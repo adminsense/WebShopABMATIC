@@ -16,9 +16,10 @@ A digital platform or website that enables businesses to sell goods or services 
 ## 📖 Project Overview
 
 **WebSHop** is a full-stack storefront: customers explore the catalog and use a cart, while staff use an admin area backed by a relational database and secure accounts.
-The old project:
-https://adminsenceweb.azurewebsites.net/
 ---
+
+The old project:  https://adminsenceweb.azurewebsites.net/
+----
 
 ## 🎯 Objective
 
