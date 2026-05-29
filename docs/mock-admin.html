@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WebShop — Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --sidebar: #0f172a;
+      --sidebar-hover: #1e293b;
+      --sidebar-text: #94a3b8;
+      --sidebar-active: #f8fafc;
+      --bg: #f1f5f9;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --accent: #2563eb;
+      --accent-soft: #eff6ff;
+      --success: #059669;
+      --warning: #d97706;
+      --danger: #dc2626;
+      --radius: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    .app { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background: var(--sidebar);
+      color: var(--sidebar-text);
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-brand {
+      padding: 1.25rem 1.5rem;
+      font-weight: 700;
+      font-size: 1.125rem;
+      color: #fff;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .sidebar-brand small {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: var(--sidebar-text);
+      margin-top: 0.15rem;
+    }
+    .sidebar-nav { flex: 1; padding: 1rem 0.75rem; }
+    .nav-section {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0.75rem 0.75rem 0.35rem;
+      color: #64748b;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      border: none;
+      background: none;
+      color: var(--sidebar-text);
+      font: inherit;
+      font-size: 0.9rem;
+      text-align: left;
+      border-radius: var(--radius);
+      cursor: pointer;
+      margin-bottom: 0.15rem;
+    }
+    .nav-item:hover { background: var(--sidebar-hover); color: #e2e8f0; }
+    .nav-item.active { background: var(--accent); color: #fff; }
+    .nav-item .icon { width: 1.25rem; text-align: center; opacity: 0.9; }
+    .sidebar-footer {
+      padding: 1rem 1.25rem;
+      border-top: 1px solid rgba(255,255,255,.08);
+      font-size: 0.8rem;
+    }
+    .sidebar-footer a { color: #93c5fd; text-decoration: none; }
+
+    /* Main */
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.875rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .topbar h1 { font-size: 1.125rem; font-weight: 600; }
+    .topbar-actions { display: flex; align-items: center; gap: 0.75rem; }
+    .admin-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.75rem;
+      background: var(--bg);
+      border-radius: 999px;
+      font-size: 0.85rem;
+    }
+    .admin-pill .dot {
+      width: 8px; height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+    }
+    .content { padding: 1.5rem; flex: 1; }
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* Stats */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+    .stat-card .label { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.35rem; }
+    .stat-card .value { font-size: 1.75rem; font-weight: 700; }
+    .stat-card .delta { font-size: 0.8rem; margin-top: 0.35rem; }
+    .stat-card .delta.up { color: var(--success); }
+    .stat-card .delta.down { color: var(--danger); }
+
+    /* Panels */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    .panel-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+    .panel-header h2 { font-size: 1rem; font-weight: 600; }
+    .panel-body { padding: 0; overflow-x: auto; }
+
+    .btn {
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius);
+      font: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-outline {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-sm { padding: 0.35rem 0.65rem; font-size: 0.8rem; }
+    .btn-danger { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; }
+    .btn-icon {
+      width: 32px; height: 32px;
+      padding: 0;
+      justify-content: center;
+      border-radius: 6px;
+    }
+
+    .search-input {
+      padding: 0.45rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font: inherit;
+      font-size: 0.875rem;
+      min-width: 200px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    th, td {
+      padding: 0.75rem 1.25rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      background: #f8fafc;
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafbfc; }
+    .thumb {
+      width: 40px;
+      height: 40px;
+      border-radius: 6px;
+      object-fit: cover;
+      background: var(--bg);
+    }
+    .badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .badge-processing { background: #fef3c7; color: #92400e; }
+    .badge-shipped { background: #dbeafe; color: #1e40af; }
+    .badge-delivered { background: #d1fae5; color: #065f46; }
+    .badge-failed { background: #fee2e2; color: #991b1b; }
+    .badge-returned { background: #f1f5f9; color: #475569; }
+    .badge-active { background: #d1fae5; color: #065f46; }
+    .badge-inactive { background: #f1f5f9; color: #64748b; }
+
+    .actions { display: flex; gap: 0.35rem; }
+    .grid-2 {
+      display: grid;
+      gap: 1.5rem;
+    }
+    @media (min-width: 1000px) {
+      .grid-2 { grid-template-columns: 1fr 1fr; }
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 1rem;
+      padding: 1.25rem;
+      max-width: 640px;
+    }
+    .form-grid label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 0.3rem;
+    }
+    .form-grid input, .form-grid select, .form-grid textarea {
+      width: 100%;
+      padding: 0.5rem 0.65rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font: inherit;
+    }
+    .form-grid textarea { min-height: 80px; resize: vertical; }
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+    .entity-tag {
+      font-size: 0.7rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .mock-banner {
+      background: #0f172a;
+      color: #64748b;
+      font-size: 0.7rem;
+      text-align: center;
+      padding: 0.3rem;
+    }
+    .mock-banner a { color: #93c5fd; }
+
+    .role-chip {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      margin-right: 0.25rem;
+      background: #e0e7ff;
+      color: #3730a3;
+    }
+    .role-chip.admin { background: #fce7f3; color: #9d174d; }
+    .role-chip.customer { background: #ecfdf5; color: #047857; }
+    .tabs-inline {
+      display: flex;
+      gap: 0.25rem;
+      padding: 0 1.25rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .tabs-inline button {
+      padding: 0.65rem 1rem;
+      border: none;
+      background: none;
+      font: inherit;
+      font-size: 0.875rem;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+    .tabs-inline button.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      font-weight: 600;
+    }
+    .sub-screen { display: none; }
+    .sub-screen.active { display: block; }
+    .perm-table td, .perm-table th { text-align: center; }
+    .perm-table th:first-child, .perm-table td:first-child { text-align: left; }
+    .perm-yes { color: var(--success); font-weight: 700; }
+    .perm-no { color: #cbd5e1; }
+
+    @media (max-width: 768px) {
+      .sidebar { width: 72px; }
+      .sidebar-brand span, .nav-item span:not(.icon), .nav-section, .sidebar-footer { display: none; }
+      .sidebar-brand { font-size: 0; padding: 1rem; }
+      .sidebar-brand::after { content: 'WS'; font-size: 1rem; color: #fff; }
+    }
+  </style>
+</head>
+<body>
+  <div class="mock-banner">
+    WebShop prototype — Admin · <a href="index.html">Index</a> · <a href="mock-shopcart.html">Store</a>
+  </div>
+
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        WebShop Admin
+        <small>Store management &amp; access control</small>
+      </div>
+      <nav class="sidebar-nav">
+        <p class="nav-section">Main</p>
+        <button type="button" class="nav-item active" data-screen="dashboard">
+          <span class="icon">📊</span><span>Dashboard</span>
+        </button>
+        <p class="nav-section">Catalog</p>
+        <button type="button" class="nav-item" data-screen="products">
+          <span class="icon">📦</span><span>Products</span>
+        </button>
+        <button type="button" class="nav-item" data-screen="categories">
+          <span class="icon">🏷️</span><span>Categories</span>
+        </button>
+        <button type="button" class="nav-item" data-screen="discounts">
+          <span class="icon">🎟️</span><span>Discounts</span>
+        </button>
+        <p class="nav-section">Sales</p>
+        <button type="button" class="nav-item" data-screen="orders">
+          <span class="icon">🛍️</span><span>Orders</span>
+        </button>
+        <button type="button" class="nav-item" data-screen="customers">
+          <span class="icon">👥</span><span>Customers</span>
+        </button>
+        <p class="nav-section">Access control</p>
+        <button type="button" class="nav-item" data-screen="users">
+          <span class="icon">👤</span><span>Users</span>
+        </button>
+        <button type="button" class="nav-item" data-screen="roles">
+          <span class="icon">🔐</span><span>Roles &amp; permissions</span>
+        </button>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="mock-shopcart.html">← View storefront</a>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <h1 id="page-title">Dashboard</h1>
+        <div class="topbar-actions">
+          <input type="search" class="search-input" placeholder="Search…" aria-label="Search">
+          <div class="admin-pill">
+            <span class="dot"></span>
+            Anna Rodriguez · AdminId: 1
+          </div>
+        </div>
+      </header>
+
+      <div class="content">
+        <!-- DASHBOARD -->
+        <section id="screen-dashboard" class="screen active">
+          <div class="stats">
+            <div class="stat-card">
+              <p class="label">Products</p>
+              <p class="value">248</p>
+              <p class="delta up">+12 this month</p>
+            </div>
+            <div class="stat-card">
+              <p class="label">Orders</p>
+              <p class="value">1,042</p>
+              <p class="delta up">+8% vs last month</p>
+            </div>
+            <div class="stat-card">
+              <p class="label">Customers</p>
+              <p class="value">3,891</p>
+              <p class="delta up">+156 new</p>
+            </div>
+            <div class="stat-card">
+              <p class="label">Revenue</p>
+              <p class="value">$84k</p>
+              <p class="delta down">-2% (seasonal)</p>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="panel">
+              <div class="panel-header">
+                <h2>Recent orders</h2>
+                <button type="button" class="btn btn-outline btn-sm" data-screen="orders">View all</button>
+              </div>
+              <div class="panel-body">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>OrderId</th>
+                      <th>Customer</th>
+                      <th>Status</th>
+                      <th>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>#1042</td>
+                      <td>Mary Smith</td>
+                      <td><span class="badge badge-processing">Processing</span></td>
+                      <td>$509.70</td>
+                    </tr>
+                    <tr>
+                      <td>#1041</td>
+                      <td>John Davis</td>
+                      <td><span class="badge badge-shipped">Shipped</span></td>
+                      <td>$189.00</td>
+                    </tr>
+                    <tr>
+                      <td>#1040</td>
+                      <td>Paula Mendez</td>
+                      <td><span class="badge badge-delivered">Delivered</span></td>
+                      <td>$1,240.00</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <h2>Low stock</h2>
+                <span class="entity-tag">Product.StockQuantity</span>
+              </div>
+              <div class="panel-body">
+                <table>
+                  <thead>
+                    <tr><th>Product</th><th>Brand</th><th>Stock</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Minimalist Watch</td>
+                      <td>Nordic</td>
+                      <td style="color:var(--warning);font-weight:600">5</td>
+                    </tr>
+                    <tr>
+                      <td>Mouse Gamer X</td>
+                      <td>LogiTech</td>
+                      <td style="color:var(--danger);font-weight:600">2</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- PRODUTOS -->
+        <section id="screen-products" class="screen">
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Products <span class="entity-tag">Product</span></h2>
+              <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+                <input type="search" class="search-input" placeholder="Name, brand…">
+                <button type="button" class="btn btn-primary">+ Add product</button>
+              </div>
+            </div>
+            <div class="panel-body">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Id</th>
+                    <th></th>
+                    <th>Name</th>
+                    <th>Brand</th>
+                    <th>CategoryId</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>101</td>
+                    <td><img class="thumb" src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=80&q=80" alt=""></td>
+                    <td><strong>Bluetooth Headphones Pro</strong><br><small style="color:var(--muted)">Active noise cancellation…</small></td>
+                    <td>Sony</td>
+                    <td>1</td>
+                    <td>$349.90</td>
+                    <td>42</td>
+                    <td>
+                      <div class="actions">
+                        <button type="button" class="btn btn-outline btn-sm btn-icon" title="Edit">✎</button>
+                        <button type="button" class="btn btn-danger btn-sm btn-icon" title="Delete">🗑</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>205</td>
+                    <td><img class="thumb" src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=80&q=80" alt=""></td>
+                    <td><strong>Minimalist Watch</strong></td>
+                    <td>Nordic</td>
+                    <td>2</td>
+                    <td>$189.00</td>
+                    <td style="color:var(--warning);font-weight:600">5</td>
+                    <td>
+                      <div class="actions">
+                        <button type="button" class="btn btn-outline btn-sm btn-icon">✎</button>
+                        <button type="button" class="btn btn-danger btn-sm btn-icon">🗑</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>310</td>
+                    <td><img class="thumb" src="https://images.unsplash.com/photo-1585386959984-a41552231656?w=80&q=80" alt=""></td>
+                    <td><strong>Thermal Bottle 750ml</strong></td>
+                    <td>Hydro</td>
+                    <td>4</td>
+                    <td>$79.90</td>
+                    <td>120</td>
+                    <td>
+                      <div class="actions">
+                        <button type="button" class="btn btn-outline btn-sm btn-icon">✎</button>
+                        <button type="button" class="btn btn-danger btn-sm btn-icon">🗑</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header"><h2>Product form — create / edit</h2></div>
+            <form class="form-grid">
+              <div class="form-row-2">
+                <div><label>Name</label><input type="text" value="Bluetooth Headphones Pro"></div>
+                <div><label>Brand</label><input type="text" value="Sony"></div>
+              </div>
+              <div><label>Description</label><textarea>Active noise cancellation, 30h battery life.</textarea></div>
+              <div class="form-row-2">
+                <div><label>Price</label><input type="text" value="349.90"></div>
+                <div><label>StockQuantity</label><input type="number" value="42"></div>
+              </div>
+              <div class="form-row-2">
+                <div><label>CategoryId</label><select><option>1 — Electronics</option></select></div>
+                <div><label>ImageUrl</label><input type="url" value="/images/products/fone-pro.jpg"></div>
+              </div>
+              <div>
+                <button type="button" class="btn btn-primary">Save</button>
+                <button type="button" class="btn btn-outline">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- CATEGORIAS -->
+        <section id="screen-categories" class="screen">
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Categories <span class="entity-tag">Category</span></h2>
+              <button type="button" class="btn btn-primary">+ Add category</button>
+            </div>
+            <div class="panel-body">
+              <table>
+                <thead>
+                  <tr>
+                    <th>CategoryId</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Products</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>1</td>
+                    <td><strong>Electronics</strong></td>
+                    <td>Audio, computing, and gadgets</td>
+                    <td>86</td>
+                    <td><div class="actions"><button class="btn btn-outline btn-sm btn-icon">✎</button><button class="btn btn-danger btn-sm btn-icon">🗑</button></div></td>
+                  </tr>
+                  <tr>
+                    <td>2</td>
+                    <td><strong>Fashion</strong></td>
+                    <td>Clothing, watches, and accessories</td>
+                    <td>54</td>
+                    <td><div class="actions"><button class="btn btn-outline btn-sm btn-icon">✎</button><button class="btn btn-danger btn-sm btn-icon">🗑</button></div></td>
+                  </tr>
+                  <tr>
+                    <td>3</td>
+                    <td><strong>Home</strong></td>
+                    <td>Decor and household items</td>
+                    <td>62</td>
+                    <td><div class="actions"><button class="btn btn-outline btn-sm btn-icon">✎</button><button class="btn btn-danger btn-sm btn-icon">🗑</button></div></td>
+                  </tr>
+                  <tr>
+                    <td>4</td>
+                    <td><strong>Sports</strong></td>
+                    <td>Fitness and outdoor</td>
+                    <td>46</td>
+                    <td><div class="actions"><button class="btn btn-outline btn-sm btn-icon">✎</button><button class="btn btn-danger btn-sm btn-icon">🗑</button></div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- DESCONTOS -->
+        <section id="screen-discounts" class="screen">
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Discounts <span class="entity-tag">Discount</span></h2>
+              <button type="button" class="btn btn-primary">+ Add discount</button>
+            </div>
+            <div class="panel-body">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Id</th>
+                    <th>Name</th>
+                    <th>Code</th>
+                    <th>%</th>
+                    <th>Amount</th>
+                    <th>Period</th>
+                    <th>IsActive</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>1</td>
+                    <td>Summer 2026</td>
+                    <td><code>SUMMER10</code></td>
+                    <td>10%</td>
+                    <td>—</td>
+                    <td>01/12/2025 – 28/02/2026</td>
+                    <td><span class="badge badge-active">Active</span></td>
+                    <td><div class="actions"><button class="btn btn-outline btn-sm btn-icon">✎</button></div></td>
+                  </tr>
+                  <tr>
+                    <td>2</td>
+                    <td>Free shipping</td>
+                    <td><code>FREESHIP</code></td>
+                    <td>—</td>
+                    <td>$19.90</td>
+                    <td>01/05/2026 – 31/05/2026</td>
+                    <td><span class="badge badge-active">Active</span></td>
+                    <td><div class="actions"><button class="btn btn-outline btn-sm btn-icon">✎</button></div></td>
+                  </tr>
+                  <tr>
+                    <td>3</td>
+                    <td>Black Friday</td>
+                    <td><code>BF2025</code></td>
+                    <td>25%</td>
+                    <td>—</td>
+                    <td>24/11/2025 – 30/11/2025</td>
+                    <td><span class="badge badge-inactive">Inactive</span></td>
+                    <td><div class="actions"><button class="btn btn-outline btn-sm btn-icon">✎</button></div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- PEDIDOS -->
+        <section id="screen-orders" class="screen">
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Orders <span class="entity-tag">Order · OrderItem</span></h2>
+              <select class="search-input" style="min-width:auto">
+                <option>All statuses</option>
+                <option>Processing</option>
+                <option>Shipped</option>
+                <option>Delivered</option>
+                <option>Failed</option>
+                <option>Returned</option>
+              </select>
+            </div>
+            <div class="panel-body">
+              <table>
+                <thead>
+                  <tr>
+                    <th>OrderId</th>
+                    <th>OrderDate</th>
+                    <th>CustomerId</th>
+                    <th>Items (OrderItem)</th>
+                    <th>Status</th>
+                    <th>TotalAmount</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>#1042</strong></td>
+                    <td>18/05/2026 14:32</td>
+                    <td>12 — Mary Smith</td>
+                    <td><small>Headphones x1, Bottle x2</small></td>
+                    <td><span class="badge badge-processing">Processing</span></td>
+                    <td>$509.70</td>
+                    <td><button class="btn btn-outline btn-sm">Update status</button></td>
+                  </tr>
+                  <tr>
+                    <td><strong>#1041</strong></td>
+                    <td>17/05/2026 09:15</td>
+                    <td>8 — John Davis</td>
+                    <td><small>Watch x1</small></td>
+                    <td><span class="badge badge-shipped">Shipped</span></td>
+                    <td>$189.00</td>
+                    <td><button class="btn btn-outline btn-sm">Update status</button></td>
+                  </tr>
+                  <tr>
+                    <td><strong>#1039</strong></td>
+                    <td>10/05/2026 18:00</td>
+                    <td>22 — Carlos Lee</td>
+                    <td><small>Mouse x1</small></td>
+                    <td><span class="badge badge-failed">Failed</span></td>
+                    <td>$129.00</td>
+                    <td><button class="btn btn-outline btn-sm">Update status</button></td>
+                  </tr>
+                  <tr>
+                    <td><strong>#1035</strong></td>
+                    <td>28/04/2026 11:20</td>
+                    <td>15 — Paula Mendez</td>
+                    <td><small>Cushion x2</small></td>
+                    <td><span class="badge badge-returned">Returned</span></td>
+                    <td>$119.80</td>
+                    <td><button class="btn btn-outline btn-sm">Update status</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- CUSTOMERS -->
+        <section id="screen-customers" class="screen">
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Customers <span class="entity-tag">Customer</span></h2>
+              <input type="search" class="search-input" placeholder="Name, email…">
+            </div>
+            <div class="panel-body">
+              <table>
+                <thead>
+                  <tr>
+                    <th>CustomerId</th>
+                    <th>Name</th>
+                    <th>UserId</th>
+                    <th>Phone</th>
+                    <th>Address</th>
+                    <th>Orders</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>12</td>
+                    <td><strong>Mary Smith</strong><br><small>Female · 05/14/1992</small></td>
+                    <td><code>a1b2-c3d4…</code></td>
+                    <td>(555) 987-6543</td>
+                    <td>120 Flower St — Austin, TX</td>
+                    <td>14</td>
+                  </tr>
+                  <tr>
+                    <td>8</td>
+                    <td><strong>John Davis</strong><br><small>Male · 08/03/1988</small></td>
+                    <td><code>e5f6-g7h8…</code></td>
+                    <td>(555) 876-5432</td>
+                    <td>500 Brazil Ave — Miami, FL</td>
+                    <td>7</td>
+                  </tr>
+                  <tr>
+                    <td>22</td>
+                    <td><strong>Carlos Lee</strong></td>
+                    <td><code>i9j0-k1l2…</code></td>
+                    <td>(555) 765-4321</td>
+                    <td>88 Minas Rd — Denver, CO</td>
+                    <td>3</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="screen-users" class="screen">
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Users <span class="entity-tag">ApplicationUser</span></h2>
+              <button type="button" class="btn btn-primary">+ Invite user</button>
+            </div>
+            <div class="panel-body">
+              <table>
+                <thead>
+                  <tr><th>Email</th><th>Name</th><th>Roles</th><th>Status</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>anna.rodriguez@webshop.com</td>
+                    <td>Anna Rodriguez</td>
+                    <td><span class="role-chip admin">Admin</span></td>
+                    <td><span class="badge badge-active">Active</span></td>
+                    <td><button class="btn btn-outline btn-sm">Edit</button></td>
+                  </tr>
+                  <tr>
+                    <td>mary.smith@email.com</td>
+                    <td>Mary Smith</td>
+                    <td><span class="role-chip customer">Customer</span></td>
+                    <td><span class="badge badge-active">Active</span></td>
+                    <td><button class="btn btn-outline btn-sm">Edit</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="screen-roles" class="screen">
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Roles &amp; permissions <span class="entity-tag">AspNetRoles</span></h2>
+              <button type="button" class="btn btn-primary">+ Create role</button>
+            </div>
+            <div class="tabs-inline">
+              <button type="button" class="active" data-role-tab="roles-list">Roles</button>
+              <button type="button" data-role-tab="permissions">Permissions</button>
+              <button type="button" data-role-tab="assign">Assign roles</button>
+            </div>
+            <div id="role-tab-roles-list" class="sub-screen active">
+              <div class="panel-body">
+                <table>
+                  <thead><tr><th>Role</th><th>Users</th><th>Description</th></tr></thead>
+                  <tbody>
+                    <tr><td><strong>Admin</strong></td><td>3</td><td>Full access</td></tr>
+                    <tr><td><strong>Manager</strong></td><td>5</td><td>Catalog and orders</td></tr>
+                    <tr><td><strong>Customer</strong></td><td>3,883</td><td>Storefront only</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div id="role-tab-permissions" class="sub-screen">
+              <div class="panel-body">
+                <table class="perm-table">
+                  <thead><tr><th>Resource</th><th>Admin</th><th>Manager</th><th>Customer</th></tr></thead>
+                  <tbody>
+                    <tr><td>Products</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-no">-</td></tr>
+                    <tr><td>Categories</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-no">-</td></tr>
+                    <tr><td>Orders</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-no">-</td></tr>
+                    <tr><td>Discounts</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-no">-</td></tr>
+                    <tr><td>Users &amp; roles</td><td class="perm-yes">Yes</td><td class="perm-no">-</td><td class="perm-no">-</td></tr>
+                    <tr><td>Storefront / cart</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div id="role-tab-assign" class="sub-screen">
+              <form class="form-grid" style="max-width:400px">
+                <div><label>User</label><select><option>mary.smith@email.com</option></select></div>
+                <div><label>Roles</label>
+                  <label><input type="checkbox" checked disabled> Customer</label><br>
+                  <label><input type="checkbox"> Manager</label><br>
+                  <label><input type="checkbox"> Admin</label>
+                </div>
+                <button type="button" class="btn btn-primary">Save</button>
+              </form>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const titles = {
+      dashboard: 'Dashboard',
+      products: 'Products',
+      categories: 'Categories',
+      discounts: 'Discounts',
+      orders: 'Orders',
+      customers: 'Customers',
+      users: 'Users',
+      roles: 'Roles & permissions'
+    };
+
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      const screen = document.getElementById('screen-' + id);
+      const nav = document.querySelector('.nav-item[data-screen="' + id + '"]');
+      if (screen) screen.classList.add('active');
+      if (nav) nav.classList.add('active');
+      document.getElementById('page-title').textContent = titles[id] || 'Admin';
+    }
+
+    document.querySelectorAll('[data-screen]').forEach(el => {
+      el.addEventListener('click', () => showScreen(el.dataset.screen));
+    });
+
+    document.querySelectorAll('[data-role-tab]').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tabs-inline button').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelectorAll('.sub-screen').forEach(s => s.classList.remove('active'));
+        const panel = document.getElementById('role-tab-' + tab.dataset.roleTab);
+        if (panel) panel.classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>
