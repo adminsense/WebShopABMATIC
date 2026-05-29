@@ -1,14 +1,14 @@
-# WebShop vNext — Storefront + Admin (template)
+# WebShopABMATIC vNext — Storefront + Admin (template)
 
 ![Blazor](https://img.shields.io/badge/Blazor-Server-512BD4?style=flat-square&logo=blazor&logoColor=white) ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white) ![C#](https://img.shields.io/badge/C%23-13.0-239120?style=flat-square&logo=csharp&logoColor=white) ![SQL Server](https://img.shields.io/badge/SQL%20Server-Database-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white) ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square&logo=opensourceinitiative&logoColor=white)
 
-This repository will become the **new version** of the WebShop experience:
+This repository will become the **new version** of the WebShopABMATIC experience:
 - **Storefront** (catalog → product detail → cart → checkout → orders)
 - **Admin** (dashboard → catalog management → sales management → access control)
 
 We are taking the current live site (`adminsenceweb.azurewebsites.net`) as the source of truth for **data and flows**, and rewriting it into:
 - a **mock-first UI** (static/prototype that mirrors the DTOs/Entities)
-- then a **working template** for the WebShop solution (Admin + Site)
+- then a **working template** for the WebShopABMATIC solution (Admin + Site)
 
 The old project:  https://adminsenceweb.azurewebsites.net/
 
@@ -230,7 +230,7 @@ Even if this remains Blazor Server, we should still define a clean service surfa
 - .NET SDK (target framework in solution)
 
 ### 8.2 Database
-Set `ConnectionStrings:connWebshop` in `appsettings.json`, then run:
+Set `ConnectionStrings:connWebShopABMATIC` in `appsettings.json`, then run:
 
 ```bash
 dotnet ef database update
@@ -239,7 +239,7 @@ dotnet ef database update
 ### 8.3 Run
 
 ```bash
-cd WebSHop
+cd WebShopABMATIC
 dotnet run
 ```
 
