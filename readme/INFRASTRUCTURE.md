@@ -1,8 +1,8 @@
-# 🧱 Infrastructure (WebShop vNext)
+# 🧱 Infrastructure (WebShopABMATIC vNext)
 
 ![Status](https://img.shields.io/badge/Status-Draft%20(vNext)-0dcaf0?style=flat-square) ![Runtime](https://img.shields.io/badge/Runtime-.NET%2010-512BD4?style=flat-square&logo=dotnet&logoColor=white) ![UI](https://img.shields.io/badge/UI-Blazor%20Server-512BD4?style=flat-square&logo=blazor&logoColor=white) ![DB](https://img.shields.io/badge/DB-SQL%20Server-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white)
 
-This document defines the **infrastructure and platform conventions** for WebShop vNext (Storefront + Admin).
+This document defines the **infrastructure and platform conventions** for WebShopABMATIC vNext (Storefront + Admin).
 
 ---
 
@@ -32,7 +32,7 @@ Suggested organization (adapt to current solution layout):
 
 - `docs/`: static prototypes (HTML mocks)
 - `readme/`: project documentation (this file lives here)
-- `WebSHop/` (or solution folder):
+- `WebShopABMATIC/` (or solution folder):
   - `Pages/` (or `Components/`): Blazor UI
   - `Application/`: DTOs, ports, mapping, validators
   - `Infrastructure/`: EF Core, migrations, external services

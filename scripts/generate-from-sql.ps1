@@ -1,12 +1,12 @@
-# Generates English SQL + EF model from Bkp_Db/ABMATIC-create-local.sql
+# Generates English SQL + EF model from scripts/ABMATIC-create-local.sql
 $ErrorActionPreference = "Stop"
 $root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
-if (-not (Test-Path "$root\Bkp_Db\ABMATIC-create-local.sql")) { $root = "c:\Projects\webshop" }
+if (-not (Test-Path "$root\scripts\ABMATIC-create-local.sql")) { $root = "c:\Projects\WebShop" }
 
-$sqlPath = Join-Path $root "Bkp_Db\ABMATIC-create-local.sql"
-$outSqlPath = Join-Path $root "Bkp_Db\WebShop-create-local.sql"
-$entitiesDir = Join-Path $root "WebShop\Model\Entities"
-$persistenceDir = Join-Path $root "WebShop\Persistence"
+$sqlPath = Join-Path $root "scripts\ABMATIC-create-local.sql"
+$outSqlPath = Join-Path $root "scripts\WebShopABMATIC-create-local.sql"
+$entitiesDir = Join-Path $root "WebShopABMATIC\Model\Entities"
+$persistenceDir = Join-Path $root "WebShopABMATIC\Persistence"
 
 $SchemaMap = @{
     Bestanden = "Files"; Boekhouding = "Accounting"; Crm = "Crm"; Emails = "Emails"

@@ -1,21 +1,21 @@
-﻿-- WebShop local: database + schemas + tables (English names)
+﻿-- WebShopABMATIC local: database + schemas + tables (English names)
 -- Generated from ABMATIC-create-local.sql
--- sqlcmd -S localhost -E -i WebShop-create-local.sql
+-- sqlcmd -S localhost -E -i WebShopABMATIC-create-local.sql
 
 USE [master];
 GO
 
-IF DB_ID(N'WebShop') IS NOT NULL
+IF DB_ID(N'WebShopABMATIC') IS NOT NULL
 BEGIN
-    ALTER DATABASE [WebShop] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-    DROP DATABASE [WebShop];
+    ALTER DATABASE [WebShopABMATIC] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE [WebShopABMATIC];
 END
 GO
 
-CREATE DATABASE [WebShop] COLLATE Latin1_General_CI_AS;
+CREATE DATABASE [WebShopABMATIC] COLLATE Latin1_General_CI_AS;
 GO
 
-USE [WebShop];
+USE [WebShopABMATIC];
 GO
 CREATE SCHEMA [Files] AUTHORIZATION [dbo];
 GO
@@ -1174,9 +1174,9 @@ CREATE TABLE [Customers].[Customers]
     [CommissionRecipientId] int,
     [RequestedCommission] decimal(18,4) NOT NULL,
     [BetaaltermijnId] int NOT NULL,
-    [WebshopLogin] nvarchar(150),
-    [WebshopPasswordHash] nvarchar(512),
-    [WebshopPasswordSalt] nvarchar(512),
+    [WebShopABMATICLogin] nvarchar(150),
+    [WebShopABMATICPasswordHash] nvarchar(512),
+    [WebShopABMATICPasswordSalt] nvarchar(512),
     [CustomerBuildingName] nvarchar(250),
     [LaatsteFollowUp] datetime,
     [DeliveryCustomerTypeId] int NOT NULL,
@@ -1407,13 +1407,13 @@ CREATE TABLE [Products].[Product]
     [ReportBebat] bit NOT NULL,
     [HasTierPricing] bit,
     [HideDetailPrice] bit,
-    [ShowOnWebshop] bit,
+    [ShowOnWebShopABMATIC] bit,
     [LastModifiedAt] datetime,
     [LastModifiedBy] nvarchar(50),
     [IsNew] bit,
     [EanCode] nvarchar(50),
     [PopupMessage] nvarchar(512),
-    [WebshopDescriptionNl] nvarchar NOT NULL,
+    [WebShopABMATICDescriptionNl] nvarchar NOT NULL,
     [GoodsCode] nvarchar(50),
     [IntrastatCodeId] int,
     CONSTRAINT [PK_Products_Product] PRIMARY KEY CLUSTERED ([ProductId])
@@ -1679,14 +1679,14 @@ CREATE TABLE [Products].[ProductStructures]
 );
 GO
 
-CREATE TABLE [Products].[WebshopProductStructures]
+CREATE TABLE [Products].[WebShopABMATICProductStructures]
 (
     [Id] int IDENTITY(1,1) NOT NULL,
     [NameEn] nvarchar(250) NOT NULL,
     [NameFr] nvarchar(250) NOT NULL,
     [NameNl] nvarchar(250) NOT NULL,
     [ParentTaskId] int,
-    CONSTRAINT [PK_Products_WebshopProductStructures] PRIMARY KEY CLUSTERED ([Id])
+    CONSTRAINT [PK_Products_WebShopABMATICProductStructures] PRIMARY KEY CLUSTERED ([Id])
 );
 GO
 
@@ -1804,13 +1804,13 @@ CREATE TABLE [Products].[StockOrderDeliveries]
 );
 GO
 
-CREATE TABLE [Products].[WebshopStructures]
+CREATE TABLE [Products].[WebShopABMATICStructures]
 (
     [Id] int IDENTITY(1,1) NOT NULL,
     [NameNl] nvarchar(50) NOT NULL,
     [ParentTaskId] int,
     [SortOrder] int NOT NULL,
-    CONSTRAINT [PK_Products_WebshopStructures] PRIMARY KEY CLUSTERED ([Id])
+    CONSTRAINT [PK_Products_WebShopABMATICStructures] PRIMARY KEY CLUSTERED ([Id])
 );
 GO
 

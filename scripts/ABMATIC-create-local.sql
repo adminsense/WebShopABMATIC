@@ -1327,9 +1327,9 @@ CREATE TABLE [Klanten].[Klant]
     [CommisieOntvanger] int,
     [GevraagdeCommisie] decimal(18,4) NOT NULL,
     [BetaaltermijnId] int NOT NULL,
-    [LoginWebshop] nvarchar(150),
-    [PasswordWebshop] nvarchar(512),
-    [SaltWebshop] nvarchar(512),
+    [LoginWebShopABMATIC] nvarchar(150),
+    [PasswordWebShopABMATIC] nvarchar(512),
+    [SaltWebShopABMATIC] nvarchar(512),
     [KlantAdresBuilding] nvarchar(250),
     [LaatsteFollowUp] datetime,
     [LeveringKlantTypeId] int NOT NULL,
@@ -1559,13 +1559,13 @@ CREATE TABLE [Products].[Product]
     [BebatRapporteren] bit NOT NULL,
     [HeeftStaffelprijzen] bit,
     [ToonGeenDetailprijs] bit,
-    [WebShop] bit,
+    [WebShopABMATIC] bit,
     [LaatsteAanpassing] datetime,
     [LaatsteAanpassingDoor] nvarchar(50),
     [IsNieuw] bit,
     [EanCode] nvarchar(50),
     [PopUpMelding] nvarchar(512),
-    [WebshopDescriptionNl] nvarchar(max) NOT NULL,
+    [WebShopABMATICDescriptionNl] nvarchar(max) NOT NULL,
     [GoederenCode] nvarchar(50),
     [IntrastatCodeId] int,
     CONSTRAINT [PK_Products_Product] PRIMARY KEY CLUSTERED ([ProdId])
@@ -1831,14 +1831,14 @@ CREATE TABLE [Products].[ProductStructuur]
 );
 GO
 
-CREATE TABLE [Products].[ProductStructuurWebshop]
+CREATE TABLE [Products].[ProductStructuurWebShopABMATIC]
 (
     [Id] int IDENTITY(1,1) NOT NULL,
     [NaamEn] nvarchar(250) NOT NULL,
     [NaamFr] nvarchar(250) NOT NULL,
     [NaamNl] nvarchar(250) NOT NULL,
     [ParentId] int,
-    CONSTRAINT [PK_Products_ProductStructuurWebshop] PRIMARY KEY CLUSTERED ([Id])
+    CONSTRAINT [PK_Products_ProductStructuurWebShopABMATIC] PRIMARY KEY CLUSTERED ([Id])
 );
 GO
 
@@ -1966,13 +1966,13 @@ CREATE TABLE [Products].[stockreserveringbackup]
 );
 GO
 
-CREATE TABLE [Products].[WebshopStructuur]
+CREATE TABLE [Products].[WebShopABMATICStructuur]
 (
     [Id] int IDENTITY(1,1) NOT NULL,
     [NaamNl] nvarchar(50) NOT NULL,
     [ParentId] int,
     [Volgorde] int NOT NULL,
-    CONSTRAINT [PK_Products_WebshopStructuur] PRIMARY KEY CLUSTERED ([Id])
+    CONSTRAINT [PK_Products_WebShopABMATICStructuur] PRIMARY KEY CLUSTERED ([Id])
 );
 GO
 
