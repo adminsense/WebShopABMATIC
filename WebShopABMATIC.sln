@@ -5,15 +5,15 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WebShopABMATIC", "WebShopABMATIC", "{122ECE93-3BFE-4286-8CCA-4240C4768A07}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebShopABMATIC.Data", "WebShopABMATIC\Model\WebShopABMATIC.Data.csproj", "{968509F3-2C9E-4567-B056-8E2ED155D6E4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebShopABMATIC.Data", "Model\WebShopABMATIC.Data.csproj", "{968509F3-2C9E-4567-B056-8E2ED155D6E4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebShopABMATIC.Data.Persistence", "WebShopABMATIC\Persistence\WebShopABMATIC.Data.Persistence.csproj", "{94AA8077-8D51-408B-B738-4393AA35F648}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebShopABMATIC.Data.Persistence", "Persistence\WebShopABMATIC.Data.Persistence.csproj", "{94AA8077-8D51-408B-B738-4393AA35F648}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebShopABMATIC.Application", "WebShopABMATIC\Application\WebShopABMATIC.Application.csproj", "{AE538C77-E78E-4E62-85DC-9303E16CEDAB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebShopABMATIC.Application", "Application\WebShopABMATIC.Application.csproj", "{AE538C77-E78E-4E62-85DC-9303E16CEDAB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebShopABMATIC.Infrastructure", "WebShopABMATIC\Infrastructure\WebShopABMATIC.Infrastructure.csproj", "{9392234A-D067-4F14-B012-036A7EA54969}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebShopABMATIC.Infrastructure", "Infrastructure\WebShopABMATIC.Infrastructure.csproj", "{9392234A-D067-4F14-B012-036A7EA54969}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebShopABMATIC.Web", "WebShopABMATIC\Web\WebShopABMATIC.Web.csproj", "{821E743E-DB09-4F8A-9852-E9D12CE0A874}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebShopABMATIC.Web", "Web\WebShopABMATIC.Web.csproj", "{821E743E-DB09-4F8A-9852-E9D12CE0A874}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

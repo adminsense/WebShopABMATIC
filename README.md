@@ -232,24 +232,41 @@ Even if this remains Blazor Server, we should still define a clean service surfa
 
 ## 🚀 8. Local setup (current stack)
 
-### 8.1 Prerequisites
-- Visual Studio / VS Code
-- SQL Server
-- .NET SDK (target framework in solution)
+### 8.1 Repository layout
 
-### 8.2 Database
-Set `ConnectionStrings:connWebShopABMATIC` in `appsettings.json`, then run:
-
-```bash
-dotnet ef database update
+```
+WebShopABMATIC/           ← repo root (clone folder)
+├── WebShopABMATIC.sln
+├── Application/
+├── Infrastructure/
+├── Web/                  ← Blazor host (run from here)
+├── Model/
+├── Persistence/
+├── docs/
+└── readme/
 ```
 
-### 8.3 Run
+### 8.2 Prerequisites
+- Visual Studio / VS Code
+- SQL Server (LocalDB for Development)
+- .NET SDK 8.x
+
+### 8.3 Database (Identity)
 
 ```bash
-cd WebShopABMATIC
+dotnet ef database update --project Infrastructure/WebShopABMATIC.Infrastructure.csproj --startup-project Web/WebShopABMATIC.Web.csproj --context ApplicationDbContext
+```
+
+Domain schema: run `scripts/WebShopABMATIC-create-local.sql` or point `connWebShopABMATIC` at an existing ABMATIC database.
+
+### 8.4 Run admin app
+
+```bash
+cd Web
 dotnet run
 ```
+
+Sign in: `admin@webshop.com` / `Admin@12345` → `/admin`
 
 ---
 
