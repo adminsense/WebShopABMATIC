@@ -1,0 +1,37 @@
+@using WebShopABMATIC.Application.Auth
+@inject NavigationManager Navigation
+
+<aside class="admin-sidebar">
+    <div class="admin-brand">
+        WS<br />WEBSHOP ABMATIC
+        <small>Admin panel</small>
+    </div>
+    <nav class="admin-nav">
+        @foreach (var item in NavItems)
+        {
+            <NavLink class="admin-nav-link" href="@item.Href" Match="@item.Match">
+                <span class="oi @item.Icon"></span> @item.Label
+            </NavLink>
+        }
+    </nav>
+    <div class="admin-sidebar-footer">
+        <div>@DateTime.Now.ToString("dd/MM/yyyy")</div>
+        <div>v1.0 · WebShopABMATIC</div>
+    </div>
+</aside>
+
+@code {
+    private sealed record NavItem(string Href, string Label, string Icon, NavLinkMatch Match = NavLinkMatch.Prefix);
+
+    private static readonly NavItem[] NavItems =
+    [
+        new("/admin", "Start", "oi-home", NavLinkMatch.All),
+        new("/admin/hub/webshop", "Webshop", "oi-globe"),
+        new("/admin/hub/catalog", "Catalog", "oi-cog"),
+        new("/admin/hub/customers", "Customers", "oi-people"),
+        new("/admin/hub/sales", "Sales", "oi-cart"),
+        new("/admin/hub/stock", "Stock", "oi-box"),
+        new("/admin/hub/settings", "Settings", "oi-wrench"),
+        new("/admin/profile", "My profile", "oi-person")
+    ];
+}
