@@ -1,0 +1,17 @@
+@inherits LayoutComponentBase
+
+<div class="admin-shell">
+    <AdminSidebar />
+    <div class="admin-main">
+        <AdminTopBar />
+        <main class="admin-content">
+            @Body
+        </main>
+    </div>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>
