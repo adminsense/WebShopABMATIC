@@ -1,0 +1,10 @@
+{
+  // Markdown preview: always white background in this repo (works with dark editor theme)
+  "markdown.styles": [
+    ".vscode/markdown-preview.css"
+  ],
+
+  // Requires extension: bierner.markdown-preview-github-styles
+  "markdown-preview-github-styles.colorTheme": "light",
+  "markdown-preview-github-styles.lightTheme": "light"
+}
