@@ -282,6 +282,8 @@ Sign in: `admin@webshop.com` / `Admin@12345` → `/admin`
 
 ## Documentation
 
+- 📋 [`readme/ADMIN.md`](readme/ADMIN.md) — Admin panel: logins, registrations, stock, dashboards
+- 📋 [`readme/WEB_STORE.md`](readme/WEB_STORE.md) — Web store: catalog, customer auth, checkout, stock display
 - 📋 [`readme/MOCK_PROTOTYPE_GUIDE.md`](readme/MOCK_PROTOTYPE_GUIDE.md) — Mock layouts, menus, entities, and validation walkthrough
 - 🎨 [`readme/UI_PATTERNS_QUICK_START.md`](readme/UI_PATTERNS_QUICK_START.md) — Buttons, grids, forms (copy-paste)
 - 🏗️ [`readme/CODE_PATTERNS_AND_INFRASTRUCTURE.md`](readme/CODE_PATTERNS_AND_INFRASTRUCTURE.md) — Blazor implementation patterns
