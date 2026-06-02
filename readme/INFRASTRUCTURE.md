@@ -15,16 +15,16 @@ This document defines the **infrastructure and platform conventions** for WebSho
 - **Storefront**: public pages + customer-authenticated pages (cart, orders, profile)
   - ⏳ HTML prototype only (`docs/mock-loja.html`) — Blazor storefront not started
 - **Admin**: staff-authenticated pages (role-protected)
-  - ✅ Blazor Server admin area live in `WebShopABMATIC/Web/`
+  - ✅ Blazor Server admin area live in `Web/`
 
 ### 1.2 Layers (recommended)
 
 | Layer | Project | Status |
 |-------|---------|--------|
-| **UI (Blazor Server)** | `WebShopABMATIC/Web/` | ✅ Admin pages — no EF in Razor |
-| **Application** | `WebShopABMATIC/Application/` | ✅ DTOs, policies, ports |
-| **Infrastructure** | `WebShopABMATIC/Infrastructure/` | ✅ EF services, Identity, seed |
-| **Domain** | `WebShopABMATIC/Model/` + `Persistence/` | ✅ Legacy entities + `WebShopABMATICDbContext` |
+| **UI (Blazor Server)** | `Web/` | ✅ Admin pages — no EF in Razor |
+| **Application** | `Application/` | ✅ DTOs, policies, ports |
+| **Infrastructure** | `Infrastructure/` | ✅ EF services, Identity, seed |
+| **Domain** | `Model/` + `Persistence/` | ✅ Legacy entities + `WebShopABMATICDbContext` |
 
 - **UI (Blazor Server)**: pages/components only, no EF queries  
   ✅ Admin pages call ports (`IProductAdminPort`, etc.) only
@@ -58,18 +58,28 @@ This document defines the **infrastructure and platform conventions** for WebSho
 
 Suggested organization (adapt to current solution layout):
 
+Repository root (`WebShopABMATIC/` — git repo):
+
+```
+WebShopABMATIC/                 ← repo root (solution parent)
+├── WebShopABMATIC.sln
+├── Application/                  ← DTOs, ports, policies
+├── Infrastructure/               ← Identity, EF services, seed
+├── Web/                          ← Blazor Server UI
+├── Model/                        ← domain entities
+├── Persistence/                  ← DbContext + ModelBuilder
+├── docs/                         ← HTML mocks
+├── readme/                       ← documentation
+└── scripts/                      ← SQL + codegen
+```
+
 - `docs/` — static prototypes (HTML mocks)  
-  ✅ Entry: `docs/mock-loja.html` · Admin reference: `docs/mock-admin.html`
-
-- `docs/images/` — storefront product images (`product1.png` … `product6.png`)  
-  ✅ Used by the store mock (Hard drive 1–6)
-
-- `readme/` — project documentation (this file lives here)  
   ✅
-
-- `WebShopABMATIC/` solution folder:
+- `readme/` — project documentation  
+  ✅
+- Solution projects (flat at repo root):
   - `Web/` — Blazor UI (admin implemented)  
-    ✅ `Components/Pages/Admin/*`, `Components/Layout/AdminLayout.razor`, `Components/Admin/*`
+    ✅
   - `Application/` — DTOs, ports, policies  
     ✅
   - `Infrastructure/` — EF, Identity migrations, admin services, dev seed  
@@ -146,7 +156,7 @@ Suggested organization (adapt to current solution layout):
 
 - Local dev:
   ```bash
-  dotnet ef database update --project WebShopABMATIC/Infrastructure/WebShopABMATIC.Infrastructure.csproj --startup-project WebShopABMATIC/Web/WebShopABMATIC.Web.csproj --context ApplicationDbContext
+  dotnet ef database update --project Infrastructure/WebShopABMATIC.Infrastructure.csproj --startup-project Web/WebShopABMATIC.Web.csproj --context ApplicationDbContext
   ```
   ✅ Auto-applied on startup in Development via `IdentitySeedHostedService`
 
@@ -231,11 +241,11 @@ This section records everything delivered beyond the baseline items 1–5 above.
 
 | Project | Path |
 |---------|------|
-| WebShopABMATIC.Web | `WebShopABMATIC/Web/` |
-| WebShopABMATIC.Application | `WebShopABMATIC/Application/` |
-| WebShopABMATIC.Infrastructure | `WebShopABMATIC/Infrastructure/` |
-| WebShopABMATIC.Data | `WebShopABMATIC/Model/` |
-| WebShopABMATIC.Data.Persistence | `WebShopABMATIC/Persistence/` |
+| WebShopABMATIC.Web | `Web/` |
+| WebShopABMATIC.Application | `Application/` |
+| WebShopABMATIC.Infrastructure | `Infrastructure/` |
+| WebShopABMATIC.Data | `Model/` |
+| WebShopABMATIC.Data.Persistence | `Persistence/` |
 
 ✅ All added to `WebShopABMATIC.sln`
 
@@ -265,7 +275,7 @@ Matches `docs/mock-admin.html` and [UI_PATTERNS_QUICK_START.md](UI_PATTERNS_QUIC
 ### Run the admin app
 
 ```bash
-cd WebShopABMATIC/Web
+cd Web
 dotnet run
 ```
 
