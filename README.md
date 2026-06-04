@@ -292,5 +292,6 @@ Sign in: `admin@webshop.com` / `Admin@12345` → `/admin`
 
 ---
 
+
 **© 2026 AdminSense. All rights reserved.**
 
