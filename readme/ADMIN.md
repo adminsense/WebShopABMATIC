@@ -31,7 +31,7 @@
 
 | Artifact | Path | Role |
 |----------|------|------|
-| **Blazor app** | `Web/` | Runnable admin UI (`/admin/*`) |
+| **Blazor app** | `Web/` | Runnable admin UI (`admin@webshop.com / Admin@12345`) |
 | **HTML prototype** | `docs/mock-admin.html` | Visual reference before Blazor |
 | **Layout screenshots** | `readme/images/*_screen.png` | Approved shell patterns |
 | **UI patterns** | [UI_PATTERNS_QUICK_START.md](UI_PATTERNS_QUICK_START.md) | Buttons, grids, forms |
@@ -66,7 +66,7 @@ The admin UI is defined by **three screen types**. These match the legacy IMMO r
 | **Content** | 2×2 **portfolio cards** with KPIs, progress indicators, and action pills |
 | **Footer** | Current date + application version (`v1.0`) |
 
-**Blazor route:** `/admin`  
+**Blazor route:** `/admin`   (admin@webshop.com / Admin@12345)
 **Purpose:** Landing page after login. Read-only summary with drill-down links to hubs (e.g. Webshop catalog → **Manage** → `/admin/hub/webshop`).
 
 #### Dashboard widgets (vNext)

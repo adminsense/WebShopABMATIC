@@ -1,0 +1,73 @@
+@page "/product/{ProductId:int}"
+@layout StoreLayout
+@inject StoreCatalog Catalog
+@inject StoreCartService Cart
+@inject NavigationManager Navigation
+
+<PageTitle>@(_product?.Name ?? "Product")</PageTitle>
+
+@if (_product is null)
+{
+    <div class="container" style="padding:2rem 0">
+        <p>Product not found.</p>
+        <NavLink href="/" class="back-link">← Back to catalog</NavLink>
+    </div>
+}
+else
+{
+    <div class="container">
+        <NavLink href="/" class="back-link">← Back to catalog</NavLink>
+        <div class="detail-layout">
+            <div class="detail-gallery">
+                <img src="@_product.ImageUrl" alt="@_product.Name" />
+            </div>
+            <div class="detail-info">
+                <p class="detail-meta">@_product.Tag · In stock</p>
+                <h1>@_product.Name</h1>
+                <p class="detail-price">@FormatPrice(_product.Price)</p>
+                <p class="detail-desc">@_product.Description</p>
+                <div class="qty-row">
+                    <div class="qty-control">
+                        <button type="button" aria-label="Decrease" @onclick="DecreaseQty">−</button>
+                        <span>@_quantity</span>
+                        <button type="button" aria-label="Increase" @onclick="IncreaseQty">+</button>
+                    </div>
+                    <button type="button" class="btn btn-primary" @onclick="AddToCart">Add to cart</button>
+                </div>
+                <p class="stock @(_product.Stock < 10 ? "low" : "")" style="font-size:0.85rem">@_product.Stock in stock</p>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int ProductId { get; set; }
+
+    private StoreProduct? _product;
+    private int _quantity = 1;
+
+    protected override void OnParametersSet()
+    {
+        _product = Catalog.GetById(ProductId);
+        _quantity = 1;
+    }
+
+    private void IncreaseQty()
+    {
+        if (_product is not null && _quantity < _product.Stock) _quantity++;
+    }
+
+    private void DecreaseQty()
+    {
+        if (_quantity > 1) _quantity--;
+    }
+
+    private void AddToCart()
+    {
+        if (_product is null) return;
+        Cart.AddProduct(_product.Id, _quantity);
+        Navigation.NavigateTo("/cart");
+    }
+
+    private static string FormatPrice(decimal price) => $"${price:F2}";
+}
