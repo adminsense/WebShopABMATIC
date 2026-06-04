@@ -392,11 +392,6 @@ All admin screens MUST follow [UI_PATTERNS_QUICK_START.md](UI_PATTERNS_QUICK_STA
 ## Documentation
 
 - 🏠 [Main Documentation](../README.md) - Project overview and structure
-- 📋 [Web Store](WEB_STORE.md) - Customer storefront specification
-- 📋 [Infrastructure](INFRASTRUCTURE.md) - Platform, auth, database, configuration
-- 📋 [UI Patterns Quick Start](UI_PATTERNS_QUICK_START.md) - Buttons, grids, forms
-- 📋 [Mock Prototype Guide](MOCK_PROTOTYPE_GUIDE.md) - HTML prototypes and screen mapping
-- 📋 [Code Patterns](CODE_PATTERNS_AND_INFRASTRUCTURE.md) - Engineering standards
 
 ---
 
