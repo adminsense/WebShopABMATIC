@@ -3,6 +3,10 @@
 @code {
     protected override void OnInitialized()
     {
-        NavigationManager.NavigateTo($"Account/Login?returnUrl={Uri.EscapeDataString(NavigationManager.Uri)}", forceLoad: true);
+        var relative = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        var isAdmin = relative.StartsWith("admin", StringComparison.OrdinalIgnoreCase);
+        var loginPath = isAdmin ? "admin/login" : "sign-in";
+        var returnUrl = Uri.EscapeDataString(NavigationManager.Uri);
+        NavigationManager.NavigateTo($"{loginPath}?returnUrl={returnUrl}", forceLoad: true);
     }
 }
