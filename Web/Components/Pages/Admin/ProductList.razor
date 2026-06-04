@@ -9,8 +9,8 @@
 
 <PageTitle>Product</PageTitle>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h4 mb-0"><i class="bi bi-box-seam"></i> Product</h1>
+<div class="list-header">
+    <h1><i class="bi bi-box-seam"></i> Product</h1>
     <div class="d-flex gap-2">
         <button type="button" class="btn btn-success btn-sm" @onclick="RefreshAsync">
             <i class="bi bi-arrow-repeat me-1"></i>Refresh
@@ -44,7 +44,7 @@
             </div>
         </div>
     </div>
-    <div class="d-flex gap-2 justify-content-center mt-3">
+    <div class="filter-actions">
         <button type="button" class="btn btn-primary" @onclick="ApplyFiltersAsync">
             <i class="bi bi-funnel-fill me-1"></i>Apply Filters
         </button>
@@ -64,7 +64,7 @@ else if (_result?.Items.Count == 0)
 }
 else if (_result is not null)
 {
-    <div class="table-responsive bg-white rounded shadow-sm">
+    <div class="table-wrap">
         <table class="table table-striped table-hover mb-0">
             <thead class="table-dark">
                 <tr>

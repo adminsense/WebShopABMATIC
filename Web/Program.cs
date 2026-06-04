@@ -5,6 +5,7 @@ using WebShopABMATIC.Infrastructure;
 using WebShopABMATIC.Infrastructure.Identity;
 using WebShopABMATIC.Web.Components;
 using WebShopABMATIC.Web.Components.Account;
+using WebShopABMATIC.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,6 +43,8 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
     .AddDefaultTokenProviders();
 
 builder.Services.AddWebShopInfrastructure(builder.Configuration);
+builder.Services.AddSingleton<StoreCatalog>();
+builder.Services.AddScoped<StoreCartService>();
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 

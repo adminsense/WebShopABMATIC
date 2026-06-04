@@ -1,0 +1,87 @@
+@page "/cart"
+@layout StoreLayout
+@using Microsoft.AspNetCore.Components.Authorization
+@inject StoreCartService CartService
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Cart</PageTitle>
+
+<div class="container">
+    <h1 class="page-title">Your cart</h1>
+
+    @if (CartService.Lines.Count == 0)
+    {
+        <p style="color:var(--muted);margin-bottom:1.5rem">Your cart is empty.</p>
+        <NavLink href="/" class="btn btn-primary">Continue shopping</NavLink>
+    }
+    else
+    {
+        <div class="cart-layout">
+            <div class="cart-table">
+                @foreach (var line in CartService.Lines)
+                {
+                    <div class="cart-row" @key="line.ProductId">
+                        <img src="@line.ImageUrl" alt="@line.Name" />
+                        <div>
+                            <h4>@line.Name</h4>
+                            <p class="unit">@FormatPrice(line.UnitPrice) each</p>
+                        </div>
+                        <div class="qty-control">
+                            <button type="button" @onclick="() => CartService.SetQuantity(line.ProductId, line.Quantity - 1)">−</button>
+                            <span>@line.Quantity</span>
+                            <button type="button" @onclick="() => CartService.SetQuantity(line.ProductId, line.Quantity + 1)">+</button>
+                        </div>
+                        <span class="line-total">@FormatPrice(line.LineTotal)</span>
+                        <button type="button" class="remove-btn" title="Remove" @onclick="() => CartService.Remove(line.ProductId)">×</button>
+                    </div>
+                }
+            </div>
+            <aside class="summary-card">
+                <h3>Order summary</h3>
+                <div class="summary-line"><span>Subtotal (@CartService.ItemCount items)</span><span>@FormatPrice(CartService.Subtotal)</span></div>
+                <div class="summary-line"><span>Delivery</span><span>Standard — @FormatPrice(CartService.DeliveryFee)</span></div>
+                <div class="discount-field">
+                    <input type="text" placeholder="Discount code" />
+                    <button type="button" class="btn btn-outline">Apply</button>
+                </div>
+                <div class="summary-line"><span>VAT 21%</span><span>@FormatPrice(CartService.VatAmount)</span></div>
+                <div class="summary-line total"><span>Total</span><span>@FormatPrice(CartService.Total)</span></div>
+                <div class="form-group" style="margin-top:1rem">
+                    <label>Delivery address</label>
+                    <select>
+                        <option>Warehouse — 120 Flower St, Austin TX</option>
+                        <option>Site — 500 Brazil Ave, Miami FL</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-top:0.75rem">
+                    <label>Payment method</label>
+                    <select>
+                        <option>Bank transfer</option>
+                        <option>Invoice 30 days</option>
+                    </select>
+                </div>
+                <button type="button" class="btn btn-primary" @onclick="PlaceOrderAsync">Place order</button>
+            </aside>
+        </div>
+    }
+</div>
+
+@code {
+    protected override void OnInitialized() => CartService.Changed += () => InvokeAsync(StateHasChanged);
+
+    private async Task PlaceOrderAsync()
+    {
+        var auth = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (auth.User.Identity?.IsAuthenticated != true)
+        {
+            Navigation.NavigateTo("/sign-in?returnUrl=/cart", forceLoad: true);
+            return;
+        }
+
+        CartService.Clear();
+        Navigation.NavigateTo("/orders");
+    }
+
+    private static string FormatPrice(decimal price) => $"${price:F2}";
+}

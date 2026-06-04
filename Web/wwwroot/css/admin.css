@@ -1,26 +1,477 @@
 :root {
   --nav-bg: #1e2a3a;
+  --nav-bg-hover: #263545;
   --nav-active: #3d5a80;
   --content-bg: #eef1f5;
-  --card-shadow: 0 2px 8px rgba(0,0,0,.08);
+  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.admin-shell { display: flex; min-height: 100vh; font-family: "Segoe UI", system-ui, sans-serif; background: var(--content-bg); }
-.admin-sidebar { width: 240px; background: var(--nav-bg); color: #b8c5d6; flex-shrink: 0; display: flex; flex-direction: column; }
-.admin-brand { margin: 1rem; padding: 0.75rem 1rem; background: #fff; border-radius: 4px; text-align: center; font-weight: 800; font-size: 0.85rem; color: #1e2a3a; }
-.admin-brand small { display: block; font-size: 0.65rem; font-weight: 600; color: #64748b; margin-top: 0.15rem; }
-.admin-nav { flex: 1; padding: 0 0.5rem; overflow-y: auto; }
-.admin-nav-link { display: flex; align-items: center; gap: 0.65rem; width: 100%; padding: 0.55rem 0.85rem; border: none; background: none; color: #b8c5d6; font-size: 0.875rem; text-align: left; border-radius: 4px; cursor: pointer; margin-bottom: 2px; text-decoration: none; }
-.admin-nav-link:hover, .admin-nav-link.active { background: #263545; color: #fff; text-decoration: none; }
-.admin-nav-link.active { background: var(--nav-active); }
-.admin-sidebar-footer { padding: 0.75rem 1rem 1rem; font-size: 0.7rem; color: #6b7c93; border-top: 1px solid rgba(255,255,255,.06); }
-.admin-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-.admin-topbar { background: var(--nav-bg); color: #fff; padding: 0.5rem 1.25rem; display: flex; align-items: center; justify-content: flex-end; gap: 1rem; font-size: 0.9rem; }
-.admin-content { padding: 1.25rem 1.5rem 2rem; flex: 1; }
-.dash-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem; }
-@media (max-width: 992px) { .dash-grid { grid-template-columns: 1fr; } }
-.portfolio-card { background: #fff; border-radius: 8px; box-shadow: var(--card-shadow); padding: 1.25rem; min-height: 200px; }
-.hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
-.hub-card { background: #fff; border-radius: 8px; box-shadow: var(--card-shadow); padding: 1.25rem; min-height: 200px; display: flex; flex-direction: column; }
-.hub-card .entity-tag { font-size: 0.65rem; color: #0d6efd; font-weight: 600; margin-bottom: 0.5rem; }
-.filter-panel { background: #fff; border: 1px solid #dee2e6; border-radius: 6px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+/* —— Admin shell —— */
+.admin-shell {
+  display: flex;
+  min-height: 100vh;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background: var(--content-bg);
+}
+
+.admin-sidebar {
+  width: 240px;
+  background: var(--nav-bg);
+  color: #b8c5d6;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-brand {
+  margin: 1rem;
+  padding: 0.75rem 1rem;
+  background: #fff;
+  border-radius: 4px;
+  text-align: center;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: #1e2a3a;
+  letter-spacing: 0.02em;
+}
+
+.admin-brand small {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-top: 0.15rem;
+}
+
+.admin-nav {
+  flex: 1;
+  padding: 0 0.5rem;
+  overflow-y: auto;
+}
+
+.admin-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.55rem 0.85rem;
+  border: none;
+  background: none;
+  color: #b8c5d6;
+  font-size: 0.875rem;
+  text-align: left;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 2px;
+  text-decoration: none;
+}
+
+.admin-nav-link:hover {
+  background: var(--nav-bg-hover);
+  color: #fff;
+  text-decoration: none;
+}
+
+.admin-nav-link.active {
+  background: var(--nav-active);
+  color: #fff;
+}
+
+.admin-nav-link .oi {
+  width: 1.1rem;
+  opacity: 0.9;
+}
+
+.admin-sidebar-footer {
+  padding: 0.75rem 1rem 1rem;
+  font-size: 0.7rem;
+  color: #6b7c93;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.admin-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.admin-topbar {
+  background: var(--nav-bg);
+  color: #fff;
+  padding: 0.5rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+.btn-logout {
+  background: #dc3545;
+  border: none;
+  color: #fff;
+  padding: 0.35rem 0.85rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn-logout:hover {
+  background: #bb2d3b;
+  color: #fff;
+}
+
+.admin-content {
+  padding: 1.25rem 1.5rem 2rem;
+  flex: 1;
+}
+
+/* —— Dashboard —— */
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+@media (max-width: 992px) {
+  .dash-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.portfolio-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: var(--card-shadow);
+  padding: 1.25rem;
+  min-height: 220px;
+}
+
+.portfolio-card h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.icon-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.icon-circle.purple { background: #7c6cf0; }
+.icon-circle.red { background: #e85d5d; }
+.icon-circle.blue { background: #5b8def; }
+.icon-circle.green { background: #3cb371; }
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f0f2f5;
+  font-size: 0.85rem;
+}
+
+.stat-row:last-child {
+  border-bottom: none;
+}
+
+.pill {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  border: 1px solid;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.pill-blue { color: #0d6efd; border-color: #0d6efd; background: #eff6ff; }
+.pill-green { color: #198754; border-color: #198754; background: #ecfdf5; }
+.pill-red { color: #dc3545; border-color: #dc3545; background: #fef2f2; }
+.pill-purple { color: #6f42c1; border-color: #6f42c1; background: #f3e8ff; }
+
+.progress-thin {
+  height: 6px;
+  background: #e9ecef;
+  border-radius: 3px;
+  margin: 0.35rem 0;
+  overflow: hidden;
+}
+
+.progress-thin > span {
+  display: block;
+  height: 100%;
+  background: #198754;
+  border-radius: 3px;
+}
+
+.mini-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.mini-metric {
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 0.5rem;
+  text-align: center;
+  font-size: 0.65rem;
+  color: #64748b;
+}
+
+.mini-metric strong {
+  display: block;
+  font-size: 0.8rem;
+  color: #1e2a3a;
+  margin-top: 0.15rem;
+}
+
+/* —— Hub —— */
+.page-header h1 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.page-header p {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.hub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.hub-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: var(--card-shadow);
+  padding: 1.25rem;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.hub-card .hub-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.15rem;
+  margin-bottom: 0.75rem;
+}
+
+.hub-card h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.hub-card p {
+  font-size: 0.85rem;
+  color: #64748b;
+  flex: 1;
+  margin-bottom: 1rem;
+}
+
+.hub-card .entity-tag {
+  font-size: 0.65rem;
+  color: #0d6efd;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.hub-card .btn-form {
+  width: 100%;
+  border: 1px solid #0d6efd;
+  color: #0d6efd;
+  background: #fff;
+  padding: 0.45rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  text-align: center;
+  text-decoration: none;
+  display: block;
+}
+
+.hub-card .btn-form:hover {
+  background: #eff6ff;
+  color: #0d6efd;
+}
+
+/* —— List / filters —— */
+.list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.list-header h1 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-panel {
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 0.75rem;
+}
+
+.table-wrap {
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+}
+
+.admin-form-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+}
+
+.admin-form-card .card-header {
+  background: #fff;
+  border-bottom: 1px solid #e9ecef;
+  padding: 1rem 1.25rem;
+}
+
+.admin-form-card .card-body {
+  padding: 1.25rem;
+}
+
+/* —— Login (IMMO-branded) —— */
+.admin-login-page {
+  min-height: 100vh;
+  background: var(--content-bg);
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+.admin-login-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.admin-login-aside {
+  width: 320px;
+  flex-shrink: 0;
+  background: var(--nav-bg);
+  color: #b8c5d6;
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-brand--login {
+  margin: 0 0 1.5rem;
+}
+
+.admin-login-tagline {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+  color: #94a3b8;
+}
+
+.admin-login-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.admin-login-features li {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.45rem 0;
+  font-size: 0.875rem;
+}
+
+.admin-login-features .oi {
+  opacity: 0.85;
+}
+
+.admin-login-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.admin-login-card {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: var(--card-shadow);
+  padding: 2rem;
+}
+
+.admin-login-card h1 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: #1e2a3a;
+}
+
+.admin-login-card .login-subtitle {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .admin-login-shell {
+    flex-direction: column;
+  }
+
+  .admin-login-aside {
+    width: 100%;
+    padding: 1.25rem;
+  }
+
+  .admin-login-main {
+    padding: 1.25rem;
+  }
+}
