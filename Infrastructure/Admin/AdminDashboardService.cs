@@ -31,6 +31,20 @@ public sealed class AdminDashboardService : IAdminDashboardPort
             () => _db.ProductStockLocations.AsNoTracking()
                 .CountAsync(x => x.Quantity <= x.MinQuantity, cancellationToken));
 
+        var yearStart = new DateTime(DateTime.UtcNow.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        var revenueYtd = await SafeSumAsync(async () =>
+            await (from line in _db.OrderLines.AsNoTracking()
+                   join order in _db.Orders.AsNoTracking() on line.OrderId equals order.Id
+                   where order.IsAccepted && order.CreatedAt >= yearStart
+                   select (decimal?)line.TotalExclVat).SumAsync(cancellationToken) ?? 0m);
+
+        var costsYtd = await SafeSumAsync(async () =>
+            await (from line in _db.OrderLines.AsNoTracking()
+                   join order in _db.Orders.AsNoTracking() on line.OrderId equals order.Id
+                   where order.IsAccepted && order.CreatedAt >= yearStart
+                   select (decimal?)(line.NettoAankoopPrijs * line.Quantity)).SumAsync(cancellationToken) ?? 0m);
+
         return new AdminDashboardDto
         {
             ProductsOnWebshop = productsOnWebshop,
@@ -38,13 +52,25 @@ public sealed class AdminDashboardService : IAdminDashboardPort
             OrdersThisMonth = ordersThisMonth,
             PendingOrders = pendingOrders,
             LowStockAlerts = lowStock,
-            RevenueYtd = 0,
-            CostsYtd = 0,
-            NetYtd = 0
+            RevenueYtd = revenueYtd,
+            CostsYtd = costsYtd,
+            NetYtd = revenueYtd - costsYtd
         };
     }
 
     private static async Task<int> SafeCountAsync(Func<Task<int>> query)
+    {
+        try
+        {
+            return await query();
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    private static async Task<decimal> SafeSumAsync(Func<Task<decimal>> query)
     {
         try
         {
