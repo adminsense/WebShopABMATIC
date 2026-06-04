@@ -13,7 +13,7 @@ This document defines the **infrastructure and platform conventions** for WebSho
 ### 1.1 UI composition
 
 - **Storefront**: public pages + customer-authenticated pages (cart, orders, profile)
-  - ⏳ HTML prototype only (`docs/mock-loja.html`) — Blazor storefront not started
+  - ✅ Blazor storefront at `/` (catalog, product, cart, sign-in, orders)
 - **Admin**: staff-authenticated pages (role-protected)
   - ✅ Blazor Server admin area live in `Web/`
 
@@ -387,6 +387,41 @@ dotnet run
   ⏳
 - endpoint → DTO → screen mapping doc  
   ✅ [MOCK_PROTOTYPE_GUIDE.md](MOCK_PROTOTYPE_GUIDE.md)
+
+---
+
+## 🔧 Troubleshooting (Visual Studio / local run)
+
+### Antiforgery error on Sign out
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| `AntiforgeryValidationException` on logout | POST form with `AntiforgeryToken` from an **interactive** Blazor component | **Fixed:** Sign out calls `SignInManager.SignOutAsync()` in code, then `forceLoad` to `/` (store and admin top bar) |
+
+### Admin Panel does nothing after login
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Click **Admin Panel** after staff login | Link always pointed to `/admin/login` | **Fixed:** When Admin/Manager is signed in, link goes to `/admin`; `/admin/login` auto-redirects to `/admin` if already authenticated |
+
+### Stuck on “Redirecting…” at `/`
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Browser shows only **Redirecting…** at `localhost:44350/` | Client-side `NavigateTo` in `Home.razor` did not complete under static SSR | **Fixed:** `Program.cs` `MapGet("/")` returns HTTP 302 to `/Account/Login` or `/admin`; `Home.razor` removed |
+| IIS Express opens `/` | Launch profile default URL | Set `launchUrl` to `Account/Login` in `launchSettings.json` |
+
+### NavigationException in debugger
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Debugger breaks on `NavigationException` | Blazor throws this **by design** on some `NavigateTo` calls | Press **Continue (F5)** or disable **User-Unhandled** for that exception type |
+
+### MSB3027 / could not copy `*.dll`
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Build fails: file locked by `iisexpress.exe` or `devenv.exe` | App still running under IIS Express while rebuilding | **Stop Debugging** (Shift+F5) in Visual Studio, then **Build → Rebuild**. If needed: Task Manager → end **IIS Express** for this site |
 
 ---
 

@@ -517,12 +517,6 @@
   </style>
 </head>
 <body>
-  <div class="mock-banner">
-    <span>Prototype — Store · 6 products · local images</span>
-    <span class="sep">·</span>
-    <a href="mock-admin.html">Admin Panel</a>
-  </div>
-
   <header class="site-header">
     <div class="header-inner">
       <a href="#" class="logo" data-goto="catalog">Web<span>Shop</span></a>
@@ -532,7 +526,7 @@
       <nav class="nav-actions">
         <button type="button" class="nav-link active" data-goto="catalog">Catalog</button>
         <button type="button" class="nav-link" data-goto="orders">My orders</button>
-        <a href="mock-admin.html" class="btn-admin" id="btn-admin" title="StaffUser.Admin — admin panel">
+        <a href="/admin/login" class="btn-admin visible" id="btn-admin" title="Admin panel">
           ⚙ Admin Panel
         </a>
         <button type="button" class="btn-cart" data-goto="cart">
@@ -676,17 +670,6 @@
       <div class="auth-card">
         <h1>Welcome</h1>
         <p>Sign in with <strong>Customer.WebshopLogin</strong> credentials</p>
-
-        <div class="demo-accounts">
-          <strong>Demo accounts (click to simulate sign-in)</strong>
-          <button type="button" class="demo-btn" data-login="customer">
-            👤 Customer — mary.smith@buildco.com (CustomerId: 12)
-          </button>
-          <button type="button" class="demo-btn admin-demo" data-login="admin">
-            ⚙ StaffUser.Admin — anna.rodriguez@webshop.com
-            <span style="color:var(--admin);font-size:0.75rem"> (shows Admin Panel link)</span>
-          </button>
-        </div>
 
         <div class="tabs">
           <button type="button" class="tab active" data-tab="login">Sign in</button>

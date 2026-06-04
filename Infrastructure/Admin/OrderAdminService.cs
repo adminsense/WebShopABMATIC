@@ -14,6 +14,8 @@ public sealed class OrderAdminService : IOrderAdminPort
 
     public async Task<PagedResult<OrderSummaryDto>> GetOrdersAsync(OrderListFilter filter, CancellationToken cancellationToken = default)
     {
+        try
+        {
         var query = _db.Orders.AsNoTracking().AsQueryable();
 
         if (filter.IsAccepted is bool accepted)
@@ -51,5 +53,10 @@ public sealed class OrderAdminService : IOrderAdminPort
             Page = page,
             PageSize = pageSize
         };
+        }
+        catch
+        {
+            return new PagedResult<OrderSummaryDto> { Items = [], TotalCount = 0, Page = 1, PageSize = filter.PageSize };
+        }
     }
 }

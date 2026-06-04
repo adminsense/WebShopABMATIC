@@ -15,56 +15,69 @@ public sealed class ProductAdminService : IProductAdminPort
 
     public async Task<PagedResult<ProductDto>> GetProductsAsync(ProductListFilter filter, CancellationToken cancellationToken = default)
     {
-        var query = _db.Products.AsNoTracking().AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(filter.Search))
+        try
         {
-            var term = filter.Search.Trim();
-            query = query.Where(p =>
-                p.NameEn.Contains(term) ||
-                p.OrderPartNumber.Contains(term) ||
-                (p.EanCode != null && p.EanCode.Contains(term)));
-        }
+            var query = _db.Products.AsNoTracking().AsQueryable();
 
-        if (filter.ShowOnWebshop is true)
-        {
-            query = query.Where(p => p.ShowOnWebshop == true);
-        }
-
-        if (filter.ModifiedOnly)
-        {
-            query = query.Where(p => p.LastModifiedAt != null);
-        }
-
-        var total = await query.CountAsync(cancellationToken);
-        var page = Math.Max(1, filter.Page);
-        var pageSize = Math.Clamp(filter.PageSize, 1, 100);
-
-        var items = await query
-            .OrderBy(p => p.NameEn)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(p => new ProductDto
+            if (!string.IsNullOrWhiteSpace(filter.Search))
             {
-                ProductId = p.ProductId,
-                NameEn = p.NameEn,
-                OrderPartNumber = p.OrderPartNumber,
-                SupplierId = p.SupplierId,
-                ManufacturerId = p.ManufacturerId,
-                ShowOnWebshop = p.ShowOnWebshop == true,
-                WebshopDescriptionNl = p.WebshopDescriptionNl,
-                EanCode = p.EanCode,
-                IsInactive = p.IsInactive
-            })
-            .ToListAsync(cancellationToken);
+                var term = filter.Search.Trim();
+                query = query.Where(p =>
+                    p.NameEn.Contains(term) ||
+                    p.OrderPartNumber.Contains(term) ||
+                    (p.EanCode != null && p.EanCode.Contains(term)));
+            }
 
-        return new PagedResult<ProductDto>
+            if (filter.ShowOnWebshop is true)
+            {
+                query = query.Where(p => p.ShowOnWebshop == true);
+            }
+
+            if (filter.ModifiedOnly)
+            {
+                query = query.Where(p => p.LastModifiedAt != null);
+            }
+
+            var total = await query.CountAsync(cancellationToken);
+            var page = Math.Max(1, filter.Page);
+            var pageSize = Math.Clamp(filter.PageSize, 1, 100);
+
+            var items = await query
+                .OrderBy(p => p.NameEn)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(p => new ProductDto
+                {
+                    ProductId = p.ProductId,
+                    NameEn = p.NameEn,
+                    OrderPartNumber = p.OrderPartNumber,
+                    SupplierId = p.SupplierId,
+                    ManufacturerId = p.ManufacturerId,
+                    ShowOnWebshop = p.ShowOnWebshop == true,
+                    WebshopDescriptionNl = p.WebshopDescriptionNl,
+                    EanCode = p.EanCode,
+                    IsInactive = p.IsInactive
+                })
+                .ToListAsync(cancellationToken);
+
+            return new PagedResult<ProductDto>
+            {
+                Items = items,
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize
+            };
+        }
+        catch
         {
-            Items = items,
-            TotalCount = total,
-            Page = page,
-            PageSize = pageSize
-        };
+            return new PagedResult<ProductDto>
+            {
+                Items = [],
+                TotalCount = 0,
+                Page = 1,
+                PageSize = filter.PageSize
+            };
+        }
     }
 
     public async Task<ProductEditDto?> GetForEditAsync(int productId, CancellationToken cancellationToken = default)

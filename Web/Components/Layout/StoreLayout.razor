@@ -1,0 +1,18 @@
+@inherits LayoutComponentBase
+
+<div class="store-shell">
+    <StoreHeader />
+    @Body
+</div>
+
+@implements IDisposable
+
+@code {
+    [Inject] private StoreCartService Cart { get; set; } = default!;
+
+    protected override void OnInitialized() => Cart.Changed += OnCartChanged;
+
+    private void OnCartChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Cart.Changed -= OnCartChanged;
+}

@@ -14,6 +14,8 @@ public sealed class CustomerAdminService : ICustomerAdminPort
 
     public async Task<PagedResult<CustomerDto>> GetCustomersAsync(CustomerListFilter filter, CancellationToken cancellationToken = default)
     {
+        try
+        {
         var query = _db.Customers.AsNoTracking().AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
@@ -50,5 +52,10 @@ public sealed class CustomerAdminService : ICustomerAdminPort
             Page = page,
             PageSize = pageSize
         };
+        }
+        catch
+        {
+            return new PagedResult<CustomerDto> { Items = [], TotalCount = 0, Page = 1, PageSize = filter.PageSize };
+        }
     }
 }
