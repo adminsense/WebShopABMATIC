@@ -1,0 +1,86 @@
+@using Microsoft.AspNetCore.Identity
+@using WebShopABMATIC.Application.Auth
+@using WebShopABMATIC.Infrastructure.Identity
+@inject NavigationManager Navigation
+@inject StoreCartService Cart
+@inject AuthenticationStateProvider AuthStateProvider
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+
+<header class="site-header">
+    <div class="header-inner">
+        <a href="/" class="logo">Web<span>Shop</span></a>
+        <div class="search-bar">
+            <input type="search" placeholder="Search products…" aria-label="Search"
+                   @bind="_search" @bind:event="oninput" @onkeyup="OnSearchKey" />
+        </div>
+        <nav class="nav-actions">
+            <NavLink href="/" class="nav-link" Match="NavLinkMatch.All">Catalog</NavLink>
+            <NavLink href="/orders" class="nav-link">My orders</NavLink>
+            @if (_isStaff)
+            {
+                <button type="button" class="btn-admin visible" title="Admin panel" @onclick="GoToAdminAsync">⚙ Admin Panel</button>
+            }
+            <NavLink href="/cart" class="btn-cart">
+                Cart <span class="cart-badge">@Cart.ItemCount</span>
+            </NavLink>
+            <div class="user-menu">
+                @if (_isAuthenticated)
+                {
+                    <span class="user-display-name @(_isStaff ? "staff-user" : "")" title="@_displayName">@_displayName</span>
+                    <button type="button" class="nav-link" style="cursor:pointer;border:none;background:none" @onclick="SignOutAsync">Sign out</button>
+                }
+                else
+                {
+                    <a href="/sign-in" class="nav-link" data-enhance-nav="false">Sign in</a>
+                    <a href="/sign-in" class="avatar" title="Guest" data-enhance-nav="false">?</a>
+                }
+            </div>
+        </nav>
+    </div>
+</header>
+
+@code {
+    private string _search = "";
+    private bool _isAuthenticated;
+    private bool _isStaff;
+    private string _displayName = "";
+
+    [Parameter] public EventCallback<string> OnSearch { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Cart.Changed += () => InvokeAsync(StateHasChanged);
+        await LoadUserAsync();
+    }
+
+    protected override async Task OnParametersSetAsync() => await LoadUserAsync();
+
+    private async Task LoadUserAsync()
+    {
+        var auth = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = auth.User;
+        _isAuthenticated = user.Identity?.IsAuthenticated == true;
+        _isStaff = user.IsInRole(AppRoles.Admin) || user.IsInRole(AppRoles.Manager);
+
+        if (_isAuthenticated)
+        {
+            var appUser = await UserManager.GetUserAsync(user);
+            _displayName = appUser?.DisplayName ?? user.Identity?.Name ?? "Account";
+        }
+    }
+
+    private void GoToAdminAsync() => Navigation.NavigateTo("/admin", forceLoad: true);
+
+    private async Task SignOutAsync()
+    {
+        await SignInManager.SignOutAsync();
+        Navigation.NavigateTo("/", forceLoad: true);
+    }
+
+    private async Task OnSearchKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && OnSearch.HasDelegate)
+            await OnSearch.InvokeAsync(_search);
+    }
+}
