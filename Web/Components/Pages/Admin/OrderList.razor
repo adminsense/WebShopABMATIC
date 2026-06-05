@@ -17,7 +17,7 @@
     </button>
 </div>
 
-<a class="btn btn-outline-secondary btn-sm mb-3" href="/admin/hub/sales"><span class="oi oi-arrow-left"></span> Back</a>
+<a class="btn btn-outline-secondary btn-sm mb-3" href="/admin/hub/sales" data-enhance-nav="false"><span class="oi oi-arrow-left"></span> Back</a>
 
 @if (_loading) { <p class="text-muted">Loading…</p> }
 else if (_result?.Items.Count == 0) { <div class="alert alert-info">No orders found.</div> }

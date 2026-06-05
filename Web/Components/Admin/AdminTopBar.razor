@@ -1,23 +1,21 @@
 @using Microsoft.AspNetCore.Identity
 @using WebShopABMATIC.Infrastructure.Identity
 @inject UserManager<ApplicationUser> UserManager
-@inject SignInManager<ApplicationUser> SignInManager
-@inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthStateProvider
 
 <div class="admin-topbar">
     <span>Hello, <strong>@_displayName</strong></span>
-    <form action="Account/Logout" method="post" style="margin:0">
+    <form action="Account/Logout" method="post" class="d-inline m-0">
         <AntiforgeryToken />
-        <input type="hidden" name="ReturnUrl" value="/Account/Login" />
-        <button type="submit" class="btn btn-danger btn-sm">
+        <input type="hidden" name="returnUrl" value="" />
+        <button type="submit" class="btn-logout" title="Logout">
             <span class="oi oi-power-standby"></span> Logout
         </button>
     </form>
 </div>
 
 @code {
-    private string _displayName = "Staff";
+    private string _displayName = "STAFF";
 
     protected override async Task OnInitializedAsync()
     {
@@ -26,7 +24,7 @@
         if (user.Identity?.IsAuthenticated == true)
         {
             var appUser = await UserManager.GetUserAsync(user);
-            _displayName = appUser?.DisplayName.ToUpperInvariant() ?? user.Identity.Name ?? "Staff";
+            _displayName = appUser?.DisplayName.ToUpperInvariant() ?? user.Identity.Name?.ToUpperInvariant() ?? "STAFF";
         }
     }
 }
