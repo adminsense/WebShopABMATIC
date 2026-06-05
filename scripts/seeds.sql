@@ -9,6 +9,8 @@ USE [WebShopABMATIC];
 GO
 
 -- Remove previous demo rows (child → parent)
+DELETE FROM [Files].[AzureFiles];
+DELETE FROM [Files].[AzureFileFolders];
 DELETE FROM [Projects].[OrderLines];
 DELETE FROM [Projects].[Orders];
 DELETE FROM [Projects].[Project];
@@ -28,6 +30,8 @@ DELETE FROM [Crm].[City];
 DELETE FROM [Crm].[Country];
 GO
 
+DBCC CHECKIDENT ('[Files].[AzureFiles]', RESEED, 0);
+DBCC CHECKIDENT ('[Files].[AzureFileFolders]', RESEED, 0);
 DBCC CHECKIDENT ('[Projects].[OrderLines]', RESEED, 0);
 DBCC CHECKIDENT ('[Projects].[Orders]', RESEED, 0);
 DBCC CHECKIDENT ('[Projects].[Project]', RESEED, 0);
@@ -138,6 +142,25 @@ INSERT INTO [Products].[Product] (
 (11, N'Internal spare part', N'Not on webshop.', N'INT-001', N'INT-001', 1, 1, 0, 1, 1, 1, 0, 1, 0, N'Internal spare part', N'Not on webshop.', N'', N'Internal spare part', N'Not shown on webshop.', N'', 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0.5, 0, 0, 0, 0, N'Not shown on webshop.', N'EANINT001'),
 (12, N'Legacy adapter', N'Legacy stock.', N'INT-002', N'INT-002', 1, 1, 0, 1, 1, 1, 0, 1, 0, N'Legacy adapter', N'Legacy stock.', N'', N'Legacy adapter', N'Legacy stock item.', N'', 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0.5, 0, 0, 0, 0, N'Legacy stock item.', N'EANINT002');
 SET IDENTITY_INSERT [Products].[Product] OFF;
+
+-- Azure file folder (product images — fictitious blob metadata)
+SET IDENTITY_INSERT [Files].[AzureFileFolders] ON;
+INSERT INTO [Files].[AzureFileFolders]
+    ([Id], [Name], [IsForCrm], [IsForOrder], [IsForProject], [IsForProduct], [IsForUser], [IsForGeneralUse], [SortOrder])
+VALUES (1, N'Products', 0, 0, 0, 1, 0, 0, 1);
+SET IDENTITY_INSERT [Files].[AzureFileFolders] OFF;
+
+-- Primary webshop images (BlobRef → static mock assets; uploads use /media/products/{id}/)
+INSERT INTO [Files].[AzureFiles]
+    ([Name], [Extension], [AzureFileFolderId], [Created], [CreatedByUserId], [Description], [BlobRef], [ThumbRef],
+     [ProductId], [IsPrimaryImage], [PublishToWeb], [SendToCustomer], [SendOnSupplierOrder])
+VALUES
+(N'product1.png', N'.png', 1, GETUTCDATE(), 1, N'Hard drive 1 catalog image', N'/images/product1.png', N'/images/product1.png', 1, 1, 1, 0, 0),
+(N'product2.png', N'.png', 1, GETUTCDATE(), 1, N'Hard drive 2 catalog image', N'/images/product2.png', N'/images/product2.png', 2, 1, 1, 0, 0),
+(N'product3.png', N'.png', 1, GETUTCDATE(), 1, N'Hard drive 3 catalog image', N'/images/product3.png', N'/images/product3.png', 3, 1, 1, 0, 0),
+(N'product4.png', N'.png', 1, GETUTCDATE(), 1, N'Hard drive 4 catalog image', N'/images/product4.png', N'/images/product4.png', 4, 1, 1, 0, 0),
+(N'product5.png', N'.png', 1, GETUTCDATE(), 1, N'Hard drive 5 catalog image', N'/images/product5.png', N'/images/product5.png', 5, 1, 1, 0, 0),
+(N'product6.png', N'.png', 1, GETUTCDATE(), 1, N'Hard drive 6 catalog image', N'/images/product6.png', N'/images/product6.png', 6, 1, 1, 0, 0);
 
 -- Stock (7 low-stock alerts: Quantity <= MinQuantity)
 INSERT INTO [Products].[ProductStockLocations] ([StockLocationId], [ProductId], [Quantity], [MaxQuantity], [IsDefault], [MinQuantity], [ReservedQuantity]) VALUES

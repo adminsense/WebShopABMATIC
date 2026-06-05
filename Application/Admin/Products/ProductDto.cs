@@ -23,6 +23,7 @@ public sealed class ProductEditDto
     public bool ShowOnWebshop { get; set; }
     public string WebshopDescriptionNl { get; set; } = string.Empty;
     public string? EanCode { get; set; }
+    public string? PrimaryImageUrl { get; set; }
 }
 
 public sealed class ProductListFilter

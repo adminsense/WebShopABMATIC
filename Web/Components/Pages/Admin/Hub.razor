@@ -14,7 +14,7 @@
 else
 {
     <div class="page-header mb-4">
-        <a class="btn btn-outline-secondary btn-sm mb-2" href="/admin">
+        <a class="btn btn-secondary btn-back mb-2" href="/admin" data-enhance-nav="false" title="Go back">
             <span class="oi oi-arrow-left"></span> Back to start
         </a>
         <h1 class="h3 mb-1"><span class="oi @_hub.IconClass"></span> @_hub.Title</h1>
@@ -25,7 +25,7 @@ else
         @foreach (var card in _hub.Cards)
         {
             var target = card.FormRoute ?? card.ListRoute;
-            <a class="hub-card hub-card-link" href="@target" title="@card.Title">
+            <a class="hub-card hub-card-link" href="@target" title="@card.Title" data-enhance-nav="false">
                 <div class="hub-icon" style="background:@card.ColorHex">
                     <span class="oi @card.IconClass"></span>
                 </div>

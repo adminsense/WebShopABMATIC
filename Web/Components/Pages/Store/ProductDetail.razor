@@ -1,12 +1,19 @@
 @page "/product/{ProductId:int}"
 @layout StoreLayout
-@inject StoreCatalog Catalog
+@using WebShopABMATIC.Application.Ports
+@inject IStoreCatalogPort CatalogPort
 @inject StoreCartService Cart
 @inject NavigationManager Navigation
 
 <PageTitle>@(_product?.Name ?? "Product")</PageTitle>
 
-@if (_product is null)
+@if (_loading)
+{
+    <div class="container" style="padding:2rem 0">
+        <p>Loading…</p>
+    </div>
+}
+else if (_product is null)
 {
     <div class="container" style="padding:2rem 0">
         <p>Product not found.</p>
@@ -32,7 +39,7 @@ else
                         <span>@_quantity</span>
                         <button type="button" aria-label="Increase" @onclick="IncreaseQty">+</button>
                     </div>
-                    <button type="button" class="btn btn-primary" @onclick="AddToCart">Add to cart</button>
+                    <button type="button" class="btn btn-primary" @onclick="AddToCartAsync">Add to cart</button>
                 </div>
                 <p class="stock @(_product.Stock < 10 ? "low" : "")" style="font-size:0.85rem">@_product.Stock in stock</p>
             </div>
@@ -45,11 +52,23 @@ else
 
     private StoreProduct? _product;
     private int _quantity = 1;
+    private bool _loading = true;
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
     {
-        _product = Catalog.GetById(ProductId);
-        _quantity = 1;
+        _loading = true;
+        try
+        {
+            var dto = await CatalogPort.GetByIdAsync(ProductId);
+            _product = dto is null ? null : StoreProductMapper.ToModel(dto);
+            _quantity = 1;
+        }
+        finally
+        {
+            _loading = false;
+        }
     }
 
     private void IncreaseQty()
@@ -62,10 +81,10 @@ else
         if (_quantity > 1) _quantity--;
     }
 
-    private void AddToCart()
+    private async Task AddToCartAsync()
     {
         if (_product is null) return;
-        Cart.AddProduct(_product.Id, _quantity);
+        await Cart.AddProductAsync(_product.Id, _quantity);
         Navigation.NavigateTo("/cart");
     }
 

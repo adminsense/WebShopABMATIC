@@ -27,7 +27,7 @@ public sealed class AdminHubRegistry : IAdminHubPort
             IconClass = "oi-cog",
             Cards =
             [
-                Card("Product", "Product", "Manage products and webshop visibility", "/admin/products", "oi-box"),
+                Card("Product", "Product", "Manage products and webshop visibility", "/admin/products", "oi-box", formRoute: "/admin/products"),
                 Card("ProductPrice", "Product price", "Gross and net prices", "/admin/product-prices", "oi-dollar"),
                 Card("ProductQuantityTier", "Quantity tiers", "Volume discounts", "/admin/product-tiers", "oi-bar-chart"),
                 Card("ProductOption", "Product options", "Configurable options", "/admin/product-options", "oi-wrench"),
@@ -116,13 +116,14 @@ public sealed class AdminHubRegistry : IAdminHubPort
     public AdminHubDefinitionDto? GetHub(string hubId) =>
         Hubs.FirstOrDefault(h => h.Id.Equals(hubId, StringComparison.OrdinalIgnoreCase));
 
-    private static AdminHubCardDto Card(string entity, string title, string description, string route, string icon) =>
+    private static AdminHubCardDto Card(string entity, string title, string description, string route, string icon, string? formRoute = null) =>
         new()
         {
             Entity = entity,
             Title = title,
             Description = description,
             ListRoute = route,
+            FormRoute = formRoute ?? route,
             IconClass = icon,
             ColorHex = "#5b8def"
         };

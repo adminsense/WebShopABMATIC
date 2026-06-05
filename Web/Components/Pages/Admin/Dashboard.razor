@@ -14,90 +14,178 @@
 }
 else if (_dashboard is not null)
 {
-    var acceptancePct = _dashboard.OrdersThisMonth > 0
-        ? (int)Math.Round(100.0 * (_dashboard.OrdersThisMonth - _dashboard.PendingOrders) / _dashboard.OrdersThisMonth)
+    var acceptancePct = Pct(_dashboard.AcceptedOrdersThisMonth, _dashboard.OrdersThisMonth);
+    var webshopPct = Pct(_dashboard.ProductsOnWebshop, _dashboard.TotalProducts);
+    var imagePct = Pct(_dashboard.ProductImages, _dashboard.ProductsOnWebshop);
+    var stockHealthPct = Pct(_dashboard.TotalProducts - _dashboard.LowStockAlerts, _dashboard.TotalProducts);
+    var marginPct = _dashboard.RevenueYtd > 0
+        ? PctDecimal(_dashboard.NetYtd, _dashboard.RevenueYtd)
         : 0;
-    acceptancePct = Math.Clamp(acceptancePct, 0, 100);
+    var itemsMonthSharePct = PctDecimal(_dashboard.ItemsSoldThisMonth, _dashboard.ItemsSoldYtd);
+    var stockFillPct = PctDecimal(_dashboard.TotalStockUnits, _dashboard.TotalStockCapacity);
+    var lowStockRiskPct = Pct(_dashboard.LowStockAlerts, _dashboard.TotalProducts);
+    var outstandingPct = PctDecimal(_dashboard.OutstandingRevenueYtd, _dashboard.PaidRevenueYtd + _dashboard.OutstandingRevenueYtd);
+    var costSharePct = PctDecimal(_dashboard.CostsYtd, _dashboard.RevenueYtd);
+    var customerCoveragePct = Pct(_dashboard.TotalCustomers, _dashboard.TotalProjects);
+    var ordersMonthSharePct = Pct(_dashboard.OrdersThisMonth, _dashboard.OrdersYtd);
 
-    <div class="dash-grid">
-        <div class="portfolio-card">
-            <h3>
-                <span class="icon-circle purple"><span class="oi oi-cog"></span></span>
-                Webshop catalog
-            </h3>
-            <div class="stat-row">
-                <span>Products · ShowOnWebshop</span>
-                <span class="pill pill-blue">@_dashboard.ProductsOnWebshop active</span>
-            </div>
-            <div class="stat-row">
-                <span>WebshopStructure nodes</span>
-                <span class="pill pill-green">@_dashboard.WebshopStructureNodes</span>
-            </div>
-            <div class="stat-row">
-                <span>Webshop structure</span>
-                <a class="pill pill-blue" href="/admin/hub/webshop" data-enhance-nav="false">Manage</a>
-            </div>
-        </div>
-
-        <div class="portfolio-card">
-            <h3>
-                <span class="icon-circle red"><span class="oi oi-cart"></span></span>
-                Sales &amp; orders
-            </h3>
-            <div class="stat-row">
-                <span>Orders this month</span>
-                <span>@_dashboard.OrdersThisMonth</span>
-            </div>
-            <div class="stat-row">
-                <span>Accepted (IsAccepted)</span>
-                <span class="pill pill-green">@acceptancePct%</span>
-            </div>
-            <p class="text-muted mb-1" style="font-size:0.75rem">Delivery completion</p>
-            <div class="progress-thin"><span style="width:@(acceptancePct)%"></span></div>
-            <div class="stat-row">
-                <span>Pending acceptance</span>
-                <span class="pill pill-red">@_dashboard.PendingOrders</span>
-            </div>
-            <div class="mt-2">
-                <a class="btn btn-outline-primary btn-sm" href="/admin/orders" data-enhance-nav="false">View orders</a>
-            </div>
-        </div>
-
-        <div class="portfolio-card">
-            <h3>
-                <span class="icon-circle blue"><span class="oi oi-wrench"></span></span>
-                Stock operations
-            </h3>
-            <div class="stat-row">
-                <span>Low stock alerts</span>
-                <span class="pill pill-red">@_dashboard.LowStockAlerts</span>
-            </div>
-            <div class="stat-row">
-                <span>ProductStockLocation</span>
-                <a class="pill pill-purple" href="/admin/hub/stock" data-enhance-nav="false">Review</a>
-            </div>
-        </div>
-
-        <div class="portfolio-card">
-            <h3>
-                <span class="icon-circle green"><span class="oi oi-dollar"></span></span>
-                Financial · YTD
-            </h3>
-            <div class="mini-metrics">
-                <div class="mini-metric">
-                    <span class="text-success"><i class="bi bi-wallet2"></i></span>
-                    <strong>@_dashboard.RevenueYtd.ToString("C0")</strong>
-                    Revenue
+    <div class="dash-page">
+        <div class="dash-grid">
+            <div class="portfolio-card portfolio-card--compact">
+                <h3>
+                    <span class="icon-circle purple"><span class="oi oi-cog"></span></span>
+                    Webshop catalog
+                </h3>
+                <div class="dash-metric">
+                    <div class="stat-band">
+                        <div>
+                            <div class="stat-band-label">Products on webshop</div>
+                            <div class="stat-band-value">@webshopPct% · @_dashboard.ProductsOnWebshop / @_dashboard.TotalProducts published</div>
+                        </div>
+                        <span class="pill pill-green"><i class="bi bi-box-seam me-1"></i>@_dashboard.ProductsOnWebshop/@_dashboard.TotalProducts</span>
+                    </div>
+                    <div class="progress-thin"><span style="width:@(webshopPct)%"></span></div>
                 </div>
-                <div class="mini-metric">
-                    <span class="text-danger"><i class="bi bi-receipt"></i></span>
-                    <strong>@_dashboard.CostsYtd.ToString("C0")</strong>
-                    Costs
+                <div class="dash-metric">
+                    <div class="stat-band">
+                        <div>
+                            <div class="stat-band-label">B2B customers</div>
+                            <div class="stat-band-value">@customerCoveragePct% · @_dashboard.TotalCustomers customers · @_dashboard.TotalProjects projects</div>
+                        </div>
+                        <span class="pill pill-blue"><i class="bi bi-people me-1"></i>@_dashboard.TotalCustomers</span>
+                    </div>
+                    <div class="progress-thin"><span style="width:@(customerCoveragePct)%"></span></div>
                 </div>
-                <div class="mini-metric">
-                    <span class="text-primary"><i class="bi bi-piggy-bank"></i></span>
-                    <strong>@_dashboard.NetYtd.ToString("C0")</strong>
-                    Net
+                <div class="dash-metric">
+                    <div class="stat-band">
+                        <div>
+                            <div class="stat-band-label">Product images</div>
+                            <div class="stat-band-value">@imagePct% · @_dashboard.ProductImages / @_dashboard.ProductsOnWebshop with image</div>
+                        </div>
+                        <span class="pill pill-purple"><i class="bi bi-image me-1"></i>@_dashboard.ProductImages/@_dashboard.ProductsOnWebshop</span>
+                    </div>
+                    <div class="progress-thin"><span style="width:@(imagePct)%"></span></div>
+                </div>
+            </div>
+
+            <div class="portfolio-card portfolio-card--compact">
+                <h3>
+                    <span class="icon-circle red"><span class="oi oi-cart"></span></span>
+                    Sales &amp; orders
+                </h3>
+                <div class="dash-metric">
+                    <div class="stat-band">
+                        <div>
+                            <div class="stat-band-label">Order acceptance (this month)</div>
+                            <div class="stat-band-value">@acceptancePct% · @_dashboard.AcceptedOrdersThisMonth / @_dashboard.OrdersThisMonth accepted</div>
+                        </div>
+                        <span class="pill pill-green"><i class="bi bi-check-circle me-1"></i>@_dashboard.AcceptedOrdersThisMonth/@_dashboard.OrdersThisMonth</span>
+                    </div>
+                    <div class="progress-thin"><span style="width:@(acceptancePct)%"></span></div>
+                </div>
+                <div class="dash-metric">
+                    <div class="stat-band">
+                        <div>
+                            <div class="stat-band-label">Items sold (this month)</div>
+                            <div class="stat-band-value">@itemsMonthSharePct% of YTD · @_dashboard.ItemsSoldThisMonth.ToString("N0") units · @_dashboard.RevenueThisMonth.ToString("N2") €</div>
+                        </div>
+                        <span class="pill pill-blue"><i class="bi bi-cart-check me-1"></i>@_dashboard.ItemsSoldThisMonth.ToString("N0")</span>
+                    </div>
+                    <div class="progress-thin progress-thin--info"><span style="width:@(itemsMonthSharePct)%"></span></div>
+                </div>
+                <div class="dash-metric">
+                    <div class="stat-band">
+                        <div>
+                            <div class="stat-band-label">Pending acceptance</div>
+                            <div class="stat-band-value">@PendingPct(_dashboard)% · @_dashboard.PendingOrders orders · @_dashboard.PendingOrderValue.ToString("N2") €</div>
+                        </div>
+                        <span class="pill pill-red"><i class="bi bi-exclamation-triangle me-1"></i>@_dashboard.PendingOrders</span>
+                    </div>
+                    <div class="progress-thin progress-thin--danger"><span style="width:@(PendingPct(_dashboard))%"></span></div>
+                </div>
+            </div>
+
+            <div class="portfolio-card portfolio-card--compact">
+                <h3>
+                    <span class="icon-circle blue"><span class="oi oi-box"></span></span>
+                    Stock &amp; warehouse
+                </h3>
+                <div class="dash-metric">
+                    <div class="stat-band">
+                        <div>
+                            <div class="stat-band-label">Stock health</div>
+                            <div class="stat-band-value">@stockHealthPct% · @(_dashboard.TotalProducts - _dashboard.LowStockAlerts) / @_dashboard.TotalProducts above minimum</div>
+                        </div>
+                        <span class="pill pill-green"><i class="bi bi-boxes me-1"></i>@stockHealthPct%</span>
+                    </div>
+                    <div class="progress-thin"><span style="width:@(stockHealthPct)%"></span></div>
+                </div>
+                <div class="dash-metric">
+                    <div class="stat-band">
+                        <div>
+                            <div class="stat-band-label">Warehouse fill level</div>
+                            <div class="stat-band-value">@stockFillPct% · @_dashboard.TotalStockUnits.ToString("N0") / @_dashboard.TotalStockCapacity.ToString("N0") units</div>
+                        </div>
+                        <span class="pill pill-blue"><i class="bi bi-stack me-1"></i>@stockFillPct%</span>
+                    </div>
+                    <div class="progress-thin progress-thin--info"><span style="width:@(stockFillPct)%"></span></div>
+                </div>
+                <div class="dash-metric">
+                    <div class="stat-band">
+                        <div>
+                            <div class="stat-band-label">Low stock &amp; out of stock</div>
+                            <div class="stat-band-value">@lowStockRiskPct% at risk · @_dashboard.LowStockAlerts low · @_dashboard.OutOfStockProducts zero</div>
+                        </div>
+                        <span class="pill pill-red"><i class="bi bi-exclamation-circle me-1"></i>@_dashboard.LowStockAlerts/@_dashboard.OutOfStockProducts</span>
+                    </div>
+                    <div class="progress-thin progress-thin--danger"><span style="width:@(lowStockRiskPct)%"></span></div>
+                </div>
+            </div>
+
+            <div class="portfolio-card portfolio-card--compact">
+                <h3>
+                    <span class="icon-circle green"><span class="oi oi-dollar"></span></span>
+                    Financial overview
+                </h3>
+                <div class="dash-metric">
+                    <div class="stat-band">
+                        <div>
+                            <div class="stat-band-label">Net margin (YTD)</div>
+                            <div class="stat-band-value">@marginPct% · @_dashboard.NetYtd.ToString("N2") € net on @_dashboard.RevenueYtd.ToString("N2") €</div>
+                        </div>
+                        <span class="pill pill-green"><i class="bi bi-percent me-1"></i>@marginPct%</span>
+                    </div>
+                    <div class="progress-thin"><span style="width:@(marginPct)%"></span></div>
+                </div>
+                <div class="dash-metric">
+                    <div class="stat-band">
+                        <div>
+                            <div class="stat-band-label">Cost share (YTD)</div>
+                            <div class="stat-band-value">@costSharePct% · @_dashboard.CostsYtd.ToString("N2") € costs of @_dashboard.RevenueYtd.ToString("N2") € revenue</div>
+                        </div>
+                        <span class="pill pill-red"><i class="bi bi-receipt me-1"></i>@costSharePct%</span>
+                    </div>
+                    <div class="progress-thin progress-thin--danger"><span style="width:@(costSharePct)%"></span></div>
+                </div>
+                <div class="dash-metric">
+                    <div class="stat-band">
+                        <div>
+                            <div class="stat-band-label">Outstanding vs accepted</div>
+                            <div class="stat-band-value">@outstandingPct% open · @_dashboard.OutstandingRevenueYtd.ToString("N2") € of @_dashboard.PaidRevenueYtd.ToString("N2") € accepted</div>
+                        </div>
+                        <span class="pill pill-red"><i class="bi bi-clock me-1"></i>@outstandingPct%</span>
+                    </div>
+                    <div class="progress-thin progress-thin--danger"><span style="width:@(outstandingPct)%"></span></div>
+                </div>
+                <div class="dash-metric">
+                    <div class="stat-band">
+                        <div>
+                            <div class="stat-band-label">Volume YTD</div>
+                            <div class="stat-band-value">@_dashboard.ItemsSoldYtd.ToString("N0") units · @_dashboard.OrdersYtd orders · @_dashboard.WebshopStructureNodes catalog nodes</div>
+                        </div>
+                        <span class="pill pill-blue"><i class="bi bi-graph-up me-1"></i>@_dashboard.OrdersYtd</span>
+                    </div>
+                    <div class="progress-thin progress-thin--info"><span style="width:@(ordersMonthSharePct)%"></span></div>
                 </div>
             </div>
         </div>
@@ -108,7 +196,6 @@ else if (_dashboard is not null)
     private CancellationTokenSource? _cts;
     private bool _loading = true;
     private WebShopABMATIC.Application.Admin.Dashboard.AdminDashboardDto? _dashboard;
-
     private bool _loaded;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -120,6 +207,25 @@ else if (_dashboard is not null)
         await LoadAsync(_cts.Token);
         _loaded = true;
     }
+
+    private static int Pct(int part, int total)
+    {
+        if (total <= 0)
+            return 0;
+
+        return Math.Clamp((int)Math.Round(100.0 * part / total), 0, 100);
+    }
+
+    private static int PctDecimal(decimal part, decimal total)
+    {
+        if (total <= 0)
+            return 0;
+
+        return Math.Clamp((int)Math.Round(100.0 * (double)(part / total)), 0, 100);
+    }
+
+    private static int PendingPct(WebShopABMATIC.Application.Admin.Dashboard.AdminDashboardDto d) =>
+        Pct(d.PendingOrders, d.OrdersThisMonth);
 
     private async Task LoadAsync(CancellationToken ct)
     {
