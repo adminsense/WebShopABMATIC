@@ -19,6 +19,7 @@
 | **Schemas with data** | `Crm`, `Customers`, `Accounting`, `Projects`, `Products` |
 | **Schemas not seeded** | `Tasks`, `Emails`, `Files`, `Logging`, `Settings`, and most optional `Projects` / `Products` tables |
 | **Identity users** | Not in `seeds.sql` — created on first dev run via `IdentitySeed` (`admin@webshop.com`, etc.) |
+| **Full legacy DB** | `ABMATIC.bacpac` exists (~3 GB) — **not** for local import; see [section 10](#10-full-legacy-database-abmaticbacpac) |
 
 ---
 
@@ -87,7 +88,7 @@ On success, `sqlcmd` prints a summary table (products on webshop, orders this mo
 
 ## 4. SQL schemas populated (domains)
 
-The full EF model defines **11 schemas** and **139+ tables** ([DUTCH_ENGLISH_DATA_MODEL.md](DUTCH_ENGLISH_DATA_MODEL.md)). The demo seed touches **five** of them.
+The full EF model defines **11 schemas** and **139+ tables**. The demo seed touches **five** of them.
 
 ### 4.1 Included schemas
 
@@ -178,7 +179,7 @@ After a successful run, expect approximately:
 | Low stock alerts | 5–7 | `Products.ProductStockLocations` where `Quantity <= MinQuantity` |
 | Revenue YTD | ~29,384 | Sum of `OrderLines.TotalExclVat` on accepted orders in current UTC year |
 
-Admin dashboard reads these via `IAdminDashboardPort` / `AdminDashboardService` ([INFRASTRUCTURE.md](INFRASTRUCTURE.md)).
+Admin dashboard reads these via `IAdminDashboardPort` / `AdminDashboardUseCase`.
 
 ---
 
@@ -216,6 +217,42 @@ Domain row for storefront: `Customers.Customers.WebshopLogin = customer@webshop.
 | App shows zeros | Wrong connection string | Confirm `appsettings.Development.json` → `MULLER` / `WebShopABMATIC` |
 | FK / duplicate key on re-run | Partial failed run | Re-run full `seeds.sql` (deletes demo tables first) |
 | SSMS shows old DB only | Wrong instance | Connect to **MULLER**, not `(localdb)` |
+
+---
+
+## 10. Full legacy database (`ABMATIC.bacpac`)
+
+The repository also references a **full legacy ABMATIC database export**: **`ABMATIC.bacpac`**.
+
+| Aspect | Detail |
+|--------|--------|
+| **File** | `ABMATIC.bacpac` |
+| **Size** | ~**3 GB** (compressed export; restored database is larger) |
+| **Contents** | Complete legacy ABMATIC schema and production-like data (Dutch names) |
+| **In repo** | Usually **not** committed — too large for Git; kept offline or in shared storage |
+
+### Why not import locally
+
+Importing `ABMATIC.bacpac` into a **local SQL Server** instance (e.g. `MULLER`, LocalDB) is **not recommended** for day-to-day development:
+
+- The restored database consumes **substantial disk space** (often several times the `.bacpac` size).
+- Most developers only need **admin lists, dashboard KPIs, and storefront smoke tests** — covered by `seeds.sql` on the English `WebShopABMATIC` schema.
+- Local machines rarely have room for both the full legacy DB and the vNext `WebShopABMATIC` database comfortably.
+
+For local work, use **`scripts/seeds.sql`** on `WebShopABMATIC` after EF migrations (sections 2–3 above).
+
+### Production / Azure integration path
+
+For **posterior integrations** with real legacy data (ETL, validation against live volumes, migration dry-runs):
+
+1. Use a **dedicated Azure SQL Database** instance (or the **production database environment**), not a developer laptop.
+2. Import `ABMATIC.bacpac` there via SSMS **Import Data-tier Application** or `SqlPackage.exe`.
+3. Run ETL / mapping scripts against that Azure copy (English schema mapping is documented in the main README index).
+4. Point integration jobs at Azure; keep local dev on `seeds.sql` + `WebShopABMATIC`.
+
+> **Note:** Production imports affect cost, storage, and security. Restrict access to the Azure instance used for bacpac restore and treat it as **non-production** unless explicitly approved for live cutover.
+
+Alternative without bacpac: `scripts/ABMATIC-create-local.sql` or `Bkp_Db/WebShopABMATIC-create-local.sql` for schema-only or smaller local setups.
 
 ---
 

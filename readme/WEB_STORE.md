@@ -382,7 +382,7 @@ Open `docs/mock-loja.html` in a browser. No build required.
 
 ## Documentation
 
-- 🏠 [Main Documentation](../README.md) - Project overview and structure
+- 🏠 [Main Documentation](../README.md) — Project overview and requirements
 
 ---
 
