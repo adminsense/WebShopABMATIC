@@ -283,7 +283,7 @@ dotnet run
 2. Sign in: `admin@webshop.com` / `Admin@12345`
 3. You are redirected to `/admin`
 
-> **Note:** Product/Customer/Order lists read from the legacy domain schema. Run `scripts/WebShopABMATIC-create-local.sql` (or point `connWebShopABMATIC` at an existing ABMATIC database) for live data. Dashboard KPIs safely return `0` if tables are missing.
+> **Note:** Product/Customer/Order lists read from the legacy domain schema. Apply EF migrations, then run `scripts/seeds.sql` on `WebShopABMATIC` — see [DEMO_SEED_DATA.md](DEMO_SEED_DATA.md). Alternatively use `scripts/WebShopABMATIC-create-local.sql` or an existing ABMATIC database. Dashboard KPIs safely return `0` if tables are missing.
 
 ### HTML prototypes (store — not Blazor yet)
 
@@ -295,20 +295,19 @@ dotnet run
 
 ## 🖼️ 6. Media (product images)
 
-### 6.1 Store `ImageUrl` as external URL (fastest)
+**Target model:** legacy `Files.AzureFiles` linked to `Products.Product` via `ProductId` (`IsPrimaryImage`, `PublishToWeb`, `BlobRef`). Phase 1 uses a **fictitious local blob** under `wwwroot/media/products/`. Full spec: [azureblob.md](azureblob.md).
 
-- Keep images on a CDN/Unsplash during development  
-  ⏳ Replaced in store mock by local assets
+### 6.1 Current storefront (prototype)
 
-- Works with current mocks  
-  ✅ `docs/images/product1.png` … `product6.png` in `mock-loja.html`
+- ✅ Static assets: `wwwroot/images/product1.png` … `product6.png` via `StoreCatalog`
+- ⏳ Replace with `AzureFiles` query when media port is implemented
 
-### 6.2 First-class media storage (production-ready)
+### 6.2 Planned storage phases
 
-- Azure Blob Storage or local filesystem  
-  ⏳
-- Persist `ImageUrl` or `BlobKey` in DB  
-  ⏳
+| Phase | Storage | DB |
+|-------|---------|-----|
+| **1** | Local filesystem (fictitious Azure) | `AzureFiles.BlobRef` |
+| **2** | Real Azure Blob Storage | Same table contract |
 
 ---
 
@@ -428,6 +427,8 @@ dotnet run
 ## Documentation
 
 - 🏠 [Main Documentation](../README.md) — Project overview and requirements
+- 🌱 [Demo seed data](DEMO_SEED_DATA.md) — `seeds.sql`, schemas populated, MULLER setup
+- 📎 [Product media / Azure Files](azureblob.md) — `AzureFiles` ↔ `Product`, local blob Phase 1
 - 🖥️ [Mock Prototype Guide](MOCK_PROTOTYPE_GUIDE.md) — HTML mocks, menus, entities, validation
 - 📋 [UI Patterns Quick Start](UI_PATTERNS_QUICK_START.md) — UI conventions and templates
 - 📋 [Code Patterns](CODE_PATTERNS_AND_INFRASTRUCTURE.md) — Engineering patterns used in the solution
