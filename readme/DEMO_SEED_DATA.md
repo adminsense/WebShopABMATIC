@@ -222,10 +222,6 @@ Domain row for storefront: `Customers.Customers.WebshopLogin = customer@webshop.
 ## Documentation
 
 - 🏠 [Main Documentation](../README.md) — Project overview and requirements
-- 🏗️ [Infrastructure](INFRASTRUCTURE.md) — Connection strings, migrations, admin services
-- 📊 [Data model](DUTCH_ENGLISH_DATA_MODEL.md) — All schemas and table inventory
-- 🖥️ [Admin panel](ADMIN.md) — Dashboard and hub screens fed by this data
-- 📋 [Code Patterns](CODE_PATTERNS_AND_INFRASTRUCTURE.md) — Readme and documentation standards
 
 ---
 
