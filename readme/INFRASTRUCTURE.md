@@ -17,26 +17,78 @@ This document defines the **infrastructure and platform conventions** for WebSho
 - **Admin**: staff-authenticated pages (role-protected)
   - ✅ Blazor Server admin area live in `Web/`
 
-### 1.2 Layers (recommended)
+### 1.2 Layers (hexagonal architecture)
 
-| Layer | Project | Status |
-|-------|---------|--------|
-| **UI (Blazor Server)** | `Web/` | ✅ Admin pages — no EF in Razor |
-| **Application** | `Application/` | ✅ DTOs, policies, ports |
-| **Infrastructure** | `Infrastructure/` | ✅ EF services, Identity, seed |
-| **Domain** | `Model/` + `Persistence/` | ✅ Legacy entities + `WebShopABMATICDbContext` |
+| Ring | Project | Responsibility |
+|------|---------|----------------|
+| **Driving adapter (UI)** | `Web/` | Blazor pages — inject **inbound ports** only, no EF |
+| **Application** | `Application/` | **Use cases**, DTOs, **inbound + outbound port** interfaces |
+| **Domain** | `Domain/` | Entities, value objects, domain rules (pure .NET, no EF) |
+| **Driven adapters** | `Infrastructure/` | EF repositories, Identity, media, seed — implement **outbound ports** |
+| **Persistence models** | `Model/` + `Persistence/` | EF entity classes + `WebShopABMATICDbContext` (legacy schema) |
+
+**Dependency rule (inward only):**
+
+```
+Web  →  Application  →  Domain
+Infrastructure  →  Application  →  Domain
+Infrastructure  →  Persistence / Model
+```
+
+**Data flow:**
+
+```
+Blazor page
+  → IProductAdminPort          (inbound / driving port)
+  → ProductAdminUseCase        (application use case)
+  → IProductRepository         (outbound / driven port)
+  → ProductRepository + Mapper (infrastructure adapter)
+  → WebShopABMATICDbContext    (persistence)
+```
+
+**Folder layout:**
+
+```
+Application/
+  Ports/
+    Inbound/          ← IProductAdminPort, ICustomerAdminPort, …
+    Outbound/         ← IProductRepository, IManufacturerRepository, …
+  UseCases/Admin/     ← *AdminUseCase (implements inbound ports)
+  Admin/              ← DTOs + filters (UI ↔ application contract)
+  DependencyInjection.cs
+
+Domain/
+  Catalog/Products/   ← Product aggregate (domain rules)
+  MasterData/         ← Manufacturer, …
+
+Infrastructure/
+  Persistence/
+    Repositories/     ← EF adapters (outbound port implementations)
+    Mappers/          ← Domain ↔ persistence entity mapping
+    AdminCrudDefaults.cs
+  Media/              ← IProductMediaPort adapter
+  Admin/              ← AdminHubRegistry (static config adapter)
+  DependencyInjection.cs   ← registers outbound adapters only
+
+Model/Entities/       ← EF persistence models (not domain)
+Persistence/          ← DbContext
+Web/                  ← Blazor driving adapter
+```
 
 - **UI (Blazor Server)**: pages/components only, no EF queries  
-  ✅ Admin pages call ports (`IProductAdminPort`, etc.) only
+  ✅ Admin pages call inbound ports only
 
-- **Application**: DTOs + mapping + use-cases/services + ports/interfaces  
-  ✅ `Application/Auth`, `Application/Admin/*`, `Application/Ports/IAdminPorts.cs`
+- **Application**: use cases + DTOs + port interfaces  
+  ✅ `Application/UseCases/Admin/*`, `Application/Ports/Inbound|Outbound`
 
-- **Infrastructure**: EF Core DbContext + repositories/adapters + external integrations  
-  ✅ `Infrastructure/Admin/*`, `Infrastructure/Identity/*`, `Infrastructure/Seeding/*`
+- **Domain**: pure business entities  
+  ✅ `Domain/Catalog/Products/Product.cs` (expand per aggregate)
 
-- **Domain**: entities + value objects  
-  ✅ Existing EF entities under `Model/Entities/`
+- **Infrastructure**: driven adapters (EF, files, Identity)  
+  ✅ `Infrastructure/Persistence/Repositories/*`
+
+- **Persistence models**: legacy EF entities under `Model/Entities/`  
+  ✅ Mapped to/from domain in infrastructure mappers
 
 ### 1.3 Data flow (mock-first → real)
 
@@ -63,10 +115,11 @@ Repository root (`WebShopABMATIC/` — git repo):
 ```
 WebShopABMATIC/                 ← repo root (solution parent)
 ├── WebShopABMATIC.sln
-├── Application/                  ← DTOs, ports, policies
-├── Infrastructure/               ← Identity, EF services, seed
-├── Web/                          ← Blazor Server UI
-├── Model/                        ← domain entities
+├── Domain/                       ← domain entities (hexagonal core)
+├── Application/                  ← use cases, DTOs, inbound/outbound ports
+├── Infrastructure/               ← driven adapters (EF repos, Identity, media)
+├── Web/                          ← driving adapter (Blazor UI)
+├── Model/                        ← EF persistence models (legacy entities)
 ├── Persistence/                  ← DbContext + ModelBuilder
 ├── docs/                         ← HTML mocks
 ├── readme/                       ← documentation
@@ -78,13 +131,15 @@ WebShopABMATIC/                 ← repo root (solution parent)
 - `readme/` — project documentation  
   ✅
 - Solution projects (flat at repo root):
-  - `Web/` — Blazor UI (admin implemented)  
+  - `Web/` — Blazor UI (driving adapter)  
     ✅
-  - `Application/` — DTOs, ports, policies  
+  - `Application/` — use cases, DTOs, port interfaces  
     ✅
-  - `Infrastructure/` — EF, Identity migrations, admin services, dev seed  
+  - `Domain/` — pure domain entities  
     ✅
-  - `Model/` — domain entities  
+  - `Infrastructure/` — outbound adapters, Identity, seed  
+    ✅
+  - `Model/` — EF persistence models  
     ✅
   - `Persistence/` — `WebShopABMATICDbContext`, model builder  
     ✅
@@ -244,6 +299,7 @@ This section records everything delivered beyond the baseline items 1–5 above.
 | WebShopABMATIC.Web | `Web/` |
 | WebShopABMATIC.Application | `Application/` |
 | WebShopABMATIC.Infrastructure | `Infrastructure/` |
+| WebShopABMATIC.Domain | `Domain/` |
 | WebShopABMATIC.Data | `Model/` |
 | WebShopABMATIC.Data.Persistence | `Persistence/` |
 
@@ -427,11 +483,6 @@ dotnet run
 ## Documentation
 
 - 🏠 [Main Documentation](../README.md) — Project overview and requirements
-- 🌱 [Demo seed data](DEMO_SEED_DATA.md) — `seeds.sql`, schemas populated, MULLER setup
-- 📎 [Product media / Azure Files](azureblob.md) — `AzureFiles` ↔ `Product`, local blob Phase 1
-- 🖥️ [Mock Prototype Guide](MOCK_PROTOTYPE_GUIDE.md) — HTML mocks, menus, entities, validation
-- 📋 [UI Patterns Quick Start](UI_PATTERNS_QUICK_START.md) — UI conventions and templates
-- 📋 [Code Patterns](CODE_PATTERNS_AND_INFRASTRUCTURE.md) — Engineering patterns used in the solution
 
 ---
 

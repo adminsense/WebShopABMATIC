@@ -470,15 +470,11 @@ WebShopABMATIC/              ← repo root
 | 4 | Point vNext | Connection string â†’ English `WebShopABMATIC` DB |
 | 5 | Future changes | EF Core migrations (baseline = generated SQL) |
 
----
 
 ## Documentation
 
-- ðŸ  [Main Documentation](../README.md) - Project overview and requirements
-- ðŸ“‹ [Infrastructure](INFRASTRUCTURE.md) - Development plan and layer conventions
-- ðŸ“‹ [Code Patterns](CODE_PATTERNS_AND_INFRASTRUCTURE.md) - Engineering patterns and readme standards
-- ðŸ“‹ [UI Patterns Quick Start](UI_PATTERNS_QUICK_START.md) - UI conventions and templates
+- 🏠 [Main Documentation](../README.md) — Project overview and requirements
 
 ---
 
-**Â© 2026 AdminSense. All rights reserved.**
+**© 2026 AdminSense. All rights reserved.**

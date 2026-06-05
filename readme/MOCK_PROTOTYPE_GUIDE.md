@@ -458,12 +458,9 @@ Open `docs/mock-loja.html` and walk through:
 
 ---
 
-## Related documentation
+## Documentation
 
-- [UI Patterns Quick Start](UI_PATTERNS_QUICK_START.md) — buttons, grids, forms, modals
-- [Code Patterns and Infrastructure](CODE_PATTERNS_AND_INFRASTRUCTURE.md) — Blazor implementation standards
-- [Main README](../README.md) — project goals and domain overview
-- Entity definitions: `Model/Entities/`
+- 🏠 [Main Documentation](../README.md) — Project overview and requirements
 
 ---
 

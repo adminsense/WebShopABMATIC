@@ -391,7 +391,7 @@ All admin screens MUST follow [UI_PATTERNS_QUICK_START.md](UI_PATTERNS_QUICK_STA
 
 ## Documentation
 
-- 🏠 [Main Documentation](../README.md) - Project overview and structure
+- 🏠 [Main Documentation](../README.md) — Project overview and requirements
 
 ---
 
