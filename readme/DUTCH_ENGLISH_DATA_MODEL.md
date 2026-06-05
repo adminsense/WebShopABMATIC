@@ -437,16 +437,18 @@ Staff permissions today live as bit flags on `StaffUser` (`Admin`, `Bestellingen
 
 ---
 
-## ðŸ—ï¸ 9. Code layout
+
+## 9. Code layout
 
 ```
 WebShopABMATIC/              ← repo root
-  Application/               # DTOs, ports, policies
-  Infrastructure/            # Identity, EF services, seed
-  Web/                       # Blazor Server UI
+  Domain/                  # pure domain entities (hexagonal core)
+  Application/             # use cases, DTOs, inbound/outbound ports
+  Infrastructure/          # EF repositories, Identity, media
+  Web/                     # Blazor Server UI (admin + store)
   Model/
     WebShopABMATIC.Data.csproj
-    Entities/                # 139 EF entity classes
+    Entities/                # 139 EF persistence models
   Persistence/
     WebShopABMATIC.Data.Persistence.csproj
     WebShopABMATICDbContext.cs
@@ -455,12 +457,14 @@ WebShopABMATIC/              ← repo root
 
 | Namespace | Project |
 |-----------|---------|
+| `WebShopABMATIC.Domain.*` | `WebShopABMATIC.Domain` |
+| `WebShopABMATIC.Application.*` | `WebShopABMATIC.Application` |
 | `WebShopABMATIC.Data.Entities` | `WebShopABMATIC.Data` |
 | `WebShopABMATIC.Data.Persistence` | `WebShopABMATIC.Data.Persistence` |
 
 ---
 
-## ðŸš€ 10. Data migration from ABMATIC
+## 10. Data migration from ABMATIC
 
 | Step | Action | Command / artifact |
 |------|--------|------------------|
