@@ -385,9 +385,7 @@ A: See Color Code Reference above. Primary (blue) for main actions, danger (red)
 
 ## Documentation
 
-- 🖥️ [Mock Prototype Guide](MOCK_PROTOTYPE_GUIDE.md) - Screen layouts, menus, entities, validation
-- 🏠 [Main Documentation](../README.md) - Project overview and structure
-- 📋 [Code Patterns](CODE_PATTERNS_AND_INFRASTRUCTURE.md) - Comprehensive patterns and infrastructure guide
+- 🏠 [Main Documentation](../README.md) — Project overview and requirements
 
 ---
 
