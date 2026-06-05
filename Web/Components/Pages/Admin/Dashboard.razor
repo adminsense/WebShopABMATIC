@@ -14,28 +14,92 @@
 }
 else if (_dashboard is not null)
 {
+    var acceptancePct = _dashboard.OrdersThisMonth > 0
+        ? (int)Math.Round(100.0 * (_dashboard.OrdersThisMonth - _dashboard.PendingOrders) / _dashboard.OrdersThisMonth)
+        : 0;
+    acceptancePct = Math.Clamp(acceptancePct, 0, 100);
+
     <div class="dash-grid">
         <div class="portfolio-card">
-            <h3><span class="oi oi-cog"></span> Webshop catalog</h3>
-            <p>Products on webshop: <strong>@_dashboard.ProductsOnWebshop</strong></p>
-            <p>Structure nodes: <strong>@_dashboard.WebshopStructureNodes</strong></p>
-            <a class="btn btn-outline-primary btn-sm" href="/admin/hub/webshop">Manage</a>
+            <h3>
+                <span class="icon-circle purple"><span class="oi oi-cog"></span></span>
+                Webshop catalog
+            </h3>
+            <div class="stat-row">
+                <span>Products · ShowOnWebshop</span>
+                <span class="pill pill-blue">@_dashboard.ProductsOnWebshop active</span>
+            </div>
+            <div class="stat-row">
+                <span>WebshopStructure nodes</span>
+                <span class="pill pill-green">@_dashboard.WebshopStructureNodes</span>
+            </div>
+            <div class="stat-row">
+                <span>Webshop structure</span>
+                <a class="pill pill-blue" href="/admin/hub/webshop">Manage</a>
+            </div>
         </div>
+
         <div class="portfolio-card">
-            <h3><span class="oi oi-cart"></span> Sales &amp; orders</h3>
-            <p>Orders this month: <strong>@_dashboard.OrdersThisMonth</strong></p>
-            <p>Pending acceptance: <strong class="text-danger">@_dashboard.PendingOrders</strong></p>
-            <a class="btn btn-outline-primary btn-sm" href="/admin/orders">View orders</a>
+            <h3>
+                <span class="icon-circle red"><span class="oi oi-cart"></span></span>
+                Sales &amp; orders
+            </h3>
+            <div class="stat-row">
+                <span>Orders this month</span>
+                <span>@_dashboard.OrdersThisMonth</span>
+            </div>
+            <div class="stat-row">
+                <span>Accepted (IsAccepted)</span>
+                <span class="pill pill-green">@acceptancePct%</span>
+            </div>
+            <p class="text-muted mb-1" style="font-size:0.75rem">Delivery completion</p>
+            <div class="progress-thin"><span style="width:@(acceptancePct)%"></span></div>
+            <div class="stat-row">
+                <span>Pending acceptance</span>
+                <span class="pill pill-red">@_dashboard.PendingOrders</span>
+            </div>
+            <div class="mt-2">
+                <a class="btn btn-outline-primary btn-sm" href="/admin/orders">View orders</a>
+            </div>
         </div>
+
         <div class="portfolio-card">
-            <h3><span class="oi oi-box"></span> Stock operations</h3>
-            <p>Low stock alerts: <strong class="text-danger">@_dashboard.LowStockAlerts</strong></p>
-            <a class="btn btn-outline-primary btn-sm" href="/admin/hub/stock">Review stock</a>
+            <h3>
+                <span class="icon-circle blue"><span class="oi oi-wrench"></span></span>
+                Stock operations
+            </h3>
+            <div class="stat-row">
+                <span>Low stock alerts</span>
+                <span class="pill pill-red">@_dashboard.LowStockAlerts</span>
+            </div>
+            <div class="stat-row">
+                <span>ProductStockLocation</span>
+                <a class="pill pill-purple" href="/admin/hub/stock">Review</a>
+            </div>
         </div>
+
         <div class="portfolio-card">
-            <h3><span class="oi oi-dollar"></span> Financial · YTD</h3>
-            <p>Revenue: <strong>@_dashboard.RevenueYtd.ToString("C")</strong></p>
-            <p>Net: <strong>@_dashboard.NetYtd.ToString("C")</strong></p>
+            <h3>
+                <span class="icon-circle green"><span class="oi oi-dollar"></span></span>
+                Financial · YTD
+            </h3>
+            <div class="mini-metrics">
+                <div class="mini-metric">
+                    <span class="text-success"><i class="bi bi-wallet2"></i></span>
+                    <strong>@_dashboard.RevenueYtd.ToString("C0")</strong>
+                    Revenue
+                </div>
+                <div class="mini-metric">
+                    <span class="text-danger"><i class="bi bi-receipt"></i></span>
+                    <strong>@_dashboard.CostsYtd.ToString("C0")</strong>
+                    Costs
+                </div>
+                <div class="mini-metric">
+                    <span class="text-primary"><i class="bi bi-piggy-bank"></i></span>
+                    <strong>@_dashboard.NetYtd.ToString("C0")</strong>
+                    Net
+                </div>
+            </div>
         </div>
     </div>
 }
@@ -45,10 +109,16 @@ else if (_dashboard is not null)
     private bool _loading = true;
     private WebShopABMATIC.Application.Admin.Dashboard.AdminDashboardDto? _dashboard;
 
-    protected override async Task OnInitializedAsync()
+    private bool _loaded;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!firstRender || _loaded)
+            return;
+
         _cts = new CancellationTokenSource();
         await LoadAsync(_cts.Token);
+        _loaded = true;
     }
 
     private async Task LoadAsync(CancellationToken ct)
@@ -58,19 +128,22 @@ else if (_dashboard is not null)
         {
             _dashboard = await DashboardPort.GetDashboardAsync(ct);
         }
+        catch (OperationCanceledException)
+        {
+        }
         finally
         {
-            if (!ct.IsCancellationRequested)
-            {
-                _loading = false;
-            }
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
         }
     }
 
     public async ValueTask DisposeAsync()
     {
-        _cts?.Cancel();
-        _cts?.Dispose();
-        await ValueTask.CompletedTask;
+        if (_cts is not null)
+        {
+            await _cts.CancelAsync();
+            _cts.Dispose();
+        }
     }
 }

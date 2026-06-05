@@ -1,0 +1,39 @@
+@page "/orders"
+@layout StoreLayout
+
+<PageTitle>My orders</PageTitle>
+
+<div class="container">
+    <h1 class="page-title">My orders</h1>
+
+    <AuthorizeView>
+        <Authorized>
+            <div class="orders-list">
+                @foreach (var order in _orders)
+                {
+                    <article class="order-card">
+                        <div class="order-header">
+                            <span class="order-id">Order @order.OrderNumber · @order.Date.ToString("MM/dd/yyyy")</span>
+                            <span class="status @order.StatusClass">@order.Status</span>
+                        </div>
+                        <p class="order-items">@order.ItemsSummary</p>
+                        <p class="order-total">Total: @($"${order.Total:F2}")</p>
+                    </article>
+                }
+            </div>
+        </Authorized>
+        <NotAuthorized>
+            <p style="color:var(--muted);margin-bottom:1rem">Sign in to view your order history.</p>
+            <NavLink href="/sign-in?returnUrl=/orders" class="btn btn-primary">Sign in</NavLink>
+        </NotAuthorized>
+    </AuthorizeView>
+</div>
+
+@code {
+    private static readonly StoreOrderSummary[] _orders =
+    [
+        new("1042", new DateOnly(2026, 5, 18), "Processing", "processing", "Hard drive 1 ×1, Hard drive 2 ×1", 143.97m),
+        new("1038", new DateOnly(2026, 5, 2), "Shipped", "shipped", "Hard drive 3 ×1", 81.58m),
+        new("1021", new DateOnly(2026, 4, 15), "Delivered", "delivered", "Hard drive 4 ×2, Hard drive 5 ×1", 242.37m)
+    ];
+}
