@@ -21,6 +21,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Application\WebShopABMATIC.Application.csproj" />
+    <ProjectReference Include="..\Domain\WebShopABMATIC.Domain.csproj" />
     <ProjectReference Include="..\Persistence\WebShopABMATIC.Data.Persistence.csproj" />
   </ItemGroup>
 </Project>

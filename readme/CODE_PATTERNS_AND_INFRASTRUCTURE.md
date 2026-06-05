@@ -809,9 +809,7 @@ Every readme file in `/readme/` MUST follow this EXACT footer pattern:
 ```markdown
 ## Documentation
 
-- 🏠 [Main Documentation](../README.md) - Project overview and structure
-- 📋 [Related Doc 1](FILENAME.md) - Brief description
-- 📋 [Related Doc 2](FILENAME.md) - Brief description
+- 🏠 [Main Documentation](../README.md) — Project overview and requirements
 
 ---
 
@@ -823,23 +821,19 @@ Every readme file in `/readme/` MUST follow this EXACT footer pattern:
 | Component | Requirement | Status | Notes |
 |-----------|-------------|--------|-------|
 | Section Label | `## Documentation` | ✅ Required | EXACT heading format |
-| Documentation Links | At least 2-3 related links | ✅ Required | Use 📋 emoji for references, 🏠 for main |
-| Link Format | `[Display Text](path) - Description` | ✅ Required | Include descriptions on same line |
+| Documentation Links | Single link to main README only | ✅ Required | Use 🏠 emoji for main |
+| Link Format | `[Main Documentation](../README.md) — Project overview and requirements` | ✅ Required | Exact description text |
 | Main Link | Always include `../README.md` | ✅ Required | Points to root project README |
+| Cross-links | All other doc links live in root `README.md` only | ✅ Required | No sibling links in `/readme/` footers |
 | Separator | Horizontal rule `---` | ✅ Required | Before copyright |
 | Copyright Line | Exact: `**© 2026 AdminSense. All rights reserved.**` | ✅ Required | **NO version info**, **NO dates** |
 | No Extra Info | NO "Last Updated", NO version numbers | ✅ Critical | Keep footer minimal and clean |
-
-**✅ Files Currently Compliant (as of 2026-04-03):**
-- LABELS_OVERRRIDES.md (reference)
-- AUDIT.md (updated)
-- CODE_PATTERNS_AND_INFRASTRUCTURE.md (updated)
 
 **Implementation Note:**
 When creating a NEW readme file in `/readme/`:
 1. Add your content
 2. Add level-2 heading: `## Documentation`
-3. Add 2-3 relevant links with descriptions
+3. Add only the main README link (see template above)
 4. Add `---` separator
 5. Add copyright line: `**© 2026 AdminSense. All rights reserved.**`
 
@@ -1702,10 +1696,8 @@ For questions about these patterns:
 
 ## Documentation
 
-- 🖥️ [Mock Prototype Guide](MOCK_PROTOTYPE_GUIDE.md) - Admin/store HTML mocks, screen layouts, entities
-- 🎨 [UI Patterns Quick Start](UI_PATTERNS_QUICK_START.md) - Buttons, grids, forms (copy-paste)
-- 🏠 [Main README](../README.md) - Project overview and structure
-- 📋 [Audit System](AUDIT.md) - Audit logging documentation
+- 🏠 [Main Documentation](../README.md) — Project overview and requirements
+
 ---
 
 **© 2026 AdminSense. All rights reserved.**
