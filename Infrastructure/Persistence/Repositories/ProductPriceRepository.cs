@@ -1,17 +1,18 @@
 using Microsoft.EntityFrameworkCore;
 using WebShopABMATIC.Application.Admin.ProductPrices;
 using WebShopABMATIC.Application.Common;
-using WebShopABMATIC.Application.Ports;
+using WebShopABMATIC.Application.Ports.Outbound;
+using WebShopABMATIC.Infrastructure.Persistence;
 using WebShopABMATIC.Data.Entities;
 using WebShopABMATIC.Data.Persistence;
 
-namespace WebShopABMATIC.Infrastructure.Admin;
+namespace WebShopABMATIC.Infrastructure.Persistence.Repositories;
 
-public sealed class ProductPriceAdminService : IProductPriceAdminPort
+public sealed class ProductPriceRepository : IProductPriceRepository
 {
     private readonly WebShopABMATICDbContext _db;
 
-    public ProductPriceAdminService(WebShopABMATICDbContext db) => _db = db;
+    public ProductPriceRepository(WebShopABMATICDbContext db) => _db = db;
 
     public async Task<PagedResult<ProductPriceDto>> GetProductPricesAsync(ProductPriceListFilter filter, CancellationToken cancellationToken = default)
     {

@@ -1,17 +1,18 @@
 using Microsoft.EntityFrameworkCore;
 using WebShopABMATIC.Application.Admin.ProductQuantityTiers;
 using WebShopABMATIC.Application.Common;
-using WebShopABMATIC.Application.Ports;
+using WebShopABMATIC.Application.Ports.Outbound;
+using WebShopABMATIC.Infrastructure.Persistence;
 using WebShopABMATIC.Data.Entities;
 using WebShopABMATIC.Data.Persistence;
 
-namespace WebShopABMATIC.Infrastructure.Admin;
+namespace WebShopABMATIC.Infrastructure.Persistence.Repositories;
 
-public sealed class ProductQuantityTierAdminService : IProductQuantityTierAdminPort
+public sealed class ProductQuantityTierRepository : IProductQuantityTierRepository
 {
     private readonly WebShopABMATICDbContext _db;
 
-    public ProductQuantityTierAdminService(WebShopABMATICDbContext db) => _db = db;
+    public ProductQuantityTierRepository(WebShopABMATICDbContext db) => _db = db;
 
     public async Task<PagedResult<ProductQuantityTierDto>> GetProductQuantityTiersAsync(ProductQuantityTierListFilter filter, CancellationToken cancellationToken = default)
     {

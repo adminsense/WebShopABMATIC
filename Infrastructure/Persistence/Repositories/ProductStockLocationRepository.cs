@@ -1,17 +1,18 @@
 using Microsoft.EntityFrameworkCore;
 using WebShopABMATIC.Application.Admin.ProductStockLocations;
 using WebShopABMATIC.Application.Common;
-using WebShopABMATIC.Application.Ports;
+using WebShopABMATIC.Application.Ports.Outbound;
+using WebShopABMATIC.Infrastructure.Persistence;
 using WebShopABMATIC.Data.Entities;
 using WebShopABMATIC.Data.Persistence;
 
-namespace WebShopABMATIC.Infrastructure.Admin;
+namespace WebShopABMATIC.Infrastructure.Persistence.Repositories;
 
-public sealed class ProductStockLocationAdminService : IProductStockLocationAdminPort
+public sealed class ProductStockLocationRepository : IProductStockLocationRepository
 {
     private readonly WebShopABMATICDbContext _db;
 
-    public ProductStockLocationAdminService(WebShopABMATICDbContext db) => _db = db;
+    public ProductStockLocationRepository(WebShopABMATICDbContext db) => _db = db;
 
     public async Task<PagedResult<ProductStockLocationDto>> GetProductStockLocationsAsync(ProductStockLocationListFilter filter, CancellationToken cancellationToken = default)
     {

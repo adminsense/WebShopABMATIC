@@ -1,22 +1,20 @@
-using Microsoft.EntityFrameworkCore;
 using WebShopABMATIC.Application.Admin.Products;
+using WebShopABMATIC.Infrastructure.Persistence.Products;
+using WebShopABMATIC.Infrastructure.Persistence.Mappers;
 using WebShopABMATIC.Application.Common;
-using WebShopABMATIC.Application.Ports;
-using WebShopABMATIC.Data.Entities;
+using WebShopABMATIC.Application.Ports.Outbound;
 using WebShopABMATIC.Data.Persistence;
+using WebShopABMATIC.Domain.Catalog.Products;
+using Microsoft.EntityFrameworkCore;
+using PersistenceProduct = WebShopABMATIC.Data.Entities.Product;
 
-namespace WebShopABMATIC.Infrastructure.Admin;
+namespace WebShopABMATIC.Infrastructure.Persistence.Repositories;
 
-public sealed class ProductAdminService : IProductAdminPort
+public sealed class ProductRepository : IProductRepository
 {
     private readonly WebShopABMATICDbContext _db;
-    private readonly IProductMediaPort _media;
 
-    public ProductAdminService(WebShopABMATICDbContext db, IProductMediaPort media)
-    {
-        _db = db;
-        _media = media;
-    }
+    public ProductRepository(WebShopABMATICDbContext db) => _db = db;
 
     public async Task<PagedResult<ProductDto>> GetProductsAsync(ProductListFilter filter, CancellationToken cancellationToken = default)
     {
@@ -72,9 +70,16 @@ public sealed class ProductAdminService : IProductAdminPort
         };
     }
 
-    public async Task<ProductEditDto?> GetForEditAsync(int productId, CancellationToken cancellationToken = default)
+    public async Task<Product?> GetByIdAsync(int productId, CancellationToken cancellationToken = default)
     {
-        var dto = await _db.Products.AsNoTracking()
+        var entity = await _db.Products.AsNoTracking()
+            .FirstOrDefaultAsync(p => p.ProductId == productId, cancellationToken);
+
+        return entity is null ? null : ProductPersistenceMapper.ToDomain(entity);
+    }
+
+    public async Task<ProductEditDto?> GetForEditAsync(int productId, CancellationToken cancellationToken = default) =>
+        await _db.Products.AsNoTracking()
             .Where(p => p.ProductId == productId)
             .Select(p => new ProductEditDto
             {
@@ -89,64 +94,25 @@ public sealed class ProductAdminService : IProductAdminPort
             })
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (dto is null)
-        {
-            return null;
-        }
-
-        dto.PrimaryImageUrl = await _media.GetPrimaryImageUrlAsync(productId, webPublishedOnly: false, cancellationToken);
-        return dto;
-    }
-
-    public async Task<int> SaveAsync(ProductEditDto dto, ProductImageUpload? primaryImage, CancellationToken cancellationToken = default)
+    public async Task<int> SaveAsync(Product product, CancellationToken cancellationToken = default)
     {
-        Product entity;
-        if (dto.ProductId == 0)
+        PersistenceProduct entity;
+        if (product.ProductId == 0)
         {
-            entity = ProductEntityFactory.CreateNew(dto);
+            entity = ProductEntityFactory.CreateNew(product);
             _db.Products.Add(entity);
         }
         else
         {
-            entity = await _db.Products.FirstAsync(p => p.ProductId == dto.ProductId, cancellationToken);
+            entity = await _db.Products.FirstAsync(p => p.ProductId == product.ProductId, cancellationToken);
         }
 
-        entity.NameEn = dto.NameEn;
-        entity.NameNl = dto.NameEn;
-        entity.NameFr = dto.NameEn;
-        entity.DescriptionEn = dto.WebshopDescriptionNl;
-        entity.DescriptionNl = dto.WebshopDescriptionNl;
-        entity.DescriptionFr = dto.WebshopDescriptionNl;
-        entity.OrderPartNumber = dto.OrderPartNumber;
-        entity.StockNumber = dto.OrderPartNumber;
-        entity.SupplierId = dto.SupplierId;
-        entity.ManufacturerId = dto.ManufacturerId;
-        entity.ShowOnWebshop = dto.ShowOnWebshop;
-        entity.WebshopDescriptionNl = dto.WebshopDescriptionNl;
-        entity.EanCode = dto.EanCode;
-        entity.LastModifiedAt = DateTime.UtcNow;
-        entity.LastModifiedBy = "admin";
-
+        ProductPersistenceMapper.ApplyToEntity(product, entity);
         await _db.SaveChangesAsync(cancellationToken);
-
-        if (primaryImage is not null)
-        {
-            await _media.SavePrimaryImageAsync(
-                entity.ProductId,
-                primaryImage,
-                publishToWeb: dto.ShowOnWebshop,
-                createdByUserId: 1,
-                cancellationToken);
-        }
-        else
-        {
-            await _media.SetPrimaryImagePublishToWebAsync(entity.ProductId, dto.ShowOnWebshop, cancellationToken);
-        }
-
         return entity.ProductId;
     }
 
-    public async Task<bool> DeleteAsync(int productId, CancellationToken cancellationToken = default)
+    public async Task<bool> SoftDeleteAsync(int productId, CancellationToken cancellationToken = default)
     {
         var entity = await _db.Products.FirstOrDefaultAsync(p => p.ProductId == productId, cancellationToken);
         if (entity is null)
@@ -154,12 +120,10 @@ public sealed class ProductAdminService : IProductAdminPort
             return false;
         }
 
-        entity.IsInactive = true;
-        entity.ShowOnWebshop = false;
-        entity.LastModifiedAt = DateTime.UtcNow;
-        entity.LastModifiedBy = "admin";
+        var domain = ProductPersistenceMapper.ToDomain(entity);
+        domain.Deactivate();
+        ProductPersistenceMapper.ApplyToEntity(domain, entity);
         await _db.SaveChangesAsync(cancellationToken);
-        await _media.SetPrimaryImagePublishToWebAsync(productId, publishToWeb: false, cancellationToken);
         return true;
     }
 }

@@ -1,17 +1,18 @@
 using Microsoft.EntityFrameworkCore;
 using WebShopABMATIC.Application.Admin.ProductOptions;
 using WebShopABMATIC.Application.Common;
-using WebShopABMATIC.Application.Ports;
+using WebShopABMATIC.Application.Ports.Outbound;
+using WebShopABMATIC.Infrastructure.Persistence;
 using WebShopABMATIC.Data.Entities;
 using WebShopABMATIC.Data.Persistence;
 
-namespace WebShopABMATIC.Infrastructure.Admin;
+namespace WebShopABMATIC.Infrastructure.Persistence.Repositories;
 
-public sealed class ProductOptionAdminService : IProductOptionAdminPort
+public sealed class ProductOptionRepository : IProductOptionRepository
 {
     private readonly WebShopABMATICDbContext _db;
 
-    public ProductOptionAdminService(WebShopABMATICDbContext db) => _db = db;
+    public ProductOptionRepository(WebShopABMATICDbContext db) => _db = db;
 
     public async Task<PagedResult<ProductOptionDto>> GetProductOptionsAsync(ProductOptionListFilter filter, CancellationToken cancellationToken = default)
     {
