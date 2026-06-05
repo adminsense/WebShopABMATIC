@@ -98,11 +98,14 @@ Web/                  ← Blazor driving adapter
 - **DTOs** become the contract between UI and Application services  
   ✅ `ProductDto`, `CustomerDto`, `OrderSummaryDto`, `AdminDashboardDto`, etc.
 
-- **Ports/services** provide a stable API the UI uses  
-  ✅ `IAdminDashboardPort`, `IProductAdminPort`, `ICustomerAdminPort`, `IOrderAdminPort`, `IAdminHubPort`
+- **Ports (inbound)** provide a stable API the UI calls  
+  ✅ `IAdminDashboardPort`, `IProductAdminPort`, `ICustomerAdminPort`, `IOrderAdminPort`, `IAdminHubPort`, …
 
-- Infrastructure implements ports using EF Core  
-  ✅ `ProductAdminService`, `CustomerAdminService`, `OrderAdminService`, `AdminDashboardService`
+- **Use cases** implement inbound ports; **repositories** implement outbound ports  
+  ✅ `Application/UseCases/Admin/*AdminUseCase` → `Application/Ports/Outbound/*Repository` → `Infrastructure/Persistence/Repositories/*Repository`
+
+- **DI registration**  
+  ✅ `Program.cs`: `AddWebShopApplication()` (use cases) + `AddWebShopInfrastructure()` (EF repos, Identity, media)
 
 ---
 
@@ -284,7 +287,7 @@ Seed strategy:
 | Key | Purpose |
 |-----|---------|
 | `DefaultConnection` | ASP.NET Identity (`ApplicationDbContext`) |
-| `connWebShopABMATIC` | Domain entities (`WebShopABMATICDbContext`) |
+| `connWebShopABMATIC` | Persistence / domain schema (`WebShopABMATICDbContext`) |
 
 ---
 
@@ -313,20 +316,26 @@ Matches `docs/mock-admin.html` and [UI_PATTERNS_QUICK_START.md](UI_PATTERNS_QUIC
 |-------|--------|--------|
 | `/admin` | Dashboard — portfolio KPI cards | ✅ |
 | `/admin/hub/{id}` | Hub — entity cards (Webshop, Catalog, …) | ✅ |
-| `/admin/products` | Product list — filters, Apply/Clear, `table-dark` | ✅ |
-| `/admin/products/new`, `/admin/products/{id}` | Product create/edit form | ✅ |
-| `/admin/customers` | Customer list | ✅ |
-| `/admin/orders` | Order list | ✅ |
+| `/admin/products` | Product — form card + list grid + image upload | ✅ |
+| `/admin/customers`, `/admin/orders`, … | All hub entities (21 routes) | ✅ Form + grid per entity (`*List.razor`) |
 | `/admin/profile` | Staff profile | ✅ |
-| `/admin/webshop-structures`, … | Other hub entities | ✅ Placeholder pages (routes ready) |
+
+Each entity page follows the **Product pattern**: back link → header → create/edit form → searchable list with edit/delete (Orders: edit only).
 
 **Shell components:** `AdminLayout`, `AdminSidebar`, `AdminTopBar`, `wwwroot/css/admin.css`  
 ✅ Dark sidebar, top bar (Hello + Logout), footer date/version
 
-### Application ports & DTOs
+### Application layer (hexagonal)
 
-✅ `IAdminDashboardPort`, `IAdminHubPort`, `IProductAdminPort`, `ICustomerAdminPort`, `IOrderAdminPort`  
-✅ Hub registry mirrors mock-admin menus (Webshop, Catalog, Customers, Sales, Stock, Settings, Profile)
+| Layer | Location | Admin examples |
+|-------|----------|----------------|
+| **Inbound ports** | `Application/Ports/Inbound/` | `IProductAdminPort`, `ICustomerAdminPort`, … |
+| **Use cases** | `Application/UseCases/Admin/` | `ProductAdminUseCase`, `CustomerAdminUseCase`, … |
+| **Outbound ports** | `Application/Ports/Outbound/` | `IProductRepository`, `ICustomerRepository`, `IProductMediaPort`, … |
+| **DTOs** | `Application/Admin/` | `ProductDto`, `CustomerEditDto`, … |
+| **Domain** | `Domain/` | `Product` aggregate (expand per entity) |
+| **Repositories** | `Infrastructure/Persistence/Repositories/` | `ProductRepository`, `CustomerRepository`, … |
+| **Hub config** | `Infrastructure/Admin/AdminHubRegistry.cs` | Static card routes (driving adapter config) |
 
 ### Run the admin app
 
@@ -341,10 +350,11 @@ dotnet run
 
 > **Note:** Product/Customer/Order lists read from the legacy domain schema. Apply EF migrations, then run `scripts/seeds.sql` on `WebShopABMATIC` — see [DEMO_SEED_DATA.md](DEMO_SEED_DATA.md). Alternatively use `scripts/WebShopABMATIC-create-local.sql` or an existing ABMATIC database. Dashboard KPIs safely return `0` if tables are missing.
 
-### HTML prototypes (store — not Blazor yet)
+### HTML prototypes and Blazor storefront
 
-✅ `docs/mock-loja.html` — light-blue storefront, 6 products (Hard drive 1–6), images in `docs/images/`  
-✅ Admin entry from store mock via **Admin Panel** (StaffUser.Admin demo)  
+✅ `docs/mock-loja.html` — light-blue storefront reference (Hard drive 1–6)  
+✅ **Blazor store (partial):** `/` catalog, `/product/{id}`, `/cart`, `/orders`, `/store/sign-in` — UI calls `IStoreCatalogPort` → `StoreCatalogService`  
+✅ Admin entry from store via **Admin Panel** when staff is signed in  
 ✅ [MOCK_PROTOTYPE_GUIDE.md](MOCK_PROTOTYPE_GUIDE.md) — screen reference with `readme/images/*_screen.png`
 
 ---
@@ -355,7 +365,7 @@ dotnet run
 
 ### 6.1 Current storefront (prototype)
 
-- ✅ Static assets: `wwwroot/images/product1.png` … `product6.png` via `StoreCatalog`
+- ✅ Static assets: `wwwroot/images/product1.png` … `product6.png` via `IStoreCatalogPort` / `StoreCatalogService`
 - ⏳ Replace with `AzureFiles` query when media port is implemented
 
 ### 6.2 Planned storage phases

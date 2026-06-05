@@ -21,8 +21,8 @@
 |--------|--------|---------|
 | **EF entities** | ✅ Complete | `AzureFile`, `AzureFileFolder` mapped |
 | **DB on MULLER** | 🟡 Schema only | `AzureFiles` exists; **0 rows** today |
-| **Admin save** | ❌ Not wired | `ProductAdminService` saves text fields only |
-| **Store catalog** | ❌ Not wired | `StoreCatalog` uses static `/images/product*.png` |
+| **Admin save** | ✅ Wired | `ProductAdminUseCase` + `IProductMediaPort` (local blob Phase 1) |
+| **Store catalog** | 🟡 Partial | `StoreCatalogService` via `IStoreCatalogPort`; static images fallback |
 | **Real Azure Blob** | ⏳ Phase 2 | Replace storage adapter only |
 
 ---
@@ -160,12 +160,12 @@ Demo seed can link HDD 1–6 `AzureFiles` rows to seeded `ProductId` values with
 | Artifact | Purpose |
 |----------|---------|
 | `ProductEditDto.PrimaryImageUrl` | Read-only preview for form |
-| `IProductMediaPort` | Upload, resolve URL, delete |
-| `ProductAdminService` | Orchestrate product + media on save |
+| `IProductMediaPort` | Upload, resolve URL, publish flag (outbound port) |
+| `ProductAdminUseCase` | Orchestrate product domain + media on save |
 
 ### 4.3 Storefront
 
-Replace hardcoded `StoreCatalog` image paths:
+Replace hardcoded image paths in `StoreCatalogService`:
 
 ```sql
 -- Primary storefront image (conceptual query)
@@ -194,7 +194,7 @@ After `Products` insert:
 flowchart LR
   subgraph Admin
     Form[ProductForm upload]
-    Svc[ProductAdminService]
+    Svc[ProductAdminUseCase]
     Media[LocalProductMediaStorage]
   end
 

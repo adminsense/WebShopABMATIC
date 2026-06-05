@@ -1,6 +1,6 @@
 # Web Store — Functional Specification
 
-![Status](https://img.shields.io/badge/Status-HTML%20prototype%20%2B%20planned%20Blazor-ffc107?style=flat-square) ![Products](https://img.shields.io/badge/Catalog%20mock-6%20SKUs-0d47a1?style=flat-square) ![Auth](https://img.shields.io/badge/Login-Customer.WebshopLogin-512BD4?style=flat-square) ![Theme](https://img.shields.io/badge/Theme-Light%20blue-0dcaf0?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Blazor%20partial%20build-ffc107?style=flat-square) ![Products](https://img.shields.io/badge/Catalog%20mock-6%20SKUs-0d47a1?style=flat-square) ![Auth](https://img.shields.io/badge/Login-Customer.WebshopLogin-512BD4?style=flat-square) ![Theme](https://img.shields.io/badge/Theme-Light%20blue-0dcaf0?style=flat-square)
 
 > [!IMPORTANT]
 > **Executive Summary:** The WebShopABMATIC **Web Store** is the B2B customer-facing storefront for browsing products, managing the cart, and placing orders. The current **HTML prototype** (`docs/mock-loja.html`) demonstrates UX, catalog filtering, stock hints, and account flows. Production delivery will be a Blazor Server or WebAssembly app sharing the same domain entities and stock rules as the admin panel.
@@ -13,17 +13,17 @@
 | **Store screens** | 7 | ✅ Documented | Catalog, detail, cart, checkout, account |
 | **Auth flows** | 2 | ✅ Documented | Customer login; staff link to admin |
 | **Stock rules** | 5 | ✅ Documented | Display, cart block, reservation |
-| **Blazor storefront** | 0 | ⏳ Planned | M2–M6 roadmap |
+| **Blazor storefront** | 5 pages | 🟡 Partial | Catalog, detail, cart, orders, sign-in |
 
 
 ### Implementation quality
 
 | Aspect | Status | Details |
 |--------|--------|---------|
-| **Catalog UX** | ✅ Prototype | Light-blue theme, category chips |
-| **Stock hints** | ✅ Prototype | Low stock when qty &lt; 10 (mock threshold) |
-| **Checkout** | 🟡 UI only | No server persistence yet |
-| **Identity login** | ⏳ Planned | `Customer.WebshopLogin` binding |
+| **Catalog UX** | ✅ Blazor + mock | `Catalog.razor` via `IStoreCatalogPort` |
+| **Stock hints** | 🟡 Partial | From DB when seeded; mock threshold in prototype |
+| **Checkout** | 🟡 UI only | `Cart.razor` — in-memory cart, no order persist |
+| **Identity login** | 🟡 Partial | `/store/sign-in`; full Customer role binding ⏳ |
 | **Order creation** | ⏳ Planned | `Order` + `OrderLine` + stock service |
 
 ---
@@ -34,21 +34,32 @@
 |----------|------|------|
 | **HTML prototype** | `docs/mock-loja.html` | Runnable UX reference (entry point for mocks) |
 | **Product images** | `docs/images/product1.png` … `product6.png` | Catalog and detail imagery |
-| **Admin data** | `Product`, `Customer`, `Order`, … | Source of truth maintained in admin |
-| **Admin spec** | [ADMIN.md](ADMIN.md) | Registrations that feed the store |
-| **UI patterns** | [UI_PATTERNS_QUICK_START.md](UI_PATTERNS_QUICK_START.md) | Shared button and form standards |
+| **Admin data** | `Product`, `Customer`, `Order`, … | Maintained via admin use cases + repositories |
+| **Admin spec** | `readme/ADMIN.md` | Registrations that feed the store |
 
 ### Implementation status
 
-| Area | Prototype (`mock-loja.html`) | Production (planned) |
-|------|------------------------------|----------------------|
-| **Catalog browse** | ✅ Hard drive 1–6, categories | Query `Product` where `ShowOnWebshop` |
-| **Product detail** | ✅ Image, price, options block | `Product`, `ProductOption`, `ProductPrice` |
-| **Stock display** | ✅ “N in stock”, low-stock colour | `ProductStockLocation` (default location) |
-| **Customer login** | ✅ UI only | `Customer.WebshopLogin` + Identity **Customer** role |
-| **Registration** | ✅ Form mock | Admin creates `Customer` + credentials |
-| **Cart / checkout** | ✅ UI flow | `Order` + `OrderLine` + stock validation |
-| **Admin entry link** | ✅ Footer link to admin mock | Link to `/Account/Login` or admin app |
+| Area | Blazor (`Web/Components/Pages/Store/`) | Backend |
+|------|----------------------------------------|---------|
+| **Catalog browse** | ✅ `Catalog.razor` | `IStoreCatalogPort` → `StoreCatalogService` |
+| **Product detail** | ✅ `ProductDetail.razor` | Same port; static images Phase 1 |
+| **Cart** | 🟡 `Cart.razor` | `StoreCartService` (scoped, in-memory) |
+| **Orders list** | 🟡 `Orders.razor` | ⏳ `IOrderService` not implemented |
+| **Customer sign-in** | 🟡 `SignIn.razor` | ⏳ Identity Customer role |
+| **Admin entry** | ✅ Header link when staff signed in | Shared Identity cookie |
+
+### Backend architecture (hexagonal)
+
+Store pages inject **inbound ports** only — same hexagonal stack as admin:
+
+```text
+Catalog.razor
+  → IStoreCatalogPort              (Application/Ports)
+  → StoreCatalogService            (Infrastructure/Store)
+  → WebShopABMATICDbContext + IProductMediaPort
+```
+
+Future: `IOrderService` / `ICartService` as inbound ports with use cases in Application; checkout persists via outbound `IOrderRepository`.
 
 ---
 

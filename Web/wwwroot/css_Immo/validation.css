@@ -1,0 +1,49 @@
+/* Client-side validation (Blazor renders .invalid-feedback; JS only reports rules/messages) */
+
+.form-control.is-invalid,
+.form-select.is-invalid {
+    border-color: #dc3545;
+}
+
+.validation-error-highlight {
+    border-color: #dc3545 !important;
+    background-color: #fff5f5 !important;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+}
+
+.validation-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    padding: 12px 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    animation: validationSlideIn 0.3s ease-in-out;
+}
+
+.validation-toast-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #721c24;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.validation-toast-icon {
+    font-size: 18px;
+}
+
+@keyframes validationSlideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
