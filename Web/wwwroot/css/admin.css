@@ -9,7 +9,8 @@
 /* —— Admin shell —— */
 .admin-shell {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   font-family: "Segoe UI", system-ui, sans-serif;
   background: var(--content-bg);
 }
@@ -94,6 +95,8 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .admin-topbar {
@@ -131,16 +134,37 @@
   flex: 1;
 }
 
+.admin-content:has(.dash-page) {
+  padding: 0.5rem 1rem 0.5rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 /* —— Dashboard —— */
+.dash-page {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .dash-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1.25rem;
+  grid-auto-rows: auto;
+  align-content: start;
+  gap: 0.5rem;
 }
 
 @media (max-width: 992px) {
   .dash-grid {
     grid-template-columns: 1fr;
+  }
+
+  .dash-page {
+    max-height: none;
+    overflow: visible;
   }
 }
 
@@ -152,6 +176,14 @@
   min-height: 220px;
 }
 
+.portfolio-card--compact {
+  padding: 0.6rem 0.75rem;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .portfolio-card h3 {
   font-size: 1rem;
   font-weight: 700;
@@ -159,6 +191,19 @@
   display: flex;
   align-items: center;
   gap: 0.65rem;
+}
+
+.portfolio-card--compact h3 {
+  font-size: 0.88rem;
+  margin-bottom: 0.55rem;
+}
+
+.dash-metric {
+  margin-bottom: 0.08rem;
+}
+
+.dash-metric:last-child {
+  margin-bottom: 0;
 }
 
 .icon-circle {
@@ -171,6 +216,12 @@
   color: #fff;
   font-size: 1rem;
   flex-shrink: 0;
+}
+
+.portfolio-card--compact .icon-circle {
+  width: 28px;
+  height: 28px;
+  font-size: 0.8rem;
 }
 
 .icon-circle.purple { background: #7c6cf0; }
@@ -189,6 +240,69 @@
 
 .stat-row:last-child {
   border-bottom: none;
+}
+
+.stat-band {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  margin-bottom: 0.5rem;
+  background: #f4f6f8;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.portfolio-card--compact .stat-band {
+  padding: 0.32rem 0.5rem;
+  margin-bottom: 0;
+  gap: 0.45rem;
+}
+
+.stat-band-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 0.1rem;
+}
+
+.portfolio-card--compact .stat-band-label {
+  font-size: 0.68rem;
+  margin-bottom: 0;
+  line-height: 1.2;
+}
+
+.stat-band-value {
+  font-weight: 600;
+  color: #1e2a3a;
+  font-size: 0.85rem;
+}
+
+.portfolio-card--compact .stat-band-value {
+  font-size: 0.74rem;
+  line-height: 1.25;
+}
+
+.portfolio-card--compact .pill {
+  font-size: 0.62rem;
+  padding: 0.12rem 0.4rem;
+}
+
+.dash-section-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin: 0;
+}
+
+/* Back navigation — same visual weight as Cancel (btn-secondary) */
+.btn-back,
+a.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .pill {
@@ -214,11 +328,26 @@
   overflow: hidden;
 }
 
+.dash-metric .progress-thin {
+  height: 4px;
+  margin: 0.2rem 0 0;
+  border-radius: 2px;
+}
+
 .progress-thin > span {
   display: block;
   height: 100%;
+  max-width: 100%;
   background: #198754;
   border-radius: 3px;
+}
+
+.progress-thin--danger > span {
+  background: #dc3545;
+}
+
+.progress-thin--info > span {
+  background: #0d6efd;
 }
 
 .mini-metrics {
@@ -512,6 +641,76 @@ a.hub-card.hub-card-link:focus-visible {
   font-style: italic;
   text-align: center;
   padding: 1.5rem !important;
+}
+
+/* —— IMMO form density (css_Immo + mock-admin / Gebouwenbeheer) —— */
+.admin-content .entity-form-card .card-header {
+  padding: 0.75rem 1.25rem;
+}
+
+.admin-content .entity-form-card .card-body {
+  padding: 1rem 1.25rem;
+}
+
+.admin-content .entity-form-fields {
+  max-width: 640px;
+}
+
+.admin-content .entity-form-fields .form-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  margin-bottom: 0.2rem;
+  color: #495057;
+}
+
+.admin-content .entity-form-fields .form-control,
+.admin-content .entity-form-fields .form-select,
+.admin-content .entity-form-fields textarea.form-control {
+  font-size: 0.875rem;
+  padding: 0.375rem 0.625rem;
+}
+
+.admin-content .entity-form-fields .form-control-sm,
+.admin-content .entity-form-fields .form-select-sm {
+  font-size: 0.8125rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.admin-content .entity-form-fields .form-check-label {
+  font-size: 0.875rem;
+}
+
+.admin-content .entity-form-fields .form-text,
+.admin-content .entity-form-fields small.text-muted {
+  font-size: 0.75rem;
+}
+
+.admin-content .entity-grid-card .card-header {
+  padding: 0.75rem 1.25rem;
+}
+
+.admin-content .entity-grid-card .form-control {
+  font-size: 0.8125rem;
+  padding: 0.25rem 0.5rem;
+}
+
+/* IMMO validation (from css_Immo/validation.css) */
+.admin-content .form-control.is-invalid,
+.admin-content .form-select.is-invalid {
+  border-color: #dc3545;
+}
+
+.admin-content .validation-error-highlight {
+  border-color: #dc3545 !important;
+  background-color: #fff5f5 !important;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+}
+
+/* IMMO entity card headers (from css_Immo/site.css) */
+.card-header-catalog {
+  background-color: #e3f2fd !important;
+  color: #0d47a1 !important;
+  border-bottom: 1px solid #bbdefb !important;
 }
 
 /* —— Login (IMMO-branded) —— */
