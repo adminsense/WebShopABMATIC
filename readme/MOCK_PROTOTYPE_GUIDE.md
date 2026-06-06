@@ -1,10 +1,10 @@
 # WebShopABMATIC — Mock Prototype Guide
 
-![Status](https://img.shields.io/badge/Status-Validation%20ready-28a745?style=flat-square) ![Layout](https://img.shields.io/badge/Layout-IMMO%20style-512BD4?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Validation%20ready-28a745?style=flat-square) ![Layout](https://img.shields.io/badge/Layout-AB-MATIC%20style-512BD4?style=flat-square)
 
-This document explains the **HTML prototypes** in `docs/`, how they map to the **reference layout** (IMMO BELGIUM admin shell), and what each **sidebar menu / entity / screen** will do in the real application.
+This document explains the **HTML prototypes** in `docs/`, how they map to the **reference layout** (AB-MATIC admin shell), and what each **sidebar menu / entity / screen** will do in the real application.
 
-Visual reference: [bcimmoapp.azurewebsites.net](https://bcimmoapp.azurewebsites.net/)
+Visual reference (AB-MATIC admin shell): [adminsenceweb.azurewebsites.net](https://adminsenceweb.azurewebsites.net/)
 
 ---
 
@@ -13,7 +13,7 @@ Visual reference: [bcimmoapp.azurewebsites.net](https://bcimmoapp.azurewebsites.
 | File | Role | Open from |
 |------|------|-----------|
 | [`docs/mock-loja.html`](../docs/mock-loja.html) | Customer **storefront** (catalog, cart, checkout) — **entry point** | Browser direct |
-| [`docs/mock-admin.html`](../docs/mock-admin.html) | Staff **admin panel** (IMMO layout) | Store **Admin Panel** button or direct |
+| [`docs/mock-admin.html`](../docs/mock-admin.html) | Staff **admin panel** (AB-MATIC layout) | Store **Admin Panel** button or direct |
 | [`docs/mock-shopcart.html`](../docs/mock-shopcart.html) | Redirect → `mock-loja.html` | Legacy alias |
 
 **Admin entry:** In the store, sign in with the **StaffUser.Admin** demo account (`anna.rodriguez@webshop.com`). The **Admin Panel** button appears in the header and opens `mock-admin.html`.
@@ -22,7 +22,7 @@ Visual reference: [bcimmoapp.azurewebsites.net](https://bcimmoapp.azurewebsites.
 
 ## Reference layout — three screen types
 
-The admin mock follows the same three-level pattern as the IMMO reference app. Screenshots live in `readme/images/`.
+The admin mock follows the same three-level pattern as the AB-MATIC reference app. Screenshots live in `readme/images/`.
 
 ### 1. Main dashboard — `main_screen.png`
 
@@ -78,7 +78,7 @@ The admin mock follows the same three-level pattern as the IMMO reference app. S
 | Data grid | `table-dark` + `table-striped table-hover` + pencil edit |
 | Edit form | `#view-form` — card with Save / Cancel |
 
-**Purpose:** Standard CRUD list pattern for every entity. Filters narrow rows; edit opens the create/edit form. Full button and icon rules: [`UI_PATTERNS_QUICK_START.md`](UI_PATTERNS_QUICK_START.md).
+**Purpose:** Standard CRUD list pattern for every entity. Filters narrow rows; edit opens the create/edit form. Full button and icon rules: [`PATTERNS_UI_QUICK_START.md`](PATTERNS_UI_QUICK_START.md).
 
 ---
 
@@ -101,7 +101,7 @@ flowchart TD
 
 ## Storefront mock — `mock-loja.html`
 
-Customer-facing prototype (not IMMO-styled; focused on domain entities).
+Customer-facing prototype (not AB-MATIC-styled; focused on domain entities).
 
 | Screen area | Entities used | Purpose |
 |-------------|---------------|---------|

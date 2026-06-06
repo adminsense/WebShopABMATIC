@@ -1,0 +1,43 @@
+<div class="admin-export-dropdown @(_open ? "show" : "")">
+    <button type="button"
+            class="btn btn-success btn-sm admin-export-btn"
+            disabled="@Disabled"
+            @onclick="ToggleAsync"
+            title="Export list">
+        <i class="bi bi-download me-1"></i> EXPORT
+        <i class="bi bi-chevron-down ms-1"></i>
+    </button>
+    @if (_open)
+    {
+        <ul class="admin-export-menu">
+            <li>
+                <button type="button" class="dropdown-item" @onclick='() => SelectAsync("csv")'>
+                    <i class="bi bi-filetype-csv me-2"></i> CSV
+                </button>
+            </li>
+            <li>
+                <button type="button" class="dropdown-item" @onclick='() => SelectAsync("pdf")'>
+                    <i class="bi bi-filetype-pdf me-2"></i> PDF
+                </button>
+            </li>
+        </ul>
+    }
+</div>
+
+@code {
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public EventCallback<string> OnExport { get; set; }
+
+    private bool _open;
+
+    private void ToggleAsync() => _open = !_open;
+
+    private async Task SelectAsync(string format)
+    {
+        _open = false;
+        if (OnExport.HasDelegate)
+        {
+            await OnExport.InvokeAsync(format);
+        }
+    }
+}

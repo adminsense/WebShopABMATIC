@@ -3,7 +3,7 @@
 ![Status](https://img.shields.io/badge/Status-Phases%20A%20%26%20B%20done-28a745?style=flat-square)
 
 > **Purpose:** Track delivery in small parts. Mark ✅ when done.  
-> **Analysis reference:** [STOCK_OPERATIONS_PROPOSAL.md](./STOCK_OPERATIONS_PROPOSAL.md)  
+> **Analysis reference:** [SPEC_STOCK_OPERATIONS_PROPOSAL.md](./SPEC_STOCK_OPERATIONS_PROPOSAL.md)  
 > **Suggested order:** **0 → A ∥ B → C → D → E** (A and B can run in parallel after 0).
 
 | Phase | Focus | Status |
@@ -29,7 +29,7 @@
 - ✅ **0.6** EF migration: Mollie columns on `OrderAdvancePayments` (`MolliePaymentId`, status, paid date, checkout URL)
 - ✅ **0.7** NuGet `Mollie.Api` + `AddMollieApi` in `Program.cs` (config in user secrets)
 - ✅ **0.8** `IMolliePaymentPort` + `MolliePaymentAdapter` (create + get payment)
-- ✅ **0.9** Update [DEMO_SEED_DATA.md](./DEMO_SEED_DATA.md) for new seed rows
+- ✅ **0.9** Update [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) for new seed rows
 
 **After pull:** run domain migration `OrderAdvancePaymentMollieColumns`, re-run `seeds.sql`, set `Mollie:ApiKey` (test key) in user secrets for Phase B.
 
@@ -42,7 +42,7 @@
 - ✅ **A.3** Movement journal: filters + grid `/admin/stock/movements`
 - ✅ **A.4** Dashboard KPIs: movements (7d), open POs on `/admin` stock card
 - ✅ **A.5** Seed: 5–10 `StockMovements` + 1 minimal open `StockOrder` (demo)
-- ✅ **A.6** Update [ADMIN.md](./ADMIN.md) routes table
+- ✅ **A.6** Update [SPEC_ADMIN.md](./SPEC_ADMIN.md) routes table
 
 ---
 
@@ -93,7 +93,7 @@
 
 ### Docs & ops
 - ⬜ **E.7** `readme/PAYMENTS.md` (keys, webhook URL, test vs live)
-- ⬜ **E.8** [WEB_STORE.md](./WEB_STORE.md) — mark checkout as implemented
+- ⬜ **E.8** [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) — mark checkout as implemented
 
 ---
 
@@ -124,8 +124,8 @@ Phase E  [__________] 0/8  (deferred)
 ## Documentation
 
 - 🏠 [Main Documentation](../README.md) — Project overview and requirements
-- 📋 [Analysis proposal](./STOCK_OPERATIONS_PROPOSAL.md) — diagrams & decisions
-- 🔐 [Auth & identity roadmap](./AUTH_IDENTITY_ROADMAP.md) — Identity ↔ domain integration
+- 📋 [Analysis proposal](./SPEC_STOCK_OPERATIONS_PROPOSAL.md) — diagrams & decisions
+- 🔐 [Auth & identity roadmap](./AUTH_IDENTITY_ROADMAP_open.md) — Identity ↔ domain integration
 
 ---
 

@@ -8,7 +8,7 @@
 
 ## 📋 Overview
 
-This document details the **best practices implemented** across the Immo application following Microsoft's official Blazor Server patterns. All recommendations have been systematically applied to improve performance, stability, security, and maintainability.
+This document details the **best practices implemented** across the WebShopABMATIC application following Microsoft's official Blazor Server patterns. All recommendations have been systematically applied to improve performance, stability, security, and maintainability.
 
 | Category | Implementation |
 |----------|-----------------|
@@ -133,7 +133,7 @@ private async Task LoadDataAsync()
 ```
 +
 **Application layer (Ports)**
-- Every method on `Immo.Application.Interfaces.*Port` MUST accept `CancellationToken ct = default`.
+- Every method on `WebShopABMATIC.Application.Ports.*Port` MUST accept `CancellationToken ct = default`.
 - UI must pass `ct` explicitly.
 +
 **Infrastructure layer (Adapters/Repositories)**
@@ -431,7 +431,7 @@ All implementations support:
 
 ## 🚀 Quick Reference Card (Copy-Paste Ready)
 
-### Button Templates - Just Copy & Paste
+### Button Snippets - Just Copy & Paste
 
 **Header Back Button:**
 ```html
@@ -651,7 +651,7 @@ private GridExportRequest? BuildExportRequest() =>
 
 **CSS classes:** `.entity-form-card-header`, `.admin-export-dropdown`, `.entity-grid-toolbar`, `.entity-grid-search` in `wwwroot/css/admin.css`
 
-**Audit (future):** wire `ReportExport` in `readme/AUDITS.md` when `IAuditService` exists.
+**Audit (future):** wire `ReportExport` in `readme/AUDITS_open.md` when `IAuditService` exists.
 
 ---
 
@@ -810,7 +810,7 @@ private GridExportRequest? BuildExportRequest() =>
 
 ### 🔙 Back Button Standardization - CRITICAL PATTERN
 
-**STANDARD (ContactRole.razor Reference):**
+**STANDARD (CustomerList.razor Reference):**
 
 ```html
 <!-- ✅ CORRECT Back Button - Use EXACTLY this pattern -->
@@ -833,13 +833,13 @@ private GridExportRequest? BuildExportRequest() =>
 - OpenIconic `oi-arrow-left` is THE system standard for navigation
 - Outline style visually distinguishes navigation from actions
 - Maintains consistency across entire application
-- Proven by ContactRole.razor reference standard
+- Proven by CustomerList.razor reference standard
 
 **Pages Using This Pattern (Config as of 2026-04-01):**
 
 | Page Name | File | Status | Verified |
 |-----------|------|--------|----------|
-| ContactRole | ContactRole.razor | ✅ | Reference Standard |
+| CustomerList | CustomerList.razor | ✅ | Reference Standard |
 | Building | Building.razor | ✅ | Implemented |
 | Owner | Owner.razor | ✅ | Implemented |
 | BuildingOwner | BuildingOwner.razor | ✅ | Implemented |
@@ -894,7 +894,7 @@ Every readme file in `/readme/` MUST follow this EXACT footer pattern:
 When creating a NEW readme file in `/readme/`:
 1. Add your content
 2. Add level-2 heading: `## Documentation`
-3. Add only the main README link (see template above)
+3. Add only the main README link (see pattern above)
 4. Add `---` separator
 5. Add copyright line: `**© 2026 AdminSense. All rights reserved.**`
 
@@ -1073,7 +1073,7 @@ public static class FieldValidationCss
            class="@FieldValidationCss.FormControl(_fieldErrors, "name")"
            id="name" 
            @bind="EditingItem.Name" 
-           @onkeyup="@((KeyboardEventArgs e) => JSRuntime.InvokeVoidAsync("immoForm.validateNameField", "name"))"
+           @onkeyup="@((KeyboardEventArgs e) => JSRuntime.InvokeVoidAsync("adminForm.validateNameField", "name"))"
            @onblur='() => ValidateFieldOnBlur("name", EditingItem.Name, "Name", "letters")'
            required />
     <ValidationFeedbackMessage FieldId="name" Errors="_fieldErrors" />
@@ -1417,7 +1417,7 @@ EDGE CASES
 
 ### 🗑️ Delete Confirmation Modal - Standard Pattern
 
-**⚠️ CRITICAL PATTERN (ContactRole.razor Reference - ALL modals follow this exactly)**
+**⚠️ CRITICAL PATTERN (CustomerList.razor Reference - ALL modals follow this exactly)**
 
 ```html
 @if (ShowDeleteConfirm && ItemToDelete != null)
@@ -1621,7 +1621,7 @@ All implementations support:
 
 | Page Name | File | Back Button | Buttons | Grid | Forms | Validation | Delete Modal | Status |
 |-----------|------|:-----------:|:-------:|:----:|:-----:|:----------:|:------------:|:------:|
-| ContactRole | ContactRole.razor | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **Reference** |
+| CustomerList | CustomerList.razor | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **Reference** |
 | Building | Building.razor | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ Complete |
 | Owner | Owner.razor | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ Complete |
 | BuildingOwner | BuildingOwner.razor | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ Complete |
@@ -1755,10 +1755,10 @@ All implementations support:
 
 For questions about these patterns:
 
-1. **Reference Implementation:** Check `Immo/Pages/ContactRole.razor`
+1. **Reference Implementation:** Check `Web/Components/Pages/Admin/CustomerList.razor`
 2. **Visual Standards:** See button color table above
 3. **Validation Pattern:** Review form example in Form Field Validation section
-4. **Quick Copy-Paste:** Use templates in Quick Reference Card
+4. **Quick Copy-Paste:** Use snippets in Quick Reference Card
 
 ---
 
