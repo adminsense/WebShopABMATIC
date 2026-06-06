@@ -672,6 +672,8 @@ public class WebShopABMATICModelBuilder
         config.Property(t => t.RequestedCommission).HasColumnType("decimal(18,4)");
         config.Property(t => t.BetaaltermijnId);
         config.Property(t => t.WebshopLogin).HasMaxLength(150);
+        config.Property(t => t.IdentityUserId).HasMaxLength(450);
+        config.HasIndex(t => t.IdentityUserId).IsUnique().HasFilter("[IdentityUserId] IS NOT NULL");
         config.Property(t => t.WebshopPasswordHash).HasMaxLength(512);
         config.Property(t => t.WebshopPasswordSalt).HasMaxLength(512);
         config.Property(t => t.CustomerBuildingName).HasMaxLength(250);
@@ -1201,6 +1203,10 @@ public class WebShopABMATICModelBuilder
         config.Property(t => t.SortOrder);
         config.Property(t => t.Amount).HasColumnType("decimal(18,6)");
         config.Property(t => t.AdvancePaymentVisibility).HasMaxLength(50);
+        config.Property(t => t.MolliePaymentId).HasMaxLength(50);
+        config.Property(t => t.MolliePaymentStatus).HasMaxLength(30);
+        config.Property(t => t.MolliePaidAt);
+        config.Property(t => t.MollieCheckoutUrl).HasMaxLength(500);
     }
 
     private static void MapOrderDeliveryTypeProduct(EntityTypeBuilder<OrderDeliveryTypeProduct> config)
