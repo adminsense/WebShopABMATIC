@@ -1,4 +1,4 @@
-# WebShopABMATIC vNext — Storefront + Admin (template)
+# WebShopABMATIC vNext — Storefront + Admin
 
 ![Blazor](https://img.shields.io/badge/Blazor-Server-512BD4?style=flat-square&logo=blazor&logoColor=white) ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white) ![C#](https://img.shields.io/badge/C%23-13.0-239120?style=flat-square&logo=csharp&logoColor=white) ![SQL Server](https://img.shields.io/badge/SQL%20Server-Database-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white) ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square&logo=opensourceinitiative&logoColor=white)
 
@@ -8,7 +8,7 @@ This repository will become the **new version** of the WebShopABMATIC experience
 
 We are taking the current live site (`adminsenceweb.azurewebsites.net`) as the source of truth for **data and flows**, and rewriting it into:
 - a **mock-first UI** (static/prototype that mirrors the DTOs/Entities)
-- then a **working template** for the WebShopABMATIC solution (Admin + Site)
+- then a **working definition** for the WebShopABMATIC solution (Admin + Site)
 
 The old project:  https://adminsenceweb.azurewebsites.net/
 
@@ -32,7 +32,7 @@ The old project:  https://adminsenceweb.azurewebsites.net/
 | File | Description |
 |------|-------------|
 | [`docs/mock-loja.html`](docs/mock-loja.html) | Customer storefront — **entry point** (catalog, cart, checkout) |
-| [`docs/mock-admin.html`](docs/mock-admin.html) | Staff admin panel — **IMMO-style layout** (sidebar, dashboard, hub cards, list + form) |
+| [`docs/mock-admin.html`](docs/mock-admin.html) | Staff admin panel — **AB-MATIC-style layout** (sidebar, dashboard, hub cards, list + form) |
 | [`docs/mock-shopcart.html`](docs/mock-shopcart.html) | Redirect to `mock-loja.html` |
 
 **Full screen-by-screen guide** (reference images, menus, entities, tables): [`readme/MOCK_PROTOTYPE_GUIDE.md`](readme/MOCK_PROTOTYPE_GUIDE.md)
@@ -288,7 +288,7 @@ Sign in: `admin@webshop.com` / `Admin@12345` → `/admin`
 
 - Extract the **real data contracts** and navigation from the live site (or API behind it).
 - Replace the current mocks with a **vNext mock** driven by the DTOs above.
-- Create a template structure for:
+- Create the application structure for:
   - `Admin` area (authz-protected)
   - `Storefront` area (public + customer auth)
 
@@ -296,17 +296,19 @@ Sign in: `admin@webshop.com` / `Admin@12345` → `/admin`
 
 ## Documentation
 
-- 🏗️ [`readme/INFRASTRUCTURE.md`](readme/INFRASTRUCTURE.md) — Hexagonal architecture, connection strings, migrations, DI
-- 📊 [`readme/DUTCH_ENGLISH_DATA_MODEL.md`](readme/DUTCH_ENGLISH_DATA_MODEL.md) — Schemas, table inventory, Dutch → English mapping
-- 🌱 [`readme/DEMO_SEED_DATA.md`](readme/DEMO_SEED_DATA.md) — SQL demo seed: schemas, tables, run `seeds.sql` on MULLER
-- 🖥️ [`readme/ADMIN.md`](readme/ADMIN.md) — Admin panel: logins, registrations, stock, dashboards
-- 🛒 [`readme/WEB_STORE.md`](readme/WEB_STORE.md) — Web store: catalog, customer auth, checkout, stock display
-- 📦 [`readme/STOCK_OPERATIONS_PROPOSAL.md`](readme/STOCK_OPERATIONS_PROPOSAL.md) — Stock operations, checkout, and Mollie payments (analysis proposal)
-- ✅ [`readme/IMPLEMENTATION_ROADMAP.md`](readme/IMPLEMENTATION_ROADMAP.md) — Phased checklist (stock + checkout + Mollie)
-- 🖼️ [`readme/azureblob.md`](readme/azureblob.md) — Product images: `AzureFiles` ↔ `Product`, fictitious blob Phase 1
+- 🏗️ [`readme/SPEC_INFRASTRUCTURE.md`](readme/SPEC_INFRASTRUCTURE.md) — Hexagonal architecture, connection strings, migrations, DI
+- 📊 [`readme/DATA_DUTCH_ENGLISH_MODEL.md`](readme/DATA_DUTCH_ENGLISH_MODEL.md) — Schemas, table inventory, Dutch → English mapping
+- 🌱 [`readme/DATA_DEMO_SEED.md`](readme/DATA_DEMO_SEED.md) — SQL demo seed: schemas, tables, run `seeds.sql` on MULLER
+- 🖥️ [`readme/SPEC_ADMIN.md`](readme/SPEC_ADMIN.md) — Admin panel: logins, registrations, stock, dashboards
+- 🛒 [`readme/SPEC_WEB_STORE.md`](readme/SPEC_WEB_STORE.md) — Web store: catalog, customer auth, checkout, stock display
+- 📦 [`readme/SPEC_STOCK_OPERATIONS_PROPOSAL.md`](readme/SPEC_STOCK_OPERATIONS_PROPOSAL.md) — Stock operations, checkout, and Mollie payments (analysis proposal)
+- ✅ [`readme/IMPLEMENTATION_ROADMAP_open.md`](readme/IMPLEMENTATION_ROADMAP_open.md) — Phased checklist (stock + checkout + Mollie)
+- 🔐 [`readme/AUTH_IDENTITY_ROADMAP_open.md`](readme/AUTH_IDENTITY_ROADMAP_open.md) — Identity, roles, customers, user IDs on writes
+- 📋 [`readme/AUDITS_open.md`](readme/AUDITS_open.md) — Audit log plan (CRUD / Login / Report / Logout badges + checklist)
+- 🖼️ [`readme/AZUREBLOB_open.md`](readme/AZUREBLOB_open.md) — Product images: `AzureFiles` ↔ `Product`, fictitious blob Phase 1
 - 🖥️ [`readme/MOCK_PROTOTYPE_GUIDE.md`](readme/MOCK_PROTOTYPE_GUIDE.md) — Mock layouts, menus, entities, and validation walkthrough
-- 🎨 [`readme/UI_PATTERNS_QUICK_START.md`](readme/UI_PATTERNS_QUICK_START.md) — Buttons, grids, forms (copy-paste)
-- 🏗️ [`readme/CODE_PATTERNS_AND_INFRASTRUCTURE.md`](readme/CODE_PATTERNS_AND_INFRASTRUCTURE.md) — Blazor implementation patterns and readme standards
+- 🎨 [`readme/PATTERNS_UI_QUICK_START.md`](readme/PATTERNS_UI_QUICK_START.md) — Buttons, grids, forms (copy-paste)
+- 🏗️ [`readme/PATTERNS_CODE_AND_INFRASTRUCTURE.md`](readme/PATTERNS_CODE_AND_INFRASTRUCTURE.md) — Blazor implementation patterns and readme standards
 - 📋 [`docs/mock-loja.html`](docs/mock-loja.html) — Storefront prototype (entry point)
 - 📋 [`docs/mock-admin.html`](docs/mock-admin.html) — Admin prototype
 
