@@ -1,158 +1,16 @@
 @page "/admin/products/new"
 @page "/admin/products/{ProductId:int}"
 @layout AdminLayout
-@attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
-@using WebShopABMATIC.Application.Admin.Products
-@using WebShopABMATIC.Application.Auth
-@using WebShopABMATIC.Application.Ports
-@inject IProductAdminPort ProductPort
 @inject NavigationManager Navigation
-@implements IAsyncDisposable
-
-<PageTitle>@(_isNew ? "New product" : "Edit product")</PageTitle>
-
-<a class="btn btn-outline-secondary btn-sm mb-3" href="/admin/products">
-    <span class="oi oi-arrow-left"></span> Back to list
-</a>
-
-<div class="card shadow-sm">
-    <div class="card-header bg-white">
-        <h2 class="h5 mb-0">@(_isNew ? "Create product" : "Edit product")</h2>
-        <small class="text-muted">Product</small>
-    </div>
-    <div class="card-body">
-        @if (_loading)
-        {
-            <p class="text-muted">Loading…</p>
-        }
-        else
-        {
-            <EditForm Model="_model" OnValidSubmit="SaveAsync">
-                <DataAnnotationsValidator />
-                <div class="row g-3" style="max-width:640px">
-                    <div class="col-md-6">
-                        <label class="form-label">NameEn *</label>
-                        <InputText class="form-control" @bind-Value="_model.NameEn" required />
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">OrderPartNumber</label>
-                        <InputText class="form-control" @bind-Value="_model.OrderPartNumber" />
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">SupplierId *</label>
-                        <InputNumber class="form-control" @bind-Value="_model.SupplierId" />
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">ManufacturerId *</label>
-                        <InputNumber class="form-control" @bind-Value="_model.ManufacturerId" />
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label">WebshopDescriptionNl</label>
-                        <InputTextArea class="form-control" rows="3" @bind-Value="_model.WebshopDescriptionNl" />
-                    </div>
-                    <div class="col-12">
-                        <div class="form-check">
-                            <InputCheckbox class="form-check-input" @bind-Value="_model.ShowOnWebshop" id="showWebshop" />
-                            <label class="form-check-label" for="showWebshop">ShowOnWebshop</label>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">EanCode</label>
-                        <InputText class="form-control" @bind-Value="_model.EanCode" />
-                    </div>
-                    <div class="col-12 d-flex gap-2 mt-2">
-                        <button type="submit" class="btn btn-primary" disabled="@_saving">
-                            @if (_saving)
-                            {
-                                <span class="spinner-border spinner-border-sm me-2"></span>
-                            }
-                            else
-                            {
-                                <i class="bi bi-check-circle me-2"></i>
-                            }
-                            Save
-                        </button>
-                        <a class="btn btn-secondary" href="/admin/products">
-                            <i class="bi bi-x me-1"></i>Cancel
-                        </a>
-                    </div>
-                </div>
-            </EditForm>
-            @if (!string.IsNullOrEmpty(_error))
-            {
-                <div class="alert alert-danger mt-3">@_error</div>
-            }
-        }
-    </div>
-</div>
 
 @code {
     [Parameter] public int ProductId { get; set; }
 
-    private CancellationTokenSource? _cts;
-    private ProductEditDto _model = new();
-    private bool _isNew;
-    private bool _loading = true;
-    private bool _saving;
-    private string? _error;
-
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        _cts = new CancellationTokenSource();
-        _isNew = ProductId == 0;
-        if (_isNew)
-        {
-            _model = new ProductEditDto { ShowOnWebshop = true, SupplierId = 1, ManufacturerId = 1 };
-            _loading = false;
-        }
-        else
-        {
-            await LoadAsync(_cts.Token);
-        }
-    }
-
-    private async Task LoadAsync(CancellationToken ct)
-    {
-        _loading = true;
-        try
-        {
-            var item = await ProductPort.GetForEditAsync(ProductId, ct);
-            if (item is null)
-            {
-                _error = "Product not found.";
-                return;
-            }
-            _model = item;
-        }
-        finally
-        {
-            if (!ct.IsCancellationRequested) _loading = false;
-        }
-    }
-
-    private async Task SaveAsync()
-    {
-        _saving = true;
-        _error = null;
-        try
-        {
-            var id = await ProductPort.SaveAsync(_model, _cts?.Token ?? CancellationToken.None);
-            Navigation.NavigateTo($"/admin/products/{id}");
-        }
-        catch (Exception ex)
-        {
-            _error = ex.Message;
-        }
-        finally
-        {
-            _saving = false;
-        }
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        _cts?.Cancel();
-        _cts?.Dispose();
-        await ValueTask.CompletedTask;
+        var target = ProductId > 0
+            ? $"/admin/products?edit={ProductId}"
+            : "/admin/products";
+        Navigation.NavigateTo(target, replace: true);
     }
 }

@@ -13,7 +13,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/open-iconic/1.1.1/font/css/open-iconic-bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="app.css" />
     <link rel="stylesheet" href="css/store.css" />
-    <link rel="stylesheet" href="css/admin.css" />
+    <link rel="stylesheet" href="css/admin.css?v=20260605" />
+    <link rel="stylesheet" href="css_Immo/validation.css" />
     <link rel="stylesheet" href="WebShopABMATIC.Web.styles.css" />
     <HeadOutlet @rendermode="PageRenderMode" />
 </head>
@@ -29,8 +30,10 @@
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 
+    private static readonly InteractiveServerRenderMode InteractiveMode = new(prerender: false);
+
     private IComponentRenderMode? PageRenderMode =>
-        UsesStaticRendering ? null : InteractiveServer;
+        UsesStaticRendering ? null : InteractiveMode;
 
     private bool UsesStaticRendering
     {

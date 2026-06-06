@@ -2,150 +2,501 @@
 @layout AdminLayout
 @attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
 @using WebShopABMATIC.Application.Admin.Products
+@using WebShopABMATIC.Application.Common
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
 @inject IProductAdminPort ProductPort
+@inject NavigationManager Navigation
 @implements IAsyncDisposable
 
 <PageTitle>Product</PageTitle>
 
-<div class="list-header">
-    <h1><i class="bi bi-box-seam"></i> Product</h1>
-    <div class="d-flex gap-2">
-        <button type="button" class="btn btn-success btn-sm" @onclick="RefreshAsync">
-            <i class="bi bi-arrow-repeat me-1"></i>Refresh
-        </button>
-        <a class="btn btn-primary btn-sm" href="/admin/products/new">+ Add product</a>
+<div class="entity-page">
+    <a class="btn btn-secondary btn-back mb-3" href="/admin/hub/catalog" title="Go back" data-enhance-nav="false">
+        <span class="oi oi-arrow-left"></span> Back to list
+    </a>
+
+    <div class="entity-page-header page-header">
+        <h1 class="h3 mb-1"><i class="bi bi-box-seam text-primary"></i> Product</h1>
+        <p class="mb-0">Create, edit and delete products for the webshop catalog.</p>
+    </div>
+
+    <div class="card shadow-sm border entity-form-card admin-form-card">
+        <div class="card-header card-header-catalog">
+            <h2 class="h6 mb-0 fw-bold">@(_isEditing ? "Edit product" : "Create product")</h2>
+        </div>
+        <div class="card-body">
+            @if (_formLoading)
+            {
+                <p class="text-muted mb-0">Loading…</p>
+            }
+            else
+            {
+                <EditForm Model="_model" OnValidSubmit="SaveAsync">
+                    <DataAnnotationsValidator />
+                    <div class="entity-form-fields">
+                    <div class="row g-2">
+                        <div class="col-md-8">
+                            <label class="form-label" for="prod-name">NameEn *</label>
+                            <InputText id="prod-name" class="form-control form-control-sm" @bind-Value="_model.NameEn" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="prod-part">OrderPartNumber</label>
+                            <InputText id="prod-part" class="form-control form-control-sm" @bind-Value="_model.OrderPartNumber" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" for="prod-supplier">SupplierId *</label>
+                            <InputNumber id="prod-supplier" class="form-control form-control-sm" @bind-Value="_model.SupplierId" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" for="prod-manufacturer">ManufacturerId *</label>
+                            <InputNumber id="prod-manufacturer" class="form-control form-control-sm" @bind-Value="_model.ManufacturerId" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="prod-ean">EanCode</label>
+                            <InputText id="prod-ean" class="form-control form-control-sm" @bind-Value="_model.EanCode" />
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <div class="form-check mb-1">
+                                <InputCheckbox class="form-check-input" @bind-Value="_model.ShowOnWebshop" id="showWebshop" />
+                                <label class="form-check-label" for="showWebshop">Webshop</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="prod-desc">WebshopDescriptionNl</label>
+                            <InputTextArea id="prod-desc" class="form-control form-control-sm" rows="2" @bind-Value="_model.WebshopDescriptionNl" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Product image</label>
+                            @if (!string.IsNullOrEmpty(_previewUrl))
+                            {
+                                <div class="mb-2">
+                                    <img src="@_previewUrl" alt="Product preview" class="rounded border" style="max-height:100px;max-width:240px;object-fit:contain" />
+                                </div>
+                            }
+                            <InputFile OnChange="OnImageSelectedAsync" class="form-control form-control-sm" accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif" />
+                            <small class="text-muted">PNG, JPG, WEBP or GIF. Maximum size 1 MB.</small>
+                            @if (!string.IsNullOrEmpty(_imageError))
+                            {
+                                <div class="text-danger small mt-1">@_imageError</div>
+                            }
+                        </div>
+                        <div class="col-12 d-flex gap-2 pt-1">
+                            <button type="submit" class="btn btn-primary" disabled="@_saving">
+                                @if (_saving)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                }
+                                else if (_isEditing)
+                                {
+                                    <i class="bi bi-check-circle me-2"></i>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-plus-circle-fill me-2"></i>
+                                }
+                                @(_isEditing ? "Update" : "Create")
+                            </button>
+                            <button type="button" class="btn btn-secondary" @onclick="CancelFormAsync" disabled="@_saving">
+                                <i class="bi bi-x me-1"></i>Cancel
+                            </button>
+                        </div>
+                    </div>
+                    </div>
+                </EditForm>
+                @if (!string.IsNullOrEmpty(_formError))
+                {
+                    <div class="alert alert-danger mt-3 mb-0">@_formError</div>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="card shadow-sm border entity-grid-card">
+        <div class="card-header bg-white border-bottom py-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <h2 class="h6 mb-0 fw-bold">Product list</h2>
+            <div class="grid-search-wrap">
+                <div class="input-group input-group-sm">
+                    <input type="search"
+                           class="form-control"
+                           placeholder="Search…"
+                           aria-label="Search products"
+                           @bind="_searchDraft"
+                           @bind:event="oninput"
+                           @onkeydown="OnSearchKeyDown" />
+                    <span class="input-group-text">
+                        <i class="bi bi-search" aria-hidden="true"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ProductId</th>
+                        <th>NameEn</th>
+                        <th>ShowOnWebshop</th>
+                        <th>SupplierId</th>
+                        <th>ManufacturerId</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_loading)
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">Loading…</td>
+                        </tr>
+                    }
+                    else if (!string.IsNullOrEmpty(_gridError))
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-danger py-4">@_gridError</td>
+                        </tr>
+                    }
+                    else if (_result is null || _result.Items.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">No products found.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in _result.Items)
+                        {
+                            <tr @key="item.ProductId" class="@(_model.ProductId == item.ProductId ? "table-active" : null)">
+                                <td>@item.ProductId</td>
+                                <td>@item.NameEn</td>
+                                <td>@(item.ShowOnWebshop ? "Yes" : "No")</td>
+                                <td>@item.SupplierId</td>
+                                <td>@item.ManufacturerId</td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                    <a class="btn btn-sm btn-primary"
+                                       href="@($"/admin/products?edit={item.ProductId}")"
+                                       title="Edit Product"
+                                       data-enhance-nav="false">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                        <button type="button" class="btn btn-sm btn-danger"
+                                                @onclick="() => PromptDelete(item)"
+                                                title="Delete Product">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (_result is not null && !_loading)
+        {
+            <div class="card-footer bg-white text-muted small py-2">
+                @_result.TotalCount total · page @_result.Page
+            </div>
+        }
     </div>
 </div>
 
-<a class="btn btn-outline-secondary btn-sm mb-3" href="/admin/hub/catalog">
-    <span class="oi oi-arrow-left"></span> Back
-</a>
-
-<div class="filter-panel">
-    <div class="row g-3">
-        <div class="col-md-4">
-            <label class="form-label small">Search</label>
-            <input class="form-control form-control-sm" @bind="_filter.Search" placeholder="Name, part number…" />
-        </div>
-        <div class="col-md-3">
-            <label class="form-label small">Show on webshop</label>
-            <select class="form-select form-select-sm" @bind="_showOnWebshopFilter">
-                <option value="">All</option>
-                <option value="true">Yes</option>
-                <option value="false">No</option>
-            </select>
-        </div>
-        <div class="col-md-3 d-flex align-items-end">
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="modifiedOnly" @bind="_filter.ModifiedOnly" />
-                <label class="form-check-label small" for="modifiedOnly">Modified only</label>
+@if (_showDeleteConfirm && _itemToDelete is not null)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title">Confirm Deletion</h5>
+                    <button type="button" class="btn-close" @onclick="CancelDelete" disabled="@_deleting"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2">Are you sure you want to delete <strong>@_itemToDelete.NameEn</strong>?</p>
+                    <p class="text-danger mb-0"><small>This action cannot be undone.</small></p>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelDelete" disabled="@_deleting">
+                        <i class="bi bi-x me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger" @onclick="ConfirmDeleteAsync" disabled="@_deleting">
+                        @if (_deleting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        Delete Product
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-    <div class="filter-actions">
-        <button type="button" class="btn btn-primary" @onclick="ApplyFiltersAsync">
-            <i class="bi bi-funnel-fill me-1"></i>Apply Filters
-        </button>
-        <button type="button" class="btn btn-danger" @onclick="ClearFiltersAsync">
-            <i class="bi bi-x-circle-fill me-1"></i>Clear
-        </button>
-    </div>
-</div>
-
-@if (_loading)
-{
-    <p class="text-muted">Loading…</p>
-}
-else if (_result?.Items.Count == 0)
-{
-    <div class="alert alert-info">No products found. Connect the domain database or add a product.</div>
-}
-else if (_result is not null)
-{
-    <div class="table-wrap">
-        <table class="table table-striped table-hover mb-0">
-            <thead class="table-dark">
-                <tr>
-                    <th>ProductId</th>
-                    <th>NameEn</th>
-                    <th>ShowOnWebshop</th>
-                    <th>SupplierId</th>
-                    <th>ManufacturerId</th>
-                    <th class="text-center">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in _result.Items)
-                {
-                    <tr @key="item.ProductId">
-                        <td>@item.ProductId</td>
-                        <td>@item.NameEn</td>
-                        <td>@(item.ShowOnWebshop ? "true" : "false")</td>
-                        <td>@item.SupplierId</td>
-                        <td>@item.ManufacturerId</td>
-                        <td class="text-center">
-                            <a class="btn btn-sm btn-primary" href="/admin/products/@item.ProductId" title="Edit Product">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-    <p class="text-muted small mt-2">@_result.TotalCount total · page @_result.Page</p>
 }
 
 @code {
+    [SupplyParameterFromQuery(Name = "edit")]
+    public int? EditProductId { get; set; }
+
     private CancellationTokenSource? _cts;
     private ProductListFilter _filter = new();
-    private string _showOnWebshopFilter = string.Empty;
+    private ProductEditDto _model = new() { ShowOnWebshop = true, SupplierId = 1, ManufacturerId = 1 };
+    private string _searchDraft = string.Empty;
     private bool _loading = true;
-    private WebShopABMATIC.Application.Common.PagedResult<ProductDto>? _result;
+    private bool _formLoading;
+    private bool _saving;
+    private bool _deleting;
+    private bool _showDeleteConfirm;
+    private bool _disposed;
+    private string? _formError;
+    private string? _gridError;
+    private string? _imageError;
+    private string? _previewUrl;
+    private ProductImageUpload? _pendingImage;
+    private PagedResult<ProductDto>? _result;
+    private ProductDto? _itemToDelete;
+    private bool _initialized;
+
+    private bool _isEditing => _model.ProductId > 0;
 
     protected override async Task OnInitializedAsync()
     {
         _cts = new CancellationTokenSource();
-        await LoadAsync(_cts.Token);
+        await LoadGridAsync(_cts.Token);
+
+        if (EditProductId is > 0)
+        {
+            await EditAsync(EditProductId.Value);
+        }
+
+        _initialized = true;
     }
 
-    private async Task LoadAsync(CancellationToken ct)
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!_initialized || _disposed || EditProductId is not > 0 || _model.ProductId == EditProductId)
+        {
+            return;
+        }
+
+        await EditAsync(EditProductId.Value);
+    }
+
+    private async Task LoadGridAsync(CancellationToken ct)
     {
         _loading = true;
+        _gridError = null;
         try
         {
-            ApplyShowOnWebshopFilter();
             _result = await ProductPort.GetProductsAsync(_filter, ct);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        catch (Exception ex)
+        {
+            _result = null;
+            _gridError = ex.Message;
         }
         finally
         {
-            if (!ct.IsCancellationRequested) _loading = false;
+            _loading = false;
+            await SafeStateHasChangedAsync();
         }
     }
 
-    private void ApplyShowOnWebshopFilter() =>
-        _filter.ShowOnWebshop = _showOnWebshopFilter switch
+    private async Task ApplySearchAsync()
+    {
+        _filter.Search = _searchDraft;
+        _filter.Page = 1;
+        _cts?.Cancel();
+        _cts = new CancellationTokenSource();
+        await LoadGridAsync(_cts.Token);
+    }
+
+    private async Task OnSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
         {
-            "true" => true,
-            "false" => false,
-            _ => null
+            await ApplySearchAsync();
+        }
+    }
+
+    private async Task EditAsync(int productId)
+    {
+        _formLoading = true;
+        _formError = null;
+        _imageError = null;
+        _pendingImage?.Content.Dispose();
+        _pendingImage = null;
+
+        try
+        {
+            var item = await ProductPort.GetForEditAsync(productId, _cts?.Token ?? CancellationToken.None);
+            if (item is null)
+            {
+                _formError = "Product not found.";
+                return;
+            }
+
+            _model = item;
+            _previewUrl = item.PrimaryImageUrl;
+        }
+        finally
+        {
+            _formLoading = false;
+            await SafeStateHasChangedAsync();
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (!string.IsNullOrEmpty(_imageError))
+        {
+            return;
+        }
+
+        _saving = true;
+        _formError = null;
+        try
+        {
+            if (_pendingImage is not null)
+            {
+                _pendingImage.Content.Position = 0;
+            }
+
+            var id = await ProductPort.SaveAsync(_model, _pendingImage, _cts?.Token ?? CancellationToken.None);
+            _pendingImage?.Content.Dispose();
+            _pendingImage = null;
+
+            await LoadGridAsync(_cts?.Token ?? CancellationToken.None);
+            await EditAsync(id);
+        }
+        catch (Exception ex)
+        {
+            _formError = ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task CancelFormAsync()
+    {
+        _formError = null;
+        _imageError = null;
+        _pendingImage?.Content.Dispose();
+        _pendingImage = null;
+        _previewUrl = null;
+        _model = new ProductEditDto { ShowOnWebshop = true, SupplierId = 1, ManufacturerId = 1 };
+        await Task.CompletedTask;
+    }
+
+    private async Task OnImageSelectedAsync(InputFileChangeEventArgs e)
+    {
+        _imageError = null;
+        _pendingImage = null;
+
+        var file = e.File;
+        if (file is null)
+        {
+            return;
+        }
+
+        if (file.Size > ProductImageRules.MaxBytes)
+        {
+            _imageError = "Image must be 1 MB or smaller.";
+            return;
+        }
+
+        var extension = Path.GetExtension(file.Name);
+        if (!ProductImageRules.IsAllowedExtension(extension))
+        {
+            _imageError = "Only PNG, JPG, WEBP or GIF images are allowed.";
+            return;
+        }
+
+        await using var stream = file.OpenReadStream(ProductImageRules.MaxBytes);
+        var buffer = new MemoryStream();
+        await stream.CopyToAsync(buffer);
+        buffer.Position = 0;
+
+        _pendingImage = new ProductImageUpload
+        {
+            Content = buffer,
+            FileName = file.Name,
+            SizeBytes = file.Size
         };
 
-    private Task ApplyFiltersAsync() => LoadAsync(_cts?.Token ?? CancellationToken.None);
-    private async Task ClearFiltersAsync()
-    {
-        _filter = new ProductListFilter();
-        _showOnWebshopFilter = string.Empty;
-        await LoadAsync(_cts?.Token ?? CancellationToken.None);
+        _previewUrl = $"data:{file.ContentType};base64,{Convert.ToBase64String(buffer.ToArray())}";
     }
-    private Task RefreshAsync() => LoadAsync(_cts?.Token ?? CancellationToken.None);
+
+    private void PromptDelete(ProductDto item)
+    {
+        _itemToDelete = item;
+        _showDeleteConfirm = true;
+    }
+
+    private void CancelDelete()
+    {
+        _showDeleteConfirm = false;
+        _itemToDelete = null;
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_itemToDelete is null)
+        {
+            return;
+        }
+
+        _deleting = true;
+        try
+        {
+            var deleted = await ProductPort.DeleteAsync(_itemToDelete.ProductId, _cts?.Token ?? CancellationToken.None);
+            if (!deleted)
+            {
+                _formError = "Product could not be deleted.";
+                return;
+            }
+
+            if (_model.ProductId == _itemToDelete.ProductId)
+            {
+                await CancelFormAsync();
+            }
+
+            CancelDelete();
+            await LoadGridAsync(_cts?.Token ?? CancellationToken.None);
+        }
+        finally
+        {
+            _deleting = false;
+        }
+    }
+
+    private async Task SafeStateHasChangedAsync()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        try
+        {
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+    }
 
     public async ValueTask DisposeAsync()
     {
-        _cts?.Cancel();
-        _cts?.Dispose();
-        await ValueTask.CompletedTask;
+        _disposed = true;
+        _pendingImage?.Content.Dispose();
+        if (_cts is not null)
+        {
+            await _cts.CancelAsync();
+            _cts.Dispose();
+        }
     }
 }
