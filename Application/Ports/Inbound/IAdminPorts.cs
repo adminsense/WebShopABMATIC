@@ -16,6 +16,7 @@ using WebShopABMATIC.Application.Admin.ProductQuantityTiers;
 using WebShopABMATIC.Application.Admin.Products;
 using WebShopABMATIC.Application.Admin.ProductStockLocations;
 using WebShopABMATIC.Application.Admin.StaffUsers;
+using WebShopABMATIC.Application.Admin.SystemUsers;
 using WebShopABMATIC.Application.Admin.Stock;
 using WebShopABMATIC.Application.Admin.StockLocations;
 using WebShopABMATIC.Application.Admin.Suppliers;
@@ -23,6 +24,7 @@ using WebShopABMATIC.Application.Admin.UserGroups;
 using WebShopABMATIC.Application.Admin.VatTypes;
 using WebShopABMATIC.Application.Admin.WebshopProductStructures;
 using WebShopABMATIC.Application.Admin.WebshopStructures;
+using WebShopABMATIC.Application.Auth;
 using WebShopABMATIC.Application.Common;
 
 namespace WebShopABMATIC.Application.Ports;
@@ -142,6 +144,7 @@ public interface ICustomerAdminPort
     Task<CustomerEditDto?> GetForEditAsync(int customerId, CancellationToken cancellationToken = default);
     Task<int> SaveAsync(CustomerEditDto dto, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(int customerId, CancellationToken cancellationToken = default);
+    Task<PasswordResetResult> ResetWebshopPasswordAsync(int customerId, string? newPassword = null, CancellationToken cancellationToken = default);
 }
 
 public interface IOrderStatusAdminPort
@@ -197,6 +200,15 @@ public interface IStaffUserAdminPort
     Task<StaffUserEditDto?> GetForEditAsync(int id, CancellationToken cancellationToken = default);
     Task<int> SaveAsync(StaffUserEditDto dto, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
+}
+
+public interface ISystemUserAdminPort
+{
+    Task<PagedResult<SystemUserDto>> GetSystemUsersAsync(SystemUserListFilter filter, CancellationToken cancellationToken = default);
+    Task<SystemUserEditDto?> GetForEditAsync(string id, CancellationToken cancellationToken = default);
+    Task<SystemUserSaveResult> SaveAsync(SystemUserEditDto dto, CancellationToken cancellationToken = default);
+
+    Task<PasswordResetResult> ResetPasswordAsync(string userId, string? newPassword = null, CancellationToken cancellationToken = default);
 }
 
 public interface IUserGroupAdminPort

@@ -1,3 +1,4 @@
+using WebShopABMATIC.Application.Auth;
 using WebShopABMATIC.Application.Common;
 using WebShopABMATIC.Application.Admin.Customers;
 
@@ -9,4 +10,6 @@ public interface ICustomerRepository
     Task<CustomerEditDto?> GetForEditAsync(int customerId, CancellationToken cancellationToken = default);
     Task<int> SaveAsync(CustomerEditDto dto, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(int customerId, CancellationToken cancellationToken = default);
+
+    Task<PasswordResetResult> ResetWebshopPasswordAsync(int customerId, string? newPassword = null, CancellationToken cancellationToken = default);
 }
