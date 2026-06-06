@@ -829,7 +829,7 @@ Stock overview and movement journal can ship **in parallel** with payment founda
 2. Implement read-only ports + repositories + two Razor pages.
 3. Extend `seeds.sql` with sample movements (and optional minimal PO).
 4. Add KPIs to `/admin` stock card.
-5. Update `ADMIN.md` hub entity table when routes exist.
+5. Update `SPEC_ADMIN.md` hub entity table when routes exist.
 
 ### If you approve Part II — Payments P0 + P1
 
@@ -857,8 +857,8 @@ Stock overview and movement journal can ship **in parallel** with payment founda
 | Mollie .NET client (GitHub) | https://github.com/Viincenttt/MollieApi |
 | Mollie API docs | https://docs.mollie.com |
 | Blazor sample in repo | https://github.com/Viincenttt/MollieApi/tree/development/samples/Mollie.WebApplication.Blazor |
-| Internal store spec | [WEB_STORE.md](./WEB_STORE.md) |
-| Hexagonal layout | [INFRASTRUCTURE.md](./INFRASTRUCTURE.md) §1.2 |
+| Internal store spec | [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) |
+| Hexagonal layout | [SPEC_INFRASTRUCTURE.md](./SPEC_INFRASTRUCTURE.md) §1.2 |
 
 ---
 

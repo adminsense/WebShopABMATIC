@@ -1,0 +1,61 @@
+@page "/orders/{OrderId:int}/payment-return"
+@layout StoreLayout
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Application.Ports.Outbound
+@using WebShopABMATIC.Application.Store.Checkout
+@attribute [Authorize(Policy = AppPolicies.CustomerOnly)]
+@inject ICheckoutPort CheckoutPort
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Payment</PageTitle>
+
+<div class="container">
+    <h1 class="page-title">Payment status</h1>
+
+    @if (_loading)
+    {
+        <p style="color:var(--muted)">Checking payment…</p>
+    }
+    else if (_order is null)
+    {
+        <p style="color:var(--muted)">Order not found.</p>
+    }
+    else if (_order.IsPaid)
+    {
+        <p>Thank you — your payment was received.</p>
+        <button type="button" class="btn btn-primary" @onclick="GoToConfirmation">View order</button>
+    }
+    else
+    {
+        <p>Payment is still pending or was not completed. You can retry from your cart or contact support.</p>
+        <NavLink href="/orders" class="btn btn-outline">My orders</NavLink>
+    }
+</div>
+
+@code {
+    [Parameter] public int OrderId { get; set; }
+
+    private CheckoutOrderSummaryDto? _order;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var auth = await AuthStateProvider.GetAuthenticationStateAsync();
+        _order = await CheckoutPort.GetOrderSummaryAsync(OrderId, new StoreUserLookup
+        {
+            Email = auth.User.Identity?.Name,
+            IdentityUserId = auth.User.FindFirstValue(ClaimTypes.NameIdentifier)
+        });
+        _loading = false;
+
+        if (_order?.IsPaid == true)
+        {
+            Navigation.NavigateTo($"/orders/{OrderId}/confirmation", replace: true);
+        }
+    }
+
+    private void GoToConfirmation() => Navigation.NavigateTo($"/orders/{OrderId}/confirmation");
+}

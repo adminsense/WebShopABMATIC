@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using WebShopABMATIC.Application.Admin.Customers;
+using WebShopABMATIC.Application.Auth;
 using WebShopABMATIC.Application.Common;
 using WebShopABMATIC.Application.Ports.Outbound;
 using WebShopABMATIC.Infrastructure.Persistence;
@@ -11,8 +12,18 @@ namespace WebShopABMATIC.Infrastructure.Persistence.Repositories;
 public sealed class CustomerRepository : ICustomerRepository
 {
     private readonly WebShopABMATICDbContext _db;
+    private readonly IIdentityPasswordPort _passwordPort;
+    private readonly ICurrentUserContext _currentUser;
 
-    public CustomerRepository(WebShopABMATICDbContext db) => _db = db;
+    public CustomerRepository(
+        WebShopABMATICDbContext db,
+        IIdentityPasswordPort passwordPort,
+        ICurrentUserContext currentUser)
+    {
+        _db = db;
+        _passwordPort = passwordPort;
+        _currentUser = currentUser;
+    }
 
     public async Task<PagedResult<CustomerDto>> GetCustomersAsync(CustomerListFilter filter, CancellationToken cancellationToken = default)
     {
@@ -44,7 +55,8 @@ public sealed class CustomerRepository : ICustomerRepository
                 CustomerEmail = c.CustomerEmail,
                 CustomerPhone = c.CustomerPhone,
                 CustomerCityId = c.CustomerCityId,
-                Locked = c.Locked
+                Locked = c.Locked,
+                HasWebshopAccount = c.IdentityUserId != null && c.IdentityUserId != ""
             })
             .ToListAsync(cancellationToken);
 
@@ -69,16 +81,22 @@ public sealed class CustomerRepository : ICustomerRepository
                 CustomerVatNumber = c.CustomerVatNumber,
                 DeliveryTypeId = c.DeliveryTypeId,
                 BetaaltermijnId = c.BetaaltermijnId,
-                Locked = c.Locked
+                Locked = c.Locked,
+                HasWebshopAccount = c.IdentityUserId != null && c.IdentityUserId != ""
             })
             .FirstOrDefaultAsync(cancellationToken);
 
     public async Task<int> SaveAsync(CustomerEditDto dto, CancellationToken cancellationToken = default)
     {
+        var currentUser = await _currentUser.GetCurrentUserAsync(cancellationToken);
+        var now = DateTime.UtcNow;
+
         Customer entity;
         if (dto.CustomerId == 0)
         {
             entity = (Customer)AdminCrudDefaults.Create("customers");
+            entity.CreatedAt = now;
+            entity.CreatedBy = currentUser.AuditLabel;
             _db.Customers.Add(entity);
         }
         else
@@ -99,6 +117,8 @@ public sealed class CustomerRepository : ICustomerRepository
         entity.DeliveryTypeId = dto.DeliveryTypeId;
         entity.BetaaltermijnId = dto.BetaaltermijnId;
         entity.Locked = dto.Locked;
+        entity.ModifiedAt = now;
+        entity.ModifiedBy = currentUser.AuditLabel;
 
         await _db.SaveChangesAsync(cancellationToken);
         return entity.CustomerId;
@@ -111,5 +131,24 @@ public sealed class CustomerRepository : ICustomerRepository
         _db.Customers.Remove(entity);
         await _db.SaveChangesAsync(cancellationToken);
         return true;
+    }
+
+    public async Task<PasswordResetResult> ResetWebshopPasswordAsync(int customerId, string? newPassword = null, CancellationToken cancellationToken = default)
+    {
+        var identityUserId = await _db.Customers.AsNoTracking()
+            .Where(c => c.CustomerId == customerId)
+            .Select(c => c.IdentityUserId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (string.IsNullOrWhiteSpace(identityUserId))
+        {
+            return new PasswordResetResult
+            {
+                Succeeded = false,
+                Errors = ["Customer has no linked webshop account."]
+            };
+        }
+
+        return await _passwordPort.ResetPasswordAsync(identityUserId, newPassword, cancellationToken);
     }
 }

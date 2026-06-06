@@ -1,0 +1,185 @@
+﻿@page "/admin/stock/overview"
+@layout AdminLayout
+@attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
+@using WebShopABMATIC.Application.Admin.Stock
+@using WebShopABMATIC.Application.Auth
+@using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Web.Services
+@inject IStockOverviewPort OverviewPort
+
+@inject IGridExportService GridExport
+@implements IAsyncDisposable
+
+<PageTitle>Stock overview</PageTitle>
+
+<div class="entity-page">
+    <a class="btn btn-secondary btn-back mb-3" href="/admin/hub/stock" data-enhance-nav="false"><span class="oi oi-arrow-left"></span> Back to Stock hub</a>
+    <div class="entity-page-header page-header">
+        <h1 class="h3 mb-1"><i class="bi bi-speedometer2 text-primary"></i> Stock overview</h1>
+        <p class="mb-0">Warehouse KPIs and location balances (read-only).</p>
+    </div>
+
+    @if (_loading)
+    {
+        <p class="text-muted">Loadingâ€¦</p>
+    }
+    else if (_overview is null)
+    {
+        <div class="alert alert-danger">Could not load stock overview.</div>
+    }
+    else
+    {
+        <div class="dash-grid mb-4">
+            <div class="portfolio-card portfolio-card--compact">
+                <h3><span class="icon-circle green"><span class="oi oi-box"></span></span> On hand</h3>
+                <div class="dash-metric">
+                    <div class="stat-band">
+                        <div>
+                            <div class="stat-band-label">SKUs in stock</div>
+                            <div class="stat-band-value">@_overview.SkusInStock SKUs Â· @_overview.TotalOnHand.ToString("N0") units</div>
+                        </div>
+                        <span class="pill pill-green">@_overview.TotalAvailable.ToString("N0") avail.</span>
+                    </div>
+                </div>
+                <div class="dash-metric">
+                    <div class="stat-band">
+                        <div>
+                            <div class="stat-band-label">Reserved</div>
+                            <div class="stat-band-value">@_overview.TotalReserved.ToString("N0") units reserved</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="portfolio-card portfolio-card--compact">
+                <h3><span class="icon-circle red"><span class="oi oi-warning"></span></span> Alerts</h3>
+                <div class="dash-metric">
+                    <div class="stat-band">
+                        <div>
+                            <div class="stat-band-label">Low stock</div>
+                            <div class="stat-band-value">@_overview.LowStockCount rows at or below minimum</div>
+                        </div>
+                        <a class="pill pill-red" href="/admin/product-stock" data-enhance-nav="false">Review</a>
+                    </div>
+                </div>
+                <div class="dash-metric">
+                    <div class="stat-band">
+                        <div>
+                            <div class="stat-band-label">Out of stock / overstock</div>
+                            <div class="stat-band-value">@_overview.OutOfStockCount zero Â· @_overview.OverstockCount over max</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="portfolio-card portfolio-card--compact">
+                <h3><span class="icon-circle blue"><span class="oi oi-list-rich"></span></span> Activity</h3>
+                <div class="dash-metric">
+                    <div class="stat-band">
+                        <div>
+                            <div class="stat-band-label">Movements today</div>
+                            <div class="stat-band-value">@_overview.MovementsToday today Â· @_overview.MovementsLast7Days last 7 days</div>
+                        </div>
+                        <a class="pill pill-blue" href="/admin/stock/movements" data-enhance-nav="false">Journal</a>
+                    </div>
+                </div>
+                <div class="dash-metric">
+                    <div class="stat-band">
+                        <div>
+                            <div class="stat-band-label">Purchase orders</div>
+                            <div class="stat-band-value">@_overview.OpenPurchaseOrders open Â· @_overview.PoLinesAwaitingDelivery lines awaiting delivery</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border entity-grid-card">
+            <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between gap-2">
+                <h2 class="h6 mb-0 fw-bold">Balance by location</h2>
+                <AdminExportDropdown Disabled="@ExportDisabled" OnExport="ExportGridAsync" />
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Location</th>
+                            <th class="text-end">On hand</th>
+                            <th class="text-end">Reserved</th>
+                            <th class="text-end">Available</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _overview.LocationBalances)
+                        {
+                            <tr @key="row.StockLocationId">
+                                <td>@row.LocationName</td>
+                                <td class="text-end">@row.OnHand.ToString("N0")</td>
+                                <td class="text-end">@row.Reserved.ToString("N0")</td>
+                                <td class="text-end">@row.Available.ToString("N0")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private StockOverviewDto? _overview;
+    private bool _loading = true;
+    private CancellationTokenSource? _cts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _cts = new CancellationTokenSource();
+        try
+        {
+            _overview = await OverviewPort.GetOverviewAsync(_cts.Token);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+
+    private bool ExportDisabled => _loading || _overview is null || _overview.LocationBalances.Count == 0;
+
+    private async Task ExportGridAsync(string format)
+    {
+        var request = BuildExportRequest();
+        if (request is not null)
+        {
+            await GridExport.ExportAsync(format, request);
+        }
+    }
+
+    private GridExportRequest? BuildExportRequest()
+    {
+        return GridExportBuilder.FromRows(
+            "stock-overview-balances",
+            "Balance by location",
+            new[] { "Location", "On hand", "Reserved", "Available" },
+            _overview?.LocationBalances.Select(row => (IReadOnlyList<string>)new[]
+            {
+                GridExportBuilder.Cell(row.LocationName),
+                GridExportBuilder.Cell(row.OnHand),
+                GridExportBuilder.Cell(row.Reserved),
+                GridExportBuilder.Cell(row.Available)
+            }));
+    }
+    public async ValueTask DisposeAsync()
+    {
+        if (_cts is not null)
+        {
+            await _cts.CancelAsync();
+            _cts.Dispose();
+        }
+    }
+}
+
+
+
+

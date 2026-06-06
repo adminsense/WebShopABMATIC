@@ -15,5 +15,9 @@ public class OrderAdvancePayment
     public int SortOrder { get; set; }
     public decimal? Amount { get; set; }
     public string? AdvancePaymentVisibility { get; set; }
+    public string? MolliePaymentId { get; set; }
+    public string? MolliePaymentStatus { get; set; }
+    public DateTime? MolliePaidAt { get; set; }
+    public string? MollieCheckoutUrl { get; set; }
 }
 

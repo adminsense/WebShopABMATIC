@@ -10,11 +10,13 @@ public sealed class ProductAdminUseCase : IProductAdminPort
 {
     private readonly IProductRepository _repository;
     private readonly IProductMediaPort _media;
+    private readonly ICurrentUserContext _currentUser;
 
-    public ProductAdminUseCase(IProductRepository repository, IProductMediaPort media)
+    public ProductAdminUseCase(IProductRepository repository, IProductMediaPort media, ICurrentUserContext currentUser)
     {
         _repository = repository;
         _media = media;
+        _currentUser = currentUser;
     }
 
     public Task<PagedResult<ProductDto>> GetProductsAsync(ProductListFilter filter, CancellationToken cancellationToken = default) =>
@@ -43,9 +45,12 @@ public sealed class ProductAdminUseCase : IProductAdminPort
 
         var productId = await _repository.SaveAsync(product, cancellationToken);
 
+        var currentUser = await _currentUser.GetCurrentUserAsync(cancellationToken);
+        var legacyUserId = currentUser.ResolveLegacyUserId();
+
         if (primaryImage is not null)
         {
-            await _media.SavePrimaryImageAsync(productId, primaryImage, publishToWeb: dto.ShowOnWebshop, createdByUserId: 1, cancellationToken);
+            await _media.SavePrimaryImageAsync(productId, primaryImage, publishToWeb: dto.ShowOnWebshop, createdByUserId: legacyUserId, cancellationToken);
         }
         else
         {
