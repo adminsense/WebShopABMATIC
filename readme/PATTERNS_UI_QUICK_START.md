@@ -1,4 +1,4 @@
-﻿# ðŸŽ¨ UI Patterns - Quick Start Guide for Developers
+# ðŸŽ¨ UI Patterns - Quick Start Guide for Developers
 
 ![Status](https://img.shields.io/badge/Status-Quick%20Reference-28a745?style=flat-square) ![Copy-Paste](https://img.shields.io/badge/Copy--Paste-Ready-0dcaf0?style=flat-square) ![UI%20Patterns](https://img.shields.io/badge/UI%20Patterns-Complete-512BD4?style=flat-square)
 
@@ -54,7 +54,7 @@ The button, grid, and form templates below are what the mock (and future Blazor 
 â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
-**Rule:** If button in GRID â†’ add `btn-sm` | If button in FORM/HEADER â†’ NO `btn-sm`
+**Rule:** If button in GRID → add `btn-sm` | If button in FORM/HEADER → NO `btn-sm` (except **EXPORT** on form card header → `btn-sm`)
 
 ---
 
@@ -262,12 +262,97 @@ private void ValidateFieldOnBlur(string fieldId, string value, string fieldName 
 
 ---
 
+### 8️⃣ EXPORT BUTTON — Form card header (green dropdown)
+
+**Placement:** top-right of the **create/edit form** card header (same row as the form title). Matches the IMMO admin mock.
+
+**Component:** `<AdminEntityFormHeader>` wraps the title and embeds `<AdminExportDropdown>`.
+
+```razor
+@inject IGridExportService GridExport
+
+<div class="card shadow-sm border entity-form-card admin-form-card">
+    <AdminEntityFormHeader ExportDisabled="@ExportDisabled" OnExport="ExportGridAsync">
+        <Title>@(_isEditing ? "Edit product price" : "Create product price")</Title>
+    </AdminEntityFormHeader>
+    <div class="card-body">
+        @* EditForm … *@
+    </div>
+</div>
+```
+
+```csharp
+private bool ExportDisabled => _loading || _result is null || _result.Items.Count == 0;
+
+private async Task ExportGridAsync(string format)
+{
+    var request = BuildExportRequest();
+    if (request is not null)
+        await GridExport.ExportAsync(format, request);
+}
+
+private GridExportRequest? BuildExportRequest() =>
+    GridExportBuilder.FromRows(
+        "product-prices",
+        "Product price list",
+        new[] { "Id", "ProductId", "GrossSalesPrice" },
+        _result?.Items.Select(item => (IReadOnlyList<string>)new[]
+        {
+            GridExportBuilder.Cell(item.Id),
+            GridExportBuilder.Cell(item.ProductId),
+            GridExportBuilder.Cell(item.GrossSalesPrice)
+        }));
+```
+
+What's special:
+- Green **`btn btn-success btn-sm`** label **EXPORT** with chevron (not full-size)
+- Dropdown options are **only CSV and PDF** — no other formats
+- Exports the **current grid rows** (respect filters/search), not the form draft
+- Disabled when grid is loading or empty
+- Read-only pages without a form card: put `<AdminExportDropdown>` on the grid toolbar instead (`StockOverview`, `StockMovementList`)
+
+**Files:** `Web/Components/Admin/AdminEntityFormHeader.razor`, `AdminExportDropdown.razor`, `Web/Services/GridExportService.cs`, `wwwroot/js/admin-export.js`
+
+---
+
+### 9️⃣ GRID SEARCH — Full-width toolbar search
+
+**Placement:** right side of the grid card header (`entity-grid-toolbar`), stretching from the **Search** label to the magnifying-glass icon.
+
+**Component:** `<AdminGridSearch>` — do **not** use a small standalone `<input type="search">`.
+
+```razor
+<div class="card-header bg-white entity-grid-toolbar">
+    <h2 class="h6 mb-0 fw-bold">Product price list</h2>
+    <AdminGridSearch @bind-Value="_searchDraft" OnSearch="ApplySearchAsync" />
+</div>
+```
+
+```csharp
+private string _searchDraft = string.Empty;
+
+private async Task ApplySearchAsync()
+{
+    _filter.Search = _searchDraft;
+    _filter.Page = 1;
+    await LoadGridAsync(_cts?.Token ?? CancellationToken.None);
+}
+```
+
+What's special:
+- `.entity-grid-search` uses `flex: 1` so the field fills the toolbar (title left, search grows to the right)
+- Input group: `[Search label][text field…][magnifying glass icon]`
+- Enter key triggers `OnSearch`; binding uses `_searchDraft` → `_filter.Search` on apply
+- CSS: `Web/wwwroot/css/admin.css` (`.entity-grid-toolbar`, `.entity-grid-search`)
+
+---
+
 ## ðŸŽ¨ Color Code Reference
 
 | Color | Hex | Button Class | When to Use |
 |-------|-----|--------------|------------|
 | ðŸ”µ Blue | `#0d6efd` | `btn-primary` | Create, Edit, Save |
-| ðŸŸ© Green | `#198754` | `btn-success` | Refresh, Approve |
+| ðŸŸ© Green | `#198754` | `btn-success` | Refresh, Approve, **EXPORT** dropdown |
 | ðŸ”´ Red | `#dc3545` | `btn-danger` | Delete, Clear, Reject |
 | ðŸŸ¦ Gray Fill | `#6c757d` | `btn-secondary` | Cancel |
 | âšª Gray Outline | `#6c757d` | `btn-outline-secondary` | Back navigation |
@@ -302,6 +387,9 @@ Before submitting a page, verify:
 - [ ] Table: `table-responsive` wrapper
 - [ ] Table: `table-striped table-hover`
 - [ ] Actions: icon-only (NO text in grids)
+- [ ] Toolbar: `<AdminGridSearch>` (full width, not a small input)
+- [ ] Form header: `<AdminEntityFormHeader>` with EXPORT (CSV/PDF)
+- [ ] `@inject IGridExportService GridExport` + `BuildExportRequest()` on list pages
 
 ### Modals
 - [ ] Classes: `modal fade show d-block`

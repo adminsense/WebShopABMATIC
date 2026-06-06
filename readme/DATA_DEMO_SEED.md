@@ -15,9 +15,9 @@
 | **Target database** | `WebShopABMATIC` |
 | **SQL Server instance** | `MULLER` (Windows authentication) |
 | **Seed script** | `scripts/seeds.sql` |
-| **Prerequisite** | EF schema applied (`InitialIdentity` + `InitialDomain` migrations) |
-| **Schemas with data** | `Crm`, `Customers`, `Accounting`, `Projects`, `Products` |
-| **Schemas not seeded** | `Tasks`, `Emails`, `Files`, `Logging`, `Settings`, and most optional `Projects` / `Products` tables |
+| **Prerequisite** | EF schema applied (`InitialIdentity` + `InitialDomain` + `OrderAdvancePaymentMollieColumns` + `CustomerIdentityUserId` + `ApplicationUserCustomerId`) |
+| **Schemas with data** | `Crm`, `Customers`, `Accounting`, `Projects`, `Products`, **`Settings`** |
+| **Schemas not seeded** | `Tasks`, `Emails`, `Logging`, and most optional `Projects` / `Products` tables |
 | **Identity users** | Not in `seeds.sql` — created on first dev run via `IdentitySeed` (`admin@webshop.com`, etc.) |
 | **Full legacy DB** | `ABMATIC.bacpac` exists (~3 GB) — **not** for local import; see [section 10](#10-full-legacy-database-abmaticbacpac) |
 
@@ -94,11 +94,12 @@ The full EF model defines **11 schemas** and **139+ tables**. The demo seed touc
 
 | Schema | Tables seeded | Purpose |
 |--------|---------------|---------|
-| **Crm** | `Country`, `City`, `CustomerStatuses`, `Manufacturer`, `Supplier` | Lookups for addresses and product master data |
+| **Crm** | `Country`, `City`, `CustomerStatuses`, `Manufacturer`, `Supplier`, **`PaymentTerms`** | Lookups + payment terms for orders |
 | **Customers** | `CustomerTypes`, `Customers` | B2B customers and `WebshopLogin` for storefront testing |
 | **Accounting** | `VatTypes` | 21% VAT on order lines |
-| **Projects** | `DeliveryTypes`, `OrderProcessingTypes`, `Project`, `Orders`, `OrderLines` | Sales pipeline and admin dashboard order KPIs |
-| **Products** | `StockLocations`, `Product`, `ProductStockLocations`, `WebshopStructures` | Catalog, low-stock alerts, webshop tree nodes |
+| **Projects** | `DeliveryTypes`, **`OrderStatuses`**, `OrderProcessingTypes`, `Project`, `Orders`, `OrderLines` | Sales pipeline, payment workflow flags |
+| **Products** | `StockLocations`, `Product`, **`ProductPrices`**, `ProductStockLocations`, `WebshopStructures` | Catalog prices + low-stock alerts |
+| **Settings** | **`PaymentMethods`** | Checkout pre-pay (Mollie) vs post-pay (invoice) |
 
 ### 4.2 Not populated (empty after seed)
 
@@ -108,9 +109,9 @@ The full EF model defines **11 schemas** and **139+ tables**. The demo seed touc
 | **Emails** | `EmailMessages`, `EmailQueues` | Out of scope for dashboard demo |
 | **Files** | `AzureFiles`, `StoredFiles` | No file-upload flows in current UI |
 | **Logging** | `AppErrors`, `ProjectActivities` | Operational data, not demo content |
-| **Settings** | `AppSettings`, `BaseCompany`, `DocumentTemplates` | Uses defaults / not required for lists |
-| **Projects** (other) | `OrderStatuses`, `OrderRemarks`, `OrderLogs`, … | Only orders + lines needed for KPIs |
-| **Products** (other) | `WebshopProductStructures`, `ProductPrices`, `ProductOptions`, … | Catalog list uses `Product` + flags |
+| **Settings** (other) | `AppSettings`, `BaseCompany`, `DocumentTemplates` | Uses defaults / not required for lists |
+| **Projects** (other) | `OrderRemarks`, `OrderLogs`, `OrderAdvancePayments`, … | Phase B checkout will populate advance payments |
+| **Products** (other) | `WebshopProductStructures`, `ProductOptions`, … | Catalog uses `Product` + **`ProductPrices`** |
 | **Customers** (other) | `Contact`, `CustomerContacts`, `CustomerDeliveryAddresses` | List uses `Customers` only |
 
 **Tasks** is part of the legacy model but is **not** used by `seeds.sql`.
@@ -194,6 +195,15 @@ Login accounts are **not** inserted by `seeds.sql`. In Development, `IdentitySee
 | `customer@webshop.com` | `Customer@12345` | Customer |
 
 Domain row for storefront: `Customers.Customers.WebshopLogin = customer@webshop.com` (seeded in SQL).
+
+On first dev run after Auth-1, `IdentitySeed` also sets:
+
+| Column | Table | Value |
+|--------|-------|--------|
+| `IdentityUserId` | `Customers.Customers` | `AspNetUsers.Id` for matching email |
+| `CustomerId` | `AspNetUsers` | `4` for `customer@webshop.com` |
+
+Checkout resolves customer by **`IdentityUserId` first**, then falls back to `WebshopLogin` / `CustomerEmail`.
 
 ---
 

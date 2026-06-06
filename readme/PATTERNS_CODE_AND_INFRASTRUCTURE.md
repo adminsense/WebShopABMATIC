@@ -595,6 +595,66 @@ All implementations support:
 
 ---
 
+### 📤 Grid Export (CSV / PDF) — Admin list pages
+
+**Standard placement (CRUD list + form):**
+
+| Element | Component | Location |
+|---------|-----------|----------|
+| EXPORT button | `<AdminEntityFormHeader>` → `<AdminExportDropdown>` | Top-right of **form** card header |
+| Grid search | `<AdminGridSearch>` | Grid card toolbar, full width |
+
+**Registration:** `Program.cs` → `services.AddScoped<IGridExportService, GridExportService>();`  
+**Script:** `App.razor` → `<script src="js/admin-export.js"></script>`
+
+**Razor page wiring (every `*List.razor`):**
+
+```razor
+@using WebShopABMATIC.Web.Services
+@inject IGridExportService GridExport
+
+<AdminEntityFormHeader ExportDisabled="@ExportDisabled" OnExport="ExportGridAsync">
+    <Title>Create / edit …</Title>
+</AdminEntityFormHeader>
+
+<div class="card-header bg-white entity-grid-toolbar">
+    <h2 class="h6 mb-0 fw-bold">… list</h2>
+    <AdminGridSearch @bind-Value="_searchDraft" OnSearch="ApplySearchAsync" />
+</div>
+```
+
+```csharp
+private bool ExportDisabled => _loading || _result is null || _result.Items.Count == 0;
+
+private async Task ExportGridAsync(string format)
+{
+    var request = BuildExportRequest();
+    if (request is not null)
+        await GridExport.ExportAsync(format, request);
+}
+
+private GridExportRequest? BuildExportRequest() =>
+    GridExportBuilder.FromRows(fileBaseName, title, headers, rows);
+```
+
+**Export behaviour:**
+
+| Format | Mechanism | User action |
+|--------|-----------|-------------|
+| **CSV** | UTF-8 BOM file download via `adminExport.downloadCsv` | Saves `.csv` locally |
+| **PDF** | HTML table → browser print dialog via `adminExport.printPdf` | Print or Save as PDF |
+
+- Only **CSV** and **PDF** — reject any other format in `GridExportService`
+- Export uses **loaded grid data** (current page / filter), column set matches visible grid (exclude Actions)
+- `ExportDisabled` when loading or no rows
+- Read-only grids without form card: `<AdminExportDropdown>` on grid header (`StockOverview`, `StockMovementList`)
+
+**CSS classes:** `.entity-form-card-header`, `.admin-export-dropdown`, `.entity-grid-toolbar`, `.entity-grid-search` in `wwwroot/css/admin.css`
+
+**Audit (future):** wire `ReportExport` in `readme/AUDITS.md` when `IAuditService` exists.
+
+---
+
 ### 🔘 Button Reference Guide - QUICK LOOKUP
 
 **Complete Button Color + Icon Reference for ALL Contexts:**
@@ -608,7 +668,7 @@ All implementations support:
 | `bi-pencil` | Grid Actions | `btn btn-sm btn-primary` | Edit record | 🔵 Blue | Edit |
 | `bi-trash` | Grid Actions | `btn btn-sm btn-danger` | Delete record | 🔴 Red | Delete |
 | `bi-eye` | Grid Actions | `btn btn-sm btn-info` | View details | 🔷 Light Blue | View |
-| `bi-download` | Grid Actions | `btn btn-sm btn-info` | Download | 🔷 Light Blue | Download |
+| `bi-download` | Form / grid export | `btn btn-success btn-sm` | EXPORT dropdown (CSV/PDF) | 🟩 Green | EXPORT |
 | `bi-plus-circle-fill` | Page Actions | `btn btn-primary` | Create new | 🔵 Blue | Create Item |
 | `bi-check-circle` | Form Actions | `btn btn-primary` | Submit/Save | 🔵 Blue | Save |
 | `bi-x` | Form Actions | `btn btn-secondary` | Cancel | 🟦 Gray | Cancel |
@@ -742,6 +802,7 @@ All implementations support:
 | **Apply Filters** | Filter section | `btn btn-primary` | `bi-funnel-fill` | Blue | Search/filter blocks |
 | **Clear** | Filter section | `btn btn-danger` | `bi-x-circle-fill` | Red | Beside "Apply Filters" |
 | **Create New** | Above grid | `btn btn-primary` | `bi-plus-circle-fill` | Blue | Grid header, create action |
+| **EXPORT** | Form card header (top-right) | `btn btn-success btn-sm` | `bi-download` | Green | CSV / PDF dropdown on list pages |
 | **Save** | Form footer | `btn btn-primary` | `bi-check-circle` | Blue | Forms |
 | **Cancel** | Form footer | `btn btn-secondary` | `bi-x` | Gray | Beside Save button |
 
@@ -1628,6 +1689,13 @@ All implementations support:
   □ Buttons properly sized (btn-sm)
   □ All buttons have specific title
   □ Disabled state during operation
+
+□ EXPORT & SEARCH (admin list pages)
+  □ Form header: AdminEntityFormHeader + green EXPORT (CSV/PDF only)
+  □ IGridExportService injected; BuildExportRequest matches grid columns
+  □ Export disabled when grid loading or empty
+  □ Grid toolbar: AdminGridSearch full width (not small input)
+  □ Enter key applies search; _searchDraft → _filter.Search
 
 □ FORM BUTTONS
   □ Submit: primary color, check icon
