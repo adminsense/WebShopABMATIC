@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using WebShopABMATIC.Application.Ports;
+using WebShopABMATIC.Application.Ports.Outbound;
 using WebShopABMATIC.Application.Store;
 using WebShopABMATIC.Data.Persistence;
 

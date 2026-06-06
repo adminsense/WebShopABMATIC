@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using WebShopABMATIC.Application.Admin.Products;
-using WebShopABMATIC.Application.Ports;
+using WebShopABMATIC.Application.Ports.Outbound;
 using WebShopABMATIC.Data.Entities;
 using WebShopABMATIC.Data.Persistence;
 

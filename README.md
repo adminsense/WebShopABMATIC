@@ -301,6 +301,8 @@ Sign in: `admin@webshop.com` / `Admin@12345` → `/admin`
 - 🌱 [`readme/DEMO_SEED_DATA.md`](readme/DEMO_SEED_DATA.md) — SQL demo seed: schemas, tables, run `seeds.sql` on MULLER
 - 🖥️ [`readme/ADMIN.md`](readme/ADMIN.md) — Admin panel: logins, registrations, stock, dashboards
 - 🛒 [`readme/WEB_STORE.md`](readme/WEB_STORE.md) — Web store: catalog, customer auth, checkout, stock display
+- 📦 [`readme/STOCK_OPERATIONS_PROPOSAL.md`](readme/STOCK_OPERATIONS_PROPOSAL.md) — Stock operations, checkout, and Mollie payments (analysis proposal)
+- ✅ [`readme/IMPLEMENTATION_ROADMAP.md`](readme/IMPLEMENTATION_ROADMAP.md) — Phased checklist (stock + checkout + Mollie)
 - 🖼️ [`readme/azureblob.md`](readme/azureblob.md) — Product images: `AzureFiles` ↔ `Product`, fictitious blob Phase 1
 - 🖥️ [`readme/MOCK_PROTOTYPE_GUIDE.md`](readme/MOCK_PROTOTYPE_GUIDE.md) — Mock layouts, menus, entities, and validation walkthrough
 - 🎨 [`readme/UI_PATTERNS_QUICK_START.md`](readme/UI_PATTERNS_QUICK_START.md) — Buttons, grids, forms (copy-paste)
