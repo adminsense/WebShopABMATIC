@@ -1,6 +1,6 @@
 # Admin Panel — Functional Specification
 
-![Status](https://img.shields.io/badge/Status-Specified%20%2B%20partial%20build-28a745?style=flat-square) ![Screens](https://img.shields.io/badge/Screens-3%20layout%20types-0d47a1?style=flat-square) ![Entities](https://img.shields.io/badge/Hub%20entities-22-512BD4?style=flat-square) ![UI](https://img.shields.io/badge/UI-IMMO%20shell-0dcaf0?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Implemented-28a745?style=flat-square) ![Screens](https://img.shields.io/badge/Screens-3%20layout%20types-0d47a1?style=flat-square) ![Entities](https://img.shields.io/badge/Hub%20entities-22-512BD4?style=flat-square) ![UI](https://img.shields.io/badge/UI-IMMO%20shell-0dcaf0?style=flat-square)
 
 > [!IMPORTANT]
 > **Executive Summary:** The WebShopABMATIC **Admin Panel** is the staff-facing Blazor Server application for managing catalog, customers, orders, stock, and settings. It follows the IMMO-style shell (sidebar, dashboard, hub cards, filter grids, forms) documented in the reference screenshots below. Access requires **Admin** or **Manager** roles via ASP.NET Core Identity.
@@ -12,18 +12,18 @@
 | **Layout screenshots** | 3 | ✅ Documented | `main_screen`, `menu_screen`, `forms_screen` |
 | **Sidebar menus** | 8 | ✅ Documented | Start through My profile |
 | **Hub entities** | 22 | ✅ Documented | Full registration map |
-| **Blazor routes** | 15+ | 🟡 Partial | Product CRUD + lists; placeholders for rest |
+| **Blazor routes** | 22+ | ✅ Complete | Dedicated `*List.razor` per hub entity (form + grid) |
 | **Stock rules** | 6 | ✅ Documented | Min/max, reserve, low-stock KPI |
 
 ### Implementation quality
 
 | Aspect | Status | Details |
 |--------|--------|---------|
-| **Shell + dashboard** | ✅ Complete | KPI cards wired to EF when DB available |
+| **Shell + dashboard** | ✅ Complete | KPI cards via `IAdminDashboardPort` → `AdminDashboardUseCase` |
 | **Hub navigation** | ✅ Complete | `AdminHubRegistry` mirrors sidebar |
-| **List screens** | 🟡 Partial | Product, Customer, Order |
-| **Forms** | 🟡 Partial | Product save; others planned |
-| **Financial widgets** | ⏳ Planned | YTD returns zero until accounting |
+| **List + forms** | ✅ Complete | All hub entities — Product pattern (form + grid) |
+| **Product media** | ✅ Complete | `ProductAdminUseCase` + `IProductMediaPort` |
+| **Financial widgets** | 🟡 Placeholder | YTD returns zero until accounting wired |
 
 ---
 
@@ -34,22 +34,48 @@
 | **Blazor app** | `Web/` | Runnable admin UI (`admin@webshop.com / Admin@12345`) |
 | **HTML prototype** | `docs/mock-admin.html` | Visual reference before Blazor |
 | **Layout screenshots** | `readme/images/*_screen.png` | Approved shell patterns |
-| **UI patterns** | [UI_PATTERNS_QUICK_START.md](UI_PATTERNS_QUICK_START.md) | Buttons, grids, forms |
-| **Infrastructure** | [INFRASTRUCTURE.md](INFRASTRUCTURE.md) | Auth, DB, configuration |
+| **UI patterns** | `readme/UI_PATTERNS_QUICK_START.md` | Buttons, grids, forms |
+| **Architecture** | `readme/INFRASTRUCTURE.md` | Hexagonal layers, DI, connection strings |
 
 ### Implementation status
 
 | Area | Status | Details |
 |------|--------|---------|
 | **Shell layout** | ✅ Implemented | Sidebar, top bar, logout, footer |
-| **Dashboard KPIs** | ✅ Implemented | `IAdminDashboardPort` + portfolio cards |
+| **Dashboard KPIs** | ✅ Implemented | `IAdminDashboardPort` → `AdminDashboardUseCase` |
 | **Hub navigation** | ✅ Implemented | 7 sidebar menus, entity cards |
-| **List + filters** | ✅ Product, Customer, Order | Apply/Clear, `table-dark`, edit icon |
-| **Forms** | ✅ Product CRUD | Other entities: routes ready (placeholder) |
+| **Entity CRUD pages** | ✅ Implemented | 21 `*List.razor` pages (form + grid per entity) |
+| **Product CRUD + media** | ✅ Implemented | `ProductAdminUseCase` + `IProductMediaPort` |
 | **Stock alerts on dashboard** | ✅ Implemented | `Quantity <= MinQuantity` count |
 | **Financial YTD widgets** | 🟡 Placeholder | Values return `0` until accounting wired |
 
 ---
+
+## 🏗️ Backend architecture (hexagonal)
+
+Admin Blazor pages **never** use EF directly. Each screen injects an **inbound port**; the Application layer runs **use cases**; Infrastructure provides **repository adapters**.
+
+```text
+ProductList.razor
+  → IProductAdminPort                    (Application/Ports/Inbound)
+  → ProductAdminUseCase                  (Application/UseCases/Admin)
+  → IProductRepository + IProductMediaPort (Application/Ports/Outbound)
+  → ProductRepository + LocalProductMediaService (Infrastructure)
+  → WebShopABMATICDbContext              (Persistence)
+```
+
+| Concern | Project / folder |
+|---------|------------------|
+| UI (driving adapter) | `Web/Components/Pages/Admin/` |
+| DTOs | `Application/Admin/{Entity}/` |
+| Inbound ports | `Application/Ports/Inbound/IAdminPorts.cs` |
+| Use cases | `Application/UseCases/Admin/*AdminUseCase.cs` |
+| Outbound ports | `Application/Ports/Outbound/I*Repository.cs` |
+| Domain rules | `Domain/` (e.g. `Catalog/Products/Product.cs`) |
+| EF repositories | `Infrastructure/Persistence/Repositories/` |
+| Hub card routes | `Infrastructure/Admin/AdminHubRegistry.cs` |
+
+DI: `AddWebShopApplication()` registers use cases; `AddWebShopInfrastructure()` registers repositories and Identity.
 
 ## 🖥️ 1. Visual layout (reference screenshots)
 
@@ -128,26 +154,64 @@ The admin UI is defined by **three screen types**. These match the legacy IMMO r
 
 | Role | Policy | Admin panel access |
 |------|--------|-------------------|
-| **Admin** | `AppPolicies.AdminOnly` | Full access; future: user/role management |
+| **Admin** | `AppPolicies.AdminOnly` | Full access; system user management (`/admin/system-users`) |
 | **Manager** | `AppPolicies.AdminOrManager` | All operational menus (catalog, sales, stock, …) |
-| **Customer** | `AppPolicies.CustomerOnly` | No admin — storefront only |
+| **Customer** | `AppPolicies.CustomerOnly` | No admin — storefront only (`/sign-in`, `/sign-up`) |
 
 > [!NOTE]
-> Staff permissions in the legacy model map from `StaffUser` flags (`Admin`, `ProductBeheer`, `Bestellingen`, …) to these roles over time.
+> **System users** (`AspNetUsers` with Admin/Manager roles) are managed at `/admin/system-users` via `ISystemUserAdminPort`. Legacy **`StaffUser`** rows in `[Settings].[StaffUsers]` remain for HR/module flags but are **not** used for login — the hub card was removed; the CRUD page stays at `/admin/staff-users` for reference.
 
-### 2.3 Development seed accounts
+### 2.3 Store registration
+
+| Route | Purpose |
+|-------|---------|
+| `/sign-up` | Create Identity account (Customer role) + `Customers` row + standard project |
+| `/sign-in` | Existing customer login |
+
+Registration uses `ICustomerRegistrationPort` → links `Customers.IdentityUserId` and `ApplicationUser.CustomerId`, then auto sign-in.
+
+### 2.4 Development seed accounts
 
 | Email | Password | Roles |
 |-------|----------|-------|
 | `admin@webshop.com` | `Admin@12345` | Admin, Manager |
 | `manager@webshop.com` | `Manager@12345` | Manager |
 
-Seeded automatically in **Development** (`IdentitySeedHostedService`).
+| `customer@webshop.com` | `Customer@12345` | Customer (linked to Customer #4) |
 
-### 2.4 Logout
+Seeded automatically in **Development** (`IdentitySeedHostedService`). Seed skips users that already exist.
+
+### 2.5 Logout
 
 - Red **Logout** in top bar (matches `main_screen.png`).
 - Ends cookie session; returns to login or storefront mock.
+
+### 2.6 Password reset (dev / admin)
+
+| Screen | Route | Who | Behaviour |
+|--------|-------|-----|-----------|
+| **System users** | `/admin/system-users` | Admin only | **Reset password** (grid or edit form): optional new password, or auto-generated temp password shown once |
+| **Customers** | `/admin/customers` | Admin only (button) | **Reset webshop password** for customers with linked Identity account (`IdentityUserId`) |
+
+Implementation: `IIdentityPasswordPort` → `UserManager.ResetPasswordAsync`. No email is sent in development — copy the temporary password from the success alert.
+
+### 2.7 Current user context (Auth-6)
+
+| Port | Implementation | Used for |
+|------|----------------|----------|
+| `ICurrentUserContext` | `HttpCurrentUserContext` | Resolve Identity user + legacy `StaffUsers.Id` bridge |
+
+`CurrentUserSnapshot` exposes:
+
+- `IdentityUserId`, `CustomerId`, `StaffUserId` (match `StaffUsers.Login` = Identity email)
+- `AuditLabel` — varchar audit columns (`Customers.CreatedBy`, `Products.LastModifiedBy`)
+- `ResolveLegacyUserId(fallback)` — int FK columns (`Orders.CreatedByUserId`, `AzureFiles.CreatedByUserId`)
+
+**Writes updated:** webshop checkout orders, admin order create, product save/media, customer save.
+
+**Legacy bridge:** no new column — staff resolved by email match; store orders fall back to customer `AccountManagerUserId`, then `1`.
+
+**Migration backlog** (int FK tables): `Orders`, `OrderLogs`, `AzureFiles`, `CalendarEntry`, `TaskItem`, `Timesheet`, `OrderStructure`.
 
 ---
 
@@ -165,7 +229,7 @@ Each sidebar item opens a **hub** of entity cards. Below: what staff **register 
 | 4 | **Customers** | B2B accounts, addresses, discounts | `Customer`, `CustomerDeliveryAddress`, `CustomerProductDiscount`, `CustomerType` |
 | 5 | **Sales** | Orders and fulfilment configuration | `Order`, `OrderStatus`, `DeliveryType` |
 | 6 | **Stock** | Warehouses and quantities | `ProductStockLocation`, `StockLocation` |
-| 7 | **Settings** | Payments, staff, VAT | `PaymentMethod`, `StaffUser`, `UserGroup`, `VatType` |
+| 7 | **Settings** | Payments, system users, VAT | `PaymentMethod`, `SystemUser` (Identity), `VatType` |
 | 8 | **My profile** | Logged-in staff user | `StaffUser` (profile form) |
 
 ---
@@ -238,8 +302,19 @@ Each sidebar item opens a **hub** of entity cards. Below: what staff **register 
 |--------|-------|----------------------|
 | **Stock location** | `StockLocation` | Warehouses and storage sites (`IsWarehouse`) |
 | **Product stock location** | `ProductStockLocation` | Per product/location: `Quantity`, `ReservedQuantity`, **`MinQuantity`**, **`MaxQuantity`**, last count |
+| **Stock movement** | `StockMovements` | Historical in/out/reservation journal (read-only) |
+| **Stock order (PO)** | `StockOrder` / `StockOrderLines` | Purchase orders (demo seed; CRUD in Phase E) |
 
-**Blazor status:** Hub + routes ready; full CRUD planned.
+**Blazor routes (Stock hub):**
+
+| Route | Page | Notes |
+|-------|------|-------|
+| `/admin/stock/overview` | Stock overview | KPI widgets + balance by location |
+| `/admin/stock/movements` | Movement journal | Date/product filters, read-only grid |
+| `/admin/product-stock` | Product stock | CRUD per product/location |
+| `/admin/stock-locations` | Stock locations | Warehouse master data |
+
+**Blazor status:** ✅ Overview + movement journal (Phase A); product stock + locations CRUD implemented.
 
 ---
 
@@ -247,13 +322,16 @@ Each sidebar item opens a **hub** of entity cards. Below: what staff **register 
 
 | Entity | Table | What staff registers |
 |--------|-------|----------------------|
+| **System user** | `AspNetUsers` | Admin/Manager login accounts (email, roles, lockout) — `/admin/system-users` |
 | **Payment method** | `PaymentMethod` | Pre-pay / post-pay methods (NL/FR/EN names) |
-| **Staff user** | `StaffUser` | Internal users, module flags, link to Identity |
-| **User group** | `UserGroup` | Teams (installation, service, transport) |
 | **VAT type** | `VatType` | VAT rates and invoice text |
 
+> Legacy **User group** and **Staff user** pages remain at `/admin/user-groups` and `/admin/staff-users` but are hidden from the Settings hub (MVP).
+
 > [!WARNING]
-> **Staff user** management and Identity user linking are **Admin-only** in the target security model. Managers use operational menus only.
+> **System user** management is **Admin-only** (`AppPolicies.AdminOnly`). Managers cannot create admin accounts.
+
+> Legacy **Staff user** (`[Settings].[StaffUsers]`) is deprecated for authentication. Use **System users** instead; StaffUsers CRUD remains for HR data migration.
 
 ---
 
@@ -277,7 +355,9 @@ Stock rules connect **admin maintenance**, **order workflow**, and the **storefr
 | Rule | Where enforced | Behaviour |
 |------|----------------|-----------|
 | **Low stock alert** | Dashboard **Stock operations** card | Count rows where `Quantity <= MinQuantity` |
-| **Low stock review** | `/admin/product-stock` (planned) | Filter and edit min/quantity per product/location |
+| **Low stock review** | `/admin/product-stock` | Filter and edit min/quantity per product/location |
+| **Movement journal** | `/admin/stock/movements` | Filter by date, product, reservation |
+| **Stock overview** | `/admin/stock/overview` | KPIs: low stock, movements (7d), open POs |
 | **Inactive location** | `ProductStockLocation.IsInactive` | Exclude from availability (planned UI filter) |
 | **Negative quantity** | Form validation (planned) | Block save if `Quantity < 0` |
 | **Reserved vs available** | Business logic (planned) | Available = `Quantity - ReservedQuantity` (conceptual) |

@@ -1,4 +1,5 @@
 using WebShopABMATIC.Application.Admin.Products;
+using WebShopABMATIC.Application.Ports.Outbound;
 using WebShopABMATIC.Infrastructure.Persistence.Products;
 using WebShopABMATIC.Infrastructure.Persistence.Mappers;
 using WebShopABMATIC.Application.Common;
@@ -13,8 +14,13 @@ namespace WebShopABMATIC.Infrastructure.Persistence.Repositories;
 public sealed class ProductRepository : IProductRepository
 {
     private readonly WebShopABMATICDbContext _db;
+    private readonly ICurrentUserContext _currentUser;
 
-    public ProductRepository(WebShopABMATICDbContext db) => _db = db;
+    public ProductRepository(WebShopABMATICDbContext db, ICurrentUserContext currentUser)
+    {
+        _db = db;
+        _currentUser = currentUser;
+    }
 
     public async Task<PagedResult<ProductDto>> GetProductsAsync(ProductListFilter filter, CancellationToken cancellationToken = default)
     {
@@ -107,7 +113,7 @@ public sealed class ProductRepository : IProductRepository
             entity = await _db.Products.FirstAsync(p => p.ProductId == product.ProductId, cancellationToken);
         }
 
-        ProductPersistenceMapper.ApplyToEntity(product, entity);
+        ProductPersistenceMapper.ApplyToEntity(product, entity, (await _currentUser.GetCurrentUserAsync(cancellationToken)).AuditLabel);
         await _db.SaveChangesAsync(cancellationToken);
         return entity.ProductId;
     }

@@ -89,7 +89,7 @@ public sealed class StoreOrderRepository : IStoreOrderRepository
         {
             IsAccepted = false,
             CreatedAt = DateTime.UtcNow,
-            CreatedByUserId = 1,
+            CreatedByUserId = command.CreatedByUserId,
             ProjectId = command.ProjectId,
             GeneralDiscount = 0,
             DeliveryTypeId = command.DeliveryTypeId,
