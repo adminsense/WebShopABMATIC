@@ -1,9 +1,9 @@
 # Admin Panel — Functional Specification
 
-![Status](https://img.shields.io/badge/Status-Implemented-28a745?style=flat-square) ![Screens](https://img.shields.io/badge/Screens-3%20layout%20types-0d47a1?style=flat-square) ![Entities](https://img.shields.io/badge/Hub%20entities-22-512BD4?style=flat-square) ![UI](https://img.shields.io/badge/UI-IMMO%20shell-0dcaf0?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Implemented-28a745?style=flat-square) ![Screens](https://img.shields.io/badge/Screens-3%20layout%20types-0d47a1?style=flat-square) ![Entities](https://img.shields.io/badge/Hub%20entities-22-512BD4?style=flat-square) ![UI](https://img.shields.io/badge/UI-AB-MATIC%20shell-0dcaf0?style=flat-square)
 
 > [!IMPORTANT]
-> **Executive Summary:** The WebShopABMATIC **Admin Panel** is the staff-facing Blazor Server application for managing catalog, customers, orders, stock, and settings. It follows the IMMO-style shell (sidebar, dashboard, hub cards, filter grids, forms) documented in the reference screenshots below. Access requires **Admin** or **Manager** roles via ASP.NET Core Identity.
+> **Executive Summary:** The WebShopABMATIC **Admin Panel** is the staff-facing Blazor Server application for managing catalog, customers, orders, stock, and settings. It follows the AB-MATIC-style shell (sidebar, dashboard, hub cards, filter grids, forms) documented in the reference screenshots below. Access requires **Admin** or **Manager** roles via ASP.NET Core Identity.
 
 ### Coverage statistics
 
@@ -34,8 +34,8 @@
 | **Blazor app** | `Web/` | Runnable admin UI (`admin@webshop.com / Admin@12345`) |
 | **HTML prototype** | `docs/mock-admin.html` | Visual reference before Blazor |
 | **Layout screenshots** | `readme/images/*_screen.png` | Approved shell patterns |
-| **UI patterns** | `readme/UI_PATTERNS_QUICK_START.md` | Buttons, grids, forms |
-| **Architecture** | `readme/INFRASTRUCTURE.md` | Hexagonal layers, DI, connection strings |
+| **UI patterns** | `readme/PATTERNS_UI_QUICK_START.md` | Buttons, grids, forms |
+| **Architecture** | `readme/SPEC_INFRASTRUCTURE.md` | Hexagonal layers, DI, connection strings |
 
 ### Implementation status
 
@@ -79,7 +79,7 @@ DI: `AddWebShopApplication()` registers use cases; `AddWebShopInfrastructure()` 
 
 ## 🖥️ 1. Visual layout (reference screenshots)
 
-The admin UI is defined by **three screen types**. These match the legacy IMMO reference app and our HTML/Blazor mocks.
+The admin UI is defined by **three screen types**. These match the legacy AB-MATIC reference app and our HTML/Blazor mocks.
 
 ### 1.1 Main dashboard — `main_screen.png`
 
@@ -456,7 +456,7 @@ dotnet run
 
 ## ✅ 8. Validation and UI standards
 
-All admin screens MUST follow [UI_PATTERNS_QUICK_START.md](UI_PATTERNS_QUICK_START.md):
+All admin screens MUST follow [PATTERNS_UI_QUICK_START.md](PATTERNS_UI_QUICK_START.md):
 
 | Control | Rule |
 |---------|------|

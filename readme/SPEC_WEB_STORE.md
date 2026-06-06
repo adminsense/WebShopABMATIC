@@ -35,7 +35,7 @@
 | **HTML prototype** | `docs/mock-loja.html` | Runnable UX reference (entry point for mocks) |
 | **Product images** | `docs/images/product1.png` … `product6.png` | Catalog and detail imagery |
 | **Admin data** | `Product`, `Customer`, `Order`, … | Maintained via admin use cases + repositories |
-| **Admin spec** | `readme/ADMIN.md` | Registrations that feed the store |
+| **Admin spec** | `readme/SPEC_ADMIN.md` | Registrations that feed the store |
 
 ### Implementation status
 
@@ -244,7 +244,7 @@ The store does not own master data; it **reads** configurations maintained in th
 
 ## 📦 5. Stock validation
 
-Stock behaviour must stay **consistent** with admin rules ([ADMIN.md §4](ADMIN.md#4-stock-validation-and-alerts)).
+Stock behaviour must stay **consistent** with admin rules ([SPEC_ADMIN.md §4](SPEC_ADMIN.md#4-stock-validation-and-alerts)).
 
 ### 5.1 Display rules (catalog and detail)
 
@@ -310,7 +310,7 @@ Configured by staff in admin → **Sales** → **Order status**.
 | **Open orders** | Awaiting acceptance / shipment |
 | **Quick reorder** | Copy lines from past `Order` (planned) |
 
-No financial YTD dashboard on the store — that remains **admin** ([ADMIN.md §5](ADMIN.md#5-dashboards-and-reporting)).
+No financial YTD dashboard on the store — that remains **admin** ([SPEC_ADMIN.md §5](SPEC_ADMIN.md#5-dashboards-and-reporting)).
 
 ### 7.2 Operational visibility (admin only)
 

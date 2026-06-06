@@ -18,6 +18,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.1" />
+    <PackageReference Include="Mollie.Api" Version="4.19.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Application\WebShopABMATIC.Application.csproj" />

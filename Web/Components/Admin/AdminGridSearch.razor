@@ -1,0 +1,32 @@
+<div class="entity-grid-search">
+    <div class="input-group">
+        <span class="input-group-text entity-grid-search-label">Search</span>
+        <input type="search"
+               class="form-control"
+               placeholder="Type to filter…"
+               value="@Value"
+               @oninput="OnInput"
+               @onkeydown="OnKeyDown" />
+        <span class="input-group-text entity-grid-search-icon"><i class="bi bi-search"></i></span>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public EventCallback OnSearch { get; set; }
+
+    private async Task OnInput(ChangeEventArgs e)
+    {
+        Value = e.Value?.ToString() ?? "";
+        await ValueChanged.InvokeAsync(Value);
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && OnSearch.HasDelegate)
+        {
+            await OnSearch.InvokeAsync();
+        }
+    }
+}

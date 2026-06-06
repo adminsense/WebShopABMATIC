@@ -30,6 +30,7 @@ public sealed class StoreOrderCreateCommand
     public int BetaaltermijnId { get; init; }
     public int DeliveryAddressId { get; init; }
     public int PaymentMethodId { get; init; }
+    public int CreatedByUserId { get; init; } = 1;
     public bool IsPrePay { get; init; }
     public decimal DeliveryFee { get; init; }
     public decimal VatPercentage { get; init; }

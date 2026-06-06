@@ -1,4 +1,4 @@
-# ðŸŽ¨ UI Patterns - Quick Start Guide for Developers
+﻿# ðŸŽ¨ UI Patterns - Quick Start Guide for Developers
 
 ![Status](https://img.shields.io/badge/Status-Quick%20Reference-28a745?style=flat-square) ![Copy-Paste](https://img.shields.io/badge/Copy--Paste-Ready-0dcaf0?style=flat-square) ![UI%20Patterns](https://img.shields.io/badge/UI%20Patterns-Complete-512BD4?style=flat-square)
 
@@ -8,7 +8,7 @@
 
 ## Mock prototype layout (WebShopABMATIC)
 
-The HTML admin mock in `docs/mock-admin.html` follows the **IMMO BELGIUM** admin shell. Three screen types map to the reference images in `readme/images/`:
+The HTML admin mock in `docs/mock-admin.html` follows the **AB-MATIC** admin shell. Three screen types map to the reference images in `readme/images/`:
 
 | Screen | Image | Mock file / view |
 |--------|-------|------------------|
@@ -20,7 +20,7 @@ Storefront + admin entry: `docs/mock-loja.html` (**Admin Panel** after `StaffUse
 
 **Full menu/entity/table documentation:** [MOCK_PROTOTYPE_GUIDE.md](MOCK_PROTOTYPE_GUIDE.md)
 
-The button, grid, and form templates below are what the mock (and future Blazor pages) must follow.
+The button, grid, and form patterns below are what the mock (and future Blazor pages) must follow.
 
 ---
 
@@ -58,7 +58,7 @@ The button, grid, and form templates below are what the mock (and future Blazor 
 
 ---
 
-## ðŸ“‹ Copy-Paste Templates
+## ðŸ“‹ Copy-Paste Snippets
 
 ### 1ï¸âƒ£ BACK BUTTON - Always use this exactly
 
@@ -264,7 +264,7 @@ private void ValidateFieldOnBlur(string fieldId, string value, string fieldName 
 
 ### 8️⃣ EXPORT BUTTON — Form card header (green dropdown)
 
-**Placement:** top-right of the **create/edit form** card header (same row as the form title). Matches the IMMO admin mock.
+**Placement:** top-right of the **create/edit form** card header (same row as the form title). Matches the AB-MATIC admin mock.
 
 **Component:** `<AdminEntityFormHeader>` wraps the title and embeds `<AdminExportDropdown>`.
 
@@ -441,19 +441,19 @@ Before submitting a page, verify:
 ## ðŸš€ Lightning Speed Lookup
 
 **Q: How do I style the back button?**
-A: Copy template #1 above. Use `oi-arrow-left` and `btn-outline-secondary btn-sm`.
+A: Copy snippet #1 above. Use `oi-arrow-left` and `btn-outline-secondary btn-sm`.
 
 **Q: How do I validate a form field?**
-A: Copy template #5. Use `@onblur`, `FieldValidationCss.FormControl()`, and `ValidationFeedbackMessage`.
+A: Copy snippet #5. Use `@onblur`, `FieldValidationCss.FormControl()`, and `ValidationFeedbackMessage`.
 
 **Q: How do I make grid action buttons?**
-A: Copy template #2. Use `btn-sm btn-primary` and `btn-sm btn-danger`, icon-only.
+A: Copy snippet #2. Use `btn-sm btn-primary` and `btn-sm btn-danger`, icon-only.
 
 **Q: How do I show a delete confirmation?**
-A: Copy template #6. Need `modal fade show d-block` and warning text in red.
+A: Copy snippet #6. Need `modal fade show d-block` and warning text in red.
 
 **Q: What's the table structure?**
-A: Copy template #7. Must have `table-dark`, `@key="item.Id"`, and `table-responsive` wrapper.
+A: Copy snippet #7. Must have `table-dark`, `@key="item.Id"`, and `table-responsive` wrapper.
 
 **Q: What color for [action]?**
 A: See Color Code Reference above. Primary (blue) for main actions, danger (red) for delete.
@@ -462,12 +462,12 @@ A: See Color Code Reference above. Primary (blue) for main actions, danger (red)
 
 ## ðŸ“ž Still Confused?
 
-1. Find your page in `Immo/Pages/`
-2. Look at `ContactRole.razor` - it has EVERYTHING!
+1. Find your page in `Web/Components/Pages/Admin/`
+2. Look at `CustomerList.razor` - it has EVERYTHING!
 3. Copy what you need from this guide
 4. Run the app and verify it looks right
 
-**Remember:** When in doubt, copy ContactRole.razor - it's the reference standard!
+**Remember:** When in doubt, copy CustomerList.razor - it's the reference standard!
 
 ---
 

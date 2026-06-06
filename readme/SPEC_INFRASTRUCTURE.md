@@ -308,9 +308,9 @@ This section records everything delivered beyond the baseline items 1–5 above.
 
 ✅ All added to `WebShopABMATIC.sln`
 
-### Admin UI (IMMO-style layout)
+### Admin UI (AB-MATIC-style layout)
 
-Matches `docs/mock-admin.html` and [UI_PATTERNS_QUICK_START.md](UI_PATTERNS_QUICK_START.md):
+Matches `docs/mock-admin.html` and [PATTERNS_UI_QUICK_START.md](PATTERNS_UI_QUICK_START.md):
 
 | Route | Screen | Status |
 |-------|--------|--------|
@@ -348,7 +348,7 @@ dotnet run
 2. Sign in: `admin@webshop.com` / `Admin@12345`
 3. You are redirected to `/admin`
 
-> **Note:** Product/Customer/Order lists read from the legacy domain schema. Apply EF migrations, then run `scripts/seeds.sql` on `WebShopABMATIC` — see [DEMO_SEED_DATA.md](DEMO_SEED_DATA.md). Alternatively use `scripts/WebShopABMATIC-create-local.sql` or an existing ABMATIC database. Dashboard KPIs safely return `0` if tables are missing.
+> **Note:** Product/Customer/Order lists read from the legacy domain schema. Apply EF migrations, then run `scripts/seeds.sql` on `WebShopABMATIC` — see [DATA_DEMO_SEED.md](DATA_DEMO_SEED.md). Alternatively use `scripts/WebShopABMATIC-create-local.sql` or an existing ABMATIC database. Dashboard KPIs safely return `0` if tables are missing.
 
 ### HTML prototypes and Blazor storefront
 
@@ -361,7 +361,7 @@ dotnet run
 
 ## 🖼️ 6. Media (product images)
 
-**Target model:** legacy `Files.AzureFiles` linked to `Products.Product` via `ProductId` (`IsPrimaryImage`, `PublishToWeb`, `BlobRef`). Phase 1 uses a **fictitious local blob** under `wwwroot/media/products/`. Full spec: [azureblob.md](azureblob.md).
+**Target model:** legacy `Files.AzureFiles` linked to `Products.Product` via `ProductId` (`IsPrimaryImage`, `PublishToWeb`, `BlobRef`). Phase 1 uses a **fictitious local blob** under `wwwroot/media/products/`. Full spec: [AZUREBLOB_open.md](AZUREBLOB_open.md).
 
 ### 6.1 Current storefront (prototype)
 
