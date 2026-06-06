@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
+using WebShopABMATIC.Application;
 using WebShopABMATIC.Application.Auth;
 using WebShopABMATIC.Infrastructure;
 using WebShopABMATIC.Infrastructure.Identity;
@@ -50,6 +51,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
+builder.Services.AddWebShopApplication();
 builder.Services.AddWebShopInfrastructure(builder.Configuration);
 builder.Services.AddScoped<StoreCartService>();
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();

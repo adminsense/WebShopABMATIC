@@ -1,0 +1,167 @@
+﻿@page "/admin/order-statuses"
+@layout AdminLayout
+@attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
+@using WebShopABMATIC.Application.Admin.OrderStatuses
+@using WebShopABMATIC.Application.Common
+@using WebShopABMATIC.Application.Auth
+@using WebShopABMATIC.Application.Ports
+@inject IOrderStatusAdminPort AdminPort
+@implements IAsyncDisposable
+
+<PageTitle>Order status</PageTitle>
+
+<div class="entity-page">
+    <a class="btn btn-secondary btn-back mb-3" href="/admin/hub/sales" data-enhance-nav="false"><span class="oi oi-arrow-left"></span> Back to list</a>
+    <div class="entity-page-header page-header">
+        <h1 class="h3 mb-1"><i class="bi bi-flag text-primary"></i> Order status</h1>
+        <p class="mb-0">Order workflow statuses.</p>
+    </div>
+    <div class="card shadow-sm border entity-form-card admin-form-card">
+        <div class="card-header card-header-catalog"><h2 class="h6 mb-0 fw-bold">@(_isEditing ? "Edit order status" : "Create order status")</h2></div>
+        <div class="card-body">
+            @if (_formLoading) { <p class="text-muted mb-0">Loadingâ€¦</p> }
+            else {
+                <EditForm Model="_model" OnValidSubmit="SaveAsync">
+                    <DataAnnotationsValidator />
+                    <div class="entity-form-fields"><div class="row g-2">
+                        <div class="col-md-4">
+                            <label class="form-label" for="f-name">Name *</label>
+                            <InputText id="f-name" class="form-control form-control-sm" @bind-Value="_model.Name" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="f-namefr">NameFr *</label>
+                            <InputText id="f-namefr" class="form-control form-control-sm" @bind-Value="_model.NameFr" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="f-screenmode">ScreenMode *</label>
+                            <InputText id="f-screenmode" class="form-control form-control-sm" @bind-Value="_model.ScreenMode" required />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label" for="f-sortorder">SortOrder</label>
+                            <InputNumber id="f-sortorder" class="form-control form-control-sm" @bind-Value="_model.SortOrder" />
+                        </div>
+                        <div class="col-12 d-flex gap-2 pt-1">
+                            <button type="submit" class="btn btn-primary" disabled="@_saving">@(_isEditing ? "Update" : "Create")</button>
+                            <button type="button" class="btn btn-secondary" @onclick="CancelFormAsync" disabled="@_saving"><i class="bi bi-x me-1"></i>Cancel</button>
+                        </div>
+                    </div></div>
+                </EditForm>
+                @if (!string.IsNullOrEmpty(_formError)) { <div class="alert alert-danger mt-3 mb-0">@_formError</div> }
+            }
+        </div>
+    </div>
+    <div class="card shadow-sm border entity-grid-card">
+        <div class="card-header bg-white border-bottom py-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <h2 class="h6 mb-0 fw-bold">Order status list</h2>
+            <div class="grid-search-wrap"><div class="input-group input-group-sm">
+                <input type="search" class="form-control" placeholder="Searchâ€¦" @bind="_searchDraft" @bind:event="oninput" @onkeydown="OnSearchKeyDown" />
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+            </div></div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="table-dark"><tr><th>Id</th>
+                        <th>Name</th>
+                        <th>ScreenMode</th>
+                    <th class="text-center">Actions</th></tr></thead>
+                <tbody>
+                    @if (_loading) { <tr><td colspan="4" class="text-center text-muted py-4">Loadingâ€¦</td></tr> }
+                    else if (!string.IsNullOrEmpty(_gridError)) { <tr><td colspan="4" class="text-center text-danger py-4">@_gridError</td></tr> }
+                    else if (_result is null || _result.Items.Count == 0) { <tr><td colspan="4" class="text-center text-muted py-4">No records found.</td></tr> }
+                    else { @foreach (var item in _result.Items) {
+                        <tr @key="item.Id" class="@(_model.Id == item.Id ? "table-active" : null)">
+                            <td>@item.Id</td>
+                                <td>@item.Name</td>
+                                <td>@item.ScreenMode</td>
+                            <td class="text-center"><div class="btn-group btn-group-sm">
+                                <a class="btn btn-sm btn-primary" href="@($"/admin/order-statuses?edit={item.Id}")" data-enhance-nav="false"><i class="bi bi-pencil"></i></a>
+                                        <button type="button" class="btn btn-sm btn-danger" @onclick="() => PromptDelete(item)" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                            </div></td>
+                        </tr> } }
+                </tbody>
+            </table>
+        </div>
+        @if (_result is not null && !_loading) { <div class="card-footer bg-white text-muted small py-2">@_result.TotalCount total Â· page @_result.Page</div> }
+    </div>
+</div>
+
+@if (_showDeleteConfirm && _itemToDelete is not null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0"><h5 class="modal-title">Confirm deletion</h5><button type="button" class="btn-close" @onclick="CancelDelete" disabled="@_deleting"></button></div>
+                <div class="modal-body"><p class="mb-0">Delete record <strong>#@_itemToDelete.Id</strong>?</p></div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelDelete" disabled="@_deleting">Cancel</button>
+                    <button type="button" class="btn btn-danger" @onclick="ConfirmDeleteAsync" disabled="@_deleting">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "edit")] public int? EditId { get; set; }
+    private CancellationTokenSource? _cts;
+    private OrderStatusListFilter _filter = new();
+    private OrderStatusEditDto _model = new OrderStatusEditDto();
+    private string _searchDraft = string.Empty;
+    private bool _loading = true, _formLoading, _saving, _deleting, _showDeleteConfirm, _disposed, _initialized;
+    private string? _formError, _gridError;
+    private PagedResult<OrderStatusDto>? _result;
+    private OrderStatusDto? _itemToDelete;
+    private bool _isEditing => _model.Id > 0;
+
+    protected override async Task OnInitializedAsync() {
+        _cts = new CancellationTokenSource();
+        await LoadGridAsync(_cts.Token);
+        if (EditId is > 0) await EditAsync(EditId.Value);
+        _initialized = true;
+    }
+    protected override async Task OnParametersSetAsync() {
+        if (!_initialized || _disposed || EditId is not > 0 || _model.Id == EditId) return;
+        await EditAsync(EditId.Value);
+    }
+    private async Task LoadGridAsync(CancellationToken ct) {
+        _loading = true; _gridError = null;
+        try { _result = await AdminPort.GetOrderStatusesAsync(_filter, ct); }
+        catch (OperationCanceledException) { return; }
+        catch (Exception ex) { _result = null; _gridError = ex.Message; }
+        finally { _loading = false; await InvokeAsync(StateHasChanged); }
+    }
+    private async Task ApplySearchAsync() { _filter.Search = _searchDraft; _filter.Page = 1; _cts?.Cancel(); _cts = new CancellationTokenSource(); await LoadGridAsync(_cts.Token); }
+    private async Task OnSearchKeyDown(KeyboardEventArgs e) { if (e.Key == "Enter") await ApplySearchAsync(); }
+    private async Task EditAsync(int id) {
+        _formLoading = true; _formError = null;
+        try {
+            var item = await AdminPort.GetForEditAsync(id, _cts?.Token ?? CancellationToken.None);
+            if (item is null) { _formError = "Record not found."; return; }
+            _model = item;
+        } finally { _formLoading = false; }
+    }
+    private async Task SaveAsync() {
+        _saving = true; _formError = null;
+        try {
+            var id = await AdminPort.SaveAsync(_model, _cts?.Token ?? CancellationToken.None);
+            await LoadGridAsync(_cts?.Token ?? CancellationToken.None);
+            await EditAsync(id);
+        } catch (Exception ex) { _formError = ex.Message; }
+        finally { _saving = false; }
+    }
+    private Task CancelFormAsync() { _formError = null; _model = new OrderStatusEditDto(); return Task.CompletedTask; }
+    private void PromptDelete(OrderStatusDto item) { _itemToDelete = item; _showDeleteConfirm = true; }
+    private void CancelDelete() { _showDeleteConfirm = false; _itemToDelete = null; }
+    private async Task ConfirmDeleteAsync() {
+        if (_itemToDelete is null) return;
+        _deleting = true;
+        try {
+            if (!await AdminPort.DeleteAsync(_itemToDelete.Id, _cts?.Token ?? CancellationToken.None)) { _formError = "Record could not be deleted."; return; }
+            if (_model.Id == _itemToDelete.Id) await CancelFormAsync();
+            CancelDelete(); await LoadGridAsync(_cts?.Token ?? CancellationToken.None);
+        } finally { _deleting = false; }
+    }
+    public async ValueTask DisposeAsync() { _disposed = true; if (_cts is not null) { await _cts.CancelAsync(); _cts.Dispose(); } }
+}
