@@ -1,86 +1,183 @@
-@page "/admin/customers"
+﻿@page "/admin/customers"
 @layout AdminLayout
 @attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
 @using WebShopABMATIC.Application.Admin.Customers
 @using WebShopABMATIC.Application.Common
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
-@inject ICustomerAdminPort CustomerPort
+@inject ICustomerAdminPort AdminPort
 @implements IAsyncDisposable
 
 <PageTitle>Customer</PageTitle>
 
-<div class="list-header">
-    <h1><i class="bi bi-person-badge"></i> Customer</h1>
-    <button type="button" class="btn btn-success btn-sm" @onclick="RefreshAsync">
-        <i class="bi bi-arrow-repeat me-1"></i>Refresh
-    </button>
-</div>
-
-<a class="btn btn-outline-secondary btn-sm mb-3" href="/admin/hub/customers"><span class="oi oi-arrow-left"></span> Back</a>
-
-<div class="filter-panel mb-3">
-    <div class="row g-3">
-        <div class="col-md-6">
-            <label class="form-label small">Search</label>
-            <input class="form-control form-control-sm" @bind="_filter.Search" placeholder="Name, email, login…" />
+<div class="entity-page">
+    <a class="btn btn-secondary btn-back mb-3" href="/admin/hub/customers" data-enhance-nav="false"><span class="oi oi-arrow-left"></span> Back to list</a>
+    <div class="entity-page-header page-header">
+        <h1 class="h3 mb-1"><i class="bi bi-person-badge text-primary"></i> Customer</h1>
+        <p class="mb-0">B2B customer accounts.</p>
+    </div>
+    <div class="card shadow-sm border entity-form-card admin-form-card">
+        <div class="card-header card-header-catalog"><h2 class="h6 mb-0 fw-bold">@(_isEditing ? "Edit customer" : "Create customer")</h2></div>
+        <div class="card-body">
+            @if (_formLoading) { <p class="text-muted mb-0">Loadingâ€¦</p> }
+            else {
+                <EditForm Model="_model" OnValidSubmit="SaveAsync">
+                    <DataAnnotationsValidator />
+                    <div class="entity-form-fields"><div class="row g-2">
+                        <div class="col-md-6">
+                            <label class="form-label" for="f-customername">Name *</label>
+                            <InputText id="f-customername" class="form-control form-control-sm" @bind-Value="_model.CustomerName" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="f-webshoplogin">Webshop login</label>
+                            <InputText id="f-webshoplogin" class="form-control form-control-sm" @bind-Value="_model.WebshopLogin" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="f-customeremail">Email *</label>
+                            <InputText id="f-customeremail" class="form-control form-control-sm" @bind-Value="_model.CustomerEmail" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="f-customerphone">Phone *</label>
+                            <InputText id="f-customerphone" class="form-control form-control-sm" @bind-Value="_model.CustomerPhone" required />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" for="f-customertypeid">CustomerTypeId *</label>
+                            <InputNumber id="f-customertypeid" class="form-control form-control-sm" @bind-Value="_model.CustomerTypeId" required />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" for="f-customercityid">CityId *</label>
+                            <InputNumber id="f-customercityid" class="form-control form-control-sm" @bind-Value="_model.CustomerCityId" required />
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <div class="form-check mb-1">
+                                <InputCheckbox class="form-check-input" @bind-Value="_model.Locked" id="f-locked" />
+                                <label class="form-check-label" for="f-locked">Locked</label>
+                            </div>
+                        </div>
+                        <div class="col-12 d-flex gap-2 pt-1">
+                            <button type="submit" class="btn btn-primary" disabled="@_saving">@(_isEditing ? "Update" : "Create")</button>
+                            <button type="button" class="btn btn-secondary" @onclick="CancelFormAsync" disabled="@_saving"><i class="bi bi-x me-1"></i>Cancel</button>
+                        </div>
+                    </div></div>
+                </EditForm>
+                @if (!string.IsNullOrEmpty(_formError)) { <div class="alert alert-danger mt-3 mb-0">@_formError</div> }
+            }
         </div>
     </div>
-    <div class="filter-actions">
-        <button type="button" class="btn btn-primary" @onclick="ApplyAsync"><i class="bi bi-funnel-fill me-1"></i>Apply Filters</button>
-        <button type="button" class="btn btn-danger" @onclick="ClearAsync"><i class="bi bi-x-circle-fill me-1"></i>Clear</button>
+    <div class="card shadow-sm border entity-grid-card">
+        <div class="card-header bg-white border-bottom py-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <h2 class="h6 mb-0 fw-bold">Customer list</h2>
+            <div class="grid-search-wrap"><div class="input-group input-group-sm">
+                <input type="search" class="form-control" placeholder="Searchâ€¦" @bind="_searchDraft" @bind:event="oninput" @onkeydown="OnSearchKeyDown" />
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+            </div></div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="table-dark"><tr><th>CustomerId</th>
+                        <th>CustomerName</th>
+                        <th>WebshopLogin</th>
+                        <th>CustomerEmail</th>
+                    <th class="text-center">Actions</th></tr></thead>
+                <tbody>
+                    @if (_loading) { <tr><td colspan="5" class="text-center text-muted py-4">Loadingâ€¦</td></tr> }
+                    else if (!string.IsNullOrEmpty(_gridError)) { <tr><td colspan="5" class="text-center text-danger py-4">@_gridError</td></tr> }
+                    else if (_result is null || _result.Items.Count == 0) { <tr><td colspan="5" class="text-center text-muted py-4">No records found.</td></tr> }
+                    else { @foreach (var item in _result.Items) {
+                        <tr @key="item.CustomerId" class="@(_model.CustomerId == item.CustomerId ? "table-active" : null)">
+                            <td>@item.CustomerId</td>
+                                <td>@item.CustomerName</td>
+                                <td>@item.WebshopLogin</td>
+                                <td>@item.CustomerEmail</td>
+                            <td class="text-center"><div class="btn-group btn-group-sm">
+                                <a class="btn btn-sm btn-primary" href="@($"/admin/customers?edit={item.CustomerId}")" data-enhance-nav="false"><i class="bi bi-pencil"></i></a>
+                                        <button type="button" class="btn btn-sm btn-danger" @onclick="() => PromptDelete(item)" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                            </div></td>
+                        </tr> } }
+                </tbody>
+            </table>
+        </div>
+        @if (_result is not null && !_loading) { <div class="card-footer bg-white text-muted small py-2">@_result.TotalCount total Â· page @_result.Page</div> }
     </div>
 </div>
 
-@if (_loading) { <p class="text-muted">Loading…</p> }
-else if (_result?.Items.Count == 0) { <div class="alert alert-info">No customers found.</div> }
-else if (_result is not null)
+@if (_showDeleteConfirm && _itemToDelete is not null)
 {
-    <div class="table-wrap">
-        <table class="table table-striped table-hover mb-0">
-            <thead class="table-dark">
-                <tr>
-                    <th>CustomerId</th><th>CustomerName</th><th>WebshopLogin</th><th>CustomerTypeId</th><th>CustomerEmail</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var c in _result.Items)
-                {
-                    <tr @key="c.CustomerId">
-                        <td>@c.CustomerId</td><td>@c.CustomerName</td><td>@c.WebshopLogin</td><td>@c.CustomerTypeId</td><td>@c.CustomerEmail</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0"><h5 class="modal-title">Confirm deletion</h5><button type="button" class="btn-close" @onclick="CancelDelete" disabled="@_deleting"></button></div>
+                <div class="modal-body"><p class="mb-0">Delete record <strong>#@_itemToDelete.CustomerId</strong>?</p></div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelDelete" disabled="@_deleting">Cancel</button>
+                    <button type="button" class="btn btn-danger" @onclick="ConfirmDeleteAsync" disabled="@_deleting">Delete</button>
+                </div>
+            </div>
+        </div>
     </div>
 }
 
 @code {
+    [SupplyParameterFromQuery(Name = "edit")] public int? EditId { get; set; }
     private CancellationTokenSource? _cts;
     private CustomerListFilter _filter = new();
-    private bool _loading = true;
+    private CustomerEditDto _model = new CustomerEditDto { CustomerTypeId = 1, CustomerCityId = 1, DeliveryTypeId = 1, BetaaltermijnId = 1 };
+    private string _searchDraft = string.Empty;
+    private bool _loading = true, _formLoading, _saving, _deleting, _showDeleteConfirm, _disposed, _initialized;
+    private string? _formError, _gridError;
     private PagedResult<CustomerDto>? _result;
-    private bool _loaded;
+    private CustomerDto? _itemToDelete;
+    private bool _isEditing => _model.CustomerId > 0;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender || _loaded) return;
+    protected override async Task OnInitializedAsync() {
         _cts = new CancellationTokenSource();
-        await LoadAsync(_cts.Token);
-        _loaded = true;
+        await LoadGridAsync(_cts.Token);
+        if (EditId is > 0) await EditAsync(EditId.Value);
+        _initialized = true;
     }
-
-    private async Task LoadAsync(CancellationToken ct)
-    {
-        _loading = true;
-        try { _result = await CustomerPort.GetCustomersAsync(_filter, ct); }
-        catch (OperationCanceledException) { }
+    protected override async Task OnParametersSetAsync() {
+        if (!_initialized || _disposed || EditId is not > 0 || _model.CustomerId == EditId) return;
+        await EditAsync(EditId.Value);
+    }
+    private async Task LoadGridAsync(CancellationToken ct) {
+        _loading = true; _gridError = null;
+        try { _result = await AdminPort.GetCustomersAsync(_filter, ct); }
+        catch (OperationCanceledException) { return; }
+        catch (Exception ex) { _result = null; _gridError = ex.Message; }
         finally { _loading = false; await InvokeAsync(StateHasChanged); }
     }
-
-    private async Task ApplyAsync() { _cts?.Cancel(); _cts = new CancellationTokenSource(); await LoadAsync(_cts.Token); }
-    private async Task ClearAsync() { _filter = new(); _cts?.Cancel(); _cts = new CancellationTokenSource(); await LoadAsync(_cts.Token); }
-    private async Task RefreshAsync() { _cts?.Cancel(); _cts = new CancellationTokenSource(); await LoadAsync(_cts.Token); }
-
-    public async ValueTask DisposeAsync() { if (_cts is not null) { await _cts.CancelAsync(); _cts.Dispose(); } }
+    private async Task ApplySearchAsync() { _filter.Search = _searchDraft; _filter.Page = 1; _cts?.Cancel(); _cts = new CancellationTokenSource(); await LoadGridAsync(_cts.Token); }
+    private async Task OnSearchKeyDown(KeyboardEventArgs e) { if (e.Key == "Enter") await ApplySearchAsync(); }
+    private async Task EditAsync(int id) {
+        _formLoading = true; _formError = null;
+        try {
+            var item = await AdminPort.GetForEditAsync(id, _cts?.Token ?? CancellationToken.None);
+            if (item is null) { _formError = "Record not found."; return; }
+            _model = item;
+        } finally { _formLoading = false; }
+    }
+    private async Task SaveAsync() {
+        _saving = true; _formError = null;
+        try {
+            var id = await AdminPort.SaveAsync(_model, _cts?.Token ?? CancellationToken.None);
+            await LoadGridAsync(_cts?.Token ?? CancellationToken.None);
+            await EditAsync(id);
+        } catch (Exception ex) { _formError = ex.Message; }
+        finally { _saving = false; }
+    }
+    private Task CancelFormAsync() { _formError = null; _model = new CustomerEditDto { CustomerTypeId = 1, CustomerCityId = 1, DeliveryTypeId = 1, BetaaltermijnId = 1 }; return Task.CompletedTask; }
+    private void PromptDelete(CustomerDto item) { _itemToDelete = item; _showDeleteConfirm = true; }
+    private void CancelDelete() { _showDeleteConfirm = false; _itemToDelete = null; }
+    private async Task ConfirmDeleteAsync() {
+        if (_itemToDelete is null) return;
+        _deleting = true;
+        try {
+            if (!await AdminPort.DeleteAsync(_itemToDelete.CustomerId, _cts?.Token ?? CancellationToken.None)) { _formError = "Record could not be deleted."; return; }
+            if (_model.CustomerId == _itemToDelete.CustomerId) await CancelFormAsync();
+            CancelDelete(); await LoadGridAsync(_cts?.Token ?? CancellationToken.None);
+        } finally { _deleting = false; }
+    }
+    public async ValueTask DisposeAsync() { _disposed = true; if (_cts is not null) { await _cts.CancelAsync(); _cts.Dispose(); } }
 }

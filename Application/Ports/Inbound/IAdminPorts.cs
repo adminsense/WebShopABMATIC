@@ -16,6 +16,7 @@ using WebShopABMATIC.Application.Admin.ProductQuantityTiers;
 using WebShopABMATIC.Application.Admin.Products;
 using WebShopABMATIC.Application.Admin.ProductStockLocations;
 using WebShopABMATIC.Application.Admin.StaffUsers;
+using WebShopABMATIC.Application.Admin.Stock;
 using WebShopABMATIC.Application.Admin.StockLocations;
 using WebShopABMATIC.Application.Admin.Suppliers;
 using WebShopABMATIC.Application.Admin.UserGroups;
@@ -212,4 +213,14 @@ public interface IVatTypeAdminPort
     Task<VatTypeEditDto?> GetForEditAsync(int id, CancellationToken cancellationToken = default);
     Task<int> SaveAsync(VatTypeEditDto dto, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
+}
+
+public interface IStockOverviewPort
+{
+    Task<StockOverviewDto> GetOverviewAsync(CancellationToken cancellationToken = default);
+}
+
+public interface IStockMovementAdminPort
+{
+    Task<PagedResult<StockMovementDto>> GetMovementsAsync(StockMovementListFilter filter, CancellationToken cancellationToken = default);
 }
