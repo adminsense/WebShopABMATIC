@@ -1,6 +1,6 @@
 # Authentication & identity roadmap
 
-![Status](https://img.shields.io/badge/Status-Auth--1%20in%20progress-f59e0b?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Auth--4%20next-f59e0b?style=flat-square)
 
 > **Purpose:** Unify ASP.NET Identity with the legacy domain model — admin users, store customers, real user IDs on writes, password reset. Mark ✅ when done.  
 > **Context:** [INFRASTRUCTURE.md](./INFRASTRUCTURE.md) §3 · [ADMIN.md](./ADMIN.md) §2  
@@ -9,15 +9,15 @@
 | Phase | Focus | Status |
 |-------|--------|--------|
 | **Baseline** | Identity tables + login (partial) | 🟡 Partial |
-| **Auth-1** | Link Identity ↔ Customer | 🟡 In progress |
-| **Auth-2** | Admin system users (roles) | ⬜ Not started |
-| **Auth-3** | Store sign-up | ⬜ Not started |
-| **Auth-4** | Admin password reset | ⬜ Not started |
-| **Auth-5** | Simplify Settings hub | ⬜ Not started |
+| **Auth-1** | Link Identity ↔ Customer | ✅ Done |
+| **Auth-2** | Admin system users (roles) | ✅ Done |
+| **Auth-3** | Store sign-up | ✅ Done |
+| **Auth-4** | Admin password reset | ✅ Done |
+| **Auth-5** | Simplify Settings hub | ✅ Done |
 | **Auth-6** | Persist real user IDs on writes | ⬜ Not started |
 | **Auth-7** | Audit logs (later) | ⬜ Deferred |
 
-**Current focus:** _Auth-1_
+**Current focus:** _Auth-6 (real user IDs on writes)_
 
 ---
 
@@ -65,45 +65,45 @@ Orders.CreatedByUserId / audit fields → resolved via ICurrentUserContext (Iden
 - ✅ **1.3** `IdentitySeed`: after creating `customer@webshop.com`, set `Customers.IdentityUserId` for matching row
 - ✅ **1.4** `IStoreCustomerRepository`: resolve by `IdentityUserId` first, fallback `WebshopLogin`
 - ✅ **1.5** Update [DEMO_SEED_DATA.md](./DEMO_SEED_DATA.md) — document link column
-- ⬜ **1.6** Manual test: sign-in as customer → checkout still resolves customer #4
+- ✅ **1.6** Manual test: sign-in as customer → checkout still resolves customer #4
 
 ---
 
 ## Auth-2 — Admin system users (replace StaffUsers for auth)
 
-- ⬜ **2.1** Hub card **System users** → `/admin/system-users` (Admin-only policy)
-- ⬜ **2.2** `ISystemUserAdminPort` + use case + list/create/edit via `UserManager` / `RoleManager`
-- ⬜ **2.3** UI: email, first/last name, roles (Admin / Manager checkboxes), active/lockout
-- ⬜ **2.4** Create user with temporary password or invite flow
-- ⬜ **2.5** Deprecate **Staff user** hub card for auth _(keep table for HR later or hide)_
-- ⬜ **2.6** Update [ADMIN.md](./ADMIN.md) — system users vs legacy StaffUsers
+- ✅ **2.1** Hub card **System users** → `/admin/system-users` (Admin-only policy)
+- ✅ **2.2** `ISystemUserAdminPort` + use case + list/create/edit via `UserManager` / `RoleManager`
+- ✅ **2.3** UI: email, first/last name, roles (Admin / Manager checkboxes), active/lockout
+- ✅ **2.4** Create user with temporary password or invite flow
+- ✅ **2.5** Deprecate **Staff user** hub card for auth _(keep table for HR later or hide)_
+- ✅ **2.6** Update [ADMIN.md](./ADMIN.md) — system users vs legacy StaffUsers
 
 ---
 
 ## Auth-3 — Store sign-up
 
-- ⬜ **3.1** `/sign-up` page (StoreLayout) — email, name, password, company name (optional)
-- ⬜ **3.2** `ICustomerRegistrationPort` + use case: create `ApplicationUser` (Customer role) + `Customers` row + link IDs
-- ⬜ **3.3** Auto sign-in after registration → redirect to catalog or cart
-- ⬜ **3.4** Link from `/sign-in` to sign-up
-- ⬜ **3.5** Seed: do not duplicate if email exists
+- ✅ **3.1** `/sign-up` page (StoreLayout) — email, name, password, company name (optional)
+- ✅ **3.2** `ICustomerRegistrationPort` + use case: create `ApplicationUser` (Customer role) + `Customers` row + link IDs
+- ✅ **3.3** Auto sign-in after registration → redirect to catalog or cart
+- ✅ **3.4** Link from `/sign-in` to sign-up
+- ✅ **3.5** Seed: do not duplicate if email exists
 
 ---
 
 ## Auth-4 — Admin password reset
 
-- ⬜ **4.1** System users: **Reset password** action (Admin-only) → set new password via `UserManager`
-- ⬜ **4.2** Customers admin (`/admin/customers`): **Reset webshop password** for linked Identity user
-- ⬜ **4.3** Optional: generate random temp password + show once (no email in dev)
-- ⬜ **4.4** Document dev flow in [ADMIN.md](./ADMIN.md)
+- ✅ **4.1** System users: **Reset password** action (Admin-only) → set new password via `UserManager`
+- ✅ **4.2** Customers admin (`/admin/customers`): **Reset webshop password** for linked Identity user
+- ✅ **4.3** Optional: generate random temp password + show once (no email in dev)
+- ✅ **4.4** Document dev flow in [ADMIN.md](./ADMIN.md)
 
 ---
 
 ## Auth-5 — Simplify Settings hub
 
-- ⬜ **5.1** Remove or hide **User group** card from `AdminHubRegistry` (legacy teams — not needed for webshop MVP)
-- ⬜ **5.2** Re-order Settings: System users, Payment methods, VAT, _(StaffUsers HR optional)_
-- ⬜ **5.3** Update sidebar active routes
+- ✅ **5.1** Remove or hide **User group** card from `AdminHubRegistry` (legacy teams — not needed for webshop MVP)
+- ✅ **5.2** Re-order Settings: System users, Payment methods, VAT, _(StaffUsers HR optional)_
+- ✅ **5.3** Update sidebar active routes
 
 ---
 
@@ -141,11 +141,11 @@ Orders.CreatedByUserId / audit fields → resolved via ICurrentUserContext (Iden
 
 ```
 Baseline [███████░░░] 7/7
-Auth-1   [█████████_] 5/6
-Auth-2   [__________] 0/6
-Auth-3   [__________] 0/5
-Auth-4   [__________] 0/4
-Auth-5   [__________] 0/3
+Auth-1   [██████████] 6/6
+Auth-2   [██████████] 6/6
+Auth-3   [██████████] 5/5
+Auth-4   [██████████] 4/4
+Auth-5   [██████████] 3/3
 Auth-6   [__________] 0/5
 Auth-7   [__________] 0/3  (deferred)
 ```

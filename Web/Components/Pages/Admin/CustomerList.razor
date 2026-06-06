@@ -16,6 +16,14 @@
         <h1 class="h3 mb-1"><i class="bi bi-person-badge text-primary"></i> Customer</h1>
         <p class="mb-0">B2B customer accounts.</p>
     </div>
+
+    @if (!string.IsNullOrEmpty(_resetPasswordMessage))
+    {
+        <div class="alert alert-success">
+            <strong>Webshop password reset.</strong> Temporary password (show once): <code>@_resetPasswordMessage</code>
+        </div>
+    }
+
     <div class="card shadow-sm border entity-form-card admin-form-card">
         <div class="card-header card-header-catalog"><h2 class="h6 mb-0 fw-bold">@(_isEditing ? "Edit customer" : "Create customer")</h2></div>
         <div class="card-body">
@@ -54,9 +62,17 @@
                                 <label class="form-check-label" for="f-locked">Locked</label>
                             </div>
                         </div>
-                        <div class="col-12 d-flex gap-2 pt-1">
+                        <div class="col-12 d-flex gap-2 pt-1 flex-wrap align-items-center">
                             <button type="submit" class="btn btn-primary" disabled="@_saving">@(_isEditing ? "Update" : "Create")</button>
                             <button type="button" class="btn btn-secondary" @onclick="CancelFormAsync" disabled="@_saving"><i class="bi bi-x me-1"></i>Cancel</button>
+                            @if (_isEditing && _model.HasWebshopAccount)
+                            {
+                                <AuthorizeView Policy="@AppPolicies.AdminOnly" Context="adminAuth">
+                                    <button type="button" class="btn btn-outline-warning btn-sm" @onclick="() => PromptResetPassword(_model.CustomerId, _model.CustomerEmail)" disabled="@_saving">
+                                        <i class="bi bi-key me-1"></i>Reset webshop password
+                                    </button>
+                                </AuthorizeView>
+                            }
                         </div>
                     </div></div>
                 </EditForm>
@@ -91,6 +107,12 @@
                                 <td>@item.CustomerEmail</td>
                             <td class="text-center"><div class="btn-group btn-group-sm">
                                 <a class="btn btn-sm btn-primary" href="@($"/admin/customers?edit={item.CustomerId}")" data-enhance-nav="false"><i class="bi bi-pencil"></i></a>
+                                @if (item.HasWebshopAccount)
+                                {
+                                    <AuthorizeView Policy="@AppPolicies.AdminOnly" Context="adminAuth">
+                                        <button type="button" class="btn btn-sm btn-warning" @onclick="() => PromptResetPassword(item.CustomerId, item.CustomerEmail)" title="Reset webshop password"><i class="bi bi-key"></i></button>
+                                    </AuthorizeView>
+                                }
                                         <button type="button" class="btn btn-sm btn-danger" @onclick="() => PromptDelete(item)" title="Delete">
                                             <i class="bi bi-trash"></i>
                                         </button>
@@ -119,6 +141,28 @@
     </div>
 }
 
+@if (_showResetConfirm && _resetCustomerId is not null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0"><h5 class="modal-title">Reset webshop password</h5><button type="button" class="btn-close" @onclick="CancelReset" disabled="@_resetting"></button></div>
+                <div class="modal-body">
+                    <p class="mb-2">Set a new webshop password for <strong>@_resetCustomerEmail</strong>.</p>
+                    <label class="form-label" for="cust-reset-password">New password</label>
+                    <InputText id="cust-reset-password" type="password" class="form-control form-control-sm" @bind-Value="_resetPasswordDraft" autocomplete="new-password" />
+                    <div class="form-text">Leave empty to generate a temporary password (shown once).</div>
+                    @if (!string.IsNullOrEmpty(_resetError)) { <div class="text-danger small mt-2 mb-0">@_resetError</div> }
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelReset" disabled="@_resetting">Cancel</button>
+                    <button type="button" class="btn btn-warning" @onclick="ConfirmResetAsync" disabled="@_resetting">Reset password</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     [SupplyParameterFromQuery(Name = "edit")] public int? EditId { get; set; }
     private CancellationTokenSource? _cts;
@@ -126,6 +170,9 @@
     private CustomerEditDto _model = new CustomerEditDto { CustomerTypeId = 1, CustomerCityId = 1, DeliveryTypeId = 1, BetaaltermijnId = 1 };
     private string _searchDraft = string.Empty;
     private bool _loading = true, _formLoading, _saving, _deleting, _showDeleteConfirm, _disposed, _initialized;
+    private bool _showResetConfirm, _resetting;
+    private int? _resetCustomerId;
+    private string? _resetCustomerEmail, _resetPasswordDraft, _resetError, _resetPasswordMessage;
     private string? _formError, _gridError;
     private PagedResult<CustomerDto>? _result;
     private CustomerDto? _itemToDelete;
@@ -179,5 +226,51 @@
             CancelDelete(); await LoadGridAsync(_cts?.Token ?? CancellationToken.None);
         } finally { _deleting = false; }
     }
+
+    private void PromptResetPassword(int customerId, string email)
+    {
+        _resetCustomerId = customerId;
+        _resetCustomerEmail = email;
+        _resetPasswordDraft = null;
+        _resetError = null;
+        _showResetConfirm = true;
+    }
+
+    private void CancelReset()
+    {
+        _showResetConfirm = false;
+        _resetCustomerId = null;
+        _resetCustomerEmail = null;
+        _resetPasswordDraft = null;
+        _resetError = null;
+    }
+
+    private async Task ConfirmResetAsync()
+    {
+        if (_resetCustomerId is null) return;
+        _resetting = true;
+        _resetError = null;
+        try
+        {
+            var result = await AdminPort.ResetWebshopPasswordAsync(
+                _resetCustomerId.Value,
+                string.IsNullOrWhiteSpace(_resetPasswordDraft) ? null : _resetPasswordDraft,
+                _cts?.Token ?? CancellationToken.None);
+
+            if (!result.Succeeded)
+            {
+                _resetError = string.Join(" ", result.Errors);
+                return;
+            }
+
+            CancelReset();
+            _resetPasswordMessage = result.TemporaryPassword ?? "Password updated.";
+        }
+        finally
+        {
+            _resetting = false;
+        }
+    }
+
     public async ValueTask DisposeAsync() { _disposed = true; if (_cts is not null) { await _cts.CancelAsync(); _cts.Dispose(); } }
 }
