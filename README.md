@@ -199,34 +199,47 @@ Order status (initial):
 
 ---
 
-## 🔌 6. Endpoints / services (initial API surface)
+## 🔌 6. Service surface (hexagonal ports)
 
-Even if this remains Blazor Server, we should still define a clean service surface (ports) to keep UI independent.
+UI pages depend on **inbound ports** only. Use cases live in `Application/`; EF adapters live in `Infrastructure/`.
 
-### 6.1 Storefront services
-- `CatalogService`: get products, product details, categories
-- `CartService`: get cart, add/update/remove items, apply discount
-- `OrderService`: create order, list my orders
-- `AuthService`: register, login, logout
+### 6.1 Storefront (driving adapter: `Web/Components/Pages/Store/`)
 
-### 6.2 Admin services
-- `AdminDashboardService`
-- `ProductAdminService`
-- `CategoryAdminService`
-- `DiscountAdminService`
-- `OrderAdminService`
-- `CustomerAdminService`
-- `UserAdminService` + `RoleAdminService`
+| Inbound port | Use case / adapter | Status |
+|--------------|-------------------|--------|
+| `IStoreCatalogPort` | `StoreCatalogService` (Infrastructure) | ✅ Catalog + product detail |
+| `CartService` (scoped) | `StoreCartService` (Web) | 🟡 In-memory cart |
+| `OrderService` | — | ⏳ Planned |
+| Customer auth | Identity **Customer** role | ⏳ Planned |
+
+### 6.2 Admin (driving adapter: `Web/Components/Pages/Admin/`)
+
+| Inbound port | Use case | Outbound port(s) |
+|--------------|----------|------------------|
+| `IAdminDashboardPort` | `AdminDashboardUseCase` | `IAdminDashboardRepository` |
+| `IProductAdminPort` | `ProductAdminUseCase` | `IProductRepository`, `IProductMediaPort` |
+| `ICustomerAdminPort` | `CustomerAdminUseCase` | `ICustomerRepository` |
+| `IOrderAdminPort` | `OrderAdminUseCase` | `IOrderRepository` |
+| … (21 entities) | `*AdminUseCase` | `*Repository` |
+| `IAdminHubPort` | `AdminHubRegistry` (Infrastructure config) | — |
+
+Register in `Program.cs`:
+
+```csharp
+builder.Services.AddWebShopApplication();      // use cases → inbound ports
+builder.Services.AddWebShopInfrastructure(...); // repositories, Identity, media
+```
 
 ---
 
 ## 🧪 7. Mock-first workflow (how we will execute)
 
 - **Mock**: each screen exists as a static prototype that references DTO fields (source: `docs/`)
-- **DTOs**: create DTOs + mapping layer (AutoMapper) early
-- **Ports/services**: define interfaces first, then implement with EF Core
-- **UI**: build pages against ports with loading/error states
-- **Seed**: create seed data so the mock data matches real DB data
+- **DTOs**: contracts in `Application/Admin/` (UI ↔ application layer)
+- **Inbound ports + use cases**: define interfaces first, implement use cases in Application
+- **Outbound ports + repositories**: EF adapters in `Infrastructure/Persistence/Repositories/`
+- **UI**: Blazor pages inject inbound ports only — no EF in Razor
+- **Seed**: `scripts/seeds.sql` for local demo data
 
 ---
 
@@ -237,11 +250,12 @@ Even if this remains Blazor Server, we should still define a clean service surfa
 ```
 WebShopABMATIC/           ← repo root (clone folder)
 ├── WebShopABMATIC.sln
-├── Application/
-├── Infrastructure/
-├── Web/                  ← Blazor host (run from here)
-├── Model/
-├── Persistence/
+├── Domain/               ← pure domain entities (hexagonal core)
+├── Application/          ← use cases, DTOs, inbound/outbound ports
+├── Infrastructure/       ← EF repositories, Identity, media adapters
+├── Web/                  ← Blazor host — admin + store UI (run from here)
+├── Model/                ← EF persistence models (legacy schema)
+├── Persistence/          ← DbContext
 ├── docs/
 └── readme/
 ```
@@ -282,13 +296,15 @@ Sign in: `admin@webshop.com` / `Admin@12345` → `/admin`
 
 ## Documentation
 
-- 📋 [`readme/azureblob.md`](readme/azureblob.md) — Product images: `AzureFiles` ↔ `Product`, fictitious blob Phase 1
-- 📋 [`readme/DEMO_SEED_DATA.md`](readme/DEMO_SEED_DATA.md) — SQL demo seed: schemas, tables, run `seeds.sql` on MULLER
-- 📋 [`readme/ADMIN.md`](readme/ADMIN.md) — Admin panel: logins, registrations, stock, dashboards
-- 📋 [`readme/WEB_STORE.md`](readme/WEB_STORE.md) — Web store: catalog, customer auth, checkout, stock display
-- 📋 [`readme/MOCK_PROTOTYPE_GUIDE.md`](readme/MOCK_PROTOTYPE_GUIDE.md) — Mock layouts, menus, entities, and validation walkthrough
+- 🏗️ [`readme/INFRASTRUCTURE.md`](readme/INFRASTRUCTURE.md) — Hexagonal architecture, connection strings, migrations, DI
+- 📊 [`readme/DUTCH_ENGLISH_DATA_MODEL.md`](readme/DUTCH_ENGLISH_DATA_MODEL.md) — Schemas, table inventory, Dutch → English mapping
+- 🌱 [`readme/DEMO_SEED_DATA.md`](readme/DEMO_SEED_DATA.md) — SQL demo seed: schemas, tables, run `seeds.sql` on MULLER
+- 🖥️ [`readme/ADMIN.md`](readme/ADMIN.md) — Admin panel: logins, registrations, stock, dashboards
+- 🛒 [`readme/WEB_STORE.md`](readme/WEB_STORE.md) — Web store: catalog, customer auth, checkout, stock display
+- 🖼️ [`readme/azureblob.md`](readme/azureblob.md) — Product images: `AzureFiles` ↔ `Product`, fictitious blob Phase 1
+- 🖥️ [`readme/MOCK_PROTOTYPE_GUIDE.md`](readme/MOCK_PROTOTYPE_GUIDE.md) — Mock layouts, menus, entities, and validation walkthrough
 - 🎨 [`readme/UI_PATTERNS_QUICK_START.md`](readme/UI_PATTERNS_QUICK_START.md) — Buttons, grids, forms (copy-paste)
-- 🏗️ [`readme/CODE_PATTERNS_AND_INFRASTRUCTURE.md`](readme/CODE_PATTERNS_AND_INFRASTRUCTURE.md) — Blazor implementation patterns
+- 🏗️ [`readme/CODE_PATTERNS_AND_INFRASTRUCTURE.md`](readme/CODE_PATTERNS_AND_INFRASTRUCTURE.md) — Blazor implementation patterns and readme standards
 - 📋 [`docs/mock-loja.html`](docs/mock-loja.html) — Storefront prototype (entry point)
 - 📋 [`docs/mock-admin.html`](docs/mock-admin.html) — Admin prototype
 
