@@ -1,6 +1,6 @@
 using WebShopABMATIC.Application.Admin.Products;
 
-namespace WebShopABMATIC.Application.Ports;
+namespace WebShopABMATIC.Application.Ports.Outbound;
 
 public interface IProductMediaPort
 {
