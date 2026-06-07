@@ -1,26 +1,26 @@
-﻿@page "/admin/customer-types"
+﻿@page "/admin/delivery-types"
 @layout AdminLayout
 @attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
-@using WebShopABMATIC.Application.Admin.CustomerTypes
+@using WebShopABMATIC.Application.Admin.DeliveryTypes
 @using WebShopABMATIC.Application.Common
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
 @using WebShopABMATIC.Web.Services
-@inject ICustomerTypeAdminPort AdminPort
+@inject IDeliveryTypeAdminPort AdminPort
 @inject IGridExportService GridExport
 @implements IAsyncDisposable
 
-<PageTitle>Customer type</PageTitle>
+<PageTitle>Delivery type</PageTitle>
 
 <div class="entity-page">
-    <a class="btn btn-secondary btn-back mb-3" href="/admin/hub/customers" data-enhance-nav="false"><span class="oi oi-arrow-left"></span> Back to list</a>
+    <a class="btn btn-secondary btn-back mb-3" href="/admin/hub/sales" data-enhance-nav="false"><span class="oi oi-arrow-left"></span> Back to list</a>
     <div class="entity-page-header page-header">
-        <h1 class="h3 mb-1"><i class="bi bi-layers text-primary"></i> Customer type</h1>
-        <p class="mb-0">Dealer, contractor, consumer types.</p>
+        <h1 class="h3 mb-1"><i class="bi bi-truck-flatbed text-primary"></i> Delivery type</h1>
+        <p class="mb-0">Pickup, delivery, installation.</p>
     </div>
     <div class="card shadow-sm border entity-form-card admin-form-card">
                 <AdminEntityFormHeader ExportDisabled="@ExportDisabled" OnExport="ExportGridAsync">
-            <Title>@(_isEditing ? "Edit customer type" : "Create customer type")</Title>
+            <Title>@(_isEditing ? "Edit delivery type" : "Create delivery type")</Title>
         </AdminEntityFormHeader>
         <div class="card-body">
             @if (_formLoading) { <p class="text-muted mb-0">Loadingâ€¦</p> }
@@ -28,21 +28,19 @@
                 <EditForm Model="_model" OnValidSubmit="SaveAsync">
                     <DataAnnotationsValidator />
                     <div class="entity-form-fields"><div class="row g-2">
-                        <div class="col-md-4">
-                            <label class="form-label" for="f-customertypename">Name *</label>
-                            <InputText id="f-customertypename" class="form-control form-control-sm" @bind-Value="_model.CustomerTypeName" required />
+                        <div class="col-md-5">
+                            <label class="form-label" for="f-name">Name *</label>
+                            <InputText id="f-name" class="form-control form-control-sm" @bind-Value="_model.Name" required />
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label" for="f-customertypenamefr">NameFr *</label>
-                            <InputText id="f-customertypenamefr" class="form-control form-control-sm" @bind-Value="_model.CustomerTypeNameFr" required />
+                        <div class="col-md-5">
+                            <label class="form-label" for="f-namefr">NameFr *</label>
+                            <InputText id="f-namefr" class="form-control form-control-sm" @bind-Value="_model.NameFr" required />
                         </div>
-                        <div class="col-md-2">
-                            <label class="form-label" for="f-basediscount">Base discount *</label>
-                            <InputNumber id="f-basediscount" class="form-control form-control-sm" @bind-Value="_model.BaseDiscount" required />
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label" for="f-sortorder">SortOrder *</label>
-                            <InputNumber id="f-sortorder" class="form-control form-control-sm" @bind-Value="_model.SortOrder" required />
+                        <div class="col-md-3 d-flex align-items-end">
+                            <div class="form-check mb-1">
+                                <InputCheckbox class="form-check-input" @bind-Value="_model.IncludeInstallationCost" id="f-includeinstallationcost" />
+                                <label class="form-check-label" for="f-includeinstallationcost">Installation cost</label>
+                            </div>
                         </div>
                         <div class="col-12 d-flex gap-2 pt-1">
                             <button type="submit" class="btn btn-primary" disabled="@_saving">@(_isEditing ? "Update" : "Create")</button>
@@ -56,26 +54,26 @@
     </div>
     <div class="card shadow-sm border entity-grid-card">
         <div class="card-header bg-white entity-grid-toolbar">
-            <h2 class="h6 mb-0 fw-bold">Customer type list</h2>
+            <h2 class="h6 mb-0 fw-bold">Delivery type list</h2>
             <AdminGridSearch @bind-Value="_searchDraft" OnSearch="ApplySearchAsync" />
         </div>
         <div class="table-responsive">
             <table class="table table-striped table-hover mb-0">
-                <thead class="table-dark"><tr><th>KlantTypeId</th>
-                        <th>CustomerTypeName</th>
-                        <th>BaseDiscount</th>
+                <thead class="table-dark"><tr><th>Id</th>
+                        <th>Name</th>
+                        <th>IncludeInstallationCost</th>
                     <th class="text-center">Actions</th></tr></thead>
                 <tbody>
                     @if (_loading) { <tr><td colspan="4" class="text-center text-muted py-4">Loadingâ€¦</td></tr> }
                     else if (!string.IsNullOrEmpty(_gridError)) { <tr><td colspan="4" class="text-center text-danger py-4">@_gridError</td></tr> }
                     else if (_result is null || _result.Items.Count == 0) { <tr><td colspan="4" class="text-center text-muted py-4">No records found.</td></tr> }
                     else { @foreach (var item in _result.Items) {
-                        <tr @key="item.KlantTypeId" class="@(_model.KlantTypeId == item.KlantTypeId ? "table-active" : null)">
-                            <td>@item.KlantTypeId</td>
-                                <td>@item.CustomerTypeName</td>
-                                <td>@item.BaseDiscount</td>
+                        <tr @key="item.Id" class="@(_model.Id == item.Id ? "table-active" : null)">
+                            <td>@item.Id</td>
+                                <td>@item.Name</td>
+                                <td>@(item.IncludeInstallationCost ? "Yes" : "No")</td>
                             <td class="text-center"><div class="btn-group btn-group-sm">
-                                <a class="btn btn-sm btn-primary" href="@($"/admin/customer-types?edit={item.KlantTypeId}")" data-enhance-nav="false"><i class="bi bi-pencil"></i></a>
+                                <a class="btn btn-sm btn-primary" href="@($"/admin/delivery-types?edit={item.Id}")" data-enhance-nav="false"><i class="bi bi-pencil"></i></a>
                                         <button type="button" class="btn btn-sm btn-danger" @onclick="() => PromptDelete(item)" title="Delete">
                                             <i class="bi bi-trash"></i>
                                         </button>
@@ -94,7 +92,7 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header border-0"><h5 class="modal-title">Confirm deletion</h5><button type="button" class="btn-close" @onclick="CancelDelete" disabled="@_deleting"></button></div>
-                <div class="modal-body"><p class="mb-0">Delete record <strong>#@_itemToDelete.KlantTypeId</strong>?</p></div>
+                <div class="modal-body"><p class="mb-0">Delete record <strong>#@_itemToDelete.Id</strong>?</p></div>
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-secondary" @onclick="CancelDelete" disabled="@_deleting">Cancel</button>
                     <button type="button" class="btn btn-danger" @onclick="ConfirmDeleteAsync" disabled="@_deleting">Delete</button>
@@ -107,14 +105,14 @@
 @code {
     [SupplyParameterFromQuery(Name = "edit")] public int? EditId { get; set; }
     private CancellationTokenSource? _cts;
-    private CustomerTypeListFilter _filter = new();
-    private CustomerTypeEditDto _model = new CustomerTypeEditDto { PaymentTermId = 1, VatSystemId = 1, DeliveryTypeId = 1, SortOrder = 1 };
+    private DeliveryTypeListFilter _filter = new();
+    private DeliveryTypeEditDto _model = new DeliveryTypeEditDto();
     private string _searchDraft = string.Empty;
     private bool _loading = true, _formLoading, _saving, _deleting, _showDeleteConfirm, _disposed, _initialized;
     private string? _formError, _gridError;
-    private PagedResult<CustomerTypeDto>? _result;
-    private CustomerTypeDto? _itemToDelete;
-    private bool _isEditing => _model.KlantTypeId > 0;
+    private PagedResult<DeliveryTypeDto>? _result;
+    private DeliveryTypeDto? _itemToDelete;
+    private bool _isEditing => _model.Id > 0;
 
     protected override async Task OnInitializedAsync() {
         _cts = new CancellationTokenSource();
@@ -123,12 +121,12 @@
         _initialized = true;
     }
     protected override async Task OnParametersSetAsync() {
-        if (!_initialized || _disposed || EditId is not > 0 || _model.KlantTypeId == EditId) return;
+        if (!_initialized || _disposed || EditId is not > 0 || _model.Id == EditId) return;
         await EditAsync(EditId.Value);
     }
     private async Task LoadGridAsync(CancellationToken ct) {
         _loading = true; _gridError = null;
-        try { _result = await AdminPort.GetCustomerTypesAsync(_filter, ct); }
+        try { _result = await AdminPort.GetDeliveryTypesAsync(_filter, ct); }
         catch (OperationCanceledException) { return; }
         catch (Exception ex) { _result = null; _gridError = ex.Message; }
         finally { _loading = false; await InvokeAsync(StateHasChanged); }
@@ -151,15 +149,15 @@ private async Task EditAsync(int id) {
         } catch (Exception ex) { _formError = ex.Message; }
         finally { _saving = false; }
     }
-    private Task CancelFormAsync() { _formError = null; _model = new CustomerTypeEditDto { PaymentTermId = 1, VatSystemId = 1, DeliveryTypeId = 1, SortOrder = 1 }; return Task.CompletedTask; }
-    private void PromptDelete(CustomerTypeDto item) { _itemToDelete = item; _showDeleteConfirm = true; }
+    private Task CancelFormAsync() { _formError = null; _model = new DeliveryTypeEditDto(); return Task.CompletedTask; }
+    private void PromptDelete(DeliveryTypeDto item) { _itemToDelete = item; _showDeleteConfirm = true; }
     private void CancelDelete() { _showDeleteConfirm = false; _itemToDelete = null; }
     private async Task ConfirmDeleteAsync() {
         if (_itemToDelete is null) return;
         _deleting = true;
         try {
-            if (!await AdminPort.DeleteAsync(_itemToDelete.KlantTypeId, _cts?.Token ?? CancellationToken.None)) { _formError = "Record could not be deleted."; return; }
-            if (_model.KlantTypeId == _itemToDelete.KlantTypeId) await CancelFormAsync();
+            if (!await AdminPort.DeleteAsync(_itemToDelete.Id, _cts?.Token ?? CancellationToken.None)) { _formError = "Record could not be deleted."; return; }
+            if (_model.Id == _itemToDelete.Id) await CancelFormAsync();
             CancelDelete(); await LoadGridAsync(_cts?.Token ?? CancellationToken.None);
         } finally { _deleting = false; }
     }
@@ -178,14 +176,14 @@ private async Task EditAsync(int id) {
     private GridExportRequest? BuildExportRequest()
     {
         return GridExportBuilder.FromRows(
-            "customer-types",
-            "Customer type list",
-            new[] { "KlantTypeId", "CustomerTypeName", "BaseDiscount" },
+            "delivery-types",
+            "Delivery type list",
+            new[] { "Id", "Name", "IncludeInstallationCost" },
             _result?.Items.Select(item => (IReadOnlyList<string>)new[]
             {
-                GridExportBuilder.Cell(item.KlantTypeId),
-                GridExportBuilder.Cell(item.CustomerTypeName),
-                GridExportBuilder.Cell(item.BaseDiscount)
+                GridExportBuilder.Cell(item.Id),
+                GridExportBuilder.Cell(item.Name),
+                GridExportBuilder.Cell(item.IncludeInstallationCost ? "Yes" : "No")
             }));
     }
     public async ValueTask DisposeAsync() { _disposed = true; if (_cts is not null) { await _cts.CancelAsync(); _cts.Dispose(); } }

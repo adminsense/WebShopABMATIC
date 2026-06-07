@@ -5,7 +5,9 @@
 @using WebShopABMATIC.Application.Common
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
-@inject ICustomerAdminPort AdminPort
+@using WebShopABMATIC.Web.Services
+@inject ICustomerAdminPort AdminPort
+@inject IGridExportService GridExport
 @implements IAsyncDisposable
 
 <PageTitle>Customer</PageTitle>
@@ -25,7 +27,9 @@
     }
 
     <div class="card shadow-sm border entity-form-card admin-form-card">
-        <div class="card-header card-header-catalog"><h2 class="h6 mb-0 fw-bold">@(_isEditing ? "Edit customer" : "Create customer")</h2></div>
+                <AdminEntityFormHeader ExportDisabled="@ExportDisabled" OnExport="ExportGridAsync">
+            <Title>@(_isEditing ? "Edit customer" : "Create customer")</Title>
+        </AdminEntityFormHeader>
         <div class="card-body">
             @if (_formLoading) { <p class="text-muted mb-0">Loadingâ€¦</p> }
             else {
@@ -81,12 +85,9 @@
         </div>
     </div>
     <div class="card shadow-sm border entity-grid-card">
-        <div class="card-header bg-white border-bottom py-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="card-header bg-white entity-grid-toolbar">
             <h2 class="h6 mb-0 fw-bold">Customer list</h2>
-            <div class="grid-search-wrap"><div class="input-group input-group-sm">
-                <input type="search" class="form-control" placeholder="Searchâ€¦" @bind="_searchDraft" @bind:event="oninput" @onkeydown="OnSearchKeyDown" />
-                <span class="input-group-text"><i class="bi bi-search"></i></span>
-            </div></div>
+            <AdminGridSearch @bind-Value="_searchDraft" OnSearch="ApplySearchAsync" />
         </div>
         <div class="table-responsive">
             <table class="table table-striped table-hover mb-0">
@@ -196,8 +197,7 @@
         finally { _loading = false; await InvokeAsync(StateHasChanged); }
     }
     private async Task ApplySearchAsync() { _filter.Search = _searchDraft; _filter.Page = 1; _cts?.Cancel(); _cts = new CancellationTokenSource(); await LoadGridAsync(_cts.Token); }
-    private async Task OnSearchKeyDown(KeyboardEventArgs e) { if (e.Key == "Enter") await ApplySearchAsync(); }
-    private async Task EditAsync(int id) {
+private async Task EditAsync(int id) {
         _formLoading = true; _formError = null;
         try {
             var item = await AdminPort.GetForEditAsync(id, _cts?.Token ?? CancellationToken.None);
@@ -272,5 +272,35 @@
         }
     }
 
+
+    private bool ExportDisabled => _loading || _result is null || _result.Items.Count == 0;
+
+    private async Task ExportGridAsync(string format)
+    {
+        var request = BuildExportRequest();
+        if (request is not null)
+        {
+            await GridExport.ExportAsync(format, request);
+        }
+    }
+
+    private GridExportRequest? BuildExportRequest()
+    {
+        return GridExportBuilder.FromRows(
+            "customers",
+            "Customer list",
+            new[] { "CustomerId", "CustomerName", "WebshopLogin", "CustomerEmail" },
+            _result?.Items.Select(item => (IReadOnlyList<string>)new[]
+            {
+                GridExportBuilder.Cell(item.CustomerId),
+                GridExportBuilder.Cell(item.CustomerName),
+                GridExportBuilder.Cell(item.WebshopLogin),
+                GridExportBuilder.Cell(item.CustomerEmail)
+            }));
+    }
     public async ValueTask DisposeAsync() { _disposed = true; if (_cts is not null) { await _cts.CancelAsync(); _cts.Dispose(); } }
 }
+
+
+
+
