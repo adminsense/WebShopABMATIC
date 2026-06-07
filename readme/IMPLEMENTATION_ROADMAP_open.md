@@ -2,61 +2,54 @@
 
 ![Status](https://img.shields.io/badge/Status-Core%20done%20%2B%20open%20backlog-22c55e?style=flat-square) ![Scope](https://img.shields.io/badge/Scope-0–E%20%2B%20media%20%2B%20alerts-512BD4?style=flat-square)
 
-> **Purpose:** Single delivery tracker for WebShopABMATIC — phased checkboxes, open backlog, and dev priority.  
-> **Mark ✅ when done · ⬜ when pending · 🔶 partial / mock only.**  
+> **Purpose:** Single delivery tracker for WebShopABMATIC — phased checkboxes, open backlog, and **dev-first** priority.  
+> **Mark ✅ when done · ⬜ when pending · 🔶 partial.**  
 > **Analysis:** [SPEC_STOCK_OPERATIONS_PROPOSAL.md](./SPEC_STOCK_OPERATIONS_PROPOSAL.md)  
 > **Related:** [PAYMENTS_open.md](./PAYMENTS_open.md) · [AUDITS_open.md](./AUDITS_open.md) · [AZUREBLOB_open.md](./AZUREBLOB_open.md) · [AUTH_IDENTITY_ROADMAP_open.md](./AUTH_IDENTITY_ROADMAP_open.md)
 
+### Delivery model (owner rule)
+
+| Track | Goal | When |
+|-------|------|------|
+| **Dev 100%** | All features working locally with **mocks** (`Mollie:UseMock`, `Notifications:LowStock:UseMock`, local file media) | **Now — finish this first** |
+| **Prod go-live** | Real Mollie, SMTP worker, Azure Blob — needs client credentials / infra | **Last — only after dev is 100%** |
+
+**Mocks count as ✅ for dev.** Prod adapters are a separate go-live track — never block dev priority.
+
 ### Master phase map
 
-| Phase | Focus | Status |
-|-------|--------|--------|
-| **0** | Seeds + pricing foundation | ✅ Done |
-| **A** | Stock admin (read-only) | ✅ Done |
-| **B** | Checkout + Mollie (code path) | ✅ Done · **B.9 E2E ⬜ last** |
-| **C** | Store & admin order visibility | ✅ Done |
-| **D** | Stock writes + low-stock in-app | ✅ Core done |
-| **3b** | Low stock **email send** (SMTP worker) | 🔶 Queue ✅ · send ⬜ |
-| **M** | Product images (`AzureFiles` seeds) | 🔶 Code ✅ · seeds ⬜ |
-| **E** | PO / GRN / transfer / reservation | ⬜ Pending |
-| **F** | SignalR real-time stock (optional) | ⬜ Pending |
-| **G** | Audit `StockAdjust` badge | ✅ Done |
+| Phase | Focus | Dev status | Prod go-live |
+|-------|--------|------------|--------------|
+| **0** | Seeds + pricing foundation | ✅ Done | — |
+| **A** | Stock admin (read-only) | ✅ Done | — |
+| **B** | Checkout + Mollie | ✅ Done (mock) | ⬜ **B.9** real E2E — last |
+| **C** | Store & admin order visibility | ✅ Done | — |
+| **D** | Stock writes + low-stock in-app | ✅ Done | — |
+| **3b** | Low stock email | ✅ Done (mock + in-app) | ⬜ SMTP worker — last |
+| **M** | Product images | ✅ Dev done | ⬜ Azure Blob — last |
+| **E** | PO / GRN / transfer / reservation | ⬜ Pending | — |
+| **F** | SignalR real-time stock (optional) | ⬜ Pending | — |
+| **G** | Audit `StockAdjust` badge | ✅ Done | — |
 
-**Suggested build order (historical):** **0 → A ∥ B → C → D → …**
+**Historical build order:** **0 → A ∥ B → C → D → …**
 
-**Open work priority (Mollie mock stays on until client credentials):**
+### Dev priority — finish dev 100% first
 
-1. **3b** — SMTP / email worker for low-stock queue  
-2. **M** — `AzureFiles` seeds in `seeds.sql`  
-3. **E** — PO → GRN → transfer → reserve on checkout *(if in scope)*  
-4. **F** — SignalR *(optional)*  
-5. **B.9** — Mollie real E2E — **[last]** — [PAYMENTS_open.md](./PAYMENTS_open.md)
+1. **E** — PO → GRN → transfer → reserve on checkout *(if in scope)*  
+2. **F** — SignalR *(optional)*  
+3. **E.8** — Refresh [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md)
 
-Mock adapters (`Mollie:UseMock`, `Notifications:LowStock:UseMock`) **do not** count as done.
+### Prod go-live — last (after dev 100%)
+
+Do **not** start until dev track above is complete:
+
+1. **3b** — SMTP / background worker for low-stock queue  
+2. **M.5** — Real Azure Blob storage adapter  
+3. **B.9** — Mollie real E2E — [PAYMENTS_open.md](./PAYMENTS_open.md)
 
 ---
 
-## ⬜ Open backlog — not done
-
-### 3b — Low stock email send
-
-| Item | Status |
-|------|--------|
-| In-app alerts + dashboard | ✅ |
-| `LowStockEmailNotifier` → `Emails.EmailMessages` | ✅ (when `UseMock=false`) |
-| `MockLowStockEmailNotifier` in Development | 🔶 |
-| **SMTP / background worker** | ⬜ |
-| Production SMTP settings | ⬜ |
-
-See [AUDITS_open.md](./AUDITS_open.md).
-
-### M — Product images ([AZUREBLOB_open.md](./AZUREBLOB_open.md))
-
-| Item | Status |
-|------|--------|
-| `IProductMediaPort` + admin upload + store read with fallback | ✅ |
-| **Seed** `AzureFileFolders` + `AzureFiles` in `seeds.sql` | ⬜ |
-| Real Azure Blob adapter (production) | ⬜ Later |
+## ⬜ Open backlog — dev (finish 100% first)
 
 ### E — Stock ops
 
@@ -73,13 +66,6 @@ Optional for minimal webshop; needed for ERP-style inbound stock.
 
 - ⬜ Real-time stock refresh — not started
 
-### B.9 — Mollie E2E (**last**)
-
-| Item | Status |
-|------|--------|
-| Code + `MollieMockPaymentAdapter` | ✅ / 🔶 |
-| `Mollie:ApiKey`, webhook, E2E checklist | ⬜ — [PAYMENTS_open.md](./PAYMENTS_open.md) |
-
 ### Later (E extras — not MVP)
 
 - ⬜ **E.4** `AccountingDocument` on payment  
@@ -89,15 +75,43 @@ Optional for minimal webshop; needed for ERP-style inbound stock.
 
 ---
 
+## ⬜ Prod go-live — last (after dev 100%)
+
+### 3b — Low stock email send (production)
+
+| Item | Dev | Prod |
+|------|-----|------|
+| In-app alerts + dashboard | ✅ | ✅ |
+| `MockLowStockEmailNotifier` (`UseMock=true`) | ✅ | n/a |
+| `LowStockEmailNotifier` → `Emails.EmailMessages` | ✅ | ✅ |
+| **SMTP / background worker** | n/a | ⬜ |
+| Production SMTP settings | n/a | ⬜ |
+
+See [AUDITS_open.md](./AUDITS_open.md).
+
+### B.9 — Mollie E2E
+
+| Item | Dev | Prod |
+|------|-----|------|
+| Code + `MollieMockPaymentAdapter` | ✅ | n/a |
+| `Mollie:ApiKey`, webhook, E2E checklist | n/a | ⬜ — [PAYMENTS_open.md](./PAYMENTS_open.md) |
+
+### M.5 — Azure Blob (production)
+
+- ⬜ Real Azure Blob storage adapter — [AZUREBLOB_open.md](./AZUREBLOB_open.md)
+
+---
+
 ## ✅ Done (summary)
 
 | Area | Status |
 |------|--------|
 | Foundation 0, stock read A, checkout B.1–B.8, visibility C | ✅ |
 | Stock writes D.1–D.4, D.6; manual adjustment; sale hooks | ✅ |
-| Low stock in-app | ✅ |
+| Low stock in-app + email mock (Phase 3b dev) | ✅ |
 | Audit `StockAdjust` (Phase G) | ✅ |
-| Mollie integration code + dev mock | ✅ / 🔶 |
+| Mollie integration + dev mock (B.9a) | ✅ |
+| Product media + seeds (Phase M dev) | ✅ |
 | `ReservedQuantity` display + available calc | ✅ display only |
 
 ---
@@ -137,8 +151,8 @@ Optional for minimal webshop; needed for ERP-style inbound stock.
 - ✅ **B.6** Webhook + idempotent handler → paid + stock
 - ✅ **B.7** `/orders/{id}/payment-return` + confirmation
 - ✅ **B.8** Post-pay path (no Mollie)
-- 🔶 **B.9a** `MollieMockPaymentAdapter` when `Mollie:UseMock=true`
-- ⬜ **B.9** Real Mollie test key + public webhook + E2E — [PAYMENTS_open.md](./PAYMENTS_open.md) — **do last**
+- ✅ **B.9a** `MollieMockPaymentAdapter` when `Mollie:UseMock=true` — **dev done**
+- ⬜ **B.9** Real Mollie test key + public webhook + E2E — [PAYMENTS_open.md](./PAYMENTS_open.md) — **prod go-live (last)**
 
 ---
 
@@ -164,25 +178,25 @@ Optional for minimal webshop; needed for ERP-style inbound stock.
 
 ---
 
-## Phase 3b — Low stock email ⬜
+## Phase 3b — Low stock email ✅ (dev) · ⬜ (prod)
 
 - ✅ **3b.1** `LowStockEmailNotifier` queues to `Emails.EmailMessages`
 - ✅ **3b.2** `MockLowStockEmailNotifier` for Development
-- 🔶 **3b.3** Dev mock: `Notifications:LowStock:UseMock=true`
-- ⬜ **3b.4** Background worker / SMTP sender for queued messages
-- ⬜ **3b.5** Production SMTP configuration
+- ✅ **3b.3** Dev mock: `Notifications:LowStock:UseMock=true` — **dev done**
+- ⬜ **3b.4** Background worker / SMTP sender — **prod go-live (last)**
+- ⬜ **3b.5** Production SMTP configuration — **prod go-live (last)**
 
 ---
 
-## Phase M — Product media 🔶
+## Phase M — Product media ✅ (dev) · ⬜ (prod)
 
 Detail: [AZUREBLOB_open.md](./AZUREBLOB_open.md)
 
 - ✅ **M.1** `IProductMediaPort` + `LocalProductMediaService`
 - ✅ **M.2** Admin product upload
 - ✅ **M.3** Store catalog reads `AzureFiles` (fallback images)
-- ⬜ **M.4** Seed `AzureFileFolders` + `AzureFiles` in `seeds.sql`
-- ⬜ **M.5** Real Azure Blob storage adapter (production)
+- ✅ **M.4** Seed `AzureFileFolders` + `AzureFiles` in `seeds.sql` (all `ShowOnWebshop` products)
+- ⬜ **M.5** Real Azure Blob storage adapter — **prod go-live (last)**
 
 ---
 
@@ -234,16 +248,22 @@ Detail: [AUDITS_open.md](./AUDITS_open.md)
 ## Progress
 
 ```
+DEV (finish first)
 Phase 0   [██████████] 9/9
 Phase A   [██████████] 6/6
-Phase B   [█████████░] B.9 last — mock until client
+Phase B   [██████████] dev mock ✅
 Phase C   [██████████] 5/5
 Phase D   [█████████░] D.7 → Phase E
-Phase 3b  [█████████░] ⬜ SMTP worker
-Phase M   [██████░░░░] ⬜ seeds
+Phase 3b  [██████████] dev mock ✅
+Phase M   [██████████] dev ✅ · M.5 prod last
 Phase E   [░░░░░░░░░░] ⬜ PO / GRN / transfer / reserve
 Phase F   [░░░░░░░░░░] ⬜ optional SignalR
 Phase G   [██████████] StockAdjust audit ✅
+
+PROD GO-LIVE (last — after dev 100%)
+B.9 Mollie E2E     ⬜
+3b SMTP worker     ⬜
+M.5 Azure Blob     ⬜
 ```
 
 ---

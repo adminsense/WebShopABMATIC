@@ -262,7 +262,7 @@ WebShopABMATIC/                 ← repo root (solution parent)
 **Domain / catalog seed (planned)**
 
 - Products with image URLs and stock values  
-  ⏳ Store mock uses local images (`docs/images/product*.png`, Hard drive 1–6); domain seed pending
+  ✅ `seeds.sql` — `AzureFileFolders` + `AzureFiles` for all `ShowOnWebshop` products (`BlobRef` → `/images/productN.png`)
 - Discounts with codes (e.g., `SUMMER10`, `FREESHIP`)  
   ⏳
 - Customer profile linked to Identity  
@@ -389,17 +389,17 @@ dotnet run
 
 **Target model:** legacy `Files.AzureFiles` linked to `Products.Product` via `ProductId` (`IsPrimaryImage`, `PublishToWeb`, `BlobRef`). Phase 1 uses a **fictitious local blob** under `wwwroot/media/products/`. Full spec: [AZUREBLOB_open.md](AZUREBLOB_open.md).
 
-### 6.1 Current storefront (prototype)
+### 6.1 Storefront (implemented)
 
-- ✅ Static assets: `wwwroot/images/product1.png` … `product6.png` via `IStoreCatalogPort` / `StoreCatalogService`
-- ⏳ Replace with `AzureFiles` query when media port is implemented
+- ✅ Static assets: `wwwroot/images/product1.png` … `product6.png`
+- ✅ `StoreCatalogService` reads primary image via `IProductMediaPort` → `Files.AzureFiles` (seed + admin upload)
 
-### 6.2 Planned storage phases
+### 6.2 Storage phases
 
 | Phase | Storage | DB |
 |-------|---------|-----|
-| **1** | Local filesystem (fictitious Azure) | `AzureFiles.BlobRef` |
-| **2** | Real Azure Blob Storage | Same table contract |
+| **1** | Local filesystem (fictitious Azure) | `AzureFiles.BlobRef` — ✅ dev done |
+| **2** | Real Azure Blob Storage | Same table contract — ⬜ prod last |
 
 ---
 

@@ -4,13 +4,17 @@
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Identity
+@using WebShopABMATIC.Application.Admin.AuditLogs
+@using WebShopABMATIC.Application.Audit
 @using WebShopABMATIC.Application.Auth
+@using WebShopABMATIC.Application.Ports.Outbound
 @using WebShopABMATIC.Infrastructure.Identity
 @using WebShopABMATIC.Web.Components.Account
 @using WebShopABMATIC.Web.Components.Account.Shared
 
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
+@inject IAuditService AuditService
 @inject IdentityRedirectManager RedirectManager
 @inject NavigationManager Navigation
 
@@ -19,7 +23,7 @@
 <div class="auth-wrap">
     <div class="auth-card">
         <h1>Welcome</h1>
-        <p>Sign in with your company account to place orders and view order history.</p>
+        <p>Sign in with your personal account to place orders and view order history.</p>
 
         <StatusMessage Message="@_errorMessage" />
 
@@ -80,6 +84,27 @@
         if (HttpMethods.IsGet(HttpContext.Request.Method))
         {
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+
+            if (HttpContext.User.Identity?.IsAuthenticated == true)
+            {
+                var user = await UserManager.GetUserAsync(HttpContext.User);
+                if (user is not null)
+                {
+                    var roles = await UserManager.GetRolesAsync(user);
+                    if ((roles.Contains(AppRoles.Admin) || roles.Contains(AppRoles.Manager))
+                        && !roles.Contains(AppRoles.Customer))
+                    {
+                        Navigation.NavigateTo(string.IsNullOrWhiteSpace(ReturnUrl) ? "/admin" : ReturnUrl, forceLoad: true);
+                        return;
+                    }
+
+                    if (roles.Contains(AppRoles.Customer))
+                    {
+                        Navigation.NavigateTo(string.IsNullOrWhiteSpace(ReturnUrl) ? "/" : ReturnUrl, forceLoad: true);
+                        return;
+                    }
+                }
+            }
         }
     }
 
@@ -89,6 +114,16 @@
         if (!result.Succeeded)
         {
             _errorMessage = "Invalid email or password.";
+            await AuditService.LogAsync(new AuditLogWriteRequest
+            {
+                Action = AuditActions.LoginFailed,
+                EntityName = "ApplicationUser",
+                UserDisplayName = _input.Email,
+                Success = false,
+                Severity = AuditSeverity.Warning,
+                ErrorMessage = "Invalid email or password",
+                NewValues = System.Text.Json.JsonSerializer.Serialize(new { email = _input.Email, reason = "InvalidPassword" })
+            });
             return;
         }
 
@@ -97,14 +132,39 @@
         {
             _errorMessage = "Invalid email or password.";
             await SignInManager.SignOutAsync();
+            await AuditService.LogAsync(new AuditLogWriteRequest
+            {
+                Action = AuditActions.LoginFailed,
+                EntityName = "ApplicationUser",
+                UserDisplayName = _input.Email,
+                Success = false,
+                Severity = AuditSeverity.Warning,
+                ErrorMessage = "User not found after sign-in",
+                NewValues = System.Text.Json.JsonSerializer.Serialize(new { email = _input.Email, reason = "UserNotFound" })
+            });
             return;
         }
 
         var roles = await UserManager.GetRolesAsync(user);
         if (roles.Contains(AppRoles.Admin) || roles.Contains(AppRoles.Manager))
         {
-            var adminDestination = string.IsNullOrWhiteSpace(ReturnUrl) ? "/admin" : ReturnUrl;
-            RedirectManager.RedirectTo(adminDestination);
+            if (!roles.Contains(AppRoles.Customer))
+            {
+                await AuditService.LogAsync(new AuditLogWriteRequest
+                {
+                    Action = AuditActions.Login,
+                    EntityName = "ApplicationUser",
+                    EntityId = user.Id,
+                    IdentityUserId = user.Id,
+                    UserDisplayName = user.Email,
+                    NewValues = System.Text.Json.JsonSerializer.Serialize(new { email = user.Email, roles, portal = "admin" })
+                });
+                var adminDestination = string.IsNullOrWhiteSpace(ReturnUrl) ? "/admin" : ReturnUrl;
+                Navigation.NavigateTo(adminDestination, forceLoad: true);
+                return;
+            }
+
+            Navigation.NavigateTo(string.IsNullOrWhiteSpace(ReturnUrl) ? "/admin" : ReturnUrl, forceLoad: true);
             return;
         }
 
@@ -112,8 +172,28 @@
         {
             _errorMessage = "This account cannot access the web store.";
             await SignInManager.SignOutAsync();
+            await AuditService.LogAsync(new AuditLogWriteRequest
+            {
+                Action = AuditActions.LoginFailed,
+                EntityName = "ApplicationUser",
+                UserDisplayName = _input.Email,
+                Success = false,
+                Severity = AuditSeverity.Warning,
+                ErrorMessage = "Not authorized for web store",
+                NewValues = System.Text.Json.JsonSerializer.Serialize(new { email = _input.Email, reason = "UnauthorizedRole" })
+            });
             return;
         }
+
+        await AuditService.LogAsync(new AuditLogWriteRequest
+        {
+            Action = AuditActions.Login,
+            EntityName = "ApplicationUser",
+            EntityId = user.Id,
+            IdentityUserId = user.Id,
+            UserDisplayName = user.Email,
+            NewValues = System.Text.Json.JsonSerializer.Serialize(new { email = user.Email, roles })
+        });
 
         var destination = string.IsNullOrWhiteSpace(ReturnUrl) ? "/" : ReturnUrl;
         RedirectManager.RedirectTo(destination);

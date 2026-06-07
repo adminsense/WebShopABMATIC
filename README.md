@@ -270,7 +270,7 @@ WebShopABMATIC/           ← repo root (clone folder)
 
 ### 8.3 Database
 
-Apply schema and demo data **manually** (migrations do not run on app startup):
+Apply schema and demo data **manually** (migrations do not run on app startup). Full script index: [`scripts/README.md`](scripts/README.md).
 
 ```powershell
 .\scripts\apply-local-database.ps1
@@ -280,8 +280,8 @@ Or step by step:
 
 ```powershell
 sqlcmd -S MULLER -E -d WebShopABMATIC -i scripts\apply-pending-schema.sql
-sqlcmd -S MULLER -E -d WebShopABMATIC -i scripts\seeds.sql
-cd Web && dotnet run -- --seed-identity
+.\scripts\seed-demo.ps1
+.\scripts\seed-identity.ps1
 ```
 
 Greenfield domain schema: `scripts/WebShopABMATIC-create-local.sql`.  
@@ -317,7 +317,9 @@ Sign in: `admin@webshop.com` / `Admin@12345` → `/admin`
 - 🛒 [`readme/SPEC_WEB_STORE.md`](readme/SPEC_WEB_STORE.md) — Web store: catalog, customer auth, checkout, stock display
 - 💳 [`readme/PAYMENTS_open.md`](readme/PAYMENTS_open.md) — Mollie test key, webhook, E2E checklist (open / pending)
 - 📦 [`readme/SPEC_STOCK_OPERATIONS_PROPOSAL.md`](readme/SPEC_STOCK_OPERATIONS_PROPOSAL.md) — Stock operations, checkout, Mollie
-- ✅ [`readme/IMPLEMENTATION_ROADMAP_open.md`](readme/IMPLEMENTATION_ROADMAP_open.md) — **Main delivery tracker** (phases 0–E, open backlog, dev priority)
+- ✅ [`readme/DATA_SUMMARY.md`](readme/DATA_SUMMARY.md) — **Demo data summary** (all tables, live row counts, admin screens)
+- ✅ [`readme/SUNDAY_open.md`](readme/SUNDAY_open.md) — Seed inventory (pending vs done)
+- ✅ [`readme/IMPLEMENTATION_ROADMAP_open.md`](readme/IMPLEMENTATION_ROADMAP_open.md) — **Main delivery tracker** (dev 100% first · prod go-live last)
 - 🔐 [`readme/AUTH_IDENTITY_ROADMAP_open.md`](readme/AUTH_IDENTITY_ROADMAP_open.md) — Identity, roles, customers, user IDs on writes
 - 📋 [`readme/AUDITS_open.md`](readme/AUDITS_open.md) — Audit log plan (CRUD / Login / Report / Logout badges + checklist)
 - 🖼️ [`readme/AZUREBLOB_open.md`](readme/AZUREBLOB_open.md) — Product images: `AzureFiles` ↔ `Product`, fictitious blob Phase 1

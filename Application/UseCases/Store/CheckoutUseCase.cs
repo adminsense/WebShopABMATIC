@@ -4,6 +4,7 @@ using WebShopABMATIC.Application.Payments;
 using WebShopABMATIC.Application.Ports;
 using WebShopABMATIC.Application.Ports.Outbound;
 using WebShopABMATIC.Application.Store.Checkout;
+using WebShopABMATIC.Application.Store.Orders;
 namespace WebShopABMATIC.Application.UseCases.Store;
 
 public sealed class CheckoutUseCase : ICheckoutPort
@@ -262,6 +263,19 @@ public sealed class CheckoutUseCase : ICheckoutPort
         }
 
         return summary;
+    }
+
+    public async Task<IReadOnlyList<StoreOrderListItemDto>> GetCustomerOrdersAsync(
+        StoreUserLookup user,
+        CancellationToken cancellationToken = default)
+    {
+        var ctx = await _customers.GetForStoreUserAsync(user, cancellationToken);
+        if (ctx is null)
+        {
+            return [];
+        }
+
+        return await _orders.GetOrdersForCustomerAsync(ctx.CustomerId, cancellationToken);
     }
 
     private static CheckoutQuoteDto EmptyQuote(IReadOnlyList<string> errors) =>
