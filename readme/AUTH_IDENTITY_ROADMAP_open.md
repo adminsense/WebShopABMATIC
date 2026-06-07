@@ -15,9 +15,9 @@
 | **Auth-4** | Admin password reset | ✅ Done |
 | **Auth-5** | Simplify Settings hub | ✅ Done |
 | **Auth-6** | Persist real user IDs on writes | ✅ Done |
-| **Auth-7** | Audit logs (later) | ⬜ Deferred |
+| **Auth-7** | Audit logs | ✅ Done (Phase 3 optional) |
 
-**Current focus:** _Auth-7 — audit logs ([AUDITS_open.md](./AUDITS_open.md))_
+**Current focus:** _Auth-7 complete — see [AUDITS_open.md](./AUDITS_open.md) (only `StockAdjust` badge deferred)_
 
 ---
 
@@ -46,6 +46,49 @@ Orders.CreatedByUserId / audit fields → resolved via ICurrentUserContext (Iden
 
 ---
 
+## Roles & authorization policies
+
+Defined in `Application/Auth/AppRoles.cs` and seeded via `IdentitySeed.cs` into `AspNetRoles`.
+
+### Application roles
+
+| Role | Constant | Who | Typical access |
+|------|----------|-----|----------------|
+| **Admin** | `AppRoles.Admin` | Back-office staff | Full admin panel; user management (`/admin/users`), audit log, customer webshop password reset |
+| **Manager** | `AppRoles.Manager` | Back-office staff | Most admin screens; **not** Admin-only actions (e.g. `/admin/users`, audit log) |
+| **Customer** | `AppRoles.Customer` | Individual webstore buyer (B2C) | Catalog, cart, orders, **`/my-account`** (name, address, phone, password). Payment method is chosen **at checkout**. Role is fixed after sign-up — **only Admin** can change it in `/admin/users`. |
+
+A user may hold **more than one role** (e.g. Admin + Manager, or Admin + Customer for dual portal access).
+
+### Authorization policies (`AppPolicies`)
+
+| Policy | Requirement | Used for |
+|--------|-------------|----------|
+| `AdminOnly` | Role **Admin** | `/admin/users`, audit log, some customer password resets |
+| `AdminOrManager` | Role **Admin** or **Manager** | Most `/admin/*` CRUD pages |
+| `CustomerOnly` | Role **Customer** | Store **`/my-account`** |
+
+### Where each user type manages their account
+
+| User type | Self-service | Admin-managed |
+|-----------|--------------|---------------|
+| **Customer** (webstore) | `/my-account` — link in store header | `/admin/users` (Admin only) |
+| **Admin / Manager** (staff) | `/admin/profile` — sidebar **My profile** | `/admin/users` (Admin only) |
+
+**Staff-only login redirect:** users with Admin/Manager roles **without** Customer are sent to **`/admin`** after sign-in (not the store homepage).
+
+### Dev seed accounts
+
+| Email | Password | Roles |
+|-------|----------|-------|
+| `admin@webshop.com` | `Admin@12345` | Admin, Manager |
+| `manager@webshop.com` | `Manager@12345` | Manager |
+| `customer@webshop.com` | `Customer@12345` | Customer |
+
+> **Legacy note:** `[Settings].[StaffUsers]` remains for HR / legacy data and is **not** used for login. Authentication is always ASP.NET Identity (`AspNetUsers`) with the three roles above.
+
+---
+
 ## Baseline — already in place (do not re-check)
 
 - ✅ **B.1** `AspNetUsers` + roles migration (`InitialIdentity`)
@@ -71,7 +114,7 @@ Orders.CreatedByUserId / audit fields → resolved via ICurrentUserContext (Iden
 
 ## Auth-2 — Admin system users (replace StaffUsers for auth)
 
-- ✅ **2.1** Hub card **System users** → `/admin/system-users` (Admin-only policy)
+- ✅ **2.1** Hub card **Users** → `/admin/users` (Admin-only policy; `/admin/system-users` alias)
 - ✅ **2.2** `ISystemUserAdminPort` + use case + list/create/edit via `UserManager` / `RoleManager`
 - ✅ **2.3** UI: email, first/last name, roles (Admin / Manager checkboxes), active/lockout
 - ✅ **2.4** Create user with temporary password or invite flow
@@ -82,8 +125,8 @@ Orders.CreatedByUserId / audit fields → resolved via ICurrentUserContext (Iden
 
 ## Auth-3 — Store sign-up
 
-- ✅ **3.1** `/sign-up` page (StoreLayout) — email, name, password, company name (optional)
-- ✅ **3.2** `ICustomerRegistrationPort` + use case: create `ApplicationUser` (Customer role) + `Customers` row + link IDs
+- ✅ **3.1** `/sign-up` page (StoreLayout) — email, name, phone, home address, password (individual consumer; **Customer** role only)
+- ✅ **3.2** `ICustomerRegistrationPort` + use case: create `ApplicationUser` (Customer role) + `Customers` row (person name, address) + link IDs
 - ✅ **3.3** Auto sign-in after registration → redirect to catalog or cart
 - ✅ **3.4** Link from `/sign-in` to sign-up
 - ✅ **3.5** Seed: do not duplicate if email exists
@@ -102,7 +145,7 @@ Orders.CreatedByUserId / audit fields → resolved via ICurrentUserContext (Iden
 ## Auth-5 — Simplify Settings hub
 
 - ✅ **5.1** Remove or hide **User group** card from `AdminHubRegistry` (legacy teams — not needed for webshop MVP)
-- ✅ **5.2** Re-order Settings: System users, Payment methods, VAT, _(StaffUsers HR optional)_
+- ✅ **5.2** Re-order Settings: Users, Payment methods, VAT, _(StaffUsers HR optional)_
 - ✅ **5.3** Update sidebar active routes
 
 ---
@@ -117,13 +160,13 @@ Orders.CreatedByUserId / audit fields → resolved via ICurrentUserContext (Iden
 
 ---
 
-## Auth-7 — Audit logs (deferred until Auth-6 stable)
+## Auth-7 — Audit logs
 
-> **Plan:** [AUDITS_open.md](./AUDITS_open.md) — Phase 1 badges (CRUD, Login, Report, Logout) + CRUD inventory with ✅/⬜ tracking.
+> **Live tracker:** [AUDITS_open.md](./AUDITS_open.md) — Phase 1 + 2 **done**; Phase 3 deferred.
 
-- ⬜ **7.1** Design `AuditLog` entity or use existing `OrderLog` pattern with Identity user id → see **AUDITS_open.md §1, §7**
-- ⬜ **7.2** Middleware or domain hook on admin mutations → **`IAuditService`** in repositories (single-layer)
-- ⬜ **7.3** Admin read-only audit journal (optional) → **AUDITS_open.md Phase 2** `/admin/audit-logs`
+- ✅ **7.1** `AuditLog` entity + EF migration (`ApplicationDbContext.AuditLogs`)
+- ✅ **7.2** `IAuditService` + domain `AuditSaveChangesInterceptor` + auth/export hooks
+- ✅ **7.3** Admin read-only journal `/admin/audit-logs` (filters, legend, detail modal, export)
 
 ---
 
@@ -149,7 +192,7 @@ Auth-3   [██████████] 5/5
 Auth-4   [██████████] 4/4
 Auth-5   [██████████] 3/3
 Auth-6   [██████████] 5/5
-Auth-7   [__________] 0/3  (deferred)
+Auth-7   [█████████░] 3/3  (Phase 3 optional)
 ```
 
 ---

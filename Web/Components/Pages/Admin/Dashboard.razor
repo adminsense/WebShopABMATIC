@@ -140,6 +140,14 @@ else if (_dashboard is not null)
                     </div>
                     <div class="progress-thin progress-thin--danger"><span style="width:@(lowStockRiskPct)%"></span></div>
                 </div>
+                @if (_dashboard.LowStockAlerts > 0)
+                {
+                    <div class="dash-metric">
+                        <a class="btn btn-sm btn-outline-danger w-100" href="/admin/product-stock?lowStock=true" data-enhance-nav="false">
+                            Review @_dashboard.LowStockAlerts low-stock row(s)
+                        </a>
+                    </div>
+                }
                 <div class="dash-metric">
                     <div class="stat-band">
                         <div>
@@ -198,12 +206,93 @@ else if (_dashboard is not null)
                 </div>
             </div>
         </div>
+
+        @if (_dashboard.UnreadStockAlertCount > 0)
+        {
+            <div class="alert alert-danger d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4 shadow-sm">
+                <div>
+                    <strong><i class="bi bi-bell-fill me-1"></i>@_dashboard.UnreadStockAlertCount stock alert(s)</strong>
+                    <span class="ms-1">— products at or below minimum after a recent sale or adjustment.</span>
+                </div>
+                <div class="d-flex gap-2">
+                    <a class="btn btn-sm btn-outline-danger" href="/admin/product-stock?lowStock=true" data-enhance-nav="false">View low stock</a>
+                    <button type="button" class="btn btn-sm btn-danger" @onclick="DismissAlertsAsync" disabled="@_dismissingAlerts">Dismiss all</button>
+                </div>
+            </div>
+        }
+
+        @if (_dashboard.LowStockProducts.Count > 0)
+        {
+            <div class="card shadow-sm border mb-4 low-stock-dashboard-card">
+                <div class="card-header bg-danger text-white d-flex flex-wrap align-items-center justify-content-between gap-2">
+                    <h2 class="h5 mb-0"><i class="bi bi-exclamation-octagon me-1"></i>Products below minimum</h2>
+                    <a class="btn btn-sm btn-light" href="/admin/product-stock?lowStock=true" data-enhance-nav="false">Open full list</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Product</th>
+                                <th>Location</th>
+                                <th class="text-end">On hand</th>
+                                <th class="text-end">Minimum</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in _dashboard.LowStockProducts)
+                            {
+                                <tr @key="row.ProductStockLocationId" class="@(row.IsOutOfStock ? "table-danger" : "table-warning")">
+                                    <td><strong>@row.ProductName</strong> <span class="text-muted">(#@row.ProductId)</span></td>
+                                    <td>@row.StockLocationName</td>
+                                    <td class="text-end fw-semibold">@row.Quantity.ToString("N0")</td>
+                                    <td class="text-end">@row.MinQuantity.ToString("N0")</td>
+                                    <td>
+                                        @if (row.IsOutOfStock)
+                                        {
+                                            <span class="badge bg-danger">Out of stock</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">Low stock</span>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <a class="btn btn-sm btn-outline-primary" href="@($"/admin/stock/adjustment")" data-enhance-nav="false">Adjust</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+
+        @if (_dashboard.UnreadStockAlerts.Count > 0)
+        {
+            <div class="card shadow-sm border mb-4">
+                <div class="card-header bg-white">
+                    <h2 class="h6 mb-0 fw-bold">Recent stock notifications</h2>
+                </div>
+                <ul class="list-group list-group-flush">
+                    @foreach (var alert in _dashboard.UnreadStockAlerts)
+                    {
+                        <li class="list-group-item d-flex flex-wrap justify-content-between gap-2" @key="alert.Id">
+                            <span><i class="bi bi-bell text-danger me-1"></i>@alert.Message</span>
+                            <small class="text-muted">@alert.CreatedAt.ToLocalTime().ToString("g")</small>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
     </div>
 }
 
 @code {
     private CancellationTokenSource? _cts;
     private bool _loading = true;
+    private bool _dismissingAlerts;
     private WebShopABMATIC.Application.Admin.Dashboard.AdminDashboardDto? _dashboard;
     private bool _loaded;
 
@@ -250,6 +339,20 @@ else if (_dashboard is not null)
         {
             _loading = false;
             await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task DismissAlertsAsync()
+    {
+        _dismissingAlerts = true;
+        try
+        {
+            await DashboardPort.MarkStockAlertsReadAsync();
+            await LoadAsync(_cts?.Token ?? CancellationToken.None);
+        }
+        finally
+        {
+            _dismissingAlerts = false;
         }
     }
 

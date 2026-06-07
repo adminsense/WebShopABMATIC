@@ -54,7 +54,7 @@
                         <p class="brand">@p.Description</p>
                         <div class="price-row">
                             <span class="price">@FormatPrice(p.Price)</span>
-                            <span class="stock @(p.Stock < 10 ? "low" : "")">@p.Stock in stock</span>
+                            <span class="stock @(p.IsOutOfStock ? "out" : p.IsLowStock ? "low" : "")">@(p.IsOutOfStock ? "Out of stock" : $"{p.Stock} in stock")</span>
                         </div>
                     </div>
                 </article>

@@ -1,0 +1,292 @@
+@page "/my-account"
+@layout StoreLayout
+@attribute [Authorize(Policy = AppPolicies.CustomerOnly)]
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using WebShopABMATIC.Application.Auth
+@using WebShopABMATIC.Application.Admin.AuditLogs
+@using WebShopABMATIC.Application.Audit
+@using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Application.Ports.Outbound
+@using WebShopABMATIC.Application.Store.Profile
+@using WebShopABMATIC.Infrastructure.Identity
+
+@inject IStoreProfilePort ProfilePort
+@inject IAuditService AuditService
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>My account</PageTitle>
+
+<div class="auth-wrap">
+    <div class="auth-card" style="max-width:720px">
+        <h1>My account</h1>
+        <p>Your personal details for orders and delivery. Payment is entered at checkout.</p>
+
+        @if (_loading)
+        {
+            <p class="text-muted">Loading…</p>
+        }
+        else if (_profile is null)
+        {
+            <div class="alert alert-danger">Could not load your account.</div>
+        }
+        else
+        {
+            @if (!string.IsNullOrEmpty(_statusMessage))
+            {
+                <div class="alert @(_statusIsError ? "alert-danger" : "alert-success")">@_statusMessage</div>
+            }
+
+            <div class="mb-3 p-2 px-3" style="background:var(--surface,#f8f9fa);border-radius:8px;font-size:0.85rem">
+                <strong>Account type:</strong> Customer
+                <span class="text-muted"> — only an administrator can change roles or account type.</span>
+            </div>
+
+            <h2 class="h6 fw-bold mb-2">Personal details</h2>
+            <EditForm Model="_profileModel" OnValidSubmit="SaveProfileAsync">
+                <DataAnnotationsValidator />
+                <div class="row g-2">
+                    <div class="col-md-6 form-group">
+                        <label for="acc-first">First name *</label>
+                        <InputText id="acc-first" class="form-control" @bind-Value="_profileModel.FirstName" />
+                        <ValidationMessage For="() => _profileModel.FirstName" />
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label for="acc-last">Last name *</label>
+                        <InputText id="acc-last" class="form-control" @bind-Value="_profileModel.LastName" />
+                        <ValidationMessage For="() => _profileModel.LastName" />
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label for="acc-email">Email</label>
+                        <input id="acc-email" type="email" class="form-control" value="@_profile.Email" disabled />
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label for="acc-phone">Phone *</label>
+                        <InputText id="acc-phone" class="form-control" @bind-Value="_profileModel.Phone" />
+                        <ValidationMessage For="() => _profileModel.Phone" />
+                    </div>
+                    <div class="col-12"><h3 class="h6 fw-bold mt-2 mb-1">Home address</h3></div>
+                    <div class="col-md-8 form-group">
+                        <label for="acc-street">Street *</label>
+                        <InputText id="acc-street" class="form-control" @bind-Value="_profileModel.Street" autocomplete="street-address" />
+                        <ValidationMessage For="() => _profileModel.Street" />
+                    </div>
+                    <div class="col-md-2 form-group">
+                        <label for="acc-number">No. *</label>
+                        <InputText id="acc-number" class="form-control" @bind-Value="_profileModel.HouseNumber" />
+                        <ValidationMessage For="() => _profileModel.HouseNumber" />
+                    </div>
+                    <div class="col-md-2 form-group">
+                        <label for="acc-box">Box</label>
+                        <InputText id="acc-box" class="form-control" @bind-Value="_profileModel.Box" />
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="acc-postal">Postal code *</label>
+                        <InputText id="acc-postal" class="form-control" @bind-Value="_profileModel.PostalCode" autocomplete="postal-code" />
+                        <ValidationMessage For="() => _profileModel.PostalCode" />
+                    </div>
+                    <div class="col-md-8 form-group">
+                        <label for="acc-city">City *</label>
+                        <InputText id="acc-city" class="form-control" @bind-Value="_profileModel.CityName" autocomplete="address-level2" />
+                        <ValidationMessage For="() => _profileModel.CityName" />
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary" disabled="@_saving">Save details</button>
+                    </div>
+                </div>
+            </EditForm>
+
+            <hr class="my-4" />
+
+            <h2 class="h6 fw-bold mb-2">Password</h2>
+            <EditForm Model="_passwordModel" OnValidSubmit="ChangePasswordAsync">
+                <DataAnnotationsValidator />
+                <div class="form-group">
+                    <label for="acc-current">Current password</label>
+                    <InputText id="acc-current" type="password" class="form-control" @bind-Value="_passwordModel.CurrentPassword" />
+                    <ValidationMessage For="() => _passwordModel.CurrentPassword" />
+                </div>
+                <div class="form-group">
+                    <label for="acc-new">New password</label>
+                    <InputText id="acc-new" type="password" class="form-control" @bind-Value="_passwordModel.NewPassword" />
+                    <ValidationMessage For="() => _passwordModel.NewPassword" />
+                </div>
+                <div class="form-group">
+                    <label for="acc-confirm">Confirm new password</label>
+                    <InputText id="acc-confirm" type="password" class="form-control" @bind-Value="_passwordModel.ConfirmPassword" />
+                    <ValidationMessage For="() => _passwordModel.ConfirmPassword" />
+                </div>
+                <button type="submit" class="btn btn-outline-primary" disabled="@_saving">Update password</button>
+            </EditForm>
+
+            <p class="mt-4 mb-0" style="font-size:0.85rem;color:var(--muted)">
+                <NavLink href="/">← Back to catalog</NavLink>
+            </p>
+        }
+    </div>
+</div>
+
+@code {
+    private StoreProfileDto? _profile;
+    private ProfileInputModel _profileModel = new();
+    private PasswordInputModel _passwordModel = new();
+    private bool _loading = true;
+    private bool _saving;
+    private string? _statusMessage;
+    private bool _statusIsError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _profile = await ProfilePort.GetMyProfileAsync();
+        if (_profile is not null)
+        {
+            _profileModel = ProfileInputModel.FromDto(_profile);
+        }
+
+        _loading = false;
+    }
+
+    private async Task SaveProfileAsync()
+    {
+        _saving = true;
+        _statusMessage = null;
+        try
+        {
+            var result = await ProfilePort.SaveMyProfileAsync(_profileModel.ToUpdateDto());
+            if (!result.Succeeded)
+            {
+                _statusIsError = true;
+                _statusMessage = string.Join(" ", result.Errors);
+                return;
+            }
+
+            var auth = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = await UserManager.GetUserAsync(auth.User);
+            if (user is not null)
+            {
+                await SignInManager.RefreshSignInAsync(user);
+            }
+
+            _profile = await ProfilePort.GetMyProfileAsync();
+            if (_profile is not null)
+            {
+                _profileModel = ProfileInputModel.FromDto(_profile);
+            }
+
+            _statusIsError = false;
+            _statusMessage = "Your details were saved.";
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task ChangePasswordAsync()
+    {
+        var auth = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(auth.User);
+        if (user is null) return;
+
+        _saving = true;
+        _statusMessage = null;
+        try
+        {
+            var result = await UserManager.ChangePasswordAsync(
+                user,
+                _passwordModel.CurrentPassword,
+                _passwordModel.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                _statusIsError = true;
+                _statusMessage = string.Join(" ", result.Errors.Select(e => e.Description));
+                return;
+            }
+
+            await SignInManager.RefreshSignInAsync(user);
+            _passwordModel = new PasswordInputModel();
+            await AuditService.LogAsync(new AuditLogWriteRequest
+            {
+                Action = AuditActions.PasswordReset,
+                EntityName = "ApplicationUser",
+                EntityId = user.Id,
+                IdentityUserId = user.Id,
+                UserDisplayName = user.Email,
+                NewValues = System.Text.Json.JsonSerializer.Serialize(new { profile = "store", selfService = true })
+            });
+            _statusIsError = false;
+            _statusMessage = "Password updated.";
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private sealed class ProfileInputModel
+    {
+        [Required, StringLength(100)]
+        public string FirstName { get; set; } = "";
+
+        [Required, StringLength(100)]
+        public string LastName { get; set; } = "";
+
+        [Required, Phone]
+        public string Phone { get; set; } = "";
+
+        [Required, StringLength(200)]
+        public string Street { get; set; } = "";
+
+        [Required, StringLength(20)]
+        public string HouseNumber { get; set; } = "";
+
+        [StringLength(20)]
+        public string? Box { get; set; }
+
+        [Required, StringLength(20)]
+        public string PostalCode { get; set; } = "";
+
+        [Required, StringLength(100)]
+        public string CityName { get; set; } = "";
+
+        public static ProfileInputModel FromDto(StoreProfileDto dto) => new()
+        {
+            FirstName = dto.FirstName,
+            LastName = dto.LastName,
+            Phone = dto.Phone,
+            Street = dto.Street,
+            HouseNumber = dto.HouseNumber,
+            Box = string.IsNullOrWhiteSpace(dto.Box) ? null : dto.Box,
+            PostalCode = dto.PostalCode,
+            CityName = dto.CityName
+        };
+
+        public StoreProfileUpdateDto ToUpdateDto() => new()
+        {
+            FirstName = FirstName,
+            LastName = LastName,
+            Phone = Phone,
+            Street = Street,
+            HouseNumber = HouseNumber,
+            Box = Box,
+            PostalCode = PostalCode,
+            CityName = CityName
+        };
+    }
+
+    private sealed class PasswordInputModel
+    {
+        [Required]
+        public string CurrentPassword { get; set; } = "";
+
+        [Required, StringLength(100, MinimumLength = 8)]
+        public string NewPassword { get; set; } = "";
+
+        [Required, Compare(nameof(NewPassword))]
+        public string ConfirmPassword { get; set; } = "";
+    }
+}

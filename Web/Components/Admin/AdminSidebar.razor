@@ -1,37 +1,263 @@
 @using WebShopABMATIC.Application.Auth
+
+@using Microsoft.AspNetCore.Components.Authorization
+
 @inject NavigationManager Navigation
 
+
+
 <aside class="admin-sidebar">
+
     <div class="admin-brand">
+
         WS<br />WEBSHOP ABMATIC
+
         <small>Admin panel</small>
+
     </div>
+
     <nav class="admin-nav">
+
         @foreach (var item in NavItems)
+
         {
-            <NavLink class="admin-nav-link" href="@item.Href" Match="@item.Match">
-                <span class="oi @item.Icon"></span> @item.Label
-            </NavLink>
+
+            if (item.AdminOnly)
+
+            {
+
+                <AuthorizeView Roles="@AppRoles.Admin">
+
+                    <Authorized>
+
+                        <a class="admin-nav-link @(IsActive(item) ? "active" : "")"
+
+                           href="@item.Href"
+
+                           data-enhance-nav="false">
+
+                            <span class="oi @item.Icon"></span> @item.Label
+
+                        </a>
+
+                    </Authorized>
+
+                </AuthorizeView>
+
+            }
+
+            else
+
+            {
+
+                <a class="admin-nav-link @(IsActive(item) ? "active" : "")"
+
+                   href="@item.Href"
+
+                   data-enhance-nav="false">
+
+                    <span class="oi @item.Icon"></span> @item.Label
+
+                </a>
+
+            }
+
         }
+
     </nav>
+
     <div class="admin-sidebar-footer">
+
         <div>@DateTime.Now.ToString("dd/MM/yyyy")</div>
+
         <div>v1.0 · WebShopABMATIC</div>
+
     </div>
+
 </aside>
 
+
+
 @code {
-    private sealed record NavItem(string Href, string Label, string Icon, NavLinkMatch Match = NavLinkMatch.Prefix);
+
+    private sealed record NavItem(string Href, string Label, string Icon, bool Exact, bool AdminOnly = false);
+
+
 
     private static readonly NavItem[] NavItems =
+
     [
-        new("/admin", "Start", "oi-home", NavLinkMatch.All),
-        new("/admin/hub/webshop", "Webshop", "oi-globe"),
-        new("/admin/hub/catalog", "Catalog", "oi-cog"),
-        new("/admin/hub/customers", "Customers", "oi-people"),
-        new("/admin/hub/sales", "Sales", "oi-cart"),
-        new("/admin/hub/stock", "Stock", "oi-box"),
-        new("/admin/hub/settings", "Settings", "oi-wrench"),
-        new("/admin/profile", "My profile", "oi-person")
+
+        new("/admin", "Start", "oi-home", Exact: true),
+
+        new("/admin/hub/webshop", "Webshop", "oi-globe", Exact: false),
+
+        new("/admin/hub/catalog", "Catalog", "oi-cog", Exact: false),
+
+        new("/admin/hub/customers", "Customers", "oi-people", Exact: false),
+
+        new("/admin/hub/sales", "Sales", "oi-cart", Exact: false),
+
+        new("/admin/hub/stock", "Stock", "oi-box", Exact: false),
+
+        new("/admin/hub/settings", "Settings", "oi-wrench", Exact: false),
+
+        new("/admin/audit-logs", "Audit log", "oi-clipboard", Exact: false, AdminOnly: true),
+
+        new("/admin/users", "Users", "oi-people", Exact: false, AdminOnly: true),
+
+        new("/admin/profile", "My profile", "oi-person", Exact: false)
+
     ];
+
+
+
+    private bool IsActive(NavItem item)
+
+    {
+
+        var path = Navigation.ToBaseRelativePath(Navigation.Uri).TrimEnd('/');
+
+        var href = item.Href.TrimStart('/').TrimEnd('/');
+
+
+
+        if (item.Exact)
+
+        {
+
+            return string.Equals(path, href, StringComparison.OrdinalIgnoreCase);
+
+        }
+
+
+
+        if (string.Equals(href, "admin/audit-logs", StringComparison.OrdinalIgnoreCase))
+
+        {
+
+            return path.StartsWith("admin/audit-logs", StringComparison.OrdinalIgnoreCase);
+
+        }
+
+
+
+        if (string.Equals(href, "admin/hub/catalog", StringComparison.OrdinalIgnoreCase))
+
+        {
+
+            return path.StartsWith(href, StringComparison.OrdinalIgnoreCase)
+
+                   || path.StartsWith("admin/products", StringComparison.OrdinalIgnoreCase)
+
+                   || path.StartsWith("admin/product-", StringComparison.OrdinalIgnoreCase)
+
+                   || path.StartsWith("admin/manufacturers", StringComparison.OrdinalIgnoreCase)
+
+                   || path.StartsWith("admin/suppliers", StringComparison.OrdinalIgnoreCase)
+
+                   || path.StartsWith("admin/price-list", StringComparison.OrdinalIgnoreCase);
+
+        }
+
+
+
+        if (string.Equals(href, "admin/hub/customers", StringComparison.OrdinalIgnoreCase))
+
+        {
+
+            return path.StartsWith(href, StringComparison.OrdinalIgnoreCase)
+
+                   || path.StartsWith("admin/customers", StringComparison.OrdinalIgnoreCase)
+
+                   || path.StartsWith("admin/customer-", StringComparison.OrdinalIgnoreCase)
+
+                   || path.StartsWith("admin/delivery-addresses", StringComparison.OrdinalIgnoreCase);
+
+        }
+
+
+
+        if (string.Equals(href, "admin/hub/sales", StringComparison.OrdinalIgnoreCase))
+
+        {
+
+            return path.StartsWith(href, StringComparison.OrdinalIgnoreCase)
+
+                   || path.StartsWith("admin/orders", StringComparison.OrdinalIgnoreCase)
+
+                   || path.StartsWith("admin/order-", StringComparison.OrdinalIgnoreCase)
+
+                   || path.StartsWith("admin/delivery-types", StringComparison.OrdinalIgnoreCase);
+
+        }
+
+
+
+        if (string.Equals(href, "admin/hub/stock", StringComparison.OrdinalIgnoreCase))
+
+        {
+
+            return path.StartsWith(href, StringComparison.OrdinalIgnoreCase)
+
+                   || path.StartsWith("admin/product-stock", StringComparison.OrdinalIgnoreCase)
+
+                   || path.StartsWith("admin/stock-locations", StringComparison.OrdinalIgnoreCase)
+
+                   || path.StartsWith("admin/stock/", StringComparison.OrdinalIgnoreCase);
+
+        }
+
+
+
+        if (string.Equals(href, "admin/hub/settings", StringComparison.OrdinalIgnoreCase))
+
+        {
+
+            return path.StartsWith(href, StringComparison.OrdinalIgnoreCase)
+
+                   || path.StartsWith("admin/payment-methods", StringComparison.OrdinalIgnoreCase)
+
+                   || path.StartsWith("admin/users", StringComparison.OrdinalIgnoreCase)
+                   || path.StartsWith("admin/system-users", StringComparison.OrdinalIgnoreCase)
+                   || path.StartsWith("admin/audit-logs", StringComparison.OrdinalIgnoreCase)
+
+                   || path.StartsWith("admin/staff-users", StringComparison.OrdinalIgnoreCase)
+
+                   || path.StartsWith("admin/vat-types", StringComparison.OrdinalIgnoreCase);
+
+        }
+
+
+
+        if (string.Equals(href, "admin/hub/webshop", StringComparison.OrdinalIgnoreCase))
+
+        {
+
+            return path.StartsWith(href, StringComparison.OrdinalIgnoreCase)
+
+                   || path.StartsWith("admin/webshop-", StringComparison.OrdinalIgnoreCase);
+
+        }
+
+
+
+        if (string.Equals(href, "admin/profile", StringComparison.OrdinalIgnoreCase))
+
+        {
+
+            return path.StartsWith("admin/profile", StringComparison.OrdinalIgnoreCase)
+
+                   || path.StartsWith("admin/hub/profile", StringComparison.OrdinalIgnoreCase);
+
+        }
+
+
+
+        return path.StartsWith(href, StringComparison.OrdinalIgnoreCase);
+
+    }
+
 }
+
+

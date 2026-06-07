@@ -239,7 +239,7 @@ builder.Services.AddWebShopInfrastructure(...); // repositories, Identity, media
 - **Inbound ports + use cases**: define interfaces first, implement use cases in Application
 - **Outbound ports + repositories**: EF adapters in `Infrastructure/Persistence/Repositories/`
 - **UI**: Blazor pages inject inbound ports only — no EF in Razor
-- **Seed**: `scripts/seeds.sql` for local demo data
+- **Seed**: `scripts/seeds.sql` for domain + app demo data (`StockLowAlerts`, `AuditLogs`, `OrderAdvancePayments`); identity users via `dotnet run -- --seed-identity`
 
 ---
 
@@ -265,13 +265,24 @@ WebShopABMATIC/           ← repo root (clone folder)
 - SQL Server (LocalDB for Development)
 - .NET SDK 8.x
 
-### 8.3 Database (Identity)
+### 8.3 Database
 
-```bash
-dotnet ef database update --project Infrastructure/WebShopABMATIC.Infrastructure.csproj --startup-project Web/WebShopABMATIC.Web.csproj --context ApplicationDbContext
+Apply schema and demo data **manually** (migrations do not run on app startup):
+
+```powershell
+.\scripts\apply-local-database.ps1
 ```
 
-Domain schema: run `scripts/WebShopABMATIC-create-local.sql` or point `connWebShopABMATIC` at an existing ABMATIC database.
+Or step by step:
+
+```powershell
+sqlcmd -S MULLER -E -d WebShopABMATIC -i scripts\apply-pending-schema.sql
+sqlcmd -S MULLER -E -d WebShopABMATIC -i scripts\seeds.sql
+cd Web && dotnet run -- --seed-identity
+```
+
+Greenfield domain schema: `scripts/WebShopABMATIC-create-local.sql`.  
+Optional EF sync: `dotnet ef database update` for `ApplicationDbContext` and `WebShopABMATICDbContext` (see `readme/DATA_DEMO_SEED.md`).
 
 ### 8.4 Run admin app
 

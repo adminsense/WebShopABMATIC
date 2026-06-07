@@ -52,11 +52,11 @@ dotnet build Persistence/WebShopABMATIC.Data.Persistence.csproj
 | ðŸ¤ **Crm** | `Crm` | 28 | Calendar, tasks, suppliers |
 | ðŸ‘¤ **Customers** | `Klanten` | 4 | Customer master, contacts |
 | ðŸ“§ **Emails** | `Emails` | 3 | Messages, attachments |
-| âš™ï¸ **Settings** | `Instellingen` | 18 | Staff, templates, config |
+| âš™ï¸ **Settings** | `Instellingen` | 18 | Staff, document types, config |
 | ðŸ“ **Logging** | `Logging` | 2 | Errors, project activity |
 | ðŸ“¦ **Products** | `Products` | 38 | Catalog, pricing, stock |
 | ðŸ—ï¸ **Projects** | `Projecten` | 31 | Orders, projects, timesheets |
-| âœ… **Tasks** | `Taken` | 4 | Task templates, dependencies |
+| âœ… **Tasks** | `Taken` | 4 | Task definitions, dependencies |
 | ðŸ‘¥ **Users** | `Users` | 1 | Sick leave |
 
 ---
@@ -105,12 +105,12 @@ public class Order { â€¦ }
 | `Boekhouding` | `Accounting` | Invoices, credit notes, accounting lines |
 | `Crm` | `Crm` | CRM, calendar, tasks, suppliers |
 | `Klanten` | `Customers` | Customer master data |
-| `Instellingen` | `Settings` | Company settings, staff users, templates |
+| `Instellingen` | `Settings` | Company settings, staff users, document types |
 | `Logging` | `Logging` | Application / audit logs |
 | `Products` | `Products` | Catalog, pricing, stock |
 | `Projecten` | `Projects` | Projects, orders, order lines |
 | `Emails` | `Emails` | Email messages and attachments |
-| `Taken` | `Tasks` | Task templates and dependencies |
+| `Taken` | `Tasks` | Task definitions and dependencies |
 | `Users` | `Users` | HR / sick leave |
 
 Legacy `dbo.*` import/staging tables are **not** migrated.

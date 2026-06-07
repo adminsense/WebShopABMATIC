@@ -1,14 +1,21 @@
 using Microsoft.AspNetCore.Identity;
+using WebShopABMATIC.Application.Audit;
 using WebShopABMATIC.Application.Auth;
 using WebShopABMATIC.Application.Ports.Outbound;
+using WebShopABMATIC.Infrastructure.Audit;
 
 namespace WebShopABMATIC.Infrastructure.Identity;
 
 public sealed class IdentityPasswordService : IIdentityPasswordPort
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IAuditService _audit;
 
-    public IdentityPasswordService(UserManager<ApplicationUser> userManager) => _userManager = userManager;
+    public IdentityPasswordService(UserManager<ApplicationUser> userManager, IAuditService audit)
+    {
+        _userManager = userManager;
+        _audit = audit;
+    }
 
     public async Task<PasswordResetResult> ResetPasswordAsync(string identityUserId, string? newPassword = null, CancellationToken cancellationToken = default)
     {
@@ -28,6 +35,14 @@ public sealed class IdentityPasswordService : IIdentityPasswordPort
         {
             return Fail(result.Errors.Select(e => e.Description).ToArray());
         }
+
+        await AuditManualLogger.LogIdentityUserAsync(
+            _audit,
+            AuditActions.PasswordReset,
+            user.Id,
+            user.Email,
+            new { passwordReset = true, temporaryGenerated = string.IsNullOrWhiteSpace(newPassword) },
+            cancellationToken);
 
         return new PasswordResetResult
         {

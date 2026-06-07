@@ -7,6 +7,9 @@ public sealed record StoreProduct(
     string ImageUrl,
     decimal Price,
     int Stock,
+    decimal MinQuantity,
+    bool IsLowStock,
+    bool IsOutOfStock,
     string Category,
     string Tag);
 
