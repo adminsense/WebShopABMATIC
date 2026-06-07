@@ -179,7 +179,7 @@ Registration uses `ICustomerRegistrationPort` → links `Customers.IdentityUserI
 
 | `customer@webshop.com` | `Customer@12345` | Customer (linked to Customer #4) |
 
-Seeded automatically in **Development** (`IdentitySeedHostedService`). Seed skips users that already exist.
+Seeded via `dotnet run -- --seed-identity` (or `apply-local-database.ps1`). Seed skips users that already exist.
 
 ### 2.5 Logout
 
@@ -311,7 +311,8 @@ Each sidebar item opens a **hub** of entity cards. Below: what staff **register 
 |-------|------|-------|
 | `/admin/stock/overview` | Stock overview | KPI widgets + balance by location |
 | `/admin/stock/movements` | Movement journal | Date/product filters, read-only grid |
-| `/admin/product-stock` | Product stock | CRUD per product/location |
+| `/admin/product-stock` | Product stock | CRUD per product/location; **low-stock filter** |
+| `/admin/stock/adjustment` | Stock adjustment | Manual inbound/outbound movements |
 | `/admin/stock-locations` | Stock locations | Warehouse master data |
 
 **Blazor status:** ✅ Overview + movement journal (Phase A); product stock + locations CRUD implemented.
@@ -354,8 +355,10 @@ Stock rules connect **admin maintenance**, **order workflow**, and the **storefr
 
 | Rule | Where enforced | Behaviour |
 |------|----------------|-----------|
-| **Low stock alert** | Dashboard **Stock operations** card | Count rows where `Quantity <= MinQuantity` |
-| **Low stock review** | `/admin/product-stock` | Filter and edit min/quantity per product/location |
+| **Low stock alert** | Dashboard + **`StockLowAlerts`** | Count + banner + **Products below minimum** table |
+| **Low stock review** | `/admin/product-stock?lowStock=true` | **All / Low stock** toggle; red rows; product name column |
+| **Dismiss stock alerts** | Dashboard **Dismiss all** | Marks `StockLowAlerts` read |
+| **Stock adjustment** | `/admin/stock/adjustment` | Signed qty + reason (not via grid quantity edit) |
 | **Movement journal** | `/admin/stock/movements` | Filter by date, product, reservation |
 | **Stock overview** | `/admin/stock/overview` | KPIs: low stock, movements (7d), open POs |
 | **Inactive location** | `ProductStockLocation.IsInactive` | Exclude from availability (planned UI filter) |
@@ -366,9 +369,10 @@ Stock rules connect **admin maintenance**, **order workflow**, and the **storefr
 
 | Rule | Where | Behaviour |
 |------|-------|-----------|
-| **Show availability hint** | Product detail page | Display e.g. “24 in stock” from default `ProductStockLocation` |
-| **Low stock styling** | Catalog cards | Highlight when below threshold (e.g. orange “3 in stock”) |
-| **Block add-to-cart** | Cart / checkout (planned) | Prevent order line if insufficient available quantity |
+| **Show availability hint** | Product detail / catalog | “N in stock” from default `ProductStockLocation` |
+| **Low stock styling** | Catalog cards | Orange when `Stock <= MinQuantity` (`IsLowStock`) |
+| **Out of stock** | Catalog + detail | Red “Out of stock” when `Stock <= 0`; disable add where applicable |
+| **Block add-to-cart** | Cart / checkout | ✅ Server validates available qty at checkout |
 | **ShowOnWebshop gate** | Catalog query | Product hidden unless `ShowOnWebshop = true` |
 
 > [!TIP]

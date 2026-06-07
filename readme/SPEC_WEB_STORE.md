@@ -248,28 +248,21 @@ Stock behaviour must stay **consistent** with admin rules ([SPEC_ADMIN.md §4](S
 
 ### 5.1 Display rules (catalog and detail)
 
-| Condition | UI behaviour (prototype) | Production rule |
-|-----------|---------------------------|-----------------|
-| `available > threshold` | Green “N in stock” | `Quantity - ReservedQuantity` from default location |
-| `available <= threshold` (e.g. 10) | Orange **low** class | `available <= MinQuantity` or configurable threshold |
-| `available = 0` | “Out of stock”; disable add to cart | Block add and show notify-me (optional) |
+| Condition | UI behaviour | Implementation |
+|-----------|----------------|----------------|
+| `available > MinQuantity` (or min = 0) | Green “N in stock” | `StoreProductDto` from default location |
+| `available <= MinQuantity` and `> 0` | Orange **low** class | `IsLowStock` — uses DB `MinQuantity`, not hardcoded 10 |
+| `available = 0` | “Out of stock” | `IsOutOfStock` |
 | Product not on webshop | Hidden | `ShowOnWebshop != true` |
 
-Prototype threshold example (JavaScript mock):
-
-```javascript
-// Low stock styling when stock < 10
-p.stock < 10 ? ' low' : ''
-```
-
-Production should prefer **`MinQuantity`** from `ProductStockLocation` per product.
+**Implemented** in `StoreCatalogService`, `Catalog.razor`, `ProductDetail.razor` (May 2026).
 
 ### 5.2 Cart and checkout validation (planned)
 
 | Rule | When | Action |
 |------|------|--------|
-| **Sufficient stock** | Add to cart / update qty | Reject if `requestedQty > available` |
-| **Reserve on submit** | Order created with initial status | Increase `ReservedQuantity` if `OrderStatus.ReserveStock` |
+| **Reserve on submit** | Order created with initial status | ⬜ Not used — **decrement on pay** (PrePay) or checkout (PostPay) via `IStockMovementService` |
+| **Sufficient stock** | Add to cart / checkout | ✅ Reject if `requestedQty > available` |
 | **Consume on fulfilment** | Status with `AffectsStock` | Decrease `Quantity`, release reservation |
 | **Multi-location** | Warehouse selection (future) | Pick `ProductStockLocation` with `IsDefault` or nearest |
 

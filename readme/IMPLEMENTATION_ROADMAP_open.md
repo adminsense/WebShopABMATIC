@@ -1,6 +1,6 @@
 # Implementation roadmap — stock, checkout & Mollie
 
-![Status](https://img.shields.io/badge/Status-Phases%20A%20%26%20B%20done-28a745?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Phases%200–D%20core%20done-28a745?style=flat-square)
 
 > **Purpose:** Track delivery in small parts. Mark ✅ when done.  
 > **Analysis reference:** [SPEC_STOCK_OPERATIONS_PROPOSAL.md](./SPEC_STOCK_OPERATIONS_PROPOSAL.md)  
@@ -11,11 +11,11 @@
 | **0** | Seeds + pricing foundation | ✅ Done |
 | **A** | Stock admin (read-only) | ✅ Done |
 | **B** | Checkout + Mollie | ✅ Done |
-| **C** | Store & admin order visibility | ⬜ Not started |
-| **D** | Stock writes + reservation on pay | ⬜ Not started |
+| **C** | Store & admin order visibility | ✅ Done |
+| **D** | Stock writes + low-stock alerts | ✅ Core done |
 | **E** | PO / invoice / extras (later) | ⬜ Deferred |
 
-**Current focus:** _Phase C_
+**Current focus:** _Mollie live E2E (B.9) · Phase E PO / transfers_
 
 ---
 
@@ -56,26 +56,28 @@
 - ✅ **B.6** Webhook endpoint + idempotent handler → mark `OrderAdvancePayment` paid
 - ✅ **B.7** `/orders/{id}/payment-return` + `/orders/{id}/confirmation`
 - ✅ **B.8** Post-pay path: no Mollie, confirmation only
-- ⬜ **B.9** Test with Mollie test key + dev tunnel (ngrok / Azure) — _local ops_
+- ⬜ **B.9** Test with Mollie test key + dev tunnel — checklist in [PAYMENTS.md](./PAYMENTS.md)
 
 ---
 
-## Phase C — Visibility (store + admin)
+## Phase C — Visibility (store + admin) ✅
 
-- ⬜ **C.1** Customer `/orders` list (own orders only)
-- ⬜ **C.2** Customer `/orders/{id}` with payment status badge
-- ⬜ **C.3** Admin `/admin/orders`: columns payment status + Mollie id
-- ⬜ **C.4** Admin order detail: `OrderAdvancePayments` read-only section
-- ⬜ **C.5** Seed: `OrderAdvancePayments` on 2–3 demo orders
+- ✅ **C.1** Customer `/orders` list (own orders only)
+- ✅ **C.2** Customer `/orders/{id}` with payment status badge
+- ✅ **C.3** Admin `/admin/orders`: columns payment status + Mollie id
+- ✅ **C.4** Admin order detail: `OrderAdvancePayments` read-only section
+- ✅ **C.5** Seed: `OrderAdvancePayments` on 2–3 demo orders — in `seeds.sql`
 
 ---
 
-## Phase D — Stock integration (after B.6 works)
+## Phase D — Stock integration ✅ (core)
 
-- ⬜ **D.1** Manual stock adjustment form + use case (transaction)
-- ⬜ **D.2** On webhook paid: reserve stock if `OrderStatus.ReserveStock`
-- ⬜ **D.3** Movement journal shows `OrderLineId` link from web orders
-- ⬜ **D.4** Confirm negative-stock rule with business (document decision)
+- ✅ **D.1** Manual stock adjustment — `/admin/stock/adjustment` + `POST /api/admin/stock/adjustments`
+- ✅ **D.2** On webhook paid (PrePay) + PostPay checkout → **`ApplySaleFromOrderAsync`** (direct decrement, not `ReserveStock` flag)
+- ✅ **D.3** Movement journal: `OrderLineId` populated from webshop sales
+- ✅ **D.4** Negative stock blocked on writes (`StockMovementService`)
+- ✅ **D.6** `ReservedQuantity` / available columns on product-stock grid + seed demo values
+- ⬜ **D.7** Reservation workflow on checkout (`ReservedQuantity` increment) — deferred
 
 ---
 
@@ -92,8 +94,8 @@
 - ⬜ **E.6** Retry payment / expired session UX
 
 ### Docs & ops
-- ⬜ **E.7** `readme/PAYMENTS.md` (keys, webhook URL, test vs live)
-- ⬜ **E.8** [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) — mark checkout as implemented
+- ⬜ **E.7** [PAYMENTS.md](./PAYMENTS.md) (keys, webhook URL, test vs live) — ✅ written
+- ⬜ **E.8** [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) — checkout ✅; order history Phase C still open
 
 ---
 
@@ -113,9 +115,9 @@
 ```
 Phase 0  [██████████] 9/9
 Phase A  [██████████] 6/6
-Phase B  [█████████_] 8/9  (B.9 manual test)
-Phase C  [__________] 0/5
-Phase D  [__________] 0/4
+Phase B  [█████████_] 8/9  (B.9 manual E2E — [PAYMENTS.md](./PAYMENTS.md))
+Phase C  [██████████] 5/5
+Phase D  [█████████░] 6/7  (reservation workflow deferred)
 Phase E  [__________] 0/8  (deferred)
 ```
 

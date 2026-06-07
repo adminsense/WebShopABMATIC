@@ -49,6 +49,18 @@ Both contexts use the **same database** in development so admin lists and Identi
 Apply migrations once against `WebShopABMATIC` on `MULLER`:
 
 ```powershell
+sqlcmd -S MULLER -E -d WebShopABMATIC -i scripts\apply-pending-schema.sql
+```
+
+Or the all-in-one script:
+
+```powershell
+.\scripts\apply-local-database.ps1
+```
+
+Alternative (EF CLI — keeps `__EFMigrationsHistory` in sync if you prefer):
+
+```powershell
 $c = "Server=MULLER;Database=WebShopABMATIC;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True"
 
 dotnet ef database update `
@@ -100,17 +112,20 @@ The full EF model defines **11 schemas** and **139+ tables**. The demo seed touc
 | **Projects** | `DeliveryTypes`, **`OrderStatuses`**, `OrderProcessingTypes`, `Project`, `Orders`, `OrderLines` | Sales pipeline, payment workflow flags |
 | **Products** | `StockLocations`, `Product`, **`ProductPrices`**, `ProductStockLocations`, `WebshopStructures` | Catalog prices + low-stock alerts |
 | **Settings** | **`PaymentMethods`** | Checkout pre-pay (Mollie) vs post-pay (invoice) |
+| **App (dbo)** | **`StockLowAlerts`**, **`AuditLogs`** | Dashboard in-app alerts + audit grid demo |
+| **Projects** | **`OrderAdvancePayments`** | 3 demo rows (Mollie paid, open, post-pay without Mollie) |
+| **Emails** | **`EmailQueues`** | Placeholder queue `LowStockAlerts` (email sender is no-op) |
 
 ### 4.2 Not populated (empty after seed)
 
 | Schema / area | Examples | Why omitted |
 |---------------|----------|-------------|
 | **Tasks** | `TaskItems`, `TaskTemplates`, `TaskDependencies` | No admin screens wired yet |
-| **Emails** | `EmailMessages`, `EmailQueues` | Out of scope for dashboard demo |
+| **Emails** (messages) | `EmailMessages` | Out of scope — queue names only |
 | **Files** | `AzureFiles`, `StoredFiles` | No file-upload flows in current UI |
 | **Logging** | `AppErrors`, `ProjectActivities` | Operational data, not demo content |
 | **Settings** (other) | `AppSettings`, `BaseCompany`, `DocumentTemplates` | Uses defaults / not required for lists |
-| **Projects** (other) | `OrderRemarks`, `OrderLogs`, `OrderAdvancePayments`, … | Phase B checkout will populate advance payments |
+| **Projects** (other) | `OrderRemarks`, `OrderLogs`, … | Not required for lists |
 | **Products** (other) | `WebshopProductStructures`, `ProductOptions`, … | Catalog uses `Product` + **`ProductPrices`** |
 | **Customers** (other) | `Contact`, `CustomerContacts`, `CustomerDeliveryAddresses` | List uses `Customers` only |
 
@@ -177,7 +192,10 @@ After a successful run, expect approximately:
 | Customers | 4 | `Customers.Customers` |
 | Orders this month | 24 | `Projects.Orders` (`CreatedAt` ≥ first day of current UTC month) |
 | Pending orders | 8 | `Projects.Orders` where `IsAccepted = 0` |
-| Low stock alerts | 5–7 | `Products.ProductStockLocations` where `Quantity <= MinQuantity` |
+| Low stock (product rows) | 5 | `Products.ProductStockLocations` where `Quantity <= MinQuantity` |
+| In-app stock alerts (unread) | 3 | `dbo.StockLowAlerts` where `IsRead = 0` |
+| Audit log rows | 12 | `dbo.AuditLogs` (incl. `CheckoutStarted`, `PaymentPaid`) |
+| Order advance payments | 3 | `Projects.OrderAdvancePayments` (Mollie paid/open + post-pay) |
 | Revenue YTD | ~29,384 | Sum of `OrderLines.TotalExclVat` on accepted orders in current UTC year |
 
 Admin dashboard reads these via `IAdminDashboardPort` / `AdminDashboardUseCase`.
@@ -186,7 +204,16 @@ Admin dashboard reads these via `IAdminDashboardPort` / `AdminDashboardUseCase`.
 
 ## 7. Sample identities (not in SQL)
 
-Login accounts are **not** inserted by `seeds.sql`. In Development, `IdentitySeedHostedService` creates:
+Login accounts are **not** inserted by `seeds.sql`. **`AuditLogs`** demo rows **are** in SQL; `dotnet run -- --seed-identity` only adds audit rows if the table is empty (skip after `seeds.sql`).
+
+Run once after schema + domain seed:
+
+```powershell
+cd Web
+dotnet run -- --seed-identity
+```
+
+Or use `.\scripts\apply-local-database.ps1` (runs schema, `seeds.sql`, and identity seed).
 
 | Email | Password | Roles |
 |-------|----------|-------|

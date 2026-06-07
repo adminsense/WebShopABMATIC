@@ -162,7 +162,7 @@ Below: one section per entity exposed in the admin mock. **Table** = SQL/EF enti
 |------|--------------------------|--------------|
 | Webshop catalog | `Product.ShowOnWebshop`, `WebshopStructure` | Jump to Webshop hub |
 | Sales & orders | `Order`, `Order.IsAccepted` | Monitor acceptance rate |
-| Stock operations | `ProductStockLocation` | Review low stock |
+| Stock operations | `ProductStockLocation` | Review low stock → `/admin/product-stock?lowStock=true` |
 | Financial YTD | Accounting aggregates | Revenue / costs snapshot |
 
 ---
@@ -369,7 +369,7 @@ Below: one section per entity exposed in the admin mock. **Table** = SQL/EF enti
 
 **Table:** `[Products].[ProductStockLocations]` — **stock level** of a product at a location: quantity, reserved, min/max, last count.
 
-**List screen:** Id, ProductId, StockLocationId, Quantity, MinQuantity, Actions.
+**List screen:** Id, Product, StockLocationId, Quantity, MinQuantity, Actions. **Low stock filter:** `?lowStock=true` (implemented).
 
 **Form screen:** Product, location, quantities, thresholds.
 

@@ -1,13 +1,80 @@
 # Stock operations & storefront payments — proposal
 
-![Status](https://img.shields.io/badge/Status-Proposal-ffc107?style=flat-square) ![Schema](https://img.shields.io/badge/Schema-Products%20%2B%20Orders-512BD4?style=flat-square) ![Architecture](https://img.shields.io/badge/Fit-Hexagonal-28a745?style=flat-square) ![Payments](https://img.shields.io/badge/Payments-Mollie.Api-0a0a0a?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Partially%20implemented-22c55e?style=flat-square) ![Schema](https://img.shields.io/badge/Schema-Products%20%2B%20Orders-512BD4?style=flat-square) ![Architecture](https://img.shields.io/badge/Fit-Hexagonal-28a745?style=flat-square) ![Payments](https://img.shields.io/badge/Payments-Mollie.Api-0a0a0a?style=flat-square) ![Tracker](https://img.shields.io/badge/Live-SUNDAY__open.md-informational?style=flat-square)
 
 > [!IMPORTANT]
-> **Executive summary:** This document is an **analysis-only** proposal — no development until you approve it. **One macro data diagram (§1.2)** covers stock, sales order, pricing, and the payment link to **Mollie (external)**. **§1.4–§1.5** show forms and the full sales cycle for the client.
+> **Executive summary:** Originally an analysis proposal — **core stock writes, checkout, Mollie, manual adjustment, and low-stock alerts are now implemented** (see **§0** and [SUNDAY_open.md](./SUNDAY_open.md)). Remaining: PO/GRN, transfers, reservations (`ReservedQuantity`), SignalR, Mollie go-live E2E, audit `StockAdjust` badge.
 
-# Part I — Stock operations
+> **Live tracker:** [SUNDAY_open.md](./SUNDAY_open.md) · **Roadmap checkboxes:** [IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md)
 
 ---
+
+## 0. Implementation log (delivered)
+
+_Last updated: May 2026 — reflects work from [SUNDAY_open.md](./SUNDAY_open.md) Phases 1–3 and low-stock enhancements._
+
+### 0.1 Stock movement service (sale + manual)
+
+| Item | Status | Implementation |
+|------|--------|----------------|
+| `IStockMovementService` | ✅ | `Application/Ports/Outbound/IStockMovementService.cs` |
+| `StockMovementService` | ✅ | `Infrastructure/Stock/StockMovementService.cs` — single transaction: `StockMovement` + `ProductStockLocation.Quantity` |
+| PrePay stock decrement | ✅ | After `PaymentPaid` — `ProcessMollieWebhookUseCase` + `GetOrderSummaryAsync` fallback |
+| PostPay stock decrement | ✅ | Immediately after `CreateWebshopOrderAsync` in `CheckoutUseCase` |
+| Idempotency | ✅ | Skip if movements already exist for order line ids |
+| Negative stock on write | ✅ Blocked | All-or-nothing; no negative `Quantity` on sales/adjustments |
+| Manual adjustment | ✅ | `ApplyManualAdjustmentAsync` — signed qty + required reason |
+
+### 0.2 Manual adjustment UI + API
+
+| Item | Route / API | Status |
+|------|-------------|--------|
+| Admin form | `/admin/stock/adjustment` | ✅ |
+| Hub card | Stock hub → **Stock adjustment** | ✅ |
+| REST | `POST /api/admin/stock/adjustments` | ✅ |
+| Preview | `GET /api/admin/stock/adjustments/preview` | ✅ |
+| Use case | `IStockAdjustmentPort` / `StockAdjustmentUseCase` | ✅ |
+
+**Rule:** Business stock corrections use the adjustment screen — not direct quantity edits on the product-stock grid (grid remains master-data CRUD).
+
+### 0.3 Low stock: `MinQuantity`, alerts, dashboard, storefront
+
+| Item | Status | Notes |
+|------|--------|-------|
+| **Min quantity cadastro** | ✅ | `/admin/product-stock` → `ProductStockLocation.MinQuantity` |
+| **Low-stock filter** | ✅ | `/admin/product-stock?lowStock=true` + **All / Low stock** toggle |
+| **Red row highlight** | ✅ | `table-danger` when `Quantity <= MinQuantity` |
+| **Stock overview link** | ✅ | Review → `?lowStock=true` |
+| **Dashboard table** | ✅ | `/admin` — **Products below minimum** with product, location, on hand, min, badges |
+| **In-app notifications** | ✅ | `StockLowAlerts` table (`ApplicationDbContext`); created on threshold cross after sale/adjustment/save |
+| **Dismiss alerts** | ✅ | Dashboard **Dismiss all** → `MarkStockAlertsReadAsync` |
+| **Storefront low stock** | ✅ | Catalog + product detail use `MinQuantity` from default location (`IsLowStock`, `IsOutOfStock`) — not hardcoded `< 10` |
+| **Email push** | ⬜ | In-app only; `IEmailSender` is no-op — email queue TBD |
+
+**Alert rule:** `Quantity <= MinQuantity`. Notification fires when stock **crosses** below minimum or while low with no unread alert for that `ProductStockLocationId`.
+
+### 0.4 Mollie & checkout (Part II — code complete, ops pending)
+
+| Item | Status |
+|------|--------|
+| `MolliePaymentAdapter`, webhook, `OrderAdvancePayment` columns | ✅ |
+| `CheckoutUseCase`, stock validation, audit `CheckoutStarted` / `PaymentPaid` | ✅ |
+| `Mollie:ApiKey` + public webhook URL + E2E test | ⬜ See SUNDAY Phase 5 |
+
+### 0.5 Still pending (from original proposal)
+
+| Feature | Phase | Reference |
+|---------|-------|-----------|
+| Transfer between locations | 2 | §3.4 |
+| Purchase orders + GRN | 3 | §3.5–3.6 |
+| `ReservedQuantity` / `OrderStatus.ReserveStock` workflow | 4 | §3.7 — **we decrement on pay, not reserve** |
+| SignalR `StockUpdated` | optional | SUNDAY Phase 4 |
+| Audit `StockAdjust` badge | 6 | [AUDITS_open.md](./AUDITS_open.md) |
+| Demo seed: movements + PO (full) | 1 | §5 — partial in seeds |
+
+---
+
+# Part I — Stock operations
 
 ## 1. Current state vs. gap
 
@@ -15,19 +82,21 @@
 
 | Area | Status | Notes |
 |------|--------|-------|
-| **Tables in DB** | ✅ Schema | `StockLocations`, `ProductStockLocations`, `StockMovements`, `StockOrder`, `StockOrderLines`, `StockOrderDeliveries` |
-| **EF entities** | ✅ Mapped | `Model/Entities/*.cs` + `WebShopABMATICDbContext` |
-| **Admin CRUD** | 🟡 Partial | `/admin/stock-locations`, `/admin/product-stock` — quantity snapshot only |
-| **Dashboard KPIs** | 🟡 Partial | Low stock / out of stock from `ProductStockLocation`; no movement or PO metrics |
-| **Demo seed** | ❌ | `seeds.sql` does **not** insert movements or stock orders |
-| **Storefront** | ❌ | Catalog reads stock level; no reservation/movement integration |
+| **Tables in DB** | ✅ | `StockLocations`, `ProductStockLocations`, `StockMovements`, `StockOrder*`, `Orders`, `OrderAdvancePayments` |
+| **EF entities** | ✅ | `Model/Entities/*.cs` + `WebShopABMATICDbContext` |
+| **Stock writes** | ✅ | `IStockMovementService` — sales (PostPay + PrePay paid) + manual adjustment |
+| **Admin hub** | ✅ | Overview, movement journal, **stock adjustment**, product-stock, stock locations |
+| **Low stock** | ✅ | `MinQuantity`, filtered grid, dashboard table, in-app `StockLowAlerts`, storefront `IsLowStock` |
+| **Dashboard KPIs** | ✅ | Low/out counts + **products below minimum** table + notification banner |
+| **Demo seed** | 🟡 Partial | Movements + minimal PO in seeds; not full PO/GRN demo |
+| **Storefront** | ✅ | Real prices, stock display, checkout decrements stock; **no reservation** model yet |
 
 
 | Area | Table | Role |
 |------|-------|------|
 | **Catalog / price** | `Product`, `ProductPrices` | What we sell; unit price for store + checkout |
 | **Customer sale** | `Orders`, `OrderLines` | Webshop order header + lines (from checkout form) |
-| **Payment** | `OrderAdvancePayments` | Amount to pay; stores **Mollie payment id** *(proposed column)* |
+| **Payment** | `OrderAdvancePayments` | Mollie payment id, status, paid date, checkout URL |
 | **Payment config** | `PaymentMethods` | Pre-pay (Mollie) vs post-pay (invoice) — admin form |
 | **Stock on hand** | `ProductStockLocations`, `StockLocations` | Current quantity per warehouse |
 | **Stock history** | `StockMovements` | Ledger; optional link to `OrderLine` when order affects stock |
@@ -38,21 +107,20 @@
 
 - `ProductStockLocation.Quantity` = on-hand stock; `StockMovements` = audit trail.
 - **`StockOrder*`** = buying from supplier · **`Orders` / `OrderLines`** = selling to customer.
-- Online pay: checkout → `OrderAdvancePayment` → **Mollie** → webhook marks paid → optional `StockMovement`.
+- Online pay: checkout → `OrderAdvancePayment` → **Mollie** → webhook marks paid → **`StockMovement`** (decrement on pay).
 
 ### 1.3 Current implementation gap
 
-| Area | Schema | App / seed today | Gap |
-|------|--------|------------------|-----|
-| **ProductPrices** | ✅ | Admin CRUD ✅ · **`seeds.sql` empty** · Store uses fake prices | Seed + wire store pricing |
-| **Orders + OrderLines** | ✅ | Seeded for admin demo · Store **does not create** | Checkout must insert |
-| **OrderAdvancePayments** | ✅ | Not seeded · not used | Payment row + Mollie link |
-| **PaymentMethods** | ✅ | Admin CRUD ✅ · not in seeds · cart hardcoded | Seed + checkout dropdown |
-| **Mollie** | — | Not integrated | NuGet + webhook (Part II) |
-| **Stock movements / PO demo** | ✅ | Not seeded | Part I Phase 1 seed |
-| **Store checkout** | — | `Cart.razor` clears cart only | Full Part II |
-
-When the customer clicks **Place order**: price from `ProductPrices` → save `Order` + `OrderLine` + `OrderAdvancePayment` → redirect **Mollie** (pre-pay) → webhook marks paid → optional stock reservation.
+| Area | Schema | App today | Gap |
+|------|--------|-----------|-----|
+| **ProductPrices** | ✅ | Store + checkout wired | Keep seeds in sync |
+| **Orders + OrderLines** | ✅ | Store checkout creates rows | Admin payment columns (Phase C) |
+| **OrderAdvancePayments + Mollie** | ✅ | Integrated in code | Ops: API key + webhook E2E |
+| **Stock movements on sale** | ✅ | `ApplySaleFromOrderAsync` | — |
+| **Manual adjustment** | ✅ | `/admin/stock/adjustment` + API | Audit `StockAdjust` badge |
+| **Low stock alerts** | ✅ | In-app `StockLowAlerts` | Email push optional |
+| **Transfer / PO / GRN** | ✅ | Read-only overview KPIs | Full CRUD + receive flows |
+| **Reservation model** | ✅ columns | Not used | §3.7 deferred — direct decrement instead |
 
 ### 1.4 Entity ↔ form model (how tables get their data)
 
@@ -79,7 +147,7 @@ In vNext, most legacy tables correspond to a **Razor form** (admin or store). Ot
 | Supplier / manufacturer | `/admin/suppliers`, … | `Supplier`, … | Admin |
 | Purchase order | `/admin/stock/purchase-orders` *(proposed)* | `StockOrder`, `StockOrderLines` | Admin |
 | Receive delivery | `/admin/stock/purchase-orders/{id}/receive` *(proposed)* | `StockOrderDeliveries`, `StockMovements`, `ProductStockLocations` | Admin |
-| Manual adjustment | `/admin/stock/adjustments/new` *(proposed)* | `StockMovements`, `ProductStockLocations` | Admin |
+| Manual adjustment | `/admin/stock/adjustment` | `StockMovements`, `ProductStockLocations` | Admin |
 | Order (staff edit) | `/admin/orders` | `Orders`, `OrderLines` | Admin |
 
 #### Store — customer forms
@@ -95,15 +163,17 @@ In vNext, most legacy tables correspond to a **Razor form** (admin or store). Ot
 | Trigger | Table(s) | Notes |
 |---------|----------|-------|
 | Checkout submit | `Orders`, `OrderLines`, `OrderAdvancePayment` | Built from cart + pricing port |
-| Mollie webhook **paid** | `OrderAdvancePayment` (Mollie ids, paid date), `Order.IsAccepted` | No user form |
-| Payment confirmed + `OrderStatus.ReserveStock` | `StockMovements`, `ProductStockLocations.ReservedQuantity` | Part I §3.7 |
+| Mollie webhook **paid** | `OrderAdvancePayment`, audit `PaymentPaid`, **`StockMovement`** | `ApplySaleFromOrderAsync` when PrePay |
+| PostPay checkout | `Order` + lines + **`StockMovement`** | Immediate decrement — no manager approval |
+| Product-stock save / manual adjust | `StockLowAlerts` (app DB) | When `Quantity <= MinQuantity` |
+| Payment confirmed + `OrderStatus.ReserveStock` | `ReservedQuantity` *(not implemented)* | §3.7 deferred — we decrement instead |
 | PO receive (GRN) | `StockMovements`, line delivery fields | From receive form; movement rows calculated |
 
 #### External — Mollie (not a table)
 
 | Artifact | Where it lives | Our link |
 |----------|----------------|----------|
-| Payment session `tr_…` | **Mollie cloud** | Stored on `OrderAdvancePayment.MolliePaymentId` *(proposed column)* |
+| Payment session `tr_…` | **Mollie cloud** | Stored on `OrderAdvancePayment.MolliePaymentId` |
 | Hosted checkout URL | **Mollie cloud** | Redirect customer from `/cart` |
 | Payment status | **Mollie cloud** | Webhook → use case updates `OrderAdvancePayment` |
 
@@ -204,104 +274,58 @@ flowchart TB
 
 Extend sidebar **Stock** (`/admin/hub/stock`) with operational screens (not only master CRUD):
 
-| # | Card | Route (proposed) | Type | Primary tables |
-|---|------|------------------|------|----------------|
-| 1 | Stock overview | `/admin/stock/overview` | Dashboard | `ProductStockLocation`, `StockLocation` |
-| 2 | Movement journal | `/admin/stock/movements` | Consultation + filter | `StockMovements` |
-| 3 | Manual adjustment | `/admin/stock/adjustments/new` | Form (creates movement) | `StockMovements`, `ProductStockLocation` |
-| 4 | Transfer between locations | `/admin/stock/transfers/new` | Form (2 movements) | `StockMovements`, `ProductStockLocation` |
-| 5 | Purchase orders | `/admin/stock/purchase-orders` | List + form | `StockOrder`, `StockOrderLines` |
-| 6 | PO delivery booking | `/admin/stock/purchase-orders/{id}/receive` | Form | `StockOrderDeliveries`, lines, movements |
-| 7 | *(existing)* Stock locations | `/admin/stock-locations` | CRUD | `StockLocations` |
-| 8 | *(existing)* Product stock | `/admin/product-stock` | CRUD | `ProductStockLocations` |
+| # | Card | Route | Type | Status |
+|---|------|-------|------|--------|
+| 1 | Stock overview | `/admin/stock/overview` | Dashboard | ✅ |
+| 2 | Movement journal | `/admin/stock/movements` | Consultation + filter | ✅ |
+| 3 | **Stock adjustment** | `/admin/stock/adjustment` | Form (creates movement) | ✅ |
+| 4 | Transfer between locations | `/admin/stock/transfers/new` | Form (2 movements) | ⬜ |
+| 5 | Purchase orders | `/admin/stock/purchase-orders` | List + form | ⬜ |
+| 6 | PO delivery booking | `/admin/stock/purchase-orders/{id}/receive` | Form | ⬜ |
+| 7 | Stock locations | `/admin/stock-locations` | CRUD | ✅ |
+| 8 | Product stock | `/admin/product-stock` | CRUD + **low-stock filter** | ✅ |
 
 ---
 
 ## 3. Feature proposals (detailed)
 
-### 3.1 Stock overview dashboard — **Recommend: Phase 1**
+### 3.1 Stock overview dashboard — ✅ **Implemented**
 
-**Purpose:** Single screen for warehouse staff — replaces jumping between product-stock rows.
+**Route:** `/admin/stock/overview` · `IStockOverviewPort` / `StockOverviewUseCase`
 
-**Widgets:**
+**Widgets (delivered):**
 
 | Widget | Query / rule | Action |
 |--------|--------------|--------|
-| Total SKUs in stock | Count `ProductStockLocation` where `Quantity > 0` | Drill-down list |
-| Low stock | `Quantity <= MinQuantity` | Link to product-stock filtered |
-| Out of stock | `Quantity <= 0` | Same |
-| Overstock | `Quantity > MaxQuantity` (where Max > 0) | Optional alert list |
-| Reserved vs available | Sum `ReservedQuantity`; available = Qty − Reserved | Table by location |
-| Movements today | Count `StockMovements` where `Timestamp >= today` | Link to journal |
-| Open POs | `StockOrder` where `IsCompleted = false` | Link to PO list |
-| PO awaiting delivery | Lines where `Geleverd = false` or `QuantityDelivered < QuantityOrdered` | Link to PO |
-
-**Hexagonal slice:**
-
-- Inbound: `IStockOverviewPort`
-- Use case: `StockOverviewUseCase`
-- Outbound: `IStockOverviewRepository` (read-only queries / DTO projections)
-
-**Effort:** Medium · **Value:** High · **Risk:** Low (read-only)
+| Total SKUs in stock | Count where `Quantity > 0` | ✅ |
+| Low stock | `Quantity <= MinQuantity` | Link to `/admin/product-stock?lowStock=true` ✅ |
+| Out of stock / overstock | `Quantity <= 0` / `> MaxQuantity` | ✅ |
+| Reserved vs available | Sum `ReservedQuantity` | ✅ |
+| Movements today / 7d | `StockMovements.Timestamp` | Link to journal ✅ |
+| Open POs | `StockOrder.IsCompleted = false` | ✅ (read-only KPI) |
 
 ---
 
-### 3.2 Movement journal (consultation) — **Recommend: Phase 1**
+### 3.2 Movement journal (consultation) — ✅ **Implemented**
 
-**Purpose:** Answer “what happened to product X in warehouse Y?” — core **tela de consulta**.
+**Route:** `/admin/stock/movements` · `IStockMovementAdminPort`
 
-**UI pattern:** Same as Product list — filters + grid (no inline edit on historical rows).
-
-**Filters:**
-
-- Date range (`Timestamp`)
-- Product (search / ProductId)
-- Stock location (`ProductStockLocatieId` → join location name)
-- Movement type: In / Out / Reservation (`IsReservation`, sign of `Quantity`)
-- Linked sales line (`OrderLineId` not null)
-
-**Grid columns:**
-
-| Column | Source |
-|--------|--------|
-| Date/time | `Timestamp` |
-| Product | join `Product.NameEn` / part number |
-| Location | join `StockLocation.Name` via `ProductStockLocation` |
-| Quantity | `Quantity` (+/− styling) |
-| Reservation | `IsReservation` |
-| Sales order line | `OrderLineId` (link when implemented) |
-| Notes | `Notes` |
-
-**Effort:** Medium · **Value:** High · **Risk:** Low (read-only)
+Webshop sales link **`OrderLineId`** on movement rows created by `ApplySaleFromOrderAsync`.
 
 ---
 
-### 3.3 Manual stock adjustment — **Recommend: Phase 2**
+### 3.3 Manual stock adjustment — ✅ **Implemented**
 
-**Purpose:** Correct inventory after count, breakage, or data fix — **creates movement + updates balance**.
+**Route:** `/admin/stock/adjustment` · **API:** `POST /api/admin/stock/adjustments`
 
-**Form fields:**
+**Delivered:**
 
-- Product, Stock location (or `ProductStockLocation` row)
-- Adjustment quantity (+ in / − out)
-- Reason / `Notes` (required)
-- Optional: reference to `LastCountedAt` / cycle count
+- `IStockAdjustmentPort` / `StockAdjustmentUseCase` → `IStockMovementService.ApplyManualAdjustmentAsync`
+- Product + stock location + signed quantity + required reason (max 150 chars)
+- Live preview of current balance; blocks negative result
+- Hub card **Stock adjustment** in Stock hub
 
-**Business rules (domain):**
-
-1. Validate product/location exists and is active.
-2. New `Quantity` on `ProductStockLocation` must not go below zero (unless you allow negative stock like legacy).
-3. Insert `StockMovement` with signed `Quantity`, `IsReservation = false`.
-4. Update `ProductStockLocation.Quantity` in same transaction.
-5. Set `LastModified` / user audit (extend with `CreatedByStaffUserId` if you add column later).
-
-**Hexagonal slice:**
-
-- Domain: `StockMovement` value object or `ProductStockLocation.Adjust(decimal delta, string reason)`
-- Inbound: `IStockAdjustmentPort`
-- Outbound: `IStockMovementRepository`, `IProductStockLocationRepository` (unit of work)
-
-**Effort:** Medium–High · **Value:** High · **Risk:** Medium (writes; needs transaction + tests)
+**Audit:** CRUD interceptor logs `Create`/`Update` on movement rows — dedicated **`StockAdjust`** badge still ⬜ ([AUDITS_open.md](./AUDITS_open.md)).
 
 ---
 
@@ -368,22 +392,40 @@ Extend sidebar **Stock** (`/admin/hub/stock`) with operational screens (not only
 
 **Effort:** Very high · **Value:** Critical for production store · **Risk:** High
 
-**Recommendation:** **Defer** until checkout persists orders reliably — see **Part II** for the checkout/payment path that unblocks this.
+**Recommendation:** **Deferred** — checkout now **decrements on pay** via `IStockMovementService` (see §0.1). Full reserve/ship/cancel workflow remains future work.
+
+---
+
+### 3.8 Low stock alerts & notifications — ✅ **Implemented**
+
+**Purpose:** Warn admin/manager when `ProductStockLocation.Quantity <= MinQuantity`.
+
+| Layer | Delivered |
+|-------|-----------|
+| **Cadastro** | `MinQuantity` on `/admin/product-stock` |
+| **Admin grid** | Filter `?lowStock=true`, red rows, product name column |
+| **Dashboard** | Table **Products below minimum**, notification banner, dismiss all |
+| **In-app alerts** | `StockLowAlerts` (`ApplicationDbContext`); `ILowStockAlertService` |
+| **Triggers** | After sale, manual adjustment, product-stock save |
+| **Storefront** | `StoreProductDto.IsLowStock` / `IsOutOfStock` from default location `MinQuantity` |
+| **Email** | ⬜ Not wired |
+
+**Services:** `LowStockAlertService`, `LowStockReadRepository`, `MarkStockAlertsReadAsync` on dashboard port.
 
 ---
 
 ## 4. Dashboard integration (`/admin`) — stock KPIs
 
-Extend existing **Stock operations** portfolio card (already shows low-stock count):
+**Delivered on `/admin`:**
 
-| KPI | Source | Phase |
-|-----|--------|-------|
-| Movements last 7 days | `StockMovements` | 1 |
-| Open purchase orders | `StockOrder` | 3 |
-| Qty on purchase order (not received) | `StockOrderLines` | 3 |
-| Stock value (optional) | Qty × last `ProductPrice` | 4 |
-
-Reuse `IAdminDashboardRepository` or add `IStockDashboardPort` to keep dashboard queries isolated.
+| KPI / UI | Source | Status |
+|----------|--------|--------|
+| Low / out counts | `ProductStockLocation` | ✅ Stock card |
+| Movements last 7 days | `StockMovements` | ✅ |
+| Open purchase orders | `StockOrder` | ✅ KPI only |
+| **Products below minimum** table | Join product + location | ✅ |
+| **Unread stock alerts** banner | `StockLowAlerts` | ✅ |
+| Stock value (optional) | Qty × `ProductPrice` | ⬜ |
 
 ---
 
@@ -400,7 +442,10 @@ To demo screens without `ABMATIC.bacpac`:
 | 5–10 `StockMovements` | In/out/reservation mix | Movement journal |
 | 1 open `StockOrder` + 3 lines | Supplier from seed | PO list |
 | 1 `StockOrderDelivery` | Partial delivery | Receive flow demo |
-| **`OrderAdvancePayments`** | 1× 100% on 2–3 demo orders | Payment schedule demo |
+| **`OrderAdvancePayments`** | 1× 100% on 2–3 demo orders | ✅ Payment schedule + Mollie ids in `seeds.sql` |
+| **`StockLowAlerts`** | 1 row per low-stock SKU (3 unread) | ✅ Dashboard banner / table |
+| **`AuditLogs`** | 12 demo rows | ✅ Audit grid + checkout/Mollie trail |
+| **`EmailQueues`** | `Outbound`, `LowStockAlerts` | ✅ Placeholder for future email push |
 | **`AccountingDocuments`** | 1 paid invoice linked to order | Show `BetaaldOp` / payment method |
 | Tie 1 movement to `OrderLineId` | Optional | Show sales link column |
 
@@ -447,16 +492,18 @@ Web/*List.razor or *Overview.razor
 
 | Feature | Do now? | Phase | Rationale |
 |---------|---------|-------|-----------|
-| Stock overview dashboard | ✅ Yes | 1 | Read-only, high visibility, uses existing `ProductStockLocation` seed |
-| Movement journal (consultation) | ✅ Yes | 1 | Core “tela de consulta”; no write risk |
-| Extend dashboard KPIs (movements, open POs) | ✅ Yes | 1 | Small addition to existing card |
-| Demo seed for movements + 1 PO | ✅ Yes | 1 | Makes UI testable |
-| Manual adjustment | 🟡 Maybe | 2 | Needed for real ops; requires transactions |
-| Transfer between locations | 🟡 Maybe | 2 | Nice; can start with adjustments |
-| Purchase order CRUD | ⏳ Later | 3 | Large form; value if purchasing uses admin |
-| Receive delivery / GRN | ⏳ Later | 3 | Depends on PO module |
-| Sales reservation integration | ❌ Defer | 4 | **Unblocked after Part II checkout + payment** |
-| Negative stock / legacy edge cases | ❌ Decide | — | Confirm with business before Phase 2 writes |
+| Stock overview dashboard | ✅ Done | 1 | `/admin/stock/overview` |
+| Movement journal (consultation) | ✅ Done | 1 | `/admin/stock/movements` |
+| Extend dashboard KPIs (movements, open POs) | ✅ Done | 1 | + low-stock table & alerts |
+| Demo seed for movements + 1 PO | 🟡 Partial | 1 | Some seed rows exist |
+| Manual adjustment | ✅ Done | 2 | `/admin/stock/adjustment` |
+| Low stock filter + notifications | ✅ Done | 2 | §3.8 |
+| Storefront `MinQuantity` display | ✅ Done | 2 | Catalog + product detail |
+| Transfer between locations | ⏳ Later | 2 | §3.4 |
+| Purchase order CRUD | ⏳ Later | 3 | §3.5 |
+| Receive delivery / GRN | ⏳ Later | 3 | §3.6 |
+| Sales reservation integration | ❌ Defer | 4 | Direct decrement implemented instead |
+| Negative stock on write | ✅ Blocked | 2 | Documented in §0.1 |
 
 ---
 
@@ -758,7 +805,7 @@ Stock **movement journal** (Part I §3.2) links via `OrderLineId` once checkout 
 | **P1b — Accounting doc** | Create `AccountingDocument` on pay (or on order) — full legacy parity | P1 | Medium |
 | **P2 — Store account** | `/orders` list/detail for customer; admin payment columns | P1 | Medium |
 | **P3 — Refunds & edge cases** | Refund API, expired payments, retry payment, email notifications | P1 | Medium |
-| **P4 — Stock link** | On paid → `ReserveStock` / movements (Part I §3.7) | P1 + stock Phase 2 writes | High |
+| **P4 — Stock link** | On paid / PostPay → `StockMovement` decrement (§0.1) | P1 | ✅ **Done in code** |
 
 **Suggested build order with Part I:**
 
@@ -766,8 +813,8 @@ Stock **movement journal** (Part I §3.2) links via `OrderLineId` once checkout 
 flowchart LR
     S1[Stock Phase 1 read-only] --> P0[Mollie P0 foundation]
     P0 --> P1[Checkout P1]
-    P1 --> S4[Stock Phase 4 reservations]
-    S1 --> S2[Stock Phase 2 adjustments]
+    P1 --> S4[Stock decrement on pay]
+    S1 --> S2[Stock adjustment + low alerts]
     S2 --> S4
 ```
 
@@ -779,17 +826,19 @@ Stock overview and movement journal can ship **in parallel** with payment founda
 
 | Feature | Do now? | Phase | Rationale |
 |---------|---------|-------|-----------|
-| Seed **`ProductPrices`** + wire store catalog | ✅ Yes | P0 | Table exists; store uses fake prices today |
-| Add `Mollie.Api` + config + port/adapter | ✅ Yes | P0 | Low risk |
-| Checkout uses **`Orders` + `OrderLines` + `OrderAdvancePayments`** | ✅ Yes | P1 | **Legacy tables — not a new order model** |
-| Mollie columns on **`OrderAdvancePayments`** | ✅ Yes | P1 | Minimal migration for PSP ids |
-| Webhook → **`BetaaldOp`** / `IsAccepted` | ✅ Yes | P1 | Legacy “paid” semantics |
-| **`AccountingDocument`** on payment | 🟡 Maybe | P1b | Full invoice parity; can follow P1 |
-| Wire **`PaymentMethod`** + **`PaymentTerm`** from DB | ✅ Yes | P1 | Replace hardcoded cart |
-| Customer order history | 🟡 Maybe | P2 | After happy path |
-| Admin: advance payments on order detail | 🟡 Maybe | P2 | Visibility for staff |
-| Refunds | ⏳ Later | P3 | After go-live |
-| Stock reservation on paid | ⏳ Later | P4 | Part I §3.7 + `OrderStatus.ReserveStock` |
+| Seed **`ProductPrices`** + wire store catalog | ✅ Done | P0 | |
+| Add `Mollie.Api` + config + port/adapter | ✅ Done | P0 | Ops: test key + webhook |
+| Checkout uses **`Orders` + `OrderLines` + `OrderAdvancePayments`** | ✅ Done | P1 | |
+| Mollie columns on **`OrderAdvancePayments`** | ✅ Done | P1 | Migration applied |
+| Webhook → paid + audit | ✅ Done | P1 | `BetaaldOp` / invoice parity optional |
+| Wire **`PaymentMethod`** from DB | ✅ Done | P1 | |
+| Stock decrement on paid / PostPay | ✅ Done | P4 | `IStockMovementService` |
+| Manual stock adjustment | ✅ Done | D | §0.2 |
+| Low stock alerts + dashboard | ✅ Done | D | §3.8 |
+| Customer order history | 🟡 Maybe | P2 | Phase C roadmap |
+| Admin: advance payments on order detail | 🟡 Maybe | P2 | Phase C |
+| Refunds | ⏳ Later | P3 | |
+| Stock reservation (`ReservedQuantity`) | ⏳ Later | P4 | §3.7 deferred |
 
 ---
 
@@ -821,32 +870,40 @@ Stock overview and movement journal can ship **in parallel** with payment founda
 
 ---
 
-## 21. Suggested next steps (after your approval)
+## 21. Suggested next steps
 
-### If you approve Part I — Stock Phase 1
+### Completed (see §0)
 
-1. Add cards to `AdminHubRegistry` (Stock hub) for **Overview** and **Movement journal**.
-2. Implement read-only ports + repositories + two Razor pages.
-3. Extend `seeds.sql` with sample movements (and optional minimal PO).
-4. Add KPIs to `/admin` stock card.
-5. Update `SPEC_ADMIN.md` hub entity table when routes exist.
+Stock Phase 1 read-only, checkout + Mollie (code), stock writes, manual adjustment, low-stock alerts.
 
-### If you approve Part II — Payments P0 + P1
+### Recommended next
 
-1. **Seed `ProductPrices`, `PaymentMethods`, `PaymentTerms`, `OrderStatuses`** in `seeds.sql`.
-2. Implement **`IProductPricingPort`**; change `StoreCatalogService` to read real prices.
-3. Add NuGet `Mollie.Api` (+ `Mollie.Api.AspNet` for webhooks).
-4. Migration: Mollie columns on **`OrderAdvancePayments`** (if option A approved).
-5. Implement `CheckoutUseCase` persisting **`Orders` + `OrderLines` + `OrderAdvancePayments`**.
-6. Webhook handler updating **`BetaaldOp`** / `IsAccepted` (+ optional `AccountingDocument`).
-7. Replace `Cart.razor` stub with real checkout + Mollie redirect.
+1. **Mollie go-live** — `Mollie:ApiKey`, webhook URL, E2E test ([SUNDAY_open.md](./SUNDAY_open.md) Phase 5).
+2. **Audit `StockAdjust`** badge on movement operations ([AUDITS_open.md](./AUDITS_open.md)).
+3. **Phase C** — customer/admin order visibility ([IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md)).
+4. **Transfer / PO / GRN** — §3.4–3.6 when purchasing team needs admin flows.
+5. **Optional:** SignalR stock refresh (SUNDAY Phase 4); email on low stock.
 
-### Combined estimate
+### Original approval checklist (historical)
 
-| Package | New files (approx.) |
-|---------|---------------------|
-| Stock Phase 1 | ~8–12 files |
-| Payments P0 + P1 | ~18–24 files (pricing port, store order repo, Mollie adapter, webhook, seeds, Razor) |
+<details>
+<summary>Part I — Stock Phase 1 (done)</summary>
+
+1. Add cards to `AdminHubRegistry` for Overview and Movement journal. ✅
+2. Read-only ports + repositories + Razor pages. ✅
+3. Extend `seeds.sql` with sample movements. 🟡
+4. Dashboard KPIs. ✅ (+ low-stock table 2026)
+</details>
+
+<details>
+<summary>Part II — Payments P0 + P1 (done in code)</summary>
+
+1. Seed prices, payment methods, terms, order statuses. ✅
+2. `IProductPricingPort` + store catalog. ✅
+3. Mollie NuGet + adapter + webhook. ✅
+4. `CheckoutUseCase` persisting orders. ✅
+5. Cart checkout + redirect. ✅
+</details>
 
 ---
 

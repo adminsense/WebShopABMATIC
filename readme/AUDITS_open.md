@@ -11,9 +11,9 @@
 |-------|--------|--------|
 | **Phase 1** | Badges + logging hooks: **CRUD**, **Login**, **Report**, **Logout** | ✅ Done |
 | **Phase 2** | Admin grid `/admin/audit-logs`, filters, details modal | ✅ Done |
-| **Phase 3** | Checkout / Mollie / PasswordReset badges | ✅ Core done (`StockAdjust` deferred) |
+| **Phase 3** | Checkout / Mollie / PasswordReset badges | ✅ Done (`StockAdjust` ✅) |
 
-**Current focus:** _Phase 6 — `StockAdjust` audit badge (movement API exists)_
+**Current focus:** _SMTP worker for queued low-stock emails_
 
 ---
 
@@ -280,7 +280,7 @@ Legend: ✅ logged · ⬜ not wired · n/a no operation · **auto** = `AuditSave
 | 💳 | `PaymentPaid` | Mollie webhook marks advance payment paid | ✅ `ProcessMollieWebhookUseCase` |
 | 🔐 | `PasswordReset` | Admin reset modal or self-service password change | ✅ |
 | 📄 | `Create` / `Update` on `AzureFile` | Product primary image upload | ✅ auto (interceptor) |
-| 📦 | `StockAdjust` | Dedicated stock write API | ⬜ Badge pending — **`IStockMovementService` + adjustment UI shipped**; CRUD interceptor still logs Create/Update on same rows |
+| 📦 | `StockAdjust` | Dedicated stock write API | ✅ Logged from `StockMovementService`; orange badge; interceptor suppressed on stock writes |
 
 ---
 
@@ -329,7 +329,7 @@ Auth (L)     [██████████] 8/8
 CRUD         [██████████] auto + identity + profile
 Reports (R)  [██████████] 2/2
 Admin UI (U) [██████████] 4/4
-Phase 3      [█████████░] 4/5  (StockAdjust deferred)
+Phase 3      [██████████] 5/5
 ```
 
 ### Key implementation files

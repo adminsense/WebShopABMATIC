@@ -193,7 +193,33 @@ WebShopABMATIC/                 ← repo root (solution parent)
     ✅ Registered; storefront not wired yet
 
 - Login redirect: Admin/Manager → `/admin` after sign-in  
-  ✅ `Components/Account/Pages/Login.razor`
+  ✅ `/admin/login`, `/sign-in` (staff without Customer role)
+
+### 3.5 Audit logging (Auth-7)
+
+- **`AuditLogs`** table on `ApplicationDbContext` — migration `AuditLogs`  
+  ✅ `Infrastructure/Identity/AuditLog.cs`
+
+- **`IAuditService`** — single write path for compliance events  
+  ✅ `Infrastructure/Audit/AuditService.cs`
+
+- **Domain CRUD** — `AuditSaveChangesInterceptor` on `WebShopABMATICDbContext` (Create / Update / Delete JSON snapshots)  
+  ✅ Includes `AzureFile` product images via `LocalProductMediaService`
+
+- **Auth events** — Login, LoginFailed, Logout (manual + circuit close via `AuditCircuitHandler`)  
+  ✅ Admin login, store sign-in, `Account/Logout`, store header sign-out
+
+- **Exports** — `ReportExport` on all admin grid CSV/PDF via `GridExportService`  
+  ✅
+
+- **Store checkout** — `CheckoutStarted` (order placed), `PaymentPaid` (Mollie webhook)  
+  ✅ `CheckoutUseCase`, `ProcessMollieWebhookUseCase`
+
+- **Self-profile** — `/admin/profile`, `/my-account` profile + `PasswordReset` action  
+  ✅
+
+- **Admin UI** — `/admin/audit-logs` (filters, legend, detail modal, export); Settings hub card  
+  ✅ See [AUDITS_open.md](./AUDITS_open.md)
 
 ---
 
@@ -216,7 +242,7 @@ WebShopABMATIC/                 ← repo root (solution parent)
   ```bash
   dotnet ef database update --project Infrastructure/WebShopABMATIC.Infrastructure.csproj --startup-project Web/WebShopABMATIC.Web.csproj --context ApplicationDbContext
   ```
-  ✅ Auto-applied on startup in Development via `IdentitySeedHostedService`
+  ✅ Applied manually via `scripts/apply-pending-schema.sql` or `scripts/apply-local-database.ps1` — **not** on app startup
 
 - For CI/Prod: run migrations as part of release  
   ⏳ Pipeline not configured yet
@@ -231,7 +257,7 @@ WebShopABMATIC/                 ← repo root (solution parent)
 | `manager@webshop.com` | `Manager@12345` | Manager |
 | `customer@webshop.com` | `Customer@12345` | Customer |
 
-✅ `Infrastructure/Seeding/IdentitySeed.cs` + `IdentitySeedHostedService`
+✅ `Infrastructure/Seeding/IdentitySeed.cs` — run with `dotnet run -- --seed-identity` or `apply-local-database.ps1`
 
 **Domain / catalog seed (planned)**
 
@@ -244,7 +270,7 @@ WebShopABMATIC/                 ← repo root (solution parent)
 
 Seed strategy:
 
-- **Dev-only seed** on startup when DB is empty  
+- **Dev-only seed** via explicit command (`dotnet run -- --seed-identity`)  
   ✅ Identity roles + users
 - Optional: explicit `Seed` command/endpoint for dev environments only  
   ⏳
