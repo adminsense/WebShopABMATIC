@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WebShop — Payment mocks (Mollie checkout + success)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f0f7ff;
+      --surface: #ffffff;
+      --text: #1e3a5f;
+      --muted: #64748b;
+      --border: #dbeafe;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-soft: #eff6ff;
+      --radius: 10px;
+      --success: #059669;
+      --success-soft: #d1fae5;
+      --mollie: #0a0a0a;
+      --mollie-accent: #0077ff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: linear-gradient(180deg, #f0f9ff 0%, var(--bg) 40%, #eef6ff 100%);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    .mock-banner {
+      background: #e0f2fe;
+      color: #475569;
+      font-size: 0.75rem;
+      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      border-bottom: 1px solid #bae6fd;
+    }
+    .mock-banner a { color: var(--accent); text-decoration: none; font-weight: 600; }
+    .mock-banner a:hover { text-decoration: underline; }
+    .mock-banner .sep { opacity: 0.35; }
+    .mock-tabs { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    .mock-tab {
+      border: 1px solid #93c5fd;
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.3rem 0.65rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .mock-tab:hover { background: var(--accent-soft); }
+    .mock-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* ── Screen 1: Mollie hosted checkout (external page simulation) ── */
+    .mollie-page {
+      min-height: calc(100vh - 2.5rem);
+      background: #f5f5f7;
+      padding: 2rem 1rem 3rem;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .mollie-shell {
+      max-width: 440px;
+      margin: 0 auto;
+    }
+    .mollie-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      color: #666;
+      font-size: 0.85rem;
+      text-decoration: none;
+      margin-bottom: 1.25rem;
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-family: inherit;
+    }
+    .mollie-back:hover { color: #111; }
+    .mollie-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+      overflow: hidden;
+    }
+    .mollie-header {
+      padding: 1.5rem 1.5rem 1rem;
+      border-bottom: 1px solid #eee;
+      text-align: center;
+    }
+    .mollie-merchant {
+      font-size: 0.8rem;
+      color: #888;
+      margin-bottom: 0.25rem;
+    }
+    .mollie-amount {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #111;
+      letter-spacing: -0.02em;
+    }
+    .mollie-order-ref {
+      font-size: 0.75rem;
+      color: #999;
+      margin-top: 0.35rem;
+    }
+    .mollie-body { padding: 1.25rem 1.5rem 1.5rem; }
+    .mollie-methods {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .mollie-method {
+      flex: 1;
+      padding: 0.65rem 0.5rem;
+      border: 2px solid #e5e5e5;
+      border-radius: 8px;
+      background: #fff;
+      font: inherit;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      color: #555;
+    }
+    .mollie-method.active {
+      border-color: var(--mollie-accent);
+      color: var(--mollie-accent);
+      background: #f0f7ff;
+    }
+    .mollie-field { margin-bottom: 1rem; }
+    .mollie-field label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #666;
+      margin-bottom: 0.35rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .mollie-field input {
+      width: 100%;
+      padding: 0.75rem 0.85rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font: inherit;
+      font-size: 1rem;
+      color: #111;
+    }
+    .mollie-field input:focus {
+      outline: none;
+      border-color: var(--mollie-accent);
+      box-shadow: 0 0 0 3px rgba(0,119,255,.15);
+    }
+    .mollie-field input::placeholder { color: #bbb; }
+    .mollie-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .mollie-cards-icons {
+      display: flex;
+      gap: 0.35rem;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+    .mollie-cards-icons span {
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 0.2rem 0.45rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      color: #666;
+      background: #fafafa;
+    }
+    .mollie-pay {
+      width: 100%;
+      padding: 0.95rem;
+      border: none;
+      border-radius: 8px;
+      background: var(--mollie-accent);
+      color: #fff;
+      font: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 0.5rem;
+    }
+    .mollie-pay:hover { background: #0066dd; }
+    .mollie-footer {
+      text-align: center;
+      margin-top: 1.25rem;
+      font-size: 0.72rem;
+      color: #999;
+    }
+    .mollie-footer strong {
+      color: var(--mollie);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .mollie-secure {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      font-size: 0.75rem;
+      color: #888;
+      margin-top: 1rem;
+    }
+    .mollie-note {
+      max-width: 440px;
+      margin: 1rem auto 0;
+      padding: 0.65rem 0.85rem;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      color: #92400e;
+      text-align: center;
+    }
+
+    /* ── Screen 2: Back on WebShop — order confirmation (OrderConfirmation.razor) ── */
+    .store-header {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+    }
+    .header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0.875rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .logo {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: 1.5rem;
+      text-decoration: none;
+      color: var(--text);
+    }
+    .logo span { color: var(--accent); }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+    .page-title {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: 1.75rem;
+      font-weight: 400;
+      padding: 2rem 0 1rem;
+    }
+    .success-hero {
+      max-width: 32rem;
+      margin-bottom: 1.5rem;
+    }
+    .success-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--success-soft);
+      color: var(--success);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.75rem;
+      margin-bottom: 1rem;
+    }
+    .success-hero h2 {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: 1.5rem;
+      font-weight: 400;
+      margin-bottom: 0.35rem;
+    }
+    .success-hero p { color: var(--muted); font-size: 0.95rem; }
+    .summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      max-width: 32rem;
+      box-shadow: 0 1px 3px rgba(59, 130, 246, .06);
+    }
+    .summary-line {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .summary-line.total {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+    .badge-paid {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.55rem;
+      border-radius: 6px;
+      background: #198754;
+      color: #fff;
+    }
+    .btn {
+      padding: 0.65rem 1.25rem;
+      border-radius: var(--radius);
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .small { font-size: 0.875rem; }
+    .next-steps {
+      max-width: 32rem;
+      margin-top: 1.25rem;
+      padding: 1rem 1.25rem;
+      background: var(--accent-soft);
+      border-radius: var(--radius);
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .next-steps strong { color: var(--text); display: block; margin-bottom: 0.35rem; }
+  </style>
+</head>
+<body>
+
+  <div class="mock-banner">
+    <span>Payment flow — 2 screens only</span>
+    <span class="sep">|</span>
+    <a href="mock-loja.html">Store</a>
+    <span class="sep">·</span>
+    <a href="mock-admin.html">Admin</a>
+    <div class="mock-tabs">
+      <button type="button" class="mock-tab active" data-screen="mollie">① Mollie checkout (card)</button>
+      <button type="button" class="mock-tab" data-screen="success">② After payment (confirmation)</button>
+    </div>
+  </div>
+
+  <!-- ① Mollie hosted checkout — customer is redirected here after "Place order" (PrePay) -->
+  <main id="screen-mollie" class="screen active">
+    <div class="mollie-page">
+      <div class="mollie-shell">
+        <button type="button" class="mollie-back" onclick="location.href='mock-loja.html'">← Back to WebShop</button>
+
+        <div class="mollie-card">
+          <div class="mollie-header">
+            <p class="mollie-merchant">WebShop ABMATIC</p>
+            <p class="mollie-amount">€216,52</p>
+            <p class="mollie-order-ref">Order #2026011 · Hard drive 1 ×2, Hard drive 3 ×1</p>
+          </div>
+          <div class="mollie-body">
+            <div class="mollie-methods">
+              <button type="button" class="mollie-method">iDEAL</button>
+              <button type="button" class="mollie-method active">Card</button>
+            </div>
+
+            <div class="mollie-cards-icons">
+              <span>VISA</span>
+              <span>MC</span>
+              <span>AMEX</span>
+            </div>
+
+            <div class="mollie-field">
+              <label for="card-number">Card number</label>
+              <input id="card-number" type="text" inputmode="numeric" placeholder="1234 5678 9012 3456" value="4111 1111 1111 1111" autocomplete="cc-number">
+            </div>
+            <div class="mollie-field">
+              <label for="card-name">Cardholder name</label>
+              <input id="card-name" type="text" placeholder="Name on card" value="Demo Customer" autocomplete="cc-name">
+            </div>
+            <div class="mollie-row">
+              <div class="mollie-field">
+                <label for="card-exp">Expiry</label>
+                <input id="card-exp" type="text" placeholder="MM / YY" value="12 / 28" autocomplete="cc-exp">
+              </div>
+              <div class="mollie-field">
+                <label for="card-cvc">CVC</label>
+                <input id="card-cvc" type="text" inputmode="numeric" placeholder="123" value="123" autocomplete="cc-csc">
+              </div>
+            </div>
+
+            <button type="button" class="mollie-pay" onclick="showScreen('success')">Pay €216,52</button>
+
+            <p class="mollie-secure">🔒 Secured by Mollie</p>
+          </div>
+        </div>
+
+        <p class="mollie-footer">Payments processed by <strong>mollie</strong></p>
+      </div>
+
+      <p class="mollie-note">
+        In the real app this page is <strong>Mollie hosted checkout</strong> (external URL after Place order).
+        WebShop does not store card data — only Mollie payment id on <code>OrderAdvancePayment</code>.
+      </p>
+    </div>
+  </main>
+
+  <!-- ② Order confirmation — customer returns here after successful payment (OrderConfirmation.razor) -->
+  <main id="screen-success" class="screen">
+    <header class="store-header">
+      <div class="header-inner">
+        <a href="mock-loja.html" class="logo">Web<span>Shop</span></a>
+      </div>
+    </header>
+
+    <div class="container">
+      <div class="success-hero">
+        <div class="success-icon" aria-hidden="true">✓</div>
+        <h2>Payment received</h2>
+        <p>Thank you — your payment was received. Your order is confirmed and stock will be updated.</p>
+      </div>
+
+      <h1 class="page-title" style="padding-top:0">Order confirmation</h1>
+
+      <div class="summary-card">
+        <p><strong>Order #2026011</strong></p>
+        <p class="small" style="color:var(--muted)">Friday, 30 May 2026 14:32</p>
+        <p style="margin-top:0.75rem">
+          Payment: <span class="badge-paid">paid</span>
+        </p>
+        <hr style="border:none;border-top:1px solid var(--border);margin:1rem 0">
+        <div class="summary-line">
+          <span>Hard drive 1 × 2</span>
+          <span>€99.98</span>
+        </div>
+        <div class="summary-line">
+          <span>Hard drive 3 × 1</span>
+          <span>€69.99</span>
+        </div>
+        <div class="summary-line">
+          <span>Delivery</span>
+          <span>€9.00</span>
+        </div>
+        <div class="summary-line">
+          <span>VAT 21%</span>
+          <span>€37.55</span>
+        </div>
+        <div class="summary-line total">
+          <span>Total (incl. VAT)</span>
+          <span>€216.52</span>
+        </div>
+        <a href="mock-loja.html" class="btn btn-primary" style="margin-top:1rem">Continue shopping</a>
+      </div>
+
+      <div class="next-steps">
+        <strong>What happens in the app</strong>
+        Mollie webhook marks <code>OrderAdvancePayment</code> as paid → audit log <em>PaymentPaid</em> → stock decremented → customer can view order at <em>/orders/2026011</em>.
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(function (el) {
+        el.classList.remove('active');
+      });
+      document.querySelectorAll('.mock-tab').forEach(function (btn) {
+        btn.classList.toggle('active', btn.getAttribute('data-screen') === id);
+      });
+      var screen = document.getElementById('screen-' + id);
+      if (screen) {
+        screen.classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+    document.querySelectorAll('.mock-tab').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        showScreen(btn.getAttribute('data-screen'));
+      });
+    });
+    document.querySelectorAll('.mollie-method').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.mollie-method').forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

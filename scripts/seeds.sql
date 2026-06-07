@@ -1,27 +1,45 @@
 /* WebShopABMATIC — demo seed data (idempotent)
    Database: WebShopABMATIC on SQL Server MULLER
-   Run: sqlcmd -S MULLER -E -d WebShopABMATIC -i scripts\seeds.sql
+   Run schema first: sqlcmd -S MULLER -E -d WebShopABMATIC -i scripts\apply-pending-schema.sql
+   Then seed:        sqlcmd -S MULLER -E -d WebShopABMATIC -i scripts\seeds.sql
+   Or all-in-one:    .\scripts\apply-local-database.ps1
 */
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
 
 USE [WebShopABMATIC];
 GO
 
 -- Remove previous demo rows (child → parent)
+DELETE FROM [dbo].[StockLowAlerts];
+DELETE FROM [dbo].[AuditLogs];
+DELETE FROM [Emails].[EmailMessages];
+DELETE FROM [Emails].[EmailQueues];
 DELETE FROM [Files].[AzureFiles];
 DELETE FROM [Files].[AzureFileFolders];
+DELETE FROM [Projects].[OrderAdvancePayments];
 DELETE FROM [Projects].[OrderLines];
 DELETE FROM [Projects].[Orders];
 DELETE FROM [Projects].[Project];
+DELETE FROM [Products].[StockOrderDeliveries];
+DELETE FROM [Products].[StockOrderLines];
+DELETE FROM [Products].[StockOrder];
+DELETE FROM [Products].[StockMovements];
+DELETE FROM [Products].[ProductPrices];
 DELETE FROM [Products].[ProductStockLocations];
 DELETE FROM [Products].[Product];
 DELETE FROM [Products].[WebshopStructures];
 DELETE FROM [Products].[StockLocations];
+DELETE FROM [Crm].[CustomerDeliveryAddresses];
 DELETE FROM [Customers].[Customers];
 DELETE FROM [Customers].[CustomerTypes];
 DELETE FROM [Projects].[OrderProcessingTypes];
+DELETE FROM [Projects].[OrderStatuses];
 DELETE FROM [Projects].[DeliveryTypes];
+DELETE FROM [Settings].[PaymentMethods];
+DELETE FROM [Crm].[PaymentTerms];
 DELETE FROM [Accounting].[VatTypes];
 DELETE FROM [Crm].[CustomerStatuses];
 DELETE FROM [Crm].[Manufacturer];
@@ -34,7 +52,14 @@ DBCC CHECKIDENT ('[Files].[AzureFiles]', RESEED, 0);
 DBCC CHECKIDENT ('[Files].[AzureFileFolders]', RESEED, 0);
 DBCC CHECKIDENT ('[Projects].[OrderLines]', RESEED, 0);
 DBCC CHECKIDENT ('[Projects].[Orders]', RESEED, 0);
+DBCC CHECKIDENT ('[Projects].[OrderAdvancePayments]', RESEED, 0);
+DBCC CHECKIDENT ('[dbo].[StockLowAlerts]', RESEED, 0);
+DBCC CHECKIDENT ('[dbo].[AuditLogs]', RESEED, 0);
+DBCC CHECKIDENT ('[Emails].[EmailQueues]', RESEED, 0);
 DBCC CHECKIDENT ('[Projects].[Project]', RESEED, 0);
+DBCC CHECKIDENT ('[Products].[StockOrderLines]', RESEED, 0);
+DBCC CHECKIDENT ('[Products].[StockOrder]', RESEED, 0);
+DBCC CHECKIDENT ('[Products].[StockMovements]', RESEED, 0);
 DBCC CHECKIDENT ('[Products].[ProductStockLocations]', RESEED, 0);
 DBCC CHECKIDENT ('[Products].[Product]', RESEED, 0);
 DBCC CHECKIDENT ('[Products].[WebshopStructures]', RESEED, 0);
@@ -42,7 +67,11 @@ DBCC CHECKIDENT ('[Products].[StockLocations]', RESEED, 0);
 DBCC CHECKIDENT ('[Customers].[Customers]', RESEED, 0);
 DBCC CHECKIDENT ('[Customers].[CustomerTypes]', RESEED, 0);
 DBCC CHECKIDENT ('[Projects].[OrderProcessingTypes]', RESEED, 0);
+DBCC CHECKIDENT ('[Projects].[OrderStatuses]', RESEED, 0);
 DBCC CHECKIDENT ('[Projects].[DeliveryTypes]', RESEED, 0);
+DBCC CHECKIDENT ('[Settings].[PaymentMethods]', RESEED, 0);
+DBCC CHECKIDENT ('[Crm].[PaymentTerms]', RESEED, 0);
+DBCC CHECKIDENT ('[Products].[ProductPrices]', RESEED, 0);
 DBCC CHECKIDENT ('[Accounting].[VatTypes]', RESEED, 0);
 DBCC CHECKIDENT ('[Crm].[CustomerStatuses]', RESEED, 0);
 DBCC CHECKIDENT ('[Crm].[Manufacturer]', RESEED, 0);
@@ -67,6 +96,26 @@ SET IDENTITY_INSERT [Projects].[DeliveryTypes] ON;
 INSERT INTO [Projects].[DeliveryTypes] ([Id], [Name], [IncludeInstallationCost], [NameFr], [IsDefault])
 VALUES (1, N'Standard delivery', 0, N'Livraison standard', 1);
 SET IDENTITY_INSERT [Projects].[DeliveryTypes] OFF;
+
+SET IDENTITY_INSERT [Crm].[PaymentTerms] ON;
+INSERT INTO [Crm].[PaymentTerms] ([Id], [Name], [AantalDagen], [EndOfMonth], [IsDefault])
+VALUES (1, N'30 days net', 30, 0, 1);
+SET IDENTITY_INSERT [Crm].[PaymentTerms] OFF;
+
+SET IDENTITY_INSERT [Projects].[OrderStatuses] ON;
+INSERT INTO [Projects].[OrderStatuses]
+    ([Id], [Name], [SortOrder], [IncludeInSalesReporting], [NameFr], [ReportInProgress], [ScreenMode], [OrderStatusGroupId], [ReserveStock], [AffectsStock])
+VALUES
+(1, N'Pending payment', 1, 1, N'En attente de paiement', 1, N'Order', NULL, 0, 0),
+(2, N'Paid', 2, 1, N'Payé', 1, N'Order', NULL, 1, 0),
+(3, N'Accepted', 3, 1, N'Accepté', 1, N'Order', NULL, 0, 1);
+SET IDENTITY_INSERT [Projects].[OrderStatuses] OFF;
+
+SET IDENTITY_INSERT [Settings].[PaymentMethods] ON;
+INSERT INTO [Settings].[PaymentMethods] ([Id], [NameNl], [NameFr], [NameEn], [IsPrePay], [IsPostPay]) VALUES
+(1, N'iDEAL / online', N'iDEAL / en ligne', N'iDEAL / card (Mollie)', 1, 0),
+(2, N'Factuur 30 dagen', N'Facture 30 jours', N'Invoice 30 days', 0, 1);
+SET IDENTITY_INSERT [Settings].[PaymentMethods] OFF;
 
 SET IDENTITY_INSERT [Customers].[CustomerTypes] ON;
 INSERT INTO [Customers].[CustomerTypes]
@@ -143,6 +192,23 @@ INSERT INTO [Products].[Product] (
 (12, N'Legacy adapter', N'Legacy stock.', N'INT-002', N'INT-002', 1, 1, 0, 1, 1, 1, 0, 1, 0, N'Legacy adapter', N'Legacy stock.', N'', N'Legacy adapter', N'Legacy stock item.', N'', 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0.5, 0, 0, 0, 0, N'Legacy stock item.', N'EANINT002');
 SET IDENTITY_INSERT [Products].[Product] OFF;
 
+-- Product prices (12 products — matches former store formula 49.99 + ((id-1) % 6) * 10)
+INSERT INTO [Products].[ProductPrices] (
+    [FromAddress], [ValidTo], [AssemblyPrice], [InstallationPrice], [ProductId],
+    [GrossSalesPrice], [GrossPurchasePrice], [NetPurchasePrice], [BasePrice], [CorrectedGrossPrice],
+    [StartupCost], [Pro1], [Pro2], [Pro3], [Aan1], [Aan2], [Par1], [Ond],
+    [PurchaseDiscountPercentage], [GrossCorrectionPercentage], [CalculationType], [SupplierUsesDifferentGrossSalesPrice]
+)
+SELECT
+    CAST(GETUTCDATE() AS date), NULL, 0, 0, p.[ProductId],
+    CAST(49.99 + ((p.[ProductId] - 1) % 6) * 10 AS decimal(18,2)),
+    CAST(ROUND((49.99 + ((p.[ProductId] - 1) % 6) * 10) * 0.32, 2) AS decimal(18,2)),
+    CAST(ROUND((49.99 + ((p.[ProductId] - 1) % 6) * 10) * 0.32, 2) AS decimal(18,2)),
+    CAST(49.99 + ((p.[ProductId] - 1) % 6) * 10 AS decimal(18,4)),
+    CAST(49.99 + ((p.[ProductId] - 1) % 6) * 10 AS decimal(18,2)),
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0
+FROM [Products].[Product] p;
+
 -- Azure file folder (product images — fictitious blob metadata)
 SET IDENTITY_INSERT [Files].[AzureFileFolders] ON;
 INSERT INTO [Files].[AzureFileFolders]
@@ -162,20 +228,51 @@ VALUES
 (N'product5.png', N'.png', 1, GETUTCDATE(), 1, N'Hard drive 5 catalog image', N'/images/product5.png', N'/images/product5.png', 5, 1, 1, 0, 0),
 (N'product6.png', N'.png', 1, GETUTCDATE(), 1, N'Hard drive 6 catalog image', N'/images/product6.png', N'/images/product6.png', 6, 1, 1, 0, 0);
 
--- Stock (7 low-stock alerts: Quantity <= MinQuantity)
+-- Stock (7 low-stock alerts: Quantity <= MinQuantity; reserved qty on a few SKUs)
 INSERT INTO [Products].[ProductStockLocations] ([StockLocationId], [ProductId], [Quantity], [MaxQuantity], [IsDefault], [MinQuantity], [ReservedQuantity]) VALUES
-(1, 1, 24, 500, 1, 5, 0),
+(1, 1, 24, 500, 1, 5, 3),
 (1, 2, 18, 500, 1, 3, 0),
 (1, 3, 32, 500, 1, 8, 0),
-(1, 4, 15, 500, 1, 2, 0),
+(1, 4, 15, 500, 1, 2, 2),
 (1, 5,  9, 500, 1, 1, 0),
 (1, 6, 41, 500, 1, 10, 0),
-(1, 7,  8, 500, 1, 15, 0),
+(1, 7,  8, 500, 1, 15, 1),
 (1, 8,  6, 500, 1, 25, 0),
 (1, 9,  0, 500, 1, 0, 0),
-(1, 10, 50, 500, 1, 5, 0),
+(1, 10, 50, 500, 1, 5, 4),
 (1, 11,  4, 500, 1, 5, 0),
 (1, 12,  2, 500, 1, 2, 0);
+
+-- Customer delivery addresses (webshop checkout)
+INSERT INTO [Crm].[CustomerDeliveryAddresses] ([CustomerId], [Name], [Straat], [Number], [Bus], [CityId], [Notes]) VALUES
+(1, N'Northwind warehouse', N'Demo Street', N'1', N'', 1, N''),
+(2, N'Contoso site', N'Demo Street', N'2', N'', 1, N''),
+(3, N'Fabrikam depot', N'Demo Street', N'3', N'', 1, N''),
+(4, N'Tailspin warehouse', N'Demo Street', N'4', N'', 1, N''),
+(4, N'Tailspin site', N'Industrial Park', N'12', N'A', 1, N'');
+
+-- Stock movements (demo journal — mix in/out/reservation)
+INSERT INTO [Products].[StockMovements] ([ProductId], [Quantity], [Timestamp], [Notes], [IsReservation], [ProductStockLocatieId])
+SELECT 1, 10, DATEADD(day, -6, GETUTCDATE()), N'Initial receipt', 0, psl.[Id] FROM [Products].[ProductStockLocations] psl WHERE psl.[ProductId] = 1 AND psl.[IsDefault] = 1
+UNION ALL SELECT 2, -3, DATEADD(day, -5, GETUTCDATE()), N'Shipped to customer', 0, psl.[Id] FROM [Products].[ProductStockLocations] psl WHERE psl.[ProductId] = 2 AND psl.[IsDefault] = 1
+UNION ALL SELECT 3, 5, DATEADD(day, -4, GETUTCDATE()), N'Cycle count adjustment', 0, psl.[Id] FROM [Products].[ProductStockLocations] psl WHERE psl.[ProductId] = 3 AND psl.[IsDefault] = 1
+UNION ALL SELECT 4, -2, DATEADD(day, -3, GETUTCDATE()), N'Web order reservation', 1, psl.[Id] FROM [Products].[ProductStockLocations] psl WHERE psl.[ProductId] = 4 AND psl.[IsDefault] = 1
+UNION ALL SELECT 5, 8, DATEADD(day, -2, GETUTCDATE()), N'PO delivery', 0, psl.[Id] FROM [Products].[ProductStockLocations] psl WHERE psl.[ProductId] = 5 AND psl.[IsDefault] = 1
+UNION ALL SELECT 6, -1, DATEADD(day, -1, GETUTCDATE()), N'Damaged unit write-off', 0, psl.[Id] FROM [Products].[ProductStockLocations] psl WHERE psl.[ProductId] = 6 AND psl.[IsDefault] = 1
+UNION ALL SELECT 7, 12, DATEADD(hour, -8, GETUTCDATE()), N'Accessory restock', 0, psl.[Id] FROM [Products].[ProductStockLocations] psl WHERE psl.[ProductId] = 7 AND psl.[IsDefault] = 1
+UNION ALL SELECT 8, -4, DATEADD(hour, -2, GETUTCDATE()), N'Bulk shipment', 0, psl.[Id] FROM [Products].[ProductStockLocations] psl WHERE psl.[ProductId] = 8 AND psl.[IsDefault] = 1;
+
+-- Open purchase order (demo)
+INSERT INTO [Products].[StockOrder] ([SupplierId], [CreatedAt], [OrderDate], [IsCompleted], [UserId], [ExpectedDeliveryDate], [Notes], [TotalAmount])
+VALUES (1, GETUTCDATE(), GETUTCDATE(), 0, 1, DATEADD(day, 7, GETUTCDATE()), N'Demo open PO — HDD restock', 1250.00);
+
+DECLARE @StockOrderId int = SCOPE_IDENTITY();
+
+INSERT INTO [Products].[StockOrderLines]
+    ([StockOrderId], [ProductId], [QuantityOrdered], [LijnOK], [ProductName], [OrderNumber], [PackSize], [PurchaseUnitPrice], [PurchaseTotalPrice], [Unit], [Geleverd], [QuantityDelivered])
+VALUES
+(@StockOrderId, 1, 50, 1, N'Hard drive 1', N'PO-2026-001', N'1', 32.00, 1600.00, N'pcs', 0, 0),
+(@StockOrderId, 2, 30, 1, N'Hard drive 2', N'PO-2026-001', N'1', 35.00, 1050.00, N'pcs', 0, 0);
 
 -- Webshop structure (12 nodes)
 SET IDENTITY_INSERT [Products].[WebshopStructures] ON;
@@ -352,6 +449,103 @@ BEGIN
     );
 END;
 
+-- Email queue names (future low-stock email — IEmailSender is no-op; alerts are in-app today)
+SET IDENTITY_INSERT [Emails].[EmailQueues] ON;
+INSERT INTO [Emails].[EmailQueues] ([Id], [Name]) VALUES
+(1, N'Outbound'),
+(2, N'LowStockAlerts');
+SET IDENTITY_INSERT [Emails].[EmailQueues] OFF;
+
+-- PrePay / Mollie demo milestones on 3 accepted webshop orders (order numbers 2026009–2026011)
+INSERT INTO [Projects].[OrderAdvancePayments]
+    ([OrderId], [Name], [Percent], [IsFinalInvoice], [SortOrder], [Amount], [AdvancePaymentVisibility],
+     [MolliePaymentId], [MolliePaymentStatus], [MolliePaidAt], [MollieCheckoutUrl])
+SELECT
+    o.[Id],
+    N'Online payment',
+    CAST(100 AS decimal(18,4)),
+    0,
+    1,
+    totals.[AmountInclVat],
+    N'Default',
+    CASE o.[OrderNumber]
+        WHEN 2026009 THEN N'tr_demo_paid_seed01'
+        WHEN 2026010 THEN N'tr_demo_open_seed02'
+        ELSE NULL
+    END,
+    CASE o.[OrderNumber]
+        WHEN 2026009 THEN N'paid'
+        WHEN 2026010 THEN N'open'
+        ELSE NULL
+    END,
+    CASE o.[OrderNumber]
+        WHEN 2026009 THEN DATEADD(day, -2, GETUTCDATE())
+        ELSE NULL
+    END,
+    CASE o.[OrderNumber]
+        WHEN 2026010 THEN N'https://www.mollie.com/checkout/test/demo-open'
+        ELSE NULL
+    END
+FROM [Projects].[Orders] o
+INNER JOIN (
+    SELECT [OrderId], SUM([TotalInclVat]) AS [AmountInclVat]
+    FROM [Projects].[OrderLines]
+    GROUP BY [OrderId]
+) totals ON totals.[OrderId] = o.[Id]
+WHERE o.[OrderNumber] IN (2026009, 2026010, 2026011);
+
+-- In-app low stock alerts (dashboard banner + unread count; email push not wired yet)
+INSERT INTO [dbo].[StockLowAlerts]
+    ([ProductStockLocationId], [ProductId], [ProductName], [StockLocationId], [StockLocationName],
+     [Quantity], [MinQuantity], [CreatedAt], [IsRead], [ReadAt])
+SELECT
+    psl.[Id],
+    psl.[ProductId],
+    p.[NameEn],
+    psl.[StockLocationId],
+    sl.[Name],
+    psl.[Quantity],
+    psl.[MinQuantity],
+    DATEADD(minute, -45 + (psl.[ProductId] * 3), GETUTCDATE()),
+    CASE WHEN psl.[ProductId] IN (7, 8) THEN 1 ELSE 0 END,
+    CASE WHEN psl.[ProductId] IN (7, 8) THEN DATEADD(minute, -30, GETUTCDATE()) ELSE NULL END
+FROM [Products].[ProductStockLocations] psl
+INNER JOIN [Products].[Product] p ON p.[ProductId] = psl.[ProductId]
+INNER JOIN [Products].[StockLocations] sl ON sl.[Id] = psl.[StockLocationId]
+WHERE psl.[Quantity] <= psl.[MinQuantity];
+
+-- Audit log demo rows (audit grid + checkout/Mollie trail)
+DECLARE @AuditNow datetime2 = GETUTCDATE();
+
+INSERT INTO [dbo].[AuditLogs]
+    ([Timestamp], [Action], [EntityName], [EntityId], [UserDisplayName], [Severity], [Success],
+     [ErrorMessage], [IpAddress], [UserAgent], [OldValues], [NewValues])
+VALUES
+(@AuditNow, N'Login', N'ApplicationUser', N'seed-admin', N'admin@webshop.com', N'Information', 1,
+ NULL, N'127.0.0.1', N'Seed', NULL, N'{"email":"admin@webshop.com","roles":["Admin","Manager"]}'),
+(DATEADD(minute, -40, @AuditNow), N'Create', N'Product', N'101', N'admin@webshop.com', N'Information', 1,
+ NULL, N'127.0.0.1', N'Seed', NULL, N'{"nameEn":"Demo pump","orderPartNumber":"PMP-101"}'),
+(DATEADD(minute, -35, @AuditNow), N'Update', N'Product', N'101', N'admin@webshop.com', N'Information', 1,
+ NULL, N'127.0.0.1', N'Seed', N'{"nameEn":"Demo pump","grossSalesPrice":120.00}', N'{"nameEn":"Demo pump XL","grossSalesPrice":135.50}'),
+(DATEADD(minute, -30, @AuditNow), N'ReportExport', N'ProductsCatalogReport', NULL, N'admin@webshop.com', N'Information', 1,
+ NULL, N'127.0.0.1', N'Seed', NULL, N'{"reportKey":"ProductsCatalogReport","format":"csv"}'),
+(DATEADD(minute, -25, @AuditNow), N'Create', N'Customer', N'42', N'manager@webshop.com', N'Information', 1,
+ NULL, N'127.0.0.1', N'Seed', NULL, N'{"name":"ACME BV","email":"acme@example.com"}'),
+(DATEADD(minute, -20, @AuditNow), N'LoginFailed', N'ApplicationUser', NULL, N'unknown@test.com', N'Warning', 0,
+ N'Invalid email or password', N'127.0.0.1', N'Seed', NULL, N'{"email":"unknown@test.com","reason":"InvalidPassword"}'),
+(DATEADD(minute, -18, @AuditNow), N'CheckoutStarted', N'Order', N'9', N'customer@webshop.com', N'Information', 1,
+ NULL, N'127.0.0.1', N'Seed', NULL, N'{"orderNumber":2026009,"paymentMethod":"PrePay","totalInclVat":null}'),
+(DATEADD(minute, -16, @AuditNow), N'PaymentPaid', N'OrderAdvancePayment', N'1', N'system', N'Information', 1,
+ NULL, N'127.0.0.1', N'MollieWebhook', NULL, N'{"molliePaymentId":"tr_demo_paid_seed01","status":"paid"}'),
+(DATEADD(minute, -15, @AuditNow), N'Update', N'Order', N'5001', N'manager@webshop.com', N'Information', 1,
+ NULL, N'127.0.0.1', N'Seed', N'{"statusId":2}', N'{"statusId":5}'),
+(DATEADD(minute, -10, @AuditNow), N'Delete', N'ProductOption', N'7', N'admin@webshop.com', N'Information', 1,
+ NULL, N'127.0.0.1', N'Seed', N'{"nameEn":"Color red"}', NULL),
+(DATEADD(minute, -5, @AuditNow), N'Logout', N'ApplicationUser', N'seed-admin', N'admin@webshop.com', N'Information', 1,
+ NULL, N'127.0.0.1', N'Seed', NULL, N'{"reason":"ManualLogout"}'),
+(DATEADD(minute, -2, @AuditNow), N'ReportExport', N'StockMovementsReport', NULL, N'admin@webshop.com', N'Information', 1,
+ NULL, N'127.0.0.1', N'Seed', NULL, N'{"reportKey":"StockMovementsReport","format":"pdf","filters":{"dateFrom":"2026-01-01"}}');
+
 COMMIT TRANSACTION;
 GO
 
@@ -361,7 +555,16 @@ UNION ALL SELECT N'Webshop structure nodes', COUNT(*) FROM [Products].[WebshopSt
 UNION ALL SELECT N'Customers', COUNT(*) FROM [Customers].[Customers]
 UNION ALL SELECT N'Orders this month', COUNT(*) FROM [Projects].[Orders] WHERE [CreatedAt] >= DATEFROMPARTS(YEAR(GETUTCDATE()), MONTH(GETUTCDATE()), 1)
 UNION ALL SELECT N'Pending orders', COUNT(*) FROM [Projects].[Orders] WHERE [IsAccepted] = 0
-UNION ALL SELECT N'Low stock alerts', COUNT(*) FROM [Products].[ProductStockLocations] WHERE [Quantity] <= [MinQuantity]
+UNION ALL SELECT N'Product prices', COUNT(*) FROM [Products].[ProductPrices]
+UNION ALL SELECT N'Payment methods', COUNT(*) FROM [Settings].[PaymentMethods]
+UNION ALL SELECT N'Stock movements', COUNT(*) FROM [Products].[StockMovements]
+UNION ALL SELECT N'Open purchase orders', COUNT(*) FROM [Products].[StockOrder] WHERE [IsCompleted] = 0
+UNION ALL SELECT N'Delivery addresses', COUNT(*) FROM [Crm].[CustomerDeliveryAddresses]
+UNION ALL SELECT N'Low stock (product rows)', COUNT(*) FROM [Products].[ProductStockLocations] WHERE [Quantity] <= [MinQuantity]
+UNION ALL SELECT N'In-app stock alerts (unread)', COUNT(*) FROM [dbo].[StockLowAlerts] WHERE [IsRead] = 0
+UNION ALL SELECT N'Audit log rows', COUNT(*) FROM [dbo].[AuditLogs]
+UNION ALL SELECT N'Order advance payments', COUNT(*) FROM [Projects].[OrderAdvancePayments]
+UNION ALL SELECT N'Email queues', COUNT(*) FROM [Emails].[EmailQueues]
 UNION ALL SELECT N'Revenue YTD', ISNULL(SUM(ol.[TotalExclVat]), 0)
     FROM [Projects].[OrderLines] ol INNER JOIN [Projects].[Orders] o ON o.[Id] = ol.[OrderId]
     WHERE o.[IsAccepted] = 1 AND o.[CreatedAt] >= DATEFROMPARTS(YEAR(GETUTCDATE()), 1, 1);

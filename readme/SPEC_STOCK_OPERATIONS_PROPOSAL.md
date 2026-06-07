@@ -1,17 +1,17 @@
 # Stock operations & storefront payments — proposal
 
-![Status](https://img.shields.io/badge/Status-Partially%20implemented-22c55e?style=flat-square) ![Schema](https://img.shields.io/badge/Schema-Products%20%2B%20Orders-512BD4?style=flat-square) ![Architecture](https://img.shields.io/badge/Fit-Hexagonal-28a745?style=flat-square) ![Payments](https://img.shields.io/badge/Payments-Mollie.Api-0a0a0a?style=flat-square) ![Tracker](https://img.shields.io/badge/Live-SUNDAY__open.md-informational?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Partially%20implemented-22c55e?style=flat-square) ![Schema](https://img.shields.io/badge/Schema-Products%20%2B%20Orders-512BD4?style=flat-square) ![Architecture](https://img.shields.io/badge/Fit-Hexagonal-28a745?style=flat-square) ![Payments](https://img.shields.io/badge/Payments-Mollie.Api-0a0a0a?style=flat-square) ![Tracker](https://img.shields.io/badge/Live-IMPLEMENTATION__ROADMAP__open.md-informational?style=flat-square)
 
 > [!IMPORTANT]
-> **Executive summary:** Originally an analysis proposal — **core stock writes, checkout, Mollie, manual adjustment, and low-stock alerts are now implemented** (see **§0** and [SUNDAY_open.md](./SUNDAY_open.md)). Remaining: PO/GRN, transfers, reservations (`ReservedQuantity`), SignalR, Mollie go-live E2E, audit `StockAdjust` badge.
+> **Executive summary:** Originally an analysis proposal — **core stock writes, checkout, Mollie, manual adjustment, and low-stock alerts are now implemented** (see **§0** and [IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md)). Remaining: open backlog in same tracker (3b email, Phase M seeds, Phase E, B.9 Mollie E2E last).
 
-> **Live tracker:** [SUNDAY_open.md](./SUNDAY_open.md) · **Roadmap checkboxes:** [IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md)
+> **Live tracker:** [IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md)
 
 ---
 
 ## 0. Implementation log (delivered)
 
-_Last updated: May 2026 — reflects work from [SUNDAY_open.md](./SUNDAY_open.md) Phases 1–3 and low-stock enhancements._
+_Last updated: May 2026 — see [IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md) for current phase status._
 
 ### 0.1 Stock movement service (sale + manual)
 
@@ -59,7 +59,7 @@ _Last updated: May 2026 — reflects work from [SUNDAY_open.md](./SUNDAY_open.md
 |------|--------|
 | `MolliePaymentAdapter`, webhook, `OrderAdvancePayment` columns | ✅ |
 | `CheckoutUseCase`, stock validation, audit `CheckoutStarted` / `PaymentPaid` | ✅ |
-| `Mollie:ApiKey` + public webhook URL + E2E test | ⬜ See SUNDAY Phase 5 |
+| `Mollie:ApiKey` + public webhook URL + E2E test | ⬜ See roadmap **B.9** (last) |
 
 ### 0.5 Still pending (from original proposal)
 
@@ -68,7 +68,7 @@ _Last updated: May 2026 — reflects work from [SUNDAY_open.md](./SUNDAY_open.md
 | Transfer between locations | 2 | §3.4 |
 | Purchase orders + GRN | 3 | §3.5–3.6 |
 | `ReservedQuantity` / `OrderStatus.ReserveStock` workflow | 4 | §3.7 — **we decrement on pay, not reserve** |
-| SignalR `StockUpdated` | optional | SUNDAY Phase 4 |
+| SignalR `StockUpdated` | optional | Roadmap Phase F |
 | Audit `StockAdjust` badge | 6 | [AUDITS_open.md](./AUDITS_open.md) |
 | Demo seed: movements + PO (full) | 1 | §5 — partial in seeds |
 
@@ -878,11 +878,11 @@ Stock Phase 1 read-only, checkout + Mollie (code), stock writes, manual adjustme
 
 ### Recommended next
 
-1. **Mollie go-live** — `Mollie:ApiKey`, webhook URL, E2E test ([SUNDAY_open.md](./SUNDAY_open.md) Phase 5).
+1. **Mollie go-live** — `Mollie:ApiKey`, webhook URL, E2E test ([IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md) **B.9 — last**).
 2. **Audit `StockAdjust`** badge on movement operations ([AUDITS_open.md](./AUDITS_open.md)).
 3. **Phase C** — customer/admin order visibility ([IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md)).
 4. **Transfer / PO / GRN** — §3.4–3.6 when purchasing team needs admin flows.
-5. **Optional:** SignalR stock refresh (SUNDAY Phase 4); email on low stock.
+5. **Optional:** SignalR (roadmap Phase F); email worker (Phase 3b).
 
 ### Original approval checklist (historical)
 

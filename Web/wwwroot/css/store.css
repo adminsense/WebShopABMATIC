@@ -259,6 +259,7 @@
     .price { font-weight: 700; font-size: 1.05rem; }
     .stock { font-size: 0.75rem; color: var(--success); }
     .stock.low { color: #d97706; }
+    .stock.out { color: #dc2626; font-weight: 600; }
 
     .detail-layout { display: grid; gap: 2.5rem; padding: 2rem 0 3rem; }
     @media (min-width: 900px) { .detail-layout { grid-template-columns: 1fr 1fr; } }
@@ -449,6 +450,10 @@
       letter-spacing: 0.03em;
     }
     .status.processing { background: #fef3c7; color: #92400e; }
+    .status.pending { background: #fef3c7; color: #92400e; }
+    .status.paid { background: #d1fae5; color: #065f46; }
+    .status.invoice { background: #e0e7ff; color: #3730a3; }
+    .status.cancelled { background: #fee2e2; color: #991b1b; }
     .status.shipped { background: #dbeafe; color: #1e40af; }
     .status.delivered { background: #d1fae5; color: #065f46; }
     .order-items { font-size: 0.9rem; color: var(--muted); }

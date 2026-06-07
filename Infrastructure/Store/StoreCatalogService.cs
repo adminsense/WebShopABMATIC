@@ -10,11 +10,13 @@ public sealed class StoreCatalogService : IStoreCatalogPort
 {
     private readonly WebShopABMATICDbContext _db;
     private readonly IProductMediaPort _media;
+    private readonly IProductPricingPort _pricing;
 
-    public StoreCatalogService(WebShopABMATICDbContext db, IProductMediaPort media)
+    public StoreCatalogService(WebShopABMATICDbContext db, IProductMediaPort media, IProductPricingPort pricing)
     {
         _db = db;
         _media = media;
+        _pricing = pricing;
     }
 
     public async Task<IReadOnlyList<StoreProductDto>> GetCatalogAsync(CancellationToken cancellationToken = default)
@@ -33,16 +35,26 @@ public sealed class StoreCatalogService : IStoreCatalogPort
                 })
                 .ToListAsync(cancellationToken);
 
-            var stock = await _db.ProductStockLocations.AsNoTracking()
-                .Where(x => x.IsDefault)
-                .ToDictionaryAsync(x => x.ProductId, x => (int)x.Quantity, cancellationToken);
+            var productIds = products.Select(p => p.ProductId).ToList();
+            var prices = await _pricing.GetCatalogPricesAsync(productIds, cancellationToken: cancellationToken);
+            var stockLevels = await GetDefaultStockLevelsAsync(productIds, cancellationToken);
 
             var items = new List<StoreProductDto>();
             foreach (var p in products)
             {
                 var imageUrl = await _media.GetPrimaryImageUrlAsync(p.ProductId, webPublishedOnly: true, cancellationToken)
                     ?? FallbackImage(p.ProductId);
-                items.Add(MapProduct(p.ProductId, p.NameEn, p.WebshopDescriptionNl, p.OrderPartNumber, imageUrl, stock));
+                prices.TryGetValue(p.ProductId, out var price);
+                stockLevels.TryGetValue(p.ProductId, out var level);
+                items.Add(MapProduct(
+                    p.ProductId,
+                    p.NameEn,
+                    p.WebshopDescriptionNl,
+                    p.OrderPartNumber,
+                    imageUrl,
+                    level.Quantity,
+                    level.MinQuantity,
+                    price));
             }
 
             return items;
@@ -73,21 +85,47 @@ public sealed class StoreCatalogService : IStoreCatalogPort
                 return null;
             }
 
-            var stockQty = await _db.ProductStockLocations.AsNoTracking()
-                .Where(x => x.ProductId == productId && x.IsDefault)
-                .Select(x => (int?)x.Quantity)
-                .FirstOrDefaultAsync(cancellationToken) ?? 0;
+            var stockLevels = await GetDefaultStockLevelsAsync([productId], cancellationToken);
+            stockLevels.TryGetValue(productId, out var level);
+
+            var price = await _pricing.GetUnitPriceAsync(productId, cancellationToken: cancellationToken);
 
             var imageUrl = await _media.GetPrimaryImageUrlAsync(productId, webPublishedOnly: true, cancellationToken)
                 ?? FallbackImage(productId);
 
-            return MapProduct(p.ProductId, p.NameEn, p.WebshopDescriptionNl, p.OrderPartNumber, imageUrl,
-                new Dictionary<int, int> { [productId] = stockQty });
+            return MapProduct(
+                p.ProductId,
+                p.NameEn,
+                p.WebshopDescriptionNl,
+                p.OrderPartNumber,
+                imageUrl,
+                level.Quantity,
+                level.MinQuantity,
+                price);
         }
         catch
         {
             return null;
         }
+    }
+
+    private async Task<Dictionary<int, (int Quantity, decimal MinQuantity)>> GetDefaultStockLevelsAsync(
+        IReadOnlyList<int> productIds,
+        CancellationToken cancellationToken)
+    {
+        if (productIds.Count == 0)
+        {
+            return new Dictionary<int, (int, decimal)>();
+        }
+
+        var rows = await _db.ProductStockLocations.AsNoTracking()
+            .Where(x => x.IsDefault && productIds.Contains(x.ProductId))
+            .Select(x => new { x.ProductId, x.Quantity, x.ReservedQuantity, x.MinQuantity })
+            .ToListAsync(cancellationToken);
+
+        return rows.ToDictionary(
+            x => x.ProductId,
+            x => ((int)Math.Max(0, x.Quantity - x.ReservedQuantity), x.MinQuantity));
     }
 
     private static StoreProductDto MapProduct(
@@ -96,9 +134,10 @@ public sealed class StoreCatalogService : IStoreCatalogPort
         string description,
         string partNumber,
         string imageUrl,
-        IReadOnlyDictionary<int, int> stock)
+        int qty,
+        decimal minQuantity,
+        decimal? price)
     {
-        stock.TryGetValue(id, out var qty);
         var category = InferCategory(partNumber);
         return new StoreProductDto
         {
@@ -106,8 +145,9 @@ public sealed class StoreCatalogService : IStoreCatalogPort
             Name = name,
             Description = description,
             ImageUrl = imageUrl,
-            Price = 49.99m + ((id - 1) % 6) * 10m,
+            Price = price ?? 0m,
             Stock = qty,
+            MinQuantity = minQuantity,
             Category = category,
             Tag = category == "ssd" ? "SSD" : category == "hdd" ? "HDD" : "Storage"
         };

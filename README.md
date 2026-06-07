@@ -32,10 +32,13 @@ The old project:  https://adminsenceweb.azurewebsites.net/
 | File | Description |
 |------|-------------|
 | [`docs/mock-loja.html`](docs/mock-loja.html) | Customer storefront — **entry point** (catalog, cart, checkout) |
+| [`docs/mock-payments.html`](docs/mock-payments.html) | **Mollie checkout** (card entry) + **order confirmation** after payment — 2-screen flow |
 | [`docs/mock-admin.html`](docs/mock-admin.html) | Staff admin panel — **AB-MATIC-style layout** (sidebar, dashboard, hub cards, list + form) |
 | [`docs/mock-shopcart.html`](docs/mock-shopcart.html) | Redirect to `mock-loja.html` |
 
 **Full screen-by-screen guide** (reference images, menus, entities, tables): [`readme/MOCK_PROTOTYPE_GUIDE.md`](readme/MOCK_PROTOTYPE_GUIDE.md)
+
+**Readme naming** (prefixes `SPEC_`, `MOCK_`, `DATA_`, `AUTH_`, `PATTERNS_`; suffix `_open` for pending trackers): [`readme/PATTERNS_CODE_AND_INFRASTRUCTURE.md`](readme/PATTERNS_CODE_AND_INFRASTRUCTURE.md) § Readme file naming convention.
 
 Reference layout screenshots: `readme/images/main_screen.png`, `menu_screen.png`, `forms_screen.png`
 
@@ -312,15 +315,17 @@ Sign in: `admin@webshop.com` / `Admin@12345` → `/admin`
 - 🌱 [`readme/DATA_DEMO_SEED.md`](readme/DATA_DEMO_SEED.md) — SQL demo seed: schemas, tables, run `seeds.sql` on MULLER
 - 🖥️ [`readme/SPEC_ADMIN.md`](readme/SPEC_ADMIN.md) — Admin panel: logins, registrations, stock, dashboards
 - 🛒 [`readme/SPEC_WEB_STORE.md`](readme/SPEC_WEB_STORE.md) — Web store: catalog, customer auth, checkout, stock display
-- 📦 [`readme/SPEC_STOCK_OPERATIONS_PROPOSAL.md`](readme/SPEC_STOCK_OPERATIONS_PROPOSAL.md) — Stock operations, checkout, and Mollie payments (analysis proposal)
-- ✅ [`readme/IMPLEMENTATION_ROADMAP_open.md`](readme/IMPLEMENTATION_ROADMAP_open.md) — Phased checklist (stock + checkout + Mollie)
+- 💳 [`readme/PAYMENTS_open.md`](readme/PAYMENTS_open.md) — Mollie test key, webhook, E2E checklist (open / pending)
+- 📦 [`readme/SPEC_STOCK_OPERATIONS_PROPOSAL.md`](readme/SPEC_STOCK_OPERATIONS_PROPOSAL.md) — Stock operations, checkout, Mollie
+- ✅ [`readme/IMPLEMENTATION_ROADMAP_open.md`](readme/IMPLEMENTATION_ROADMAP_open.md) — **Main delivery tracker** (phases 0–E, open backlog, dev priority)
 - 🔐 [`readme/AUTH_IDENTITY_ROADMAP_open.md`](readme/AUTH_IDENTITY_ROADMAP_open.md) — Identity, roles, customers, user IDs on writes
 - 📋 [`readme/AUDITS_open.md`](readme/AUDITS_open.md) — Audit log plan (CRUD / Login / Report / Logout badges + checklist)
 - 🖼️ [`readme/AZUREBLOB_open.md`](readme/AZUREBLOB_open.md) — Product images: `AzureFiles` ↔ `Product`, fictitious blob Phase 1
 - 🖥️ [`readme/MOCK_PROTOTYPE_GUIDE.md`](readme/MOCK_PROTOTYPE_GUIDE.md) — Mock layouts, menus, entities, and validation walkthrough
 - 🎨 [`readme/PATTERNS_UI_QUICK_START.md`](readme/PATTERNS_UI_QUICK_START.md) — Buttons, grids, forms (copy-paste)
-- 🏗️ [`readme/PATTERNS_CODE_AND_INFRASTRUCTURE.md`](readme/PATTERNS_CODE_AND_INFRASTRUCTURE.md) — Blazor implementation patterns and readme standards
+- 🏗️ [`readme/PATTERNS_CODE_AND_INFRASTRUCTURE.md`](readme/PATTERNS_CODE_AND_INFRASTRUCTURE.md) — Blazor patterns, readme standards, **doc naming (`SPEC_` / `MOCK_` / `DATA_` / `AUTH_` / `_open`)**
 - 📋 [`docs/mock-loja.html`](docs/mock-loja.html) — Storefront prototype (entry point)
+- 📋 [`docs/mock-payments.html`](docs/mock-payments.html) — Mollie card checkout + payment success
 - 📋 [`docs/mock-admin.html`](docs/mock-admin.html) — Admin prototype
 
 ---

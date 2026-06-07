@@ -1,101 +1,222 @@
-# Implementation roadmap — stock, checkout & Mollie
+# Implementation roadmap — stock, checkout, Mollie & open backlog
 
-![Status](https://img.shields.io/badge/Status-Phases%200–D%20core%20done-28a745?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Core%20done%20%2B%20open%20backlog-22c55e?style=flat-square) ![Scope](https://img.shields.io/badge/Scope-0–E%20%2B%20media%20%2B%20alerts-512BD4?style=flat-square)
 
-> **Purpose:** Track delivery in small parts. Mark ✅ when done.  
-> **Analysis reference:** [SPEC_STOCK_OPERATIONS_PROPOSAL.md](./SPEC_STOCK_OPERATIONS_PROPOSAL.md)  
-> **Suggested order:** **0 → A ∥ B → C → D → E** (A and B can run in parallel after 0).
+> **Purpose:** Single delivery tracker for WebShopABMATIC — phased checkboxes, open backlog, and dev priority.  
+> **Mark ✅ when done · ⬜ when pending · 🔶 partial / mock only.**  
+> **Analysis:** [SPEC_STOCK_OPERATIONS_PROPOSAL.md](./SPEC_STOCK_OPERATIONS_PROPOSAL.md)  
+> **Related:** [PAYMENTS_open.md](./PAYMENTS_open.md) · [AUDITS_open.md](./AUDITS_open.md) · [AZUREBLOB_open.md](./AZUREBLOB_open.md) · [AUTH_IDENTITY_ROADMAP_open.md](./AUTH_IDENTITY_ROADMAP_open.md)
+
+### Master phase map
 
 | Phase | Focus | Status |
 |-------|--------|--------|
 | **0** | Seeds + pricing foundation | ✅ Done |
 | **A** | Stock admin (read-only) | ✅ Done |
-| **B** | Checkout + Mollie | ✅ Done |
+| **B** | Checkout + Mollie (code path) | ✅ Done · **B.9 E2E ⬜ last** |
 | **C** | Store & admin order visibility | ✅ Done |
-| **D** | Stock writes + low-stock alerts | ✅ Core done |
-| **E** | PO / invoice / extras (later) | ⬜ Deferred |
+| **D** | Stock writes + low-stock in-app | ✅ Core done |
+| **3b** | Low stock **email send** (SMTP worker) | 🔶 Queue ✅ · send ⬜ |
+| **M** | Product images (`AzureFiles` seeds) | 🔶 Code ✅ · seeds ⬜ |
+| **E** | PO / GRN / transfer / reservation | ⬜ Pending |
+| **F** | SignalR real-time stock (optional) | ⬜ Pending |
+| **G** | Audit `StockAdjust` badge | ✅ Done |
 
-**Current focus:** _Mollie live E2E (B.9) · Phase E PO / transfers_
+**Suggested build order (historical):** **0 → A ∥ B → C → D → …**
+
+**Open work priority (Mollie mock stays on until client credentials):**
+
+1. **3b** — SMTP / email worker for low-stock queue  
+2. **M** — `AzureFiles` seeds in `seeds.sql`  
+3. **E** — PO → GRN → transfer → reserve on checkout *(if in scope)*  
+4. **F** — SignalR *(optional)*  
+5. **B.9** — Mollie real E2E — **[last]** — [PAYMENTS_open.md](./PAYMENTS_open.md)
+
+Mock adapters (`Mollie:UseMock`, `Notifications:LowStock:UseMock`) **do not** count as done.
 
 ---
 
-## Phase 0 — Foundation (do first)
+## ⬜ Open backlog — not done
 
-- ✅ **0.1** Seed `ProductPrices` (1 row per webshop product) in `scripts/seeds.sql`
-- ✅ **0.2** Seed `PaymentMethods` (pre-pay + post-pay) + `PaymentTerms`
+### 3b — Low stock email send
+
+| Item | Status |
+|------|--------|
+| In-app alerts + dashboard | ✅ |
+| `LowStockEmailNotifier` → `Emails.EmailMessages` | ✅ (when `UseMock=false`) |
+| `MockLowStockEmailNotifier` in Development | 🔶 |
+| **SMTP / background worker** | ⬜ |
+| Production SMTP settings | ⬜ |
+
+See [AUDITS_open.md](./AUDITS_open.md).
+
+### M — Product images ([AZUREBLOB_open.md](./AZUREBLOB_open.md))
+
+| Item | Status |
+|------|--------|
+| `IProductMediaPort` + admin upload + store read with fallback | ✅ |
+| **Seed** `AzureFileFolders` + `AzureFiles` in `seeds.sql` | ⬜ |
+| Real Azure Blob adapter (production) | ⬜ Later |
+
+### E — Stock ops
+
+Optional for minimal webshop; needed for ERP-style inbound stock.
+
+| Item | Status | Today |
+|------|--------|-------|
+| **E.2 PO CRUD** | ⬜ | Seed + read-only KPI — no admin CRUD |
+| **E.3 GRN** | ⬜ | Model only — no receive UI |
+| **E.1 Transfer** | ⬜ | No UI/API / paired movements |
+| **D.7 / E reservation** | ⬜ | Grid + seeds show reserved; checkout does not increment |
+
+### F — SignalR (optional)
+
+- ⬜ Real-time stock refresh — not started
+
+### B.9 — Mollie E2E (**last**)
+
+| Item | Status |
+|------|--------|
+| Code + `MollieMockPaymentAdapter` | ✅ / 🔶 |
+| `Mollie:ApiKey`, webhook, E2E checklist | ⬜ — [PAYMENTS_open.md](./PAYMENTS_open.md) |
+
+### Later (E extras — not MVP)
+
+- ⬜ **E.4** `AccountingDocument` on payment  
+- ⬜ **E.5** Mollie refunds in admin  
+- ⬜ **E.6** Retry payment / expired session UX  
+- ⬜ **E.8** Refresh [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) (outdated status text)
+
+---
+
+## ✅ Done (summary)
+
+| Area | Status |
+|------|--------|
+| Foundation 0, stock read A, checkout B.1–B.8, visibility C | ✅ |
+| Stock writes D.1–D.4, D.6; manual adjustment; sale hooks | ✅ |
+| Low stock in-app | ✅ |
+| Audit `StockAdjust` (Phase G) | ✅ |
+| Mollie integration code + dev mock | ✅ / 🔶 |
+| `ReservedQuantity` display + available calc | ✅ display only |
+
+---
+
+## Phase 0 — Foundation ✅
+
+- ✅ **0.1** Seed `ProductPrices` in `scripts/seeds.sql`
+- ✅ **0.2** Seed `PaymentMethods` + `PaymentTerms`
 - ✅ **0.3** Seed `OrderStatuses` with `ReserveStock` / `AffectsStock` flags
-- ✅ **0.4** `IProductPricingPort` + repository (active price + discounts)
-- ✅ **0.5** Wire `StoreCatalogService` to real prices (remove hardcoded `49.99 + …`)
-- ✅ **0.6** EF migration: Mollie columns on `OrderAdvancePayments` (`MolliePaymentId`, status, paid date, checkout URL)
-- ✅ **0.7** NuGet `Mollie.Api` + `AddMollieApi` in `Program.cs` (config in user secrets)
-- ✅ **0.8** `IMolliePaymentPort` + `MolliePaymentAdapter` (create + get payment)
-- ✅ **0.9** Update [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) for new seed rows
-
-**After pull:** run domain migration `OrderAdvancePaymentMollieColumns`, re-run `seeds.sql`, set `Mollie:ApiKey` (test key) in user secrets for Phase B.
+- ✅ **0.4** `IProductPricingPort` + repository
+- ✅ **0.5** Wire `StoreCatalogService` to real prices
+- ✅ **0.6** EF migration: Mollie columns on `OrderAdvancePayments`
+- ✅ **0.7** NuGet `Mollie.Api` + DI (`MollieDependencyInjection`)
+- ✅ **0.8** `IMolliePaymentPort` + `MolliePaymentAdapter`
+- ✅ **0.9** Update [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md)
 
 ---
 
-## Phase A — Stock admin (read-only)
+## Phase A — Stock admin (read-only) ✅
 
-- ✅ **A.1** Hub cards: Stock overview + Movement journal in `AdminHubRegistry`
-- ✅ **A.2** `IStockOverviewPort` / use case / repository + `/admin/stock/overview`
-- ✅ **A.3** Movement journal: filters + grid `/admin/stock/movements`
-- ✅ **A.4** Dashboard KPIs: movements (7d), open POs on `/admin` stock card
-- ✅ **A.5** Seed: 5–10 `StockMovements` + 1 minimal open `StockOrder` (demo)
-- ✅ **A.6** Update [SPEC_ADMIN.md](./SPEC_ADMIN.md) routes table
+- ✅ **A.1** Hub cards: overview + movement journal
+- ✅ **A.2** `IStockOverviewPort` + `/admin/stock/overview`
+- ✅ **A.3** Movement journal `/admin/stock/movements`
+- ✅ **A.4** Dashboard KPIs: movements (7d), open POs
+- ✅ **A.5** Seed: `StockMovements` + open `StockOrder` demo
+- ✅ **A.6** Update [SPEC_ADMIN.md](./SPEC_ADMIN.md) routes
 
 ---
 
-## Phase B — Checkout + Mollie (happy path)
+## Phase B — Checkout + Mollie
 
 - ✅ **B.1** `ICheckoutPort` + `CheckoutUseCase` + `IStoreOrderRepository`
-- ✅ **B.2** Persist `Order` + `OrderLine` + `OrderAdvancePayment` on Place order
-- ✅ **B.3** Cart: load `PaymentMethods` + delivery addresses from DB
-- ✅ **B.4** Server-side totals from `IProductPricingPort` + stock validation
-- ✅ **B.5** Pre-pay: create Mollie payment → redirect to hosted checkout
-- ✅ **B.6** Webhook endpoint + idempotent handler → mark `OrderAdvancePayment` paid
-- ✅ **B.7** `/orders/{id}/payment-return` + `/orders/{id}/confirmation`
-- ✅ **B.8** Post-pay path: no Mollie, confirmation only
-- ⬜ **B.9** Test with Mollie test key + dev tunnel — checklist in [PAYMENTS.md](./PAYMENTS.md)
+- ✅ **B.2** Persist `Order` + `OrderLine` + `OrderAdvancePayment`
+- ✅ **B.3** Cart: `PaymentMethods` + delivery addresses from DB
+- ✅ **B.4** Server-side totals + stock validation
+- ✅ **B.5** Pre-pay: Mollie payment → hosted checkout URL
+- ✅ **B.6** Webhook + idempotent handler → paid + stock
+- ✅ **B.7** `/orders/{id}/payment-return` + confirmation
+- ✅ **B.8** Post-pay path (no Mollie)
+- 🔶 **B.9a** `MollieMockPaymentAdapter` when `Mollie:UseMock=true`
+- ⬜ **B.9** Real Mollie test key + public webhook + E2E — [PAYMENTS_open.md](./PAYMENTS_open.md) — **do last**
 
 ---
 
-## Phase C — Visibility (store + admin) ✅
+## Phase C — Visibility ✅
 
-- ✅ **C.1** Customer `/orders` list (own orders only)
-- ✅ **C.2** Customer `/orders/{id}` with payment status badge
-- ✅ **C.3** Admin `/admin/orders`: columns payment status + Mollie id
-- ✅ **C.4** Admin order detail: `OrderAdvancePayments` read-only section
-- ✅ **C.5** Seed: `OrderAdvancePayments` on 2–3 demo orders — in `seeds.sql`
+- ✅ **C.1** Customer `/orders` list
+- ✅ **C.2** Customer `/orders/{id}` + payment badge
+- ✅ **C.3** Admin orders: payment status + Mollie id
+- ✅ **C.4** Admin: `OrderAdvancePayments` read-only
+- ✅ **C.5** Seed demo advance payments
 
 ---
 
 ## Phase D — Stock integration ✅ (core)
 
-- ✅ **D.1** Manual stock adjustment — `/admin/stock/adjustment` + `POST /api/admin/stock/adjustments`
-- ✅ **D.2** On webhook paid (PrePay) + PostPay checkout → **`ApplySaleFromOrderAsync`** (direct decrement, not `ReserveStock` flag)
-- ✅ **D.3** Movement journal: `OrderLineId` populated from webshop sales
-- ✅ **D.4** Negative stock blocked on writes (`StockMovementService`)
-- ✅ **D.6** `ReservedQuantity` / available columns on product-stock grid + seed demo values
-- ⬜ **D.7** Reservation workflow on checkout (`ReservedQuantity` increment) — deferred
+- ✅ **D.1** Manual adjustment — `/admin/stock/adjustment` + API
+- ✅ **D.2** PrePay paid + PostPay checkout → `ApplySaleFromOrderAsync`
+- ✅ **D.3** Movement journal: `OrderLineId` on sales
+- ✅ **D.4** Negative stock blocked
+- ✅ **D.5** Low stock in-app alerts + dashboard + storefront hints
+- ✅ **D.6** `ReservedQuantity` / available on product-stock grid + seeds
+- ⬜ **D.7** Reservation on checkout (`ReservedQuantity` increment) — see Phase E
 
 ---
 
-## Phase E — Later (defer until Phases 0–D stable)
+## Phase 3b — Low stock email ⬜
+
+- ✅ **3b.1** `LowStockEmailNotifier` queues to `Emails.EmailMessages`
+- ✅ **3b.2** `MockLowStockEmailNotifier` for Development
+- 🔶 **3b.3** Dev mock: `Notifications:LowStock:UseMock=true`
+- ⬜ **3b.4** Background worker / SMTP sender for queued messages
+- ⬜ **3b.5** Production SMTP configuration
+
+---
+
+## Phase M — Product media 🔶
+
+Detail: [AZUREBLOB_open.md](./AZUREBLOB_open.md)
+
+- ✅ **M.1** `IProductMediaPort` + `LocalProductMediaService`
+- ✅ **M.2** Admin product upload
+- ✅ **M.3** Store catalog reads `AzureFiles` (fallback images)
+- ⬜ **M.4** Seed `AzureFileFolders` + `AzureFiles` in `seeds.sql`
+- ⬜ **M.5** Real Azure Blob storage adapter (production)
+
+---
+
+## Phase E — Stock ops & extras ⬜
 
 ### Stock operations
-- ⬜ **E.1** Transfer between locations
-- ⬜ **E.2** Purchase order CRUD
-- ⬜ **E.3** Receive delivery (GRN)
+- ⬜ **E.1** Transfer between locations (UI + API + paired movements)
+- ⬜ **E.2** Purchase order CRUD (`StockOrder` + lines)
+- ⬜ **E.3** Receive delivery (GRN) linked to PO
 
-### Payments & accounting
-- ⬜ **E.4** `AccountingDocument` on payment (invoice parity)
+### Payments & accounting (later)
+- ⬜ **E.4** `AccountingDocument` on payment
 - ⬜ **E.5** Mollie refunds in admin
 - ⬜ **E.6** Retry payment / expired session UX
 
-### Docs & ops
-- ⬜ **E.7** [PAYMENTS.md](./PAYMENTS.md) (keys, webhook URL, test vs live) — ✅ written
-- ⬜ **E.8** [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) — checkout ✅; order history Phase C still open
+### Docs
+- ✅ **E.7** [PAYMENTS_open.md](./PAYMENTS_open.md) written
+- ⬜ **E.8** Update [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) to match current Blazor store
+
+---
+
+## Phase F — SignalR (optional) ⬜
+
+- ⬜ **F.1** Push stock updates to admin / store UI
+
+---
+
+## Phase G — Audit `StockAdjust` ✅
+
+- ✅ **G.1** `StockAdjust` in `AuditActions` + orange badge
+- ✅ **G.2** Logging from `StockMovementService` (sale + manual)
+- ✅ **G.3** Interceptor suppressed on stock movement writes
+
+Detail: [AUDITS_open.md](./AUDITS_open.md)
 
 ---
 
@@ -104,21 +225,25 @@
 | Criterion | Applies to |
 |-----------|------------|
 | Builds with 0 errors | All |
-| Manual test documented in PR / commit message | B, D |
-| Uses hexagonal ports + use cases (no logic only in Razor) | A–D |
-| `seeds.sql` runnable after change | 0, A, C |
+| Manual test documented in PR / commit message | B, D, E |
+| Hexagonal ports + use cases (no logic only in Razor) | A–E |
+| `seeds.sql` runnable after change | 0, A, C, M |
 
 ---
 
-## Quick progress
+## Progress
 
 ```
-Phase 0  [██████████] 9/9
-Phase A  [██████████] 6/6
-Phase B  [█████████_] 8/9  (B.9 manual E2E — [PAYMENTS.md](./PAYMENTS.md))
-Phase C  [██████████] 5/5
-Phase D  [█████████░] 6/7  (reservation workflow deferred)
-Phase E  [__________] 0/8  (deferred)
+Phase 0   [██████████] 9/9
+Phase A   [██████████] 6/6
+Phase B   [█████████░] B.9 last — mock until client
+Phase C   [██████████] 5/5
+Phase D   [█████████░] D.7 → Phase E
+Phase 3b  [█████████░] ⬜ SMTP worker
+Phase M   [██████░░░░] ⬜ seeds
+Phase E   [░░░░░░░░░░] ⬜ PO / GRN / transfer / reserve
+Phase F   [░░░░░░░░░░] ⬜ optional SignalR
+Phase G   [██████████] StockAdjust audit ✅
 ```
 
 ---

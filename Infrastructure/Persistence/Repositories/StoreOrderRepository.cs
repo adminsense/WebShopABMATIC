@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using WebShopABMATIC.Application.Store.Checkout;
 using WebShopABMATIC.Application.Ports.Outbound;
 using WebShopABMATIC.Data.Entities;
+using WebShopABMATIC.Application.Store.Orders;
 using WebShopABMATIC.Data.Persistence;
 
 namespace WebShopABMATIC.Infrastructure.Persistence.Repositories;
@@ -361,5 +362,83 @@ public sealed class StoreOrderRepository : IStoreOrderRepository
         advance.MolliePaymentStatus = status;
         advance.MollieCheckoutUrl = checkoutUrl;
         await _db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<StoreOrderListItemDto>> GetOrdersForCustomerAsync(
+        int customerId,
+        CancellationToken cancellationToken = default)
+    {
+        var orders = await (
+            from o in _db.Orders.AsNoTracking()
+            join p in _db.Projects.AsNoTracking() on o.ProjectId equals p.ProjectId
+            where p.CustomerId == customerId
+            orderby o.CreatedAt descending
+            select new { o.Id, o.OrderNumber, o.CreatedAt }
+        ).Take(50).ToListAsync(cancellationToken);
+
+        if (orders.Count == 0)
+        {
+            return [];
+        }
+
+        var orderIds = orders.Select(o => o.Id).ToList();
+
+        var advances = (await _db.OrderAdvancePayments.AsNoTracking()
+            .Where(a => orderIds.Contains(a.OrderId))
+            .OrderBy(a => a.SortOrder)
+            .ToListAsync(cancellationToken))
+            .GroupBy(a => a.OrderId)
+            .ToDictionary(g => g.Key, g => g.First());
+
+        var totals = await _db.OrderLines.AsNoTracking()
+            .Where(l => orderIds.Contains(l.OrderId))
+            .GroupBy(l => l.OrderId)
+            .Select(g => new { OrderId = g.Key, TotalInclVat = g.Sum(l => l.TotalInclVat) })
+            .ToDictionaryAsync(x => x.OrderId, x => x.TotalInclVat, cancellationToken);
+
+        var lineSummaries = await (
+            from l in _db.OrderLines.AsNoTracking()
+            join prod in _db.Products.AsNoTracking() on l.ProductId equals prod.ProductId into prodJoin
+            from prod in prodJoin.DefaultIfEmpty()
+            where orderIds.Contains(l.OrderId) && l.ProductId != null
+            orderby l.OrderId, l.SortOrder
+            select new
+            {
+                l.OrderId,
+                Name = prod != null ? prod.NameEn : l.DocumentDisplayName,
+                l.Quantity
+            }).ToListAsync(cancellationToken);
+
+        var summaryByOrder = lineSummaries
+            .GroupBy(x => x.OrderId)
+            .ToDictionary(
+                g => g.Key,
+                g => string.Join(", ", g.Take(3).Select(x => $"{x.Name} ×{(int)x.Quantity}"))
+                    + (g.Count() > 3 ? $" +{g.Count() - 3} more" : ""));
+
+        return orders.Select(o =>
+        {
+            advances.TryGetValue(o.Id, out var advance);
+            var isPrePay = advance is not null;
+            var paymentStatus = advance?.MolliePaymentStatus ?? (isPrePay ? "open" : "invoice");
+            var isPaid = advance?.MolliePaidAt != null ||
+                         string.Equals(paymentStatus, "paid", StringComparison.OrdinalIgnoreCase) ||
+                         !isPrePay;
+            var (label, css) = StoreOrderPaymentDisplay.Describe(isPrePay, isPaid, paymentStatus);
+
+            return new StoreOrderListItemDto
+            {
+                OrderId = o.Id,
+                OrderNumber = o.OrderNumber,
+                CreatedAt = o.CreatedAt,
+                TotalInclVat = totals.GetValueOrDefault(o.Id),
+                PaymentStatus = paymentStatus,
+                IsPrePay = isPrePay,
+                IsPaid = isPaid,
+                ItemsSummary = summaryByOrder.GetValueOrDefault(o.Id, "—"),
+                StatusLabel = label,
+                StatusClass = css
+            };
+        }).ToList();
     }
 }
