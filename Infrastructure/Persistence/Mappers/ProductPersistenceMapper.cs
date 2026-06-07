@@ -18,7 +18,7 @@ internal static class ProductPersistenceMapper
             entity.EanCode,
             entity.IsInactive);
 
-    public static void ApplyToEntity(Product domain, PersistenceProduct entity)
+    public static void ApplyToEntity(Product domain, PersistenceProduct entity, string? modifiedBy = null)
     {
         entity.NameEn = domain.NameEn;
         entity.NameNl = domain.NameEn;
@@ -35,6 +35,6 @@ internal static class ProductPersistenceMapper
         entity.EanCode = domain.EanCode;
         entity.IsInactive = domain.IsInactive;
         entity.LastModifiedAt = DateTime.UtcNow;
-        entity.LastModifiedBy = "admin";
+        entity.LastModifiedBy = modifiedBy ?? entity.LastModifiedBy ?? "system";
     }
 }

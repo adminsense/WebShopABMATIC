@@ -1,35 +1,227 @@
-@page "/admin/profile"
+﻿@page "/admin/profile"
 @layout AdminLayout
 @attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
+@using System.ComponentModel.DataAnnotations
 @using WebShopABMATIC.Application.Auth
 @using Microsoft.AspNetCore.Identity
 @using WebShopABMATIC.Infrastructure.Identity
 @inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
 @inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>My profile</PageTitle>
 
-<a class="btn btn-secondary btn-back mb-3" href="/admin" data-enhance-nav="false" title="Go back"><span class="oi oi-arrow-left"></span> Back to start</a>
-
-<div class="card shadow-sm" style="max-width:480px">
-    <div class="card-body">
-        <h1 class="h5">Staff profile</h1>
-        @if (_user is not null)
-        {
-            <p><strong>Name:</strong> @_user.DisplayName</p>
-            <p><strong>Email:</strong> @_user.Email</p>
-            <p><strong>User name:</strong> @_user.UserName</p>
-            <a class="btn btn-outline-primary btn-sm" href="Account/Manage">Account settings</a>
-        }
+<div class="entity-page">
+    <a class="btn btn-secondary btn-back mb-3" href="/admin/hub/profile" data-enhance-nav="false"><span class="oi oi-arrow-left"></span> Back to profile hub</a>
+    <div class="entity-page-header page-header">
+        <h1 class="h3 mb-1"><i class="bi bi-person text-primary"></i> My profile</h1>
+        <p class="mb-0">Update your account details.</p>
     </div>
+
+    @if (_loading)
+    {
+        <p class="text-muted">Loadingâ€¦</p>
+    }
+    else if (_user is null)
+    {
+        <div class="alert alert-danger">Could not load your profile.</div>
+    }
+    else
+    {
+        @if (!string.IsNullOrEmpty(_statusMessage))
+        {
+            <div class="alert @(_statusIsError ? "alert-danger" : "alert-success")">@_statusMessage</div>
+        }
+
+        <div class="card shadow-sm border entity-form-card admin-form-card" style="max-width:640px">
+            <div class="card-header card-header-catalog"><h2 class="h6 mb-0 fw-bold">Account details</h2></div>
+            <div class="card-body">
+                <EditForm Model="_profileModel" OnValidSubmit="SaveProfileAsync">
+                    <DataAnnotationsValidator />
+                    <div class="entity-form-fields">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label" for="f-first">First name</label>
+                                <InputText id="f-first" class="form-control form-control-sm" @bind-Value="_profileModel.FirstName" />
+                                <ValidationMessage For="() => _profileModel.FirstName" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="f-last">Last name</label>
+                                <InputText id="f-last" class="form-control form-control-sm" @bind-Value="_profileModel.LastName" />
+                                <ValidationMessage For="() => _profileModel.LastName" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="f-email">Email</label>
+                                <input id="f-email" type="email" class="form-control form-control-sm" value="@_user.Email" disabled />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="f-phone">Phone</label>
+                                <InputText id="f-phone" class="form-control form-control-sm" @bind-Value="_profileModel.PhoneNumber" />
+                                <ValidationMessage For="() => _profileModel.PhoneNumber" />
+                            </div>
+                            <div class="col-12 d-flex gap-2 pt-1">
+                                <button type="submit" class="btn btn-primary" disabled="@_saving">Save profile</button>
+                            </div>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border entity-form-card admin-form-card mt-3" style="max-width:640px">
+            <div class="card-header card-header-catalog"><h2 class="h6 mb-0 fw-bold">Change password</h2></div>
+            <div class="card-body">
+                <EditForm Model="_passwordModel" OnValidSubmit="ChangePasswordAsync">
+                    <DataAnnotationsValidator />
+                    <div class="entity-form-fields">
+                        <div class="row g-2">
+                            <div class="col-md-12">
+                                <label class="form-label" for="f-current">Current password</label>
+                                <InputText id="f-current" type="password" class="form-control form-control-sm" @bind-Value="_passwordModel.CurrentPassword" />
+                                <ValidationMessage For="() => _passwordModel.CurrentPassword" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="f-new">New password</label>
+                                <InputText id="f-new" type="password" class="form-control form-control-sm" @bind-Value="_passwordModel.NewPassword" />
+                                <ValidationMessage For="() => _passwordModel.NewPassword" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="f-confirm">Confirm new password</label>
+                                <InputText id="f-confirm" type="password" class="form-control form-control-sm" @bind-Value="_passwordModel.ConfirmPassword" />
+                                <ValidationMessage For="() => _passwordModel.ConfirmPassword" />
+                            </div>
+                            <div class="col-12 d-flex gap-2 pt-1">
+                                <button type="submit" class="btn btn-outline-primary" disabled="@_saving">Update password</button>
+                            </div>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
 </div>
 
 @code {
     private ApplicationUser? _user;
+    private ProfileInputModel _profileModel = new();
+    private PasswordInputModel _passwordModel = new();
+    private bool _loading = true;
+    private bool _saving;
+    private string? _statusMessage;
+    private bool _statusIsError;
 
     protected override async Task OnInitializedAsync()
     {
         var auth = await AuthStateProvider.GetAuthenticationStateAsync();
         _user = await UserManager.GetUserAsync(auth.User);
+        if (_user is not null)
+        {
+            _profileModel = new ProfileInputModel
+            {
+                FirstName = _user.FirstName,
+                LastName = _user.LastName,
+                PhoneNumber = _user.PhoneNumber
+            };
+        }
+
+        _loading = false;
+    }
+
+    private async Task SaveProfileAsync()
+    {
+        if (_user is null)
+        {
+            return;
+        }
+
+        _saving = true;
+        _statusMessage = null;
+        try
+        {
+            _user.FirstName = _profileModel.FirstName?.Trim() ?? "";
+            _user.LastName = _profileModel.LastName?.Trim() ?? "";
+            _user.PhoneNumber = _profileModel.PhoneNumber?.Trim();
+
+            var result = await UserManager.UpdateAsync(_user);
+            if (!result.Succeeded)
+            {
+                _statusIsError = true;
+                _statusMessage = string.Join(" ", result.Errors.Select(e => e.Description));
+                return;
+            }
+
+            await SignInManager.RefreshSignInAsync(_user);
+            _statusIsError = false;
+            _statusMessage = "Profile saved.";
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task ChangePasswordAsync()
+    {
+        if (_user is null)
+        {
+            return;
+        }
+
+        _saving = true;
+        _statusMessage = null;
+        try
+        {
+            var result = await UserManager.ChangePasswordAsync(
+                _user,
+                _passwordModel.CurrentPassword,
+                _passwordModel.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                _statusIsError = true;
+                _statusMessage = string.Join(" ", result.Errors.Select(e => e.Description));
+                return;
+            }
+
+            await SignInManager.RefreshSignInAsync(_user);
+            _passwordModel = new PasswordInputModel();
+            _statusIsError = false;
+            _statusMessage = "Password updated.";
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private sealed class ProfileInputModel
+    {
+        [Required]
+        [StringLength(100)]
+        public string? FirstName { get; set; }
+
+        [Required]
+        [StringLength(100)]
+        public string? LastName { get; set; }
+
+        [Phone]
+        public string? PhoneNumber { get; set; }
+    }
+
+    private sealed class PasswordInputModel
+    {
+        [Required]
+        public string CurrentPassword { get; set; } = "";
+
+        [Required]
+        [StringLength(100, MinimumLength = 8)]
+        public string NewPassword { get; set; } = "";
+
+        [Required]
+        [Compare(nameof(NewPassword))]
+        public string ConfirmPassword { get; set; } = "";
     }
 }
+
+
+

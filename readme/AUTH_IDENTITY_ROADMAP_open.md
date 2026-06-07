@@ -3,7 +3,7 @@
 ![Status](https://img.shields.io/badge/Status-Auth--4%20next-f59e0b?style=flat-square)
 
 > **Purpose:** Unify ASP.NET Identity with the legacy domain model — admin users, store customers, real user IDs on writes, password reset. Mark ✅ when done.  
-> **Context:** [INFRASTRUCTURE.md](./INFRASTRUCTURE.md) §3 · [ADMIN.md](./ADMIN.md) §2  
+> **Context:** [SPEC_INFRASTRUCTURE.md](./SPEC_INFRASTRUCTURE.md) §3 · [SPEC_ADMIN.md](./SPEC_ADMIN.md) §2  
 > **Suggested order:** **Auth-1 → Auth-2 → Auth-3 → Auth-4 → Auth-5 → Auth-6 → Auth-7** (Auth-7 = audit logs, after IDs are stable).
 
 | Phase | Focus | Status |
@@ -17,7 +17,7 @@
 | **Auth-6** | Persist real user IDs on writes | ✅ Done |
 | **Auth-7** | Audit logs (later) | ⬜ Deferred |
 
-**Current focus:** _Auth-7 — audit logs ([AUDITS.md](./AUDITS.md))_
+**Current focus:** _Auth-7 — audit logs ([AUDITS_open.md](./AUDITS_open.md))_
 
 ---
 
@@ -64,7 +64,7 @@ Orders.CreatedByUserId / audit fields → resolved via ICurrentUserContext (Iden
 - ✅ **1.2** Domain migration + update `WebShopABMATICModelBuilder`
 - ✅ **1.3** `IdentitySeed`: after creating `customer@webshop.com`, set `Customers.IdentityUserId` for matching row
 - ✅ **1.4** `IStoreCustomerRepository`: resolve by `IdentityUserId` first, fallback `WebshopLogin`
-- ✅ **1.5** Update [DEMO_SEED_DATA.md](./DEMO_SEED_DATA.md) — document link column
+- ✅ **1.5** Update [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) — document link column
 - ✅ **1.6** Manual test: sign-in as customer → checkout still resolves customer #4
 
 ---
@@ -76,7 +76,7 @@ Orders.CreatedByUserId / audit fields → resolved via ICurrentUserContext (Iden
 - ✅ **2.3** UI: email, first/last name, roles (Admin / Manager checkboxes), active/lockout
 - ✅ **2.4** Create user with temporary password or invite flow
 - ✅ **2.5** Deprecate **Staff user** hub card for auth _(keep table for HR later or hide)_
-- ✅ **2.6** Update [ADMIN.md](./ADMIN.md) — system users vs legacy StaffUsers
+- ✅ **2.6** Update [SPEC_ADMIN.md](./SPEC_ADMIN.md) — system users vs legacy StaffUsers
 
 ---
 
@@ -95,7 +95,7 @@ Orders.CreatedByUserId / audit fields → resolved via ICurrentUserContext (Iden
 - ✅ **4.1** System users: **Reset password** action (Admin-only) → set new password via `UserManager`
 - ✅ **4.2** Customers admin (`/admin/customers`): **Reset webshop password** for linked Identity user
 - ✅ **4.3** Optional: generate random temp password + show once (no email in dev)
-- ✅ **4.4** Document dev flow in [ADMIN.md](./ADMIN.md)
+- ✅ **4.4** Document dev flow in [SPEC_ADMIN.md](./SPEC_ADMIN.md)
 
 ---
 
@@ -119,11 +119,11 @@ Orders.CreatedByUserId / audit fields → resolved via ICurrentUserContext (Iden
 
 ## Auth-7 — Audit logs (deferred until Auth-6 stable)
 
-> **Plan:** [AUDITS.md](./AUDITS.md) — Phase 1 badges (CRUD, Login, Report, Logout) + CRUD inventory with ✅/⬜ tracking.
+> **Plan:** [AUDITS_open.md](./AUDITS_open.md) — Phase 1 badges (CRUD, Login, Report, Logout) + CRUD inventory with ✅/⬜ tracking.
 
-- ⬜ **7.1** Design `AuditLog` entity or use existing `OrderLog` pattern with Identity user id → see **AUDITS.md §1, §7**
+- ⬜ **7.1** Design `AuditLog` entity or use existing `OrderLog` pattern with Identity user id → see **AUDITS_open.md §1, §7**
 - ⬜ **7.2** Middleware or domain hook on admin mutations → **`IAuditService`** in repositories (single-layer)
-- ⬜ **7.3** Admin read-only audit journal (optional) → **AUDITS.md Phase 2** `/admin/audit-logs`
+- ⬜ **7.3** Admin read-only audit journal (optional) → **AUDITS_open.md Phase 2** `/admin/audit-logs`
 
 ---
 
@@ -157,9 +157,9 @@ Auth-7   [__________] 0/3  (deferred)
 ## Documentation
 
 - 🏠 [Main Documentation](../README.md)
-- 🏗️ [Infrastructure — Identity §3](./INFRASTRUCTURE.md)
-- 🖥️ [Admin — auth §2](./ADMIN.md)
-- ✅ [Stock & checkout roadmap](./IMPLEMENTATION_ROADMAP.md)
+- 🏗️ [Infrastructure — Identity §3](./SPEC_INFRASTRUCTURE.md)
+- 🖥️ [Admin — auth §2](./SPEC_ADMIN.md)
+- ✅ [Stock & checkout roadmap](./IMPLEMENTATION_ROADMAP_open.md)
 
 ---
 

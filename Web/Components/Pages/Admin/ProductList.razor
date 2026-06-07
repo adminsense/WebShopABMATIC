@@ -1,12 +1,14 @@
-@page "/admin/products"
+﻿@page "/admin/products"
 @layout AdminLayout
 @attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
 @using WebShopABMATIC.Application.Admin.Products
 @using WebShopABMATIC.Application.Common
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Web.Services
 @inject IProductAdminPort ProductPort
-@inject NavigationManager Navigation
+@inject NavigationManager Navigation
+@inject IGridExportService GridExport
 @implements IAsyncDisposable
 
 <PageTitle>Product</PageTitle>
@@ -22,13 +24,13 @@
     </div>
 
     <div class="card shadow-sm border entity-form-card admin-form-card">
-        <div class="card-header card-header-catalog">
-            <h2 class="h6 mb-0 fw-bold">@(_isEditing ? "Edit product" : "Create product")</h2>
-        </div>
+                <AdminEntityFormHeader ExportDisabled="@ExportDisabled" OnExport="ExportGridAsync">
+            <Title>@(_isEditing ? "Edit product" : "Create product")</Title>
+        </AdminEntityFormHeader>
         <div class="card-body">
             @if (_formLoading)
             {
-                <p class="text-muted mb-0">Loading…</p>
+                <p class="text-muted mb-0">Loadingâ€¦</p>
             }
             else
             {
@@ -113,22 +115,9 @@
     </div>
 
     <div class="card shadow-sm border entity-grid-card">
-        <div class="card-header bg-white border-bottom py-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="card-header bg-white entity-grid-toolbar">
             <h2 class="h6 mb-0 fw-bold">Product list</h2>
-            <div class="grid-search-wrap">
-                <div class="input-group input-group-sm">
-                    <input type="search"
-                           class="form-control"
-                           placeholder="Search…"
-                           aria-label="Search products"
-                           @bind="_searchDraft"
-                           @bind:event="oninput"
-                           @onkeydown="OnSearchKeyDown" />
-                    <span class="input-group-text">
-                        <i class="bi bi-search" aria-hidden="true"></i>
-                    </span>
-                </div>
-            </div>
+            <AdminGridSearch @bind-Value="_searchDraft" OnSearch="ApplySearchAsync" />
         </div>
         <div class="table-responsive">
             <table class="table table-striped table-hover mb-0">
@@ -146,7 +135,7 @@
                     @if (_loading)
                     {
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-4">Loading…</td>
+                            <td colspan="6" class="text-center text-muted py-4">Loadingâ€¦</td>
                         </tr>
                     }
                     else if (!string.IsNullOrEmpty(_gridError))
@@ -195,7 +184,7 @@
         @if (_result is not null && !_loading)
         {
             <div class="card-footer bg-white text-muted small py-2">
-                @_result.TotalCount total · page @_result.Page
+                @_result.TotalCount total Â· page @_result.Page
             </div>
         }
     </div>
@@ -310,14 +299,6 @@
         _cts?.Cancel();
         _cts = new CancellationTokenSource();
         await LoadGridAsync(_cts.Token);
-    }
-
-    private async Task OnSearchKeyDown(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter")
-        {
-            await ApplySearchAsync();
-        }
     }
 
     private async Task EditAsync(int productId)
@@ -489,6 +470,33 @@
         }
     }
 
+
+    private bool ExportDisabled => _loading || _result is null || _result.Items.Count == 0;
+
+    private async Task ExportGridAsync(string format)
+    {
+        var request = BuildExportRequest();
+        if (request is not null)
+        {
+            await GridExport.ExportAsync(format, request);
+        }
+    }
+
+    private GridExportRequest? BuildExportRequest()
+    {
+        return GridExportBuilder.FromRows(
+            "products",
+            "Product list",
+            new[] { "ProductId", "NameEn", "ShowOnWebshop", "SupplierId", "ManufacturerId" },
+            _result?.Items.Select(item => (IReadOnlyList<string>)new[]
+            {
+                GridExportBuilder.Cell(item.ProductId),
+                GridExportBuilder.Cell(item.NameEn),
+                GridExportBuilder.Cell(item.ShowOnWebshop ? "Yes" : "No"),
+                GridExportBuilder.Cell(item.SupplierId),
+                GridExportBuilder.Cell(item.ManufacturerId)
+            }));
+    }
     public async ValueTask DisposeAsync()
     {
         _disposed = true;
@@ -500,3 +508,7 @@
         }
     }
 }
+
+
+
+

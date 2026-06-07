@@ -1,26 +1,26 @@
-﻿@page "/admin/customer-discounts"
+﻿@page "/admin/product-stock"
 @layout AdminLayout
 @attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
-@using WebShopABMATIC.Application.Admin.CustomerProductDiscounts
+@using WebShopABMATIC.Application.Admin.ProductStockLocations
 @using WebShopABMATIC.Application.Common
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
 @using WebShopABMATIC.Web.Services
-@inject ICustomerProductDiscountAdminPort AdminPort
+@inject IProductStockLocationAdminPort AdminPort
 @inject IGridExportService GridExport
 @implements IAsyncDisposable
 
-<PageTitle>Product discount</PageTitle>
+<PageTitle>Product stock</PageTitle>
 
 <div class="entity-page">
-    <a class="btn btn-secondary btn-back mb-3" href="/admin/hub/customers" data-enhance-nav="false"><span class="oi oi-arrow-left"></span> Back to list</a>
+    <a class="btn btn-secondary btn-back mb-3" href="/admin/hub/stock" data-enhance-nav="false"><span class="oi oi-arrow-left"></span> Back to list</a>
     <div class="entity-page-header page-header">
-        <h1 class="h3 mb-1"><i class="bi bi-percent text-primary"></i> Product discount</h1>
-        <p class="mb-0">Customer-specific product discounts.</p>
+        <h1 class="h3 mb-1"><i class="bi bi-boxes text-primary"></i> Product stock</h1>
+        <p class="mb-0">Quantity per warehouse location.</p>
     </div>
     <div class="card shadow-sm border entity-form-card admin-form-card">
                 <AdminEntityFormHeader ExportDisabled="@ExportDisabled" OnExport="ExportGridAsync">
-            <Title>@(_isEditing ? "Edit product discount" : "Create product discount")</Title>
+            <Title>@(_isEditing ? "Edit product stock" : "Create product stock")</Title>
         </AdminEntityFormHeader>
         <div class="card-body">
             @if (_formLoading) { <p class="text-muted mb-0">Loadingâ€¦</p> }
@@ -29,20 +29,24 @@
                     <DataAnnotationsValidator />
                     <div class="entity-form-fields"><div class="row g-2">
                         <div class="col-md-3">
-                            <label class="form-label" for="f-customerid">CustomerId *</label>
-                            <InputNumber id="f-customerid" class="form-control form-control-sm" @bind-Value="_model.CustomerId" required />
+                            <label class="form-label" for="f-stocklocationid">StockLocationId *</label>
+                            <InputNumber id="f-stocklocationid" class="form-control form-control-sm" @bind-Value="_model.StockLocationId" required />
                         </div>
                         <div class="col-md-3">
                             <label class="form-label" for="f-productid">ProductId *</label>
                             <InputNumber id="f-productid" class="form-control form-control-sm" @bind-Value="_model.ProductId" required />
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label" for="f-discountpercentage">Discount %</label>
-                            <InputNumber id="f-discountpercentage" class="form-control form-control-sm" @bind-Value="_model.DiscountPercentage" />
+                            <label class="form-label" for="f-quantity">Quantity *</label>
+                            <InputNumber id="f-quantity" class="form-control form-control-sm" @bind-Value="_model.Quantity" required />
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label" for="f-fromaddress">Valid from *</label>
-                            <InputDate id="f-fromaddress" class="form-control form-control-sm" @bind-Value="_model.FromAddress" required />
+                            <label class="form-label" for="f-minquantity">Min quantity</label>
+                            <InputNumber id="f-minquantity" class="form-control form-control-sm" @bind-Value="_model.MinQuantity" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" for="f-maxquantity">Max quantity</label>
+                            <InputNumber id="f-maxquantity" class="form-control form-control-sm" @bind-Value="_model.MaxQuantity" />
                         </div>
                         <div class="col-12 d-flex gap-2 pt-1">
                             <button type="submit" class="btn btn-primary" disabled="@_saving">@(_isEditing ? "Update" : "Create")</button>
@@ -56,15 +60,15 @@
     </div>
     <div class="card shadow-sm border entity-grid-card">
         <div class="card-header bg-white entity-grid-toolbar">
-            <h2 class="h6 mb-0 fw-bold">Product discount list</h2>
+            <h2 class="h6 mb-0 fw-bold">Product stock list</h2>
             <AdminGridSearch @bind-Value="_searchDraft" OnSearch="ApplySearchAsync" />
         </div>
         <div class="table-responsive">
             <table class="table table-striped table-hover mb-0">
                 <thead class="table-dark"><tr><th>Id</th>
-                        <th>CustomerId</th>
                         <th>ProductId</th>
-                        <th>DiscountPercentage</th>
+                        <th>StockLocationId</th>
+                        <th>Quantity</th>
                     <th class="text-center">Actions</th></tr></thead>
                 <tbody>
                     @if (_loading) { <tr><td colspan="5" class="text-center text-muted py-4">Loadingâ€¦</td></tr> }
@@ -73,11 +77,11 @@
                     else { @foreach (var item in _result.Items) {
                         <tr @key="item.Id" class="@(_model.Id == item.Id ? "table-active" : null)">
                             <td>@item.Id</td>
-                                <td>@item.CustomerId</td>
                                 <td>@item.ProductId</td>
-                                <td>@item.DiscountPercentage</td>
+                                <td>@item.StockLocationId</td>
+                                <td>@item.Quantity</td>
                             <td class="text-center"><div class="btn-group btn-group-sm">
-                                <a class="btn btn-sm btn-primary" href="@($"/admin/customer-discounts?edit={item.Id}")" data-enhance-nav="false"><i class="bi bi-pencil"></i></a>
+                                <a class="btn btn-sm btn-primary" href="@($"/admin/product-stock?edit={item.Id}")" data-enhance-nav="false"><i class="bi bi-pencil"></i></a>
                                         <button type="button" class="btn btn-sm btn-danger" @onclick="() => PromptDelete(item)" title="Delete">
                                             <i class="bi bi-trash"></i>
                                         </button>
@@ -109,13 +113,13 @@
 @code {
     [SupplyParameterFromQuery(Name = "edit")] public int? EditId { get; set; }
     private CancellationTokenSource? _cts;
-    private CustomerProductDiscountListFilter _filter = new();
-    private CustomerProductDiscountEditDto _model = new CustomerProductDiscountEditDto();
+    private ProductStockLocationListFilter _filter = new();
+    private ProductStockLocationEditDto _model = new ProductStockLocationEditDto { StockLocationId = 1, ProductId = 1, MaxQuantity = 100 };
     private string _searchDraft = string.Empty;
     private bool _loading = true, _formLoading, _saving, _deleting, _showDeleteConfirm, _disposed, _initialized;
     private string? _formError, _gridError;
-    private PagedResult<CustomerProductDiscountDto>? _result;
-    private CustomerProductDiscountDto? _itemToDelete;
+    private PagedResult<ProductStockLocationDto>? _result;
+    private ProductStockLocationDto? _itemToDelete;
     private bool _isEditing => _model.Id > 0;
 
     protected override async Task OnInitializedAsync() {
@@ -130,7 +134,7 @@
     }
     private async Task LoadGridAsync(CancellationToken ct) {
         _loading = true; _gridError = null;
-        try { _result = await AdminPort.GetCustomerProductDiscountsAsync(_filter, ct); }
+        try { _result = await AdminPort.GetProductStockLocationsAsync(_filter, ct); }
         catch (OperationCanceledException) { return; }
         catch (Exception ex) { _result = null; _gridError = ex.Message; }
         finally { _loading = false; await InvokeAsync(StateHasChanged); }
@@ -153,8 +157,8 @@ private async Task EditAsync(int id) {
         } catch (Exception ex) { _formError = ex.Message; }
         finally { _saving = false; }
     }
-    private Task CancelFormAsync() { _formError = null; _model = new CustomerProductDiscountEditDto(); return Task.CompletedTask; }
-    private void PromptDelete(CustomerProductDiscountDto item) { _itemToDelete = item; _showDeleteConfirm = true; }
+    private Task CancelFormAsync() { _formError = null; _model = new ProductStockLocationEditDto { StockLocationId = 1, ProductId = 1, MaxQuantity = 100 }; return Task.CompletedTask; }
+    private void PromptDelete(ProductStockLocationDto item) { _itemToDelete = item; _showDeleteConfirm = true; }
     private void CancelDelete() { _showDeleteConfirm = false; _itemToDelete = null; }
     private async Task ConfirmDeleteAsync() {
         if (_itemToDelete is null) return;
@@ -180,15 +184,15 @@ private async Task EditAsync(int id) {
     private GridExportRequest? BuildExportRequest()
     {
         return GridExportBuilder.FromRows(
-            "customer-discounts",
-            "Product discount list",
-            new[] { "Id", "CustomerId", "ProductId", "DiscountPercentage" },
+            "product-stock",
+            "Product stock list",
+            new[] { "Id", "ProductId", "StockLocationId", "Quantity" },
             _result?.Items.Select(item => (IReadOnlyList<string>)new[]
             {
                 GridExportBuilder.Cell(item.Id),
-                GridExportBuilder.Cell(item.CustomerId),
                 GridExportBuilder.Cell(item.ProductId),
-                GridExportBuilder.Cell(item.DiscountPercentage)
+                GridExportBuilder.Cell(item.StockLocationId),
+                GridExportBuilder.Cell(item.Quantity)
             }));
     }
     public async ValueTask DisposeAsync() { _disposed = true; if (_cts is not null) { await _cts.CancelAsync(); _cts.Dispose(); } }

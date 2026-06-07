@@ -1,0 +1,97 @@
+@page "/"
+@layout StoreLayout
+@using WebShopABMATIC.Application.Ports
+@inject IStoreCatalogPort CatalogPort
+@inject NavigationManager Navigation
+
+<PageTitle>WebShop — Catalog</PageTitle>
+
+<section class="hero container">
+    <div class="hero-grid">
+        <div>
+            <h1>Storage solutions, light and simple</h1>
+            <p>Browse our hard drive catalog, add to cart, and check out in a few clicks.</p>
+            <div class="hero-cta">
+                <a href="#products" class="btn btn-primary">Browse catalog</a>
+                <NavLink href="/cart" class="btn btn-outline">View cart</NavLink>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <img src="/images/product1.png" alt="Featured product" />
+        </div>
+    </div>
+</section>
+
+<section class="container" id="products">
+    <h2 class="section-title">Categories</h2>
+    <div class="categories">
+        @foreach (var cat in StoreCategories.All)
+        {
+            <button type="button" class="chip @(cat.Key == _category ? "active" : "")"
+                    @onclick="() => SetCategory(cat.Key)">@cat.Label</button>
+        }
+    </div>
+
+    <h2 class="section-title">Products</h2>
+    @if (_loading)
+    {
+        <p class="text-muted">Loading catalog…</p>
+    }
+    else if (_products.Count == 0)
+    {
+        <p class="text-muted">No products available on the webshop.</p>
+    }
+    else
+    {
+        <div class="product-grid">
+            @foreach (var p in FilteredProducts())
+            {
+                <article class="product-card" @onclick="() => GoToProduct(p.Id)">
+                    <div class="img-wrap"><img src="@p.ImageUrl" alt="@p.Name" /></div>
+                    <div class="body">
+                        <p class="category">@p.Tag</p>
+                        <h3>@p.Name</h3>
+                        <p class="brand">@p.Description</p>
+                        <div class="price-row">
+                            <span class="price">@FormatPrice(p.Price)</span>
+                            <span class="stock @(p.Stock < 10 ? "low" : "")">@p.Stock in stock</span>
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    private string _category = "all";
+    private bool _loading = true;
+    private IReadOnlyList<StoreProduct> _products = [];
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var items = await CatalogPort.GetCatalogAsync();
+            _products = items.Select(StoreProductMapper.ToModel).ToList();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private IEnumerable<StoreProduct> FilteredProducts() =>
+        _category == "all"
+            ? _products
+            : _products.Where(p => p.Category.Equals(_category, StringComparison.OrdinalIgnoreCase));
+
+    private void SetCategory(string category) => _category = category;
+
+    private void GoToProduct(int id) => Navigation.NavigateTo($"/product/{id}");
+
+    private static string FormatPrice(decimal price) => $"${price:F2}";
+}

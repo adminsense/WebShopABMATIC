@@ -1,0 +1,77 @@
+@page "/orders/{OrderId:int}/confirmation"
+@layout StoreLayout
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Application.Ports.Outbound
+@using WebShopABMATIC.Application.Store.Checkout
+@attribute [Authorize(Policy = AppPolicies.CustomerOnly)]
+@inject ICheckoutPort CheckoutPort
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Order confirmation</PageTitle>
+
+<div class="container">
+    <h1 class="page-title">Order confirmation</h1>
+
+    @if (_loading)
+    {
+        <p style="color:var(--muted)">Loading…</p>
+    }
+    else if (_order is null)
+    {
+        <p style="color:var(--muted)">Order not found.</p>
+        <NavLink href="/orders" class="btn btn-primary">My orders</NavLink>
+    }
+    else
+    {
+        <div class="summary-card" style="max-width:32rem">
+            <p><strong>Order #@(_order.OrderNumber ?? _order.OrderId)</strong></p>
+            <p class="small" style="color:var(--muted)">@_order.CreatedAt.ToLocalTime().ToString("f")</p>
+            <p>
+                Payment:
+                @if (_order.IsPaid)
+                {
+                    <span class="badge bg-success">@_order.PaymentStatus</span>
+                }
+                else
+                {
+                    <span class="badge bg-warning text-dark">@_order.PaymentStatus</span>
+                }
+            </p>
+            <hr />
+            @foreach (var line in _order.Lines)
+            {
+                <div class="summary-line">
+                    <span>@line.Name × @line.Quantity</span>
+                    <span>@FormatPrice(line.LineTotal)</span>
+                </div>
+            }
+            <div class="summary-line total">
+                <span>Total (incl. VAT)</span>
+                <span>@FormatPrice(_order.TotalInclVat)</span>
+            </div>
+            <NavLink href="/" class="btn btn-primary" style="margin-top:1rem">Continue shopping</NavLink>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int OrderId { get; set; }
+
+    private CheckoutOrderSummaryDto? _order;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var auth = await AuthStateProvider.GetAuthenticationStateAsync();
+        _order = await CheckoutPort.GetOrderSummaryAsync(OrderId, new StoreUserLookup
+        {
+            Email = auth.User.Identity?.Name,
+            IdentityUserId = auth.User.FindFirstValue(ClaimTypes.NameIdentifier)
+        });
+        _loading = false;
+    }
+
+    private static string FormatPrice(decimal price) => $"€{price:F2}";
+}

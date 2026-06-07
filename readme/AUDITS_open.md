@@ -1,9 +1,9 @@
 # Audit System — WebShopABMATIC (plan)
 
-![Status](https://img.shields.io/badge/Status-Planning-f59e0b?style=flat-square) ![Phase](https://img.shields.io/badge/Phase%201-MVP%20badges-512BD4?style=flat-square) ![Template](https://img.shields.io/badge/Based%20on-IMMO%20template-informational?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Planning-f59e0b?style=flat-square) ![Phase](https://img.shields.io/badge/Phase%201-MVP%20badges-512BD4?style=flat-square) ![Reference](https://img.shields.io/badge/Based%20on-AB-MATIC-informational?style=flat-square)
 
 > **Purpose:** Plan and track audit logging for WebShopABMATIC before implementation (Auth-7).  
-> **IMMO reference:** [AUDIT_TEMPLATE_TO BUILD.md](./AUDIT_TEMPLATE_TO%20BUILD.md) — full production spec (90+ actions, grid, modal).  
+> **AB-MATIC reference:** [AUDIT_TEMPLATE_TO BUILD.md](./AUDIT_TEMPLATE_TO%20BUILD.md) — full production spec (90+ actions, grid, modal).  
 > **Identity baseline:** Auth-6 done — `ICurrentUserContext` + `CurrentUserSnapshot` for user/audit labels.  
 > **Mark ✅ when done · ⬜ when pending.**
 
@@ -22,7 +22,7 @@
 | Source | Table | Today | Fit for global audit? |
 |--------|-------|-------|------------------------|
 | Legacy ERP | `[Projects].[OrderLogs]` | `OrderId`, `UserId` (int), `Description` | ⬜ Order-scoped only — keep for dossier timeline |
-| IMMO pattern | `AuditLogs` (app-owned) | Full action, JSON old/new, IP, severity | ✅ Target for Auth-7 |
+| AB-MATIC pattern | `AuditLogs` (app-owned) | Full action, JSON old/new, IP, severity | ✅ Target for Auth-7 |
 | Identity | `AspNetUsers` | Login store | ⬜ Not an audit trail |
 
 **Decision (proposed):**
@@ -35,7 +35,7 @@
 
 ## 2. Phase 1 — Action badges (MVP only)
 
-Start with **five families** from IMMO. Defer workflow, Mollie, file-manager, 2FA, contract, etc.
+Start with **five families** from AB-MATIC. Defer workflow, Mollie, file-manager, 2FA, contract, etc.
 
 ### 2.1 Badge legend (grid + modal)
 
@@ -51,17 +51,17 @@ Start with **five families** from IMMO. Defer workflow, Mollie, file-manager, 2F
 
 **Phase 1 implementation checklist (badges):**
 
-- ⬜ **B.1** Shared CSS in `wwwroot/css/admin.css` — `.audit-badge-*` aligned with IMMO colours
+- ⬜ **B.1** Shared CSS in `wwwroot/css/admin.css` — `.audit-badge-*` aligned with AB-MATIC colours
 - ⬜ **B.2** Razor component `AuditActionBadge.razor` — maps `action` string → badge HTML
 - ⬜ **B.3** Enum or constants `AuditActions` in Application — `Create`, `Update`, `Delete`, `Login`, `LoginFailed`, `Logout`, `ReportExport`
-- ⬜ **B.4** Legend modal on future grid (copy IMMO “Badges legend” button) — can ship with Phase 2 UI
+- ⬜ **B.4** Legend modal on future grid (copy AB-MATIC “Badges legend” button) — can ship with Phase 2 UI
 
 ### 2.2 Severity & status (supporting, not separate badges)
 
 | Field | Values | Notes |
 |-------|--------|-------|
 | **Severity** | Information, Warning, Error, Critical | Login failures → Warning; unhandled exception → Error |
-| **Success** | ✅ / ❌ | Same as IMMO grid Status column |
+| **Success** | ✅ / ❌ | Same as AB-MATIC grid Status column |
 
 ---
 
@@ -92,7 +92,7 @@ Store checkout (future badge phase)
 | User context | Existing `ICurrentUserContext` |
 | IP / User-Agent | `IHttpContextAccessor` inside `AuditService` |
 
-**Rules (from IMMO — apply here):**
+**Rules (from AB-MATIC — apply here):**
 
 - ⬜ **A.1** One audit row per **business operation** (no duplicate page + repository logs)
 - ⬜ **A.2** Do **not** use `ILogger` for compliance trail — use `IAuditService` only
@@ -119,13 +119,13 @@ Store checkout (future badge phase)
 - Login success: `{ "email": "admin@webshop.com", "roles": ["Admin","Manager"] }`
 - Login failed: `{ "email": "…", "reason": "InvalidPassword" }` — no password field
 
-**Infrastructure note:** ⬜ Optional `AppCircuitHandler` (see [CODE_PATTERNS_AND_INFRASTRUCTURE.md](./CODE_PATTERNS_AND_INFRASTRUCTURE.md)) for **Logout** on circuit closed — same as IMMO session end.
+**Infrastructure note:** ⬜ Optional `AppCircuitHandler` (see [PATTERNS_CODE_AND_INFRASTRUCTURE.md](./PATTERNS_CODE_AND_INFRASTRUCTURE.md)) for **Logout** on circuit closed — same as AB-MATIC session end.
 
 ---
 
 ## 5. Report events (Report badge)
 
-WebShop has **no** IMMO-style report suite yet. Phase 1 defines **reportKey** vocabulary for future exports.
+WebShop has **no** AB-MATIC-style report suite yet. Phase 1 defines **reportKey** vocabulary for future exports.
 
 | reportKey (Entity column) | Trigger (future) | Format | Status |
 |--------------------------|------------------|--------|--------|
@@ -135,7 +135,7 @@ WebShop has **no** IMMO-style report suite yet. Phase 1 defines **reportKey** vo
 | `CustomersReport` | `/admin/customers` export | CSV | ⬜ |
 | `ProductsCatalogReport` | `/admin/products` export | CSV | ⬜ |
 
-**Log shape (IMMO-compatible):**
+**Log shape (AB-MATIC-compatible):**
 
 ```json
 {
@@ -250,9 +250,9 @@ Legend: ✅ logged · ⬜ not wired · n/a no operation
 
 ---
 
-## 8. Phase 2 — Admin UI (IMMO parity, deferred)
+## 8. Phase 2 — Admin UI (AB-MATIC parity, deferred)
 
-| Item | IMMO | WebShop plan | Status |
+| Item | AB-MATIC | WebShop plan | Status |
 |------|------|--------------|--------|
 | Route | `/audit-logs` | `/admin/audit-logs` | ⬜ |
 | Access | Admin only | `AppPolicies.AdminOnly` | ⬜ |
@@ -299,12 +299,12 @@ Defer until MVP stable — listed so they are not confused with Phase 1 scope.
 - ⬜ **U.1** `IAuditLogAdminPort` + read-only grid
 - ⬜ **U.2** Filters + legend modal
 - ⬜ **U.3** Details modal
-- ⬜ **U.4** Hub card + `ADMIN.md` section
+- ⬜ **U.4** Hub card + `SPEC_ADMIN.md` section
 
 ### Documentation sync
 
-- ⬜ **D.1** Update [AUTH_IDENTITY_ROADMAP.md](./AUTH_IDENTITY_ROADMAP.md) Auth-7 with link here
-- ⬜ **D.2** Update [INFRASTRUCTURE.md](./INFRASTRUCTURE.md) § audit when `IAuditService` exists
+- ⬜ **D.1** Update [AUTH_IDENTITY_ROADMAP_open.md](./AUTH_IDENTITY_ROADMAP_open.md) Auth-7 with link here
+- ⬜ **D.2** Update [SPEC_INFRASTRUCTURE.md](./SPEC_INFRASTRUCTURE.md) § audit when `IAuditService` exists
 
 ---
 
@@ -321,7 +321,7 @@ Admin UI (U) [__________] 0/4
 
 ---
 
-## 12. What we are **not** copying from IMMO (yet)
+## 12. What we are **not** copying from AB-MATIC (yet)
 
 - Workflow badges (`WKFLOWSAVE`, …)
 - Payment schedule / rent index badges
@@ -334,10 +334,10 @@ Admin UI (U) [__________] 0/4
 
 ## Documentation
 
-- 📋 [IMMO audit template](./AUDIT_TEMPLATE_TO%20BUILD.md) — full reference implementation
-- 🔐 [Auth identity roadmap — Auth-7](./AUTH_IDENTITY_ROADMAP.md)
-- 🖥️ [Admin — user context §2.7](./ADMIN.md)
-- 🏗️ [Infrastructure patterns](./CODE_PATTERNS_AND_INFRASTRUCTURE.md)
+- 📋 [AB-MATIC audit spec](./AUDIT_TEMPLATE_TO%20BUILD.md) — full reference implementation
+- 🔐 [Auth identity roadmap — Auth-7](./AUTH_IDENTITY_ROADMAP_open.md)
+- 🖥️ [Admin — user context §2.7](./SPEC_ADMIN.md)
+- 🏗️ [Infrastructure patterns](./PATTERNS_CODE_AND_INFRASTRUCTURE.md)
 - 🏠 [Main README](../README.md)
 
 ---

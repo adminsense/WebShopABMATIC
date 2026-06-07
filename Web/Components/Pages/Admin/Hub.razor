@@ -1,4 +1,4 @@
-@page "/admin/hub/{HubId}"
+﻿@page "/admin/hub/{HubId}"
 @layout AdminLayout
 @attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
 @using WebShopABMATIC.Application.Auth
@@ -45,3 +45,6 @@ else
     protected override void OnParametersSet() =>
         _hub = HubPort.GetHub(HubId);
 }
+
+
+

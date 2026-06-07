@@ -1,0 +1,25 @@
+/* Product page — AB-MATIC-aligned form width (scoped) */
+.entity-page ::deep .entity-back-btn {
+    margin-bottom: 1rem;
+}
+
+.entity-page ::deep .entity-page-header {
+    margin-bottom: 1.5rem;
+}
+
+.entity-page ::deep .entity-form-card {
+    margin-bottom: 2.5rem;
+}
+
+.entity-page ::deep .entity-grid-card {
+    margin-top: 0;
+}
+
+.entity-page ::deep .grid-search-wrap {
+    width: 220px;
+    max-width: 100%;
+}
+
+.entity-page ::deep .grid-search-wrap .input-group-text {
+    background-color: #fff;
+}

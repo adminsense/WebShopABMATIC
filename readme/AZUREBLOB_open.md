@@ -253,7 +253,7 @@ flowchart LR
 3. **Infrastructure** — `IProductMediaPort` + `LocalProductMediaStorage`  
 4. **Admin** — extend DTO, service, `ProductForm` upload  
 5. **Store** — catalog/detail read image from `AzureFiles`  
-6. **Docs** — update [DEMO_SEED_DATA.md](DEMO_SEED_DATA.md) and [INFRASTRUCTURE.md](INFRASTRUCTURE.md) media section  
+6. **Docs** — update [DATA_DEMO_SEED.md](DATA_DEMO_SEED.md) and [SPEC_INFRASTRUCTURE.md](SPEC_INFRASTRUCTURE.md) media section  
 
 ---
 

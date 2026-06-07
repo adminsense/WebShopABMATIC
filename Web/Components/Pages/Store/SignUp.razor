@@ -1,0 +1,170 @@
+@page "/sign-up"
+@layout StoreLayout
+
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Identity
+@using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Application.Store.Registration
+@using WebShopABMATIC.Infrastructure.Identity
+@using WebShopABMATIC.Web.Components.Account
+@using WebShopABMATIC.Web.Components.Account.Shared
+
+@inject ICustomerRegistrationPort RegistrationPort
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IdentityRedirectManager RedirectManager
+@inject NavigationManager Navigation
+
+<PageTitle>Create account</PageTitle>
+
+<div class="auth-wrap">
+    <div class="auth-card">
+        <h1>Create account</h1>
+        <p>Register your company to place orders and track deliveries online.</p>
+
+        <StatusMessage Message="@_errorMessage" />
+
+        <EditForm Model="_input" method="post" OnValidSubmit="RegisterAsync" FormName="store-signup">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger mb-3" role="alert" />
+            <div class="form-group">
+                <label for="signup-email">Email *</label>
+                <InputText id="signup-email" @bind-Value="_input.Email" autocomplete="username" />
+                <ValidationMessage For="() => _input.Email" />
+            </div>
+            <div class="form-group">
+                <label for="signup-firstname">First name *</label>
+                <InputText id="signup-firstname" @bind-Value="_input.FirstName" autocomplete="given-name" />
+                <ValidationMessage For="() => _input.FirstName" />
+            </div>
+            <div class="form-group">
+                <label for="signup-lastname">Last name *</label>
+                <InputText id="signup-lastname" @bind-Value="_input.LastName" autocomplete="family-name" />
+                <ValidationMessage For="() => _input.LastName" />
+            </div>
+            <div class="form-group">
+                <label for="signup-company">Company name</label>
+                <InputText id="signup-company" @bind-Value="_input.CompanyName" autocomplete="organization" />
+            </div>
+            <div class="form-group">
+                <label for="signup-password">Password *</label>
+                <InputText id="signup-password" type="password" @bind-Value="_input.Password" autocomplete="new-password" />
+                <ValidationMessage For="() => _input.Password" />
+            </div>
+            <div class="form-group">
+                <label for="signup-confirm">Confirm password *</label>
+                <InputText id="signup-confirm" type="password" @bind-Value="_input.ConfirmPassword" autocomplete="new-password" />
+                <ValidationMessage For="() => _input.ConfirmPassword" />
+            </div>
+            <button type="submit" class="btn btn-primary" disabled="@_submitting">@(_submitting ? "Creating account…" : "Create account")</button>
+        </EditForm>
+
+        <p class="mt-3 mb-0" style="font-size:0.85rem;color:var(--muted)">
+            Already have an account? <NavLink href="/sign-in">Sign in</NavLink>
+            · <NavLink href="/">← Back to catalog</NavLink>
+        </p>
+    </div>
+</div>
+
+@code {
+    private string? _errorMessage;
+    private bool _submitting;
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    [SupplyParameterFromForm]
+    private SignUpInput _input { get; set; } = new();
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (HttpContext is null)
+        {
+            Navigation.Refresh(forceReload: true);
+        }
+    }
+
+    private async Task RegisterAsync()
+    {
+        _submitting = true;
+        _errorMessage = null;
+
+        try
+        {
+            var result = await RegistrationPort.RegisterAsync(new CustomerRegistrationRequest
+            {
+                Email = _input.Email,
+                Password = _input.Password,
+                FirstName = _input.FirstName,
+                LastName = _input.LastName,
+                CompanyName = _input.CompanyName
+            });
+
+            if (!result.Succeeded)
+            {
+                _errorMessage = string.Join(" ", result.Errors);
+                return;
+            }
+
+            var signIn = await SignInManager.PasswordSignInAsync(_input.Email, _input.Password, isPersistent: false, lockoutOnFailure: false);
+            if (!signIn.Succeeded)
+            {
+                RedirectManager.RedirectTo("/sign-in");
+                return;
+            }
+
+            var destination = string.IsNullOrWhiteSpace(ReturnUrl) ? "/" : ReturnUrl;
+            RedirectManager.RedirectTo(destination);
+        }
+        finally
+        {
+            _submitting = false;
+        }
+    }
+
+    private sealed class SignUpInput : IValidatableObject
+    {
+        [Required, EmailAddress]
+        public string Email { get; set; } = "";
+
+        [Required, StringLength(100, MinimumLength = 1)]
+        public string FirstName { get; set; } = "";
+
+        [Required, StringLength(100, MinimumLength = 1)]
+        public string LastName { get; set; } = "";
+
+        [StringLength(200)]
+        public string? CompanyName { get; set; }
+
+        [Required, StringLength(100, MinimumLength = 8)]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = "";
+
+        [Required, DataType(DataType.Password)]
+        [Compare(nameof(Password), ErrorMessage = "Passwords do not match.")]
+        public string ConfirmPassword { get; set; } = "";
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (!string.IsNullOrEmpty(Password))
+            {
+                if (!Password.Any(char.IsUpper))
+                {
+                    yield return new ValidationResult("Password must contain an uppercase letter.", [nameof(Password)]);
+                }
+
+                if (!Password.Any(char.IsLower))
+                {
+                    yield return new ValidationResult("Password must contain a lowercase letter.", [nameof(Password)]);
+                }
+
+                if (!Password.Any(char.IsDigit))
+                {
+                    yield return new ValidationResult("Password must contain a digit.", [nameof(Password)]);
+                }
+            }
+        }
+    }
+}

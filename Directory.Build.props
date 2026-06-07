@@ -1,0 +1,7 @@
+<Project>
+  <!-- Applies to every project in WebShopABMATIC.sln (dotnet build / Visual Studio). -->
+  <PropertyGroup>
+    <WarningLevel>0</WarningLevel>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>

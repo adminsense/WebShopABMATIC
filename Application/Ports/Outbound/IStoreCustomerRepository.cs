@@ -22,4 +22,5 @@ public sealed class StoreCustomerContext
     public int DeliveryTypeId { get; init; }
     public int BetaaltermijnId { get; init; }
     public int ProjectId { get; init; }
+    public int AccountManagerUserId { get; init; }
 }
