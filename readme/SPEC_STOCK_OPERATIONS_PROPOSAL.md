@@ -3,7 +3,7 @@
 ![Status](https://img.shields.io/badge/Status-Partially%20implemented-22c55e?style=flat-square) ![Schema](https://img.shields.io/badge/Schema-Products%20%2B%20Orders-512BD4?style=flat-square) ![Architecture](https://img.shields.io/badge/Fit-Hexagonal-28a745?style=flat-square) ![Payments](https://img.shields.io/badge/Payments-Mollie.Api-0a0a0a?style=flat-square) ![Tracker](https://img.shields.io/badge/Live-IMPLEMENTATION__ROADMAP__open.md-informational?style=flat-square)
 
 > [!IMPORTANT]
-> **Executive summary:** Originally an analysis proposal — **core stock writes, checkout, Mollie, manual adjustment, and low-stock alerts are now implemented** (see **§0** and [IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md)). Remaining: open backlog in same tracker (3b email, Phase M seeds, Phase E, B.9 Mollie E2E last).
+> **Executive summary:** Originally an analysis proposal — **core stock writes, checkout, Mollie (dev mock), manual adjustment, and low-stock alerts are now implemented** (see **§0** and [IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md)). **Dev priority:** Phase E stock ops. **Prod go-live (last):** 3b SMTP, B.9 Mollie E2E, M.5 Azure Blob.
 
 > **Live tracker:** [IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md)
 
@@ -49,7 +49,7 @@ _Last updated: May 2026 — see [IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATIO
 | **In-app notifications** | ✅ | `StockLowAlerts` table (`ApplicationDbContext`); created on threshold cross after sale/adjustment/save |
 | **Dismiss alerts** | ✅ | Dashboard **Dismiss all** → `MarkStockAlertsReadAsync` |
 | **Storefront low stock** | ✅ | Catalog + product detail use `MinQuantity` from default location (`IsLowStock`, `IsOutOfStock`) — not hardcoded `< 10` |
-| **Email push** | ⬜ | In-app only; `IEmailSender` is no-op — email queue TBD |
+| **Email push** | ✅ dev / ⬜ prod | In-app ✅; dev mock ✅; prod SMTP worker last |
 
 **Alert rule:** `Quantity <= MinQuantity`. Notification fires when stock **crosses** below minimum or while low with no unread alert for that `ProductStockLocationId`.
 
@@ -878,11 +878,11 @@ Stock Phase 1 read-only, checkout + Mollie (code), stock writes, manual adjustme
 
 ### Recommended next
 
-1. **Mollie go-live** — `Mollie:ApiKey`, webhook URL, E2E test ([IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md) **B.9 — last**).
+1. **Mollie prod go-live** — `Mollie:ApiKey`, webhook URL, E2E test ([IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md) **B.9 — prod, last**).
 2. **Audit `StockAdjust`** badge on movement operations ([AUDITS_open.md](./AUDITS_open.md)).
 3. **Phase C** — customer/admin order visibility ([IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md)).
 4. **Transfer / PO / GRN** — §3.4–3.6 when purchasing team needs admin flows.
-5. **Optional:** SignalR (roadmap Phase F); email worker (Phase 3b).
+5. **Optional:** SignalR (roadmap Phase F). **Prod last:** SMTP worker (Phase 3b), Mollie E2E (B.9).
 
 ### Original approval checklist (historical)
 
