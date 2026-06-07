@@ -1,0 +1,14 @@
+<div class="card-header card-header-catalog entity-form-card-header">
+    <h2 class="h6 mb-0 fw-bold">@Title</h2>
+    @if (ShowExport)
+    {
+        <AdminExportDropdown Disabled="@ExportDisabled" OnExport="OnExport" />
+    }
+</div>
+
+@code {
+    [Parameter] public RenderFragment? Title { get; set; }
+    [Parameter] public bool ShowExport { get; set; } = true;
+    [Parameter] public bool ExportDisabled { get; set; }
+    [Parameter] public EventCallback<string> OnExport { get; set; }
+}

@@ -6,6 +6,7 @@ using WebShopABMATIC.Infrastructure;
 using WebShopABMATIC.Infrastructure.Identity;
 using WebShopABMATIC.Web.Components;
 using WebShopABMATIC.Web.Components.Account;
+using WebShopABMATIC.Web.Endpoints;
 using WebShopABMATIC.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +22,7 @@ builder.Services.Configure<Microsoft.AspNetCore.SignalR.HubOptions>(options =>
     options.MaximumReceiveMessageSize = 2 * 1024 * 1024;
 });
 
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
@@ -54,6 +56,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 builder.Services.AddWebShopApplication();
 builder.Services.AddWebShopInfrastructure(builder.Configuration);
 builder.Services.AddScoped<StoreCartService>();
+builder.Services.AddScoped<IGridExportService, GridExportService>();
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -79,6 +82,7 @@ app.UseAuthorization();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
+app.MapMollieWebhook();
 app.MapAdditionalIdentityEndpoints();
 
 app.Run();
