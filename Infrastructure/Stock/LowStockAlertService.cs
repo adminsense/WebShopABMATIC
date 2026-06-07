@@ -11,15 +11,18 @@ public sealed class LowStockAlertService : ILowStockAlertService
 {
     private readonly WebShopABMATICDbContext _domainDb;
     private readonly ApplicationDbContext _appDb;
+    private readonly ILowStockEmailNotifier _emailNotifier;
     private readonly ILogger<LowStockAlertService> _logger;
 
     public LowStockAlertService(
         WebShopABMATICDbContext domainDb,
         ApplicationDbContext appDb,
+        ILowStockEmailNotifier emailNotifier,
         ILogger<LowStockAlertService> logger)
     {
         _domainDb = domainDb;
         _appDb = appDb;
+        _emailNotifier = emailNotifier;
         _logger = logger;
     }
 
@@ -69,6 +72,14 @@ public sealed class LowStockAlertService : ILowStockAlertService
         });
 
         await _appDb.SaveChangesAsync(cancellationToken);
+
+        await _emailNotifier.NotifyAsync(
+            snapshot.ProductId,
+            snapshot.ProductName,
+            snapshot.StockLocationName,
+            snapshot.Quantity,
+            snapshot.MinQuantity,
+            cancellationToken);
 
         _logger.LogWarning(
             "Low stock alert: product {ProductId} ({ProductName}) at {Location} — qty {Qty} / min {Min}",

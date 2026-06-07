@@ -55,6 +55,7 @@ public sealed class ProductStockLocationRepository : IProductStockLocationReposi
                 ProductId = x.psl.ProductId,
                 ProductName = x.ProductName,
                 Quantity = x.psl.Quantity,
+                ReservedQuantity = x.psl.ReservedQuantity,
                 MinQuantity = x.psl.MinQuantity,
                 MaxQuantity = x.psl.MaxQuantity,
                 IsDefault = x.psl.IsDefault

@@ -1,12 +1,15 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using WebShopABMATIC.Application.Audit;
 using WebShopABMATIC.Application.Auth;
 using WebShopABMATIC.Application.Ports.Outbound;
 using WebShopABMATIC.Application.Store.Registration;
 using WebShopABMATIC.Data.Entities;
 using WebShopABMATIC.Data.Persistence;
+using WebShopABMATIC.Infrastructure.Audit;
 using WebShopABMATIC.Infrastructure.Identity;
 using WebShopABMATIC.Infrastructure.Persistence;
+using WebShopABMATIC.Infrastructure.Store;
 
 namespace WebShopABMATIC.Infrastructure.Persistence.Repositories;
 
@@ -14,11 +17,16 @@ public sealed class CustomerRegistrationRepository : ICustomerRegistrationReposi
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly WebShopABMATICDbContext _db;
+    private readonly IAuditService _audit;
 
-    public CustomerRegistrationRepository(UserManager<ApplicationUser> userManager, WebShopABMATICDbContext db)
+    public CustomerRegistrationRepository(
+        UserManager<ApplicationUser> userManager,
+        WebShopABMATICDbContext db,
+        IAuditService audit)
     {
         _userManager = userManager;
         _db = db;
+        _audit = audit;
     }
 
     public async Task<CustomerRegistrationResult> RegisterAsync(CustomerRegistrationRequest request, CancellationToken cancellationToken = default)
@@ -53,9 +61,12 @@ public sealed class CustomerRegistrationRepository : ICustomerRegistrationReposi
             return Fail(roleResult.Errors.Select(e => e.Description).ToArray());
         }
 
-        var customerName = string.IsNullOrWhiteSpace(request.CompanyName)
-            ? $"{user.FirstName} {user.LastName}".Trim()
-            : request.CompanyName.Trim();
+        user.PhoneNumber = request.Phone.Trim();
+        await _userManager.UpdateAsync(user);
+
+        var fullName = $"{user.FirstName} {user.LastName}".Trim();
+        var cityId = await WebshopAddressHelper.ResolveCityIdAsync(
+            _db, request.PostalCode, request.CityName, cancellationToken);
 
         var customer = await _db.Customers
             .FirstOrDefaultAsync(c =>
@@ -72,6 +83,13 @@ public sealed class CustomerRegistrationRepository : ICustomerRegistrationReposi
 
             customer.IdentityUserId = user.Id;
             customer.WebshopLogin ??= email;
+            customer.CustomerName = fullName;
+            customer.FirstContactName = fullName;
+            customer.CustomerPhone = request.Phone.Trim();
+            customer.CustomerStreet = request.Street.Trim();
+            customer.CustomerHouseNumber = request.HouseNumber.Trim();
+            customer.CustomerBox = request.Box?.Trim() ?? string.Empty;
+            customer.CustomerCityId = cityId;
             if (string.IsNullOrWhiteSpace(customer.CustomerEmail))
             {
                 customer.CustomerEmail = email;
@@ -80,10 +98,16 @@ public sealed class CustomerRegistrationRepository : ICustomerRegistrationReposi
         else
         {
             customer = (Customer)AdminCrudDefaults.Create("customers");
-            customer.CustomerName = customerName;
+            customer.CustomerName = fullName;
             customer.CustomerEmail = email;
             customer.WebshopLogin = email;
-            customer.FirstContactName = $"{user.FirstName} {user.LastName}".Trim();
+            customer.FirstContactName = fullName;
+            customer.CustomerPhone = request.Phone.Trim();
+            customer.CustomerStreet = request.Street.Trim();
+            customer.CustomerHouseNumber = request.HouseNumber.Trim();
+            customer.CustomerBox = request.Box?.Trim() ?? string.Empty;
+            customer.CustomerCityId = cityId;
+            customer.CustomerVatNumber = string.Empty;
             customer.IdentityUserId = user.Id;
             _db.Customers.Add(customer);
         }
@@ -93,7 +117,16 @@ public sealed class CustomerRegistrationRepository : ICustomerRegistrationReposi
         user.CustomerId = customer.CustomerId;
         await _userManager.UpdateAsync(user);
 
-        await EnsureProjectAsync(customer, customerName, cancellationToken);
+        await EnsureDefaultDeliveryAddressAsync(customer, cityId, cancellationToken);
+        await EnsureProjectAsync(customer, fullName, cancellationToken);
+
+        await AuditManualLogger.LogIdentityUserAsync(
+            _audit,
+            AuditActions.Create,
+            user.Id,
+            email,
+            new { email, customerId = customer.CustomerId, registration = true },
+            cancellationToken);
 
         return new CustomerRegistrationResult
         {
@@ -101,6 +134,30 @@ public sealed class CustomerRegistrationRepository : ICustomerRegistrationReposi
             IdentityUserId = user.Id,
             CustomerId = customer.CustomerId
         };
+    }
+
+    private async Task EnsureDefaultDeliveryAddressAsync(Customer customer, int cityId, CancellationToken cancellationToken)
+    {
+        var exists = await _db.CustomerDeliveryAddresses
+            .AnyAsync(a => a.CustomerId == customer.CustomerId, cancellationToken);
+
+        if (exists)
+        {
+            return;
+        }
+
+        _db.CustomerDeliveryAddresses.Add(new CustomerDeliveryAddress
+        {
+            CustomerId = customer.CustomerId,
+            Name = customer.CustomerName,
+            Straat = customer.CustomerStreet,
+            Number = customer.CustomerHouseNumber,
+            Bus = customer.CustomerBox,
+            CityId = cityId,
+            Notes = string.Empty
+        });
+
+        await _db.SaveChangesAsync(cancellationToken);
     }
 
     private async Task EnsureProjectAsync(Customer customer, string customerName, CancellationToken cancellationToken)

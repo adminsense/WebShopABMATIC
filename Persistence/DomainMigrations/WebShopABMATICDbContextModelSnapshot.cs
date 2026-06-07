@@ -1596,6 +1596,10 @@ namespace WebShopABMATIC.Data.Persistence.DomainMigrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
+                    b.Property<string>("IdentityUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<bool>("InvoicesByMail")
                         .HasColumnType("bit");
 
@@ -1686,6 +1690,10 @@ namespace WebShopABMATIC.Data.Persistence.DomainMigrations
                         .HasColumnType("nvarchar(512)");
 
                     b.HasKey("CustomerId");
+
+                    b.HasIndex("IdentityUserId")
+                        .IsUnique()
+                        .HasFilter("[IdentityUserId] IS NOT NULL");
 
                     b.ToTable("Customers", "Customers");
                 });
@@ -3109,6 +3117,21 @@ namespace WebShopABMATIC.Data.Persistence.DomainMigrations
 
                     b.Property<bool>("IsFinalInvoice")
                         .HasColumnType("bit");
+
+                    b.Property<string>("MollieCheckoutUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("MolliePaidAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("MolliePaymentId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("MolliePaymentStatus")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<string>("Name")
                         .IsRequired()

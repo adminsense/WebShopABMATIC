@@ -59,30 +59,43 @@ public sealed class OrderRepository : IOrderRepository
             .ToListAsync(cancellationToken);
 
         var orderIds = pageRows.Select(x => x.Id).ToList();
-        var payments = await _db.OrderAdvancePayments.AsNoTracking()
+        var paymentRows = await _db.OrderAdvancePayments.AsNoTracking()
             .Where(a => orderIds.Contains(a.OrderId))
+            .OrderBy(a => a.SortOrder)
+            .ToListAsync(cancellationToken);
+        var payments = paymentRows
             .GroupBy(a => a.OrderId)
-            .Select(g => new { OrderId = g.Key, Status = g.OrderBy(a => a.SortOrder).Select(a => a.MolliePaymentStatus).FirstOrDefault() })
-            .ToDictionaryAsync(x => x.OrderId, x => x.Status ?? "invoice", cancellationToken);
+            .ToDictionary(g => g.Key, g => g.First());
 
-        var items = pageRows.Select(x => new OrderSummaryDto
+        var items = pageRows.Select(x =>
         {
-            Id = x.Id,
-            OrderNumber = x.OrderNumber,
-            CreatedAt = x.CreatedAt,
-            CustomerName = string.IsNullOrWhiteSpace(x.CustomerName) ? "—" : x.CustomerName,
-            DeliveryTypeId = x.DeliveryTypeId,
-            IsAccepted = x.IsAccepted,
-            PaymentStatus = payments.GetValueOrDefault(x.Id, "invoice"),
-            GeneralDiscount = x.GeneralDiscount,
-            IsUrgent = x.IsUrgent
+            var hasAdvance = payments.ContainsKey(x.Id);
+            var advance = hasAdvance ? payments[x.Id] : null;
+            var status = hasAdvance
+                ? (string.IsNullOrWhiteSpace(advance!.MolliePaymentStatus) ? "open" : advance.MolliePaymentStatus!)
+                : "invoice";
+
+            return new OrderSummaryDto
+            {
+                Id = x.Id,
+                OrderNumber = x.OrderNumber,
+                CreatedAt = x.CreatedAt,
+                CustomerName = string.IsNullOrWhiteSpace(x.CustomerName) ? "—" : x.CustomerName,
+                DeliveryTypeId = x.DeliveryTypeId,
+                IsAccepted = x.IsAccepted,
+                PaymentStatus = status,
+                MolliePaymentId = advance?.MolliePaymentId,
+                GeneralDiscount = x.GeneralDiscount,
+                IsUrgent = x.IsUrgent
+            };
         }).ToList();
 
         return new PagedResult<OrderSummaryDto> { Items = items, TotalCount = total, Page = page, PageSize = pageSize };
     }
 
-    public async Task<OrderEditDto?> GetForEditAsync(int id, CancellationToken cancellationToken = default) =>
-        await (
+    public async Task<OrderEditDto?> GetForEditAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var order = await (
             from o in _db.Orders.AsNoTracking()
             join p in _db.Projects.AsNoTracking() on o.ProjectId equals p.ProjectId into projectJoin
             from p in projectJoin.DefaultIfEmpty()
@@ -102,6 +115,31 @@ public sealed class OrderRepository : IOrderRepository
                 CustomerNotes = o.CustomerNotes,
                 IsUrgent = o.IsUrgent
             }).FirstOrDefaultAsync(cancellationToken);
+
+        if (order is null)
+        {
+            return null;
+        }
+
+        order.AdvancePayments = await _db.OrderAdvancePayments.AsNoTracking()
+            .Where(a => a.OrderId == id)
+            .OrderBy(a => a.SortOrder)
+            .Select(a => new OrderAdvancePaymentDto
+            {
+                Id = a.Id,
+                Name = a.Name,
+                Percent = a.Percent,
+                Amount = a.Amount,
+                SortOrder = a.SortOrder,
+                MolliePaymentId = a.MolliePaymentId,
+                MolliePaymentStatus = a.MolliePaymentStatus,
+                MolliePaidAt = a.MolliePaidAt,
+                MollieCheckoutUrl = a.MollieCheckoutUrl
+            })
+            .ToListAsync(cancellationToken);
+
+        return order;
+    }
 
     public async Task<int> SaveAsync(OrderEditDto dto, CancellationToken cancellationToken = default)
     {
