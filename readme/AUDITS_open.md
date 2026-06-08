@@ -13,7 +13,7 @@
 | **Phase 2** | Admin grid `/admin/audit-logs`, filters, details modal | ✅ Done |
 | **Phase 3** | Checkout / Mollie / PasswordReset badges | ✅ Done (`StockAdjust` ✅) |
 
-**Current focus:** _SMTP worker for queued low-stock emails_
+**Current focus:** _Dev 100% — see [IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md) (Phase E stock ops). Prod SMTP is last._
 
 ---
 
