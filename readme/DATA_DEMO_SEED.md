@@ -16,7 +16,7 @@
 | **SQL Server instance** | `MULLER` (Windows authentication) |
 | **Seed script** | `scripts/seeds.sql` |
 | **Prerequisite** | EF schema applied (`InitialIdentity` + `InitialDomain` + `OrderAdvancePaymentMollieColumns` + `CustomerIdentityUserId` + `ApplicationUserCustomerId`) |
-| **Schemas with data** | `Crm`, `Customers`, `Accounting`, `Projects`, `Products`, **`Settings`** |
+| **Schemas with data** | `Crm`, `Customers`, `Accounting`, `Projects`, `Products`, **`Files`**, **`Settings`**, **`Emails`** (queues + demo messages) |
 | **Schemas not seeded** | `Tasks`, `Emails`, `Logging`, and most optional `Projects` / `Products` tables |
 | **Identity users** | Not in `seeds.sql` — created on first dev run via `IdentitySeed` (`admin@webshop.com`, etc.) |
 | **Full legacy DB** | `ABMATIC.bacpac` exists (~3 GB) — **not** for local import; see [section 10](#10-full-legacy-database-abmaticbacpac) |
@@ -106,28 +106,29 @@ The full EF model defines **11 schemas** and **139+ tables**. The demo seed touc
 
 | Schema | Tables seeded | Purpose |
 |--------|---------------|---------|
-| **Crm** | `Country`, `City`, `CustomerStatuses`, `Manufacturer`, `Supplier`, **`PaymentTerms`** | Lookups + payment terms for orders |
-| **Customers** | `CustomerTypes`, `Customers` | B2B customers and `WebshopLogin` for storefront testing |
-| **Accounting** | `VatTypes` | 21% VAT on order lines |
-| **Projects** | `DeliveryTypes`, **`OrderStatuses`**, `OrderProcessingTypes`, `Project`, `Orders`, `OrderLines` | Sales pipeline, payment workflow flags |
-| **Products** | `StockLocations`, `Product`, **`ProductPrices`**, `ProductStockLocations`, `WebshopStructures` | Catalog prices + low-stock alerts |
-| **Settings** | **`PaymentMethods`** | Checkout pre-pay (Mollie) vs post-pay (invoice) |
-| **App (dbo)** | **`StockLowAlerts`**, **`AuditLogs`** | Dashboard in-app alerts + audit grid demo |
-| **Projects** | **`OrderAdvancePayments`** | 3 demo rows (Mollie paid, open, post-pay without Mollie) |
-| **Emails** | **`EmailQueues`** | Placeholder queue `LowStockAlerts` (email sender is no-op) |
+| **Crm** | `Country`, `City`, `CustomerStatuses`, `Manufacturer`, `Supplier`, **`PaymentTerms`**, **`CustomerProductDiscounts`** | Lookups + customer discounts |
+| **Customers** | `CustomerTypes`, `Customers`, **`Contact`**, **`CustomerContacts`**, `CustomerDeliveryAddresses` | B2B + contacts + checkout addresses |
+| **Accounting** | `VatTypes`, **`DocumentTypes`**, **`AccountingDocuments`** | VAT + demo invoice |
+| **Projects** | `DeliveryTypes`, **`OrderStatuses`**, `OrderProcessingTypes`, `Project`, `Orders`, `OrderLines`, **`OrderAdvancePayments`** | Sales + Mollie demo |
+| **Products** | `StockLocations`, `Product`, **`ProductPrices`**, `ProductStockLocations`, `WebshopStructures`, **`WebshopProductStructures`**, **`ProductOptions`**, **`ProductOptionValue`**, **`ProductQuantityTiers`**, **`PriceListCategories`**, `StockOrder` (+ lines + GRN) | Full catalog admin |
+| **Files** | **`AzureFileFolders`**, **`AzureFiles`** | Storefront images |
+| **Settings** | **`PaymentMethods`**, **`UserGroups`**, **`StaffUsers`**, **`BaseCompany`**, **`BaseCompanyVatNumber`** | Checkout + staff |
+| **App (dbo)** | **`StockLowAlerts`**, **`AuditLogs`** | Dashboard alerts + audit |
+| **Emails** | **`EmailQueues`**, **`EmailMessages`** (2 demo) | Queued low-stock demo |
+
+Inventory detail: [DATA_SUMMARY.md](./DATA_SUMMARY.md) · [SUNDAY_open.md](./SUNDAY_open.md).
 
 ### 4.2 Not populated (empty after seed)
 
 | Schema / area | Examples | Why omitted |
 |---------------|----------|-------------|
 | **Tasks** | `TaskItems`, `TaskTemplates`, `TaskDependencies` | No admin screens wired yet |
-| **Emails** (messages) | `EmailMessages` | Out of scope — queue names only |
-| **Files** | `AzureFiles`, `StoredFiles` | No file-upload flows in current UI |
+| **Emails** (send) | SMTP worker | Prod go-live — demo rows exist in DB |
+| **Files** (other) | `StoredFiles` | Binary attachments — not used for catalog images |
 | **Logging** | `AppErrors`, `ProjectActivities` | Operational data, not demo content |
-| **Settings** (other) | `AppSettings`, `BaseCompany`, `DocumentTemplates` | Uses defaults / not required for lists |
+| **Settings** (other) | `AppSettings`, `DocumentTemplates` | Uses defaults / not required for lists |
 | **Projects** (other) | `OrderRemarks`, `OrderLogs`, … | Not required for lists |
-| **Products** (other) | `WebshopProductStructures`, `ProductOptions`, … | Catalog uses `Product` + **`ProductPrices`** |
-| **Customers** (other) | `Contact`, `CustomerContacts`, `CustomerDeliveryAddresses` | List uses `Customers` only |
+| **Accounting** (other) | `AccountingDocumentLines` | Header-only demo invoice |
 
 **Tasks** is part of the legacy model but is **not** used by `seeds.sql`.
 
@@ -196,7 +197,19 @@ After a successful run, expect approximately:
 | In-app stock alerts (unread) | 3 | `dbo.StockLowAlerts` where `IsRead = 0` |
 | Audit log rows | 12 | `dbo.AuditLogs` (incl. `CheckoutStarted`, `PaymentPaid`) |
 | Order advance payments | 3 | `Projects.OrderAdvancePayments` (Mollie paid/open + post-pay) |
+| Webshop product structures | 11 | `Products.WebshopProductStructures` |
+| Product options / values | 3 / 7 | `ProductOptions` / `ProductOptionValue` |
+| Product quantity tiers | 4 | `ProductQuantityTiers` |
+| Price list categories | 3 | `PriceListCategories` |
+| User groups / staff users | 3 / 3 | `UserGroups` / `StaffUsers` |
+| Customer product discounts | 3 | `Crm.CustomerProductDiscounts` |
+| Contacts / customer contacts | 3 / 3 | `Contact` / `CustomerContacts` |
+| Stock GRN rows | 1 | `StockOrderDeliveries` |
+| Accounting documents | 1 | `Accounting.AccountingDocuments` |
+| Queued demo emails | 2 | `Emails.EmailMessages` |
 | Revenue YTD | ~29,384 | Sum of `OrderLines.TotalExclVat` on accepted orders in current UTC year |
+
+Full inventory: [SUNDAY_open.md](./SUNDAY_open.md).
 
 Admin dashboard reads these via `IAdminDashboardPort` / `AdminDashboardUseCase`.
 

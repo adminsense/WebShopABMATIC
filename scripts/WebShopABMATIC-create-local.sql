@@ -1182,6 +1182,7 @@ CREATE TABLE [Customers].[Customers]
     [DeliveryCustomerTypeId] int NOT NULL,
     [PeppolIdSchema] nvarchar(8),
     [PeppolId] nvarchar(250),
+    [IdentityUserId] nvarchar(450),
     CONSTRAINT [PK_Customers_Customers] PRIMARY KEY CLUSTERED ([CustomerId])
 );
 GO
@@ -2297,6 +2298,10 @@ CREATE TABLE [Projects].[OrderAdvancePayments]
     [SortOrder] int NOT NULL,
     [Amount] decimal(18,6),
     [AdvancePaymentVisibility] nvarchar(50),
+    [MollieCheckoutUrl] nvarchar(500),
+    [MolliePaidAt] datetime2,
+    [MolliePaymentId] nvarchar(50),
+    [MolliePaymentStatus] nvarchar(30),
     CONSTRAINT [PK_Projects_OrderAdvancePayments] PRIMARY KEY CLUSTERED ([Id])
 );
 GO

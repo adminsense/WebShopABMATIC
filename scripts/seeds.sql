@@ -17,6 +17,9 @@ DELETE FROM [dbo].[StockLowAlerts];
 DELETE FROM [dbo].[AuditLogs];
 DELETE FROM [Emails].[EmailMessages];
 DELETE FROM [Emails].[EmailQueues];
+DELETE FROM [Accounting].[AccountingDocumentLines];
+DELETE FROM [Accounting].[AccountingDocuments];
+DELETE FROM [Accounting].[DocumentTypes];
 DELETE FROM [Files].[AzureFiles];
 DELETE FROM [Files].[AzureFileFolders];
 DELETE FROM [Projects].[OrderAdvancePayments];
@@ -27,17 +30,30 @@ DELETE FROM [Products].[StockOrderDeliveries];
 DELETE FROM [Products].[StockOrderLines];
 DELETE FROM [Products].[StockOrder];
 DELETE FROM [Products].[StockMovements];
+DELETE FROM [Products].[ProductOptionValue];
+DELETE FROM [Products].[ProductOptions];
+DELETE FROM [Products].[ProductQuantityTiers];
 DELETE FROM [Products].[ProductPrices];
 DELETE FROM [Products].[ProductStockLocations];
 DELETE FROM [Products].[Product];
+DELETE FROM [Products].[WebshopProductStructures];
 DELETE FROM [Products].[WebshopStructures];
+DELETE FROM [Products].[PriceListCategories];
 DELETE FROM [Products].[StockLocations];
+DELETE FROM [Crm].[CustomerProductDiscounts];
 DELETE FROM [Crm].[CustomerDeliveryAddresses];
+DELETE FROM [Customers].[CustomerContacts];
+DELETE FROM [Customers].[Contact];
 DELETE FROM [Customers].[Customers];
 DELETE FROM [Customers].[CustomerTypes];
 DELETE FROM [Projects].[OrderProcessingTypes];
 DELETE FROM [Projects].[OrderStatuses];
 DELETE FROM [Projects].[DeliveryTypes];
+DELETE FROM [Settings].[StaffUsers];
+DELETE FROM [Settings].[UserGroups];
+DELETE FROM [Settings].[BaseCompanyAccess];
+DELETE FROM [Settings].[BaseCompanyVatNumber];
+DELETE FROM [Settings].[BaseCompany];
 DELETE FROM [Settings].[PaymentMethods];
 DELETE FROM [Crm].[PaymentTerms];
 DELETE FROM [Accounting].[VatTypes];
@@ -48,8 +64,23 @@ DELETE FROM [Crm].[City];
 DELETE FROM [Crm].[Country];
 GO
 
+DBCC CHECKIDENT ('[Accounting].[AccountingDocumentLines]', RESEED, 0);
+DBCC CHECKIDENT ('[Accounting].[AccountingDocuments]', RESEED, 0);
+DBCC CHECKIDENT ('[Accounting].[DocumentTypes]', RESEED, 0);
 DBCC CHECKIDENT ('[Files].[AzureFiles]', RESEED, 0);
 DBCC CHECKIDENT ('[Files].[AzureFileFolders]', RESEED, 0);
+DBCC CHECKIDENT ('[Products].[ProductOptionValue]', RESEED, 0);
+DBCC CHECKIDENT ('[Products].[ProductOptions]', RESEED, 0);
+DBCC CHECKIDENT ('[Products].[ProductQuantityTiers]', RESEED, 0);
+DBCC CHECKIDENT ('[Products].[WebshopProductStructures]', RESEED, 0);
+DBCC CHECKIDENT ('[Products].[PriceListCategories]', RESEED, 0);
+DBCC CHECKIDENT ('[Crm].[CustomerProductDiscounts]', RESEED, 0);
+DBCC CHECKIDENT ('[Customers].[CustomerContacts]', RESEED, 0);
+DBCC CHECKIDENT ('[Customers].[Contact]', RESEED, 0);
+DBCC CHECKIDENT ('[Settings].[StaffUsers]', RESEED, 0);
+DBCC CHECKIDENT ('[Settings].[UserGroups]', RESEED, 0);
+DBCC CHECKIDENT ('[Settings].[BaseCompanyVatNumber]', RESEED, 0);
+DBCC CHECKIDENT ('[Settings].[BaseCompany]', RESEED, 0);
 DBCC CHECKIDENT ('[Projects].[OrderLines]', RESEED, 0);
 DBCC CHECKIDENT ('[Projects].[Orders]', RESEED, 0);
 DBCC CHECKIDENT ('[Projects].[OrderAdvancePayments]', RESEED, 0);
@@ -116,6 +147,40 @@ INSERT INTO [Settings].[PaymentMethods] ([Id], [NameNl], [NameFr], [NameEn], [Is
 (1, N'iDEAL / online', N'iDEAL / en ligne', N'iDEAL / card (Mollie)', 1, 0),
 (2, N'Factuur 30 dagen', N'Facture 30 jours', N'Invoice 30 days', 0, 1);
 SET IDENTITY_INSERT [Settings].[PaymentMethods] OFF;
+
+SET IDENTITY_INSERT [Settings].[UserGroups] ON;
+INSERT INTO [Settings].[UserGroups] ([Id], [Name], [IsInstallationTeam], [IsServiceTeam], [IsTransportTeam], [OrderStatusGroupId]) VALUES
+(1, N'Sales', 0, 0, 0, NULL),
+(2, N'Warehouse', 0, 0, 1, NULL),
+(3, N'Installation', 1, 1, 0, NULL);
+SET IDENTITY_INSERT [Settings].[UserGroups] OFF;
+
+SET IDENTITY_INSERT [Settings].[BaseCompany] ON;
+INSERT INTO [Settings].[BaseCompany]
+    ([Id], [Name], [Street], [StreetNr], [StreetBox], [City], [Zip], [Country], [VatNumber], [Tel], [FaxTemplate],
+     [IBAN], [BIC], [Slogan], [AccountingDocumentFooter], [Tag], [Bank])
+VALUES
+(1, N'WebShopABMATIC Demo BV', N'Demo Street', N'100', N'', N'Brussels', N'1000', N'Belgium', N'BE0123456789',
+ N'+32 2 100 0000', N'', N'BE68539007547034', N'GEBABEBB', N'Demo webshop company', N'Thank you for your business.', N'DEMO', N'Demo Bank');
+SET IDENTITY_INSERT [Settings].[BaseCompany] OFF;
+
+SET IDENTITY_INSERT [Settings].[BaseCompanyVatNumber] ON;
+INSERT INTO [Settings].[BaseCompanyVatNumber] ([Id], [BaseCompanyId], [VatNumber], [EoriNumber]) VALUES
+(1, 1, N'BE0123456789', N'BE0123456789');
+SET IDENTITY_INSERT [Settings].[BaseCompanyVatNumber] OFF;
+
+SET IDENTITY_INSERT [Accounting].[DocumentTypes] ON;
+INSERT INTO [Accounting].[DocumentTypes] ([Id], [Name], [NameFr], [ParameterId], [NameEn]) VALUES
+(1, N'Factuur', N'Facture', 1, N'Invoice'),
+(2, N'Creditnota', N'Note de crédit', 2, N'Credit note');
+SET IDENTITY_INSERT [Accounting].[DocumentTypes] OFF;
+
+SET IDENTITY_INSERT [Products].[PriceListCategories] ON;
+INSERT INTO [Products].[PriceListCategories] ([Id], [SortOrder], [Name], [HasOptions], [Color], [NameFr]) VALUES
+(1, 1, N'Storage', 1, N'#2563eb', N'Stockage'),
+(2, 2, N'Accessories', 0, N'#7c6cf0', N'Accessoires'),
+(3, 3, N'Services', 0, N'#059669', N'Services');
+SET IDENTITY_INSERT [Products].[PriceListCategories] OFF;
 
 SET IDENTITY_INSERT [Customers].[CustomerTypes] ON;
 INSERT INTO [Customers].[CustomerTypes]
@@ -217,16 +282,26 @@ VALUES (1, N'Products', 0, 0, 0, 1, 0, 0, 1);
 SET IDENTITY_INSERT [Files].[AzureFileFolders] OFF;
 
 -- Primary webshop images (BlobRef → static mock assets; uploads use /media/products/{id}/)
+-- All ShowOnWebshop products (1–10); image cycles product1–6 for accessories/services
 INSERT INTO [Files].[AzureFiles]
     ([Name], [Extension], [AzureFileFolderId], [Created], [CreatedByUserId], [Description], [BlobRef], [ThumbRef],
      [ProductId], [IsPrimaryImage], [PublishToWeb], [SendToCustomer], [SendOnSupplierOrder])
-VALUES
-(N'product1.png', N'.png', 1, GETUTCDATE(), 1, N'Hard drive 1 catalog image', N'/images/product1.png', N'/images/product1.png', 1, 1, 1, 0, 0),
-(N'product2.png', N'.png', 1, GETUTCDATE(), 1, N'Hard drive 2 catalog image', N'/images/product2.png', N'/images/product2.png', 2, 1, 1, 0, 0),
-(N'product3.png', N'.png', 1, GETUTCDATE(), 1, N'Hard drive 3 catalog image', N'/images/product3.png', N'/images/product3.png', 3, 1, 1, 0, 0),
-(N'product4.png', N'.png', 1, GETUTCDATE(), 1, N'Hard drive 4 catalog image', N'/images/product4.png', N'/images/product4.png', 4, 1, 1, 0, 0),
-(N'product5.png', N'.png', 1, GETUTCDATE(), 1, N'Hard drive 5 catalog image', N'/images/product5.png', N'/images/product5.png', 5, 1, 1, 0, 0),
-(N'product6.png', N'.png', 1, GETUTCDATE(), 1, N'Hard drive 6 catalog image', N'/images/product6.png', N'/images/product6.png', 6, 1, 1, 0, 0);
+SELECT
+    CONCAT(N'product', ((p.[ProductId] - 1) % 6) + 1, N'.png'),
+    N'.png',
+    1,
+    GETUTCDATE(),
+    1,
+    CONCAT(p.[NameEn], N' catalog image'),
+    CONCAT(N'/images/product', ((p.[ProductId] - 1) % 6) + 1, N'.png'),
+    CONCAT(N'/images/product', ((p.[ProductId] - 1) % 6) + 1, N'.png'),
+    p.[ProductId],
+    1,
+    1,
+    0,
+    0
+FROM [Products].[Product] p
+WHERE p.[ShowOnWebshop] = 1;
 
 -- Stock (7 low-stock alerts: Quantity <= MinQuantity; reserved qty on a few SKUs)
 INSERT INTO [Products].[ProductStockLocations] ([StockLocationId], [ProductId], [Quantity], [MaxQuantity], [IsDefault], [MinQuantity], [ReservedQuantity]) VALUES
@@ -272,7 +347,14 @@ INSERT INTO [Products].[StockOrderLines]
     ([StockOrderId], [ProductId], [QuantityOrdered], [LijnOK], [ProductName], [OrderNumber], [PackSize], [PurchaseUnitPrice], [PurchaseTotalPrice], [Unit], [Geleverd], [QuantityDelivered])
 VALUES
 (@StockOrderId, 1, 50, 1, N'Hard drive 1', N'PO-2026-001', N'1', 32.00, 1600.00, N'pcs', 0, 0),
-(@StockOrderId, 2, 30, 1, N'Hard drive 2', N'PO-2026-001', N'1', 35.00, 1050.00, N'pcs', 0, 0);
+(@StockOrderId, 2, 30, 1, N'Hard drive 2', N'PO-2026-001', N'1', 35.00, 1050.00, N'pcs', 0, 0),
+(@StockOrderId, 3, 20, 1, N'Hard drive 3', N'PO-2026-001', N'1', 42.00, 840.00, N'pcs', 0, 0);
+
+-- GRN — partial receive on first PO line (StockOrderDeliveries)
+INSERT INTO [Products].[StockOrderDeliveries] ([StockOrderDetail], [DeliveryDocumentNumber], [Date], [Quantity], [QuantityInvoiced])
+SELECT sol.[Id], N'GRN-2026-001', DATEADD(day, -1, GETUTCDATE()), 10, 10
+FROM [Products].[StockOrderLines] sol
+WHERE sol.[StockOrderId] = @StockOrderId AND sol.[ProductId] = 1;
 
 -- Webshop structure (12 nodes)
 SET IDENTITY_INSERT [Products].[WebshopStructures] ON;
@@ -290,6 +372,112 @@ INSERT INTO [Products].[WebshopStructures] ([Id], [NameNl], [ParentTaskId], [Sor
 (11, N'Spare parts', NULL, 11),
 (12, N'Archive',  NULL, 12);
 SET IDENTITY_INSERT [Products].[WebshopStructures] OFF;
+
+-- Webshop product category labels (admin: /admin/webshop-product-structures)
+SET IDENTITY_INSERT [Products].[WebshopProductStructures] ON;
+INSERT INTO [Products].[WebshopProductStructures] ([Id], [NameEn], [NameFr], [NameNl], [ParentTaskId]) VALUES
+(1,  N'Storage',       N'Stockage',     N'Opslag',       NULL),
+(2,  N'HDD',           N'DD',           N'HDD',          1),
+(3,  N'SSD',           N'SSD',          N'SSD',          1),
+(4,  N'Enterprise HDD',N'DD entreprise',N'Enterprise HDD', 2),
+(5,  N'Consumer HDD',  N'DD grand public', N'Consumer HDD', 2),
+(6,  N'Accessories',   N'Accessoires',  N'Accessoires',  NULL),
+(7,  N'Cables',        N'Câbles',       N'Kabels',       6),
+(8,  N'Rack',          N'Rack',         N'Rack',         6),
+(9,  N'Services',      N'Services',     N'Diensten',     NULL),
+(10, N'Installation',  N'Installation', N'Installatie',  9),
+(11, N'Warranty',      N'Garantie',     N'Garantie',     9);
+SET IDENTITY_INSERT [Products].[WebshopProductStructures] OFF;
+
+-- Link products to webshop product structure (ProductStructureId)
+UPDATE [Products].[Product] SET [ProductStructureId] = 5 WHERE [ProductId] IN (1, 2);
+UPDATE [Products].[Product] SET [ProductStructureId] = 3 WHERE [ProductId] IN (3, 4);
+UPDATE [Products].[Product] SET [ProductStructureId] = 4 WHERE [ProductId] IN (5, 6);
+UPDATE [Products].[Product] SET [ProductStructureId] = 7 WHERE [ProductId] = 8;
+UPDATE [Products].[Product] SET [ProductStructureId] = 8 WHERE [ProductId] = 7;
+UPDATE [Products].[Product] SET [ProductStructureId] = 10 WHERE [ProductId] = 9;
+UPDATE [Products].[Product] SET [ProductStructureId] = 11 WHERE [ProductId] = 10;
+
+-- Product options (admin: /admin/product-options)
+INSERT INTO [Products].[ProductOptions]
+    ([Name], [ValueType], [IsRequired], [ProductId], [ProductionNotesFlag], [QuoteNotesFlag], [CalculatePrice], [SortOrder],
+     [NameFr], [Tag], [NameEn])
+VALUES
+(N'Capacity', N'List', 1, 1, 0, 0, 0, 1, N'Capacité', N'capacity', N'Capacity'),
+(N'Interface', N'List', 0, 1, 0, 0, 0, 2, N'Interface', N'interface', N'Interface'),
+(N'Cable length', N'List', 0, 8, 0, 0, 0, 1, N'Longueur câble', N'length', N'Cable length');
+
+DECLARE @OptCapacity int;
+DECLARE @OptInterface int;
+DECLARE @OptCableLen int;
+
+SELECT @OptCapacity = [Id] FROM [Products].[ProductOptions] WHERE [ProductId] = 1 AND [NameEn] = N'Capacity';
+SELECT @OptInterface = [Id] FROM [Products].[ProductOptions] WHERE [ProductId] = 1 AND [NameEn] = N'Interface';
+SELECT @OptCableLen = [Id] FROM [Products].[ProductOptions] WHERE [ProductId] = 8 AND [NameEn] = N'Cable length';
+
+INSERT INTO [Products].[ProductOptionValue] ([ProductOptionId], [Value], [ValueEn], [ValueFr], [SortOrder]) VALUES
+(@OptCapacity, N'500 GB', N'500 GB', N'500 Go', 1),
+(@OptCapacity, N'1 TB', N'1 TB', N'1 To', 2),
+(@OptCapacity, N'2 TB', N'2 TB', N'2 To', 3),
+(@OptInterface, N'SATA III', N'SATA III', N'SATA III', 1),
+(@OptInterface, N'NVMe', N'NVMe', N'NVMe', 2),
+(@OptCableLen, N'0.5 m', N'0.5 m', N'0,5 m', 1),
+(@OptCableLen, N'1 m', N'1 m', N'1 m', 2);
+
+-- Quantity tiers (admin: /admin/product-tiers)
+INSERT INTO [Products].[ProductQuantityTiers] ([MinimumQuantity], [Discount], [ProductId]) VALUES
+(10, 5.00, 1),
+(50, 10.00, 1),
+(10, 3.00, 2),
+(25, 7.50, 3);
+
+-- Customer-specific product discounts (admin: /admin/customer-discounts)
+INSERT INTO [Crm].[CustomerProductDiscounts]
+    ([CustomerId], [DiscountPercentage], [ProductId], [Notes], [FromAddress], [ValidTo], [CustomerTypeId], [CreatedAt], [UserId])
+VALUES
+(1, 10.0000, 1, N'Northwind HDD volume deal', DATEADD(year, -1, GETUTCDATE()), NULL, 1, GETUTCDATE(), 1),
+(2, 5.0000, 3, N'Contoso SSD promo', DATEADD(month, -3, GETUTCDATE()), DATEADD(month, 9, GETUTCDATE()), 1, GETUTCDATE(), 1),
+(4, 15.0000, 2, N'Tailspin loyalty', DATEADD(month, -6, GETUTCDATE()), NULL, 1, GETUTCDATE(), 1);
+
+-- Contacts + customer links
+SET IDENTITY_INSERT [Customers].[Contact] ON;
+INSERT INTO [Customers].[Contact] (
+    [ContactId], [ContactBox], [ContactEmail], [ContactFax], [ContactHouseNumber], [ContactLogin], [ContactMobile],
+    [ContactLastName], [ContactPassword], [ContactStreet], [ContactPhone], [ContactFirstName],
+    [IsInstallerContact], [ContactCityId], [IsInternalUserContact], [ContactLanguageId],
+    [EmailQuote], [EmailOrderConfirmation], [EmailPlanning], [EmailDeliveryReady], [EmailDelivered], [EmailBilling],
+    [ContactJobTitle]
+) VALUES
+(1, N'', N'john.buyer@northwind.demo', N'', N'10', N'john.buyer', N'+32 470 111 001', N'Buyer', N'demo', N'Buyer Lane', N'+32 2 111 0001', N'John',
+ 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, N'Purchasing'),
+(2, N'', N'mary.smith@tailspin.demo', N'', N'4', N'mary.smith', N'+32 470 222 002', N'Smith', N'demo', N'Demo Street', N'+32 2 111 0004', N'Mary',
+ 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, N'Operations'),
+(3, N'', N'warehouse@demo-supplier.local', N'', N'1', N'supplier.contact', N'', N'Peeters', N'demo', N'Industrial Zone', N'+32 2 555 0100', N'Jan',
+ 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, N'Logistics');
+SET IDENTITY_INSERT [Customers].[Contact] OFF;
+
+SET IDENTITY_INSERT [Customers].[CustomerContacts] ON;
+INSERT INTO [Customers].[CustomerContacts]
+    ([CustomerContactId], [CustomerId], [ContactId], [Notes], [IsDefaultContact], [JobTitle]) VALUES
+(1, 1, 1, N'Primary buyer', 1, N'Purchasing manager'),
+(2, 4, 2, N'Storefront login contact', 1, N'Buyer'),
+(3, NULL, 3, N'Supplier logistics', 0, N'Warehouse');
+SET IDENTITY_INSERT [Customers].[CustomerContacts] OFF;
+
+-- Legacy staff users (admin: /admin/staff-users) — parallel to Identity, not AspNetUsers
+INSERT INTO [Settings].[StaffUsers] (
+    [Crm], [Offerte], [Bestellingen], [Productie], [Boekhouding], [Planning], [Admin], [Verkoper],
+    [Color], [DoSyncExchange], [RechtstreeksGsmNrtonen], [RechtstreeksTelefoonNrTonen], [UserGroupId], [DirecteLosseVerkoop],
+    [Login], [Password], [EmailTemplate], [Tel], [FirstName], [LastName], [BaseCompaniesId], [TaalId], [Address], [HiredAt],
+    [ProductBeheer], [PlanningBinnenDienst], [PlanningBuitendienst], [PlanningProjecten], [TextColor], [JobTitle],
+    [CanAccessStockManagement], [CanAccessBilling]
+) VALUES
+(1, 1, 1, 0, 1, 1, 1, 1, 2263842, 0, 0, 0, 1, 1, N'admin@webshop.com', N'demo', N'admin@webshop.com', N'+32 2 100 0001',
+ N'Anna', N'Rodriguez', 1, 1, N'Brussels', DATEADD(year, -3, GETUTCDATE()), 1, 1, 0, 1, 16777215, N'Admin', 1, 1),
+(1, 1, 1, 0, 0, 0, 0, 1, 3447003, 0, 0, 0, 1, 0, N'manager@webshop.com', N'demo', N'manager@webshop.com', N'+32 2 100 0002',
+ N'John', N'Sales', 1, 1, N'Brussels', DATEADD(year, -2, GETUTCDATE()), 0, 0, 0, 0, 16777215, N'Sales manager', 1, 0),
+(0, 0, 0, 0, 0, 0, 0, 0, 9803157, 0, 0, 0, 2, 0, N'warehouse.demo', N'demo', N'warehouse@webshop.local', N'+32 2 100 0003',
+ N'Kim', N'Vermeulen', 1, 1, N'Brussels', DATEADD(year, -1, GETUTCDATE()), 0, 0, 0, 0, 16777215, N'Warehouse lead', 1, 0);
 
 -- Projects (1 per customer)
 SET IDENTITY_INSERT [Projects].[Project] ON;
@@ -456,6 +644,46 @@ INSERT INTO [Emails].[EmailQueues] ([Id], [Name]) VALUES
 (2, N'LowStockAlerts');
 SET IDENTITY_INSERT [Emails].[EmailQueues] OFF;
 
+-- Demo queued emails (LowStockAlerts queue — worker sends in prod only)
+INSERT INTO [Emails].[EmailMessages]
+    ([ToAddress], [FromAddress], [Subject], [Body], [PreviewText], [SentAt], [ReceivedAt], [EmailQueueId], [RequiresAction], [CustomerId])
+VALUES
+(N'admin@webshop.com', N'noreply@webshop.local', N'Low stock: Hard drive 5',
+ N'Hard drive 5 at Main warehouse: 9 on hand (minimum 1).', N'Hard drive 5 at Main warehouse: 9 on hand (minimum 1).',
+ DATEADD(hour, -2, GETUTCDATE()), DATEADD(hour, -2, GETUTCDATE()), 2, 1, NULL),
+(N'admin@webshop.com', N'noreply@webshop.local', N'Out of stock: Installation service',
+ N'Installation service is out of stock at Main warehouse.', N'Installation service is out of stock at Main warehouse.',
+ DATEADD(hour, -1, GETUTCDATE()), DATEADD(hour, -1, GETUTCDATE()), 2, 1, NULL);
+
+-- Demo accounting document (paid invoice linked to accepted order 2026009)
+DECLARE @DemoOrderId int;
+DECLARE @DemoProjectId int = 4;
+SELECT @DemoOrderId = [Id] FROM [Projects].[Orders] WHERE [OrderNumber] = 2026009;
+
+IF @DemoOrderId IS NOT NULL
+BEGIN
+    INSERT INTO [Accounting].[AccountingDocuments] (
+        [DocumentCreatedAt], [DocumentVatAmount], [DocumentNetAmount], [DocumentTotalAmount], [DocumentDate], [IsFinal],
+        [DocumentCustomerBox], [CustomerId], [DocumentCustomerName], [DocumentCustomerNumber], [DocumentCustomerPostalCode],
+        [DocumentCustomerStreet], [DocumentCustomerCity], [DocumentNumber], [DocumentTypeId], [CreatedBy], [OrderId],
+        [DocumentCustomerCompanyName], [DocumentCustomerVatNumber], [DocumentCustomerCountry], [DocumentCustomerHouseNumber],
+        [ProjectId], [BaseCompanyVatNumberId], [BetaaldOp], [BetalingswijzeId]
+    )
+    SELECT
+        GETUTCDATE(), ROUND(t.[Net] * 0.21, 2), t.[Net], ROUND(t.[Net] * 1.21, 2), CAST(GETUTCDATE() AS date), 1,
+        c.[CustomerBox], c.[CustomerId], c.[CustomerName], CAST(c.[CustomerId] AS nvarchar(50)), N'1000',
+        c.[CustomerStreet], N'Brussels', N'INV-2026-0009', 1, 1, @DemoOrderId,
+        c.[CustomerName], c.[CustomerVatNumber], N'Belgium', c.[CustomerHouseNumber],
+        @DemoProjectId, 1, DATEADD(day, -1, GETUTCDATE()), 1
+    FROM [Customers].[Customers] c
+    CROSS APPLY (
+        SELECT SUM(ol.[TotalExclVat]) AS [Net]
+        FROM [Projects].[OrderLines] ol
+        WHERE ol.[OrderId] = @DemoOrderId
+    ) t
+    WHERE c.[CustomerId] = 4;
+END;
+
 -- PrePay / Mollie demo milestones on 3 accepted webshop orders (order numbers 2026009–2026011)
 INSERT INTO [Projects].[OrderAdvancePayments]
     ([OrderId], [Name], [Percent], [IsFinalInvoice], [SortOrder], [Amount], [AdvancePaymentVisibility],
@@ -556,6 +784,8 @@ UNION ALL SELECT N'Customers', COUNT(*) FROM [Customers].[Customers]
 UNION ALL SELECT N'Orders this month', COUNT(*) FROM [Projects].[Orders] WHERE [CreatedAt] >= DATEFROMPARTS(YEAR(GETUTCDATE()), MONTH(GETUTCDATE()), 1)
 UNION ALL SELECT N'Pending orders', COUNT(*) FROM [Projects].[Orders] WHERE [IsAccepted] = 0
 UNION ALL SELECT N'Product prices', COUNT(*) FROM [Products].[ProductPrices]
+UNION ALL SELECT N'Azure file folders', COUNT(*) FROM [Files].[AzureFileFolders]
+UNION ALL SELECT N'Product images (AzureFiles)', COUNT(*) FROM [Files].[AzureFiles] WHERE [ProductId] IS NOT NULL AND [IsPrimaryImage] = 1
 UNION ALL SELECT N'Payment methods', COUNT(*) FROM [Settings].[PaymentMethods]
 UNION ALL SELECT N'Stock movements', COUNT(*) FROM [Products].[StockMovements]
 UNION ALL SELECT N'Open purchase orders', COUNT(*) FROM [Products].[StockOrder] WHERE [IsCompleted] = 0
@@ -565,6 +795,18 @@ UNION ALL SELECT N'In-app stock alerts (unread)', COUNT(*) FROM [dbo].[StockLowA
 UNION ALL SELECT N'Audit log rows', COUNT(*) FROM [dbo].[AuditLogs]
 UNION ALL SELECT N'Order advance payments', COUNT(*) FROM [Projects].[OrderAdvancePayments]
 UNION ALL SELECT N'Email queues', COUNT(*) FROM [Emails].[EmailQueues]
+UNION ALL SELECT N'Queued emails (demo)', COUNT(*) FROM [Emails].[EmailMessages]
+UNION ALL SELECT N'Webshop product structures', COUNT(*) FROM [Products].[WebshopProductStructures]
+UNION ALL SELECT N'Product options', COUNT(*) FROM [Products].[ProductOptions]
+UNION ALL SELECT N'Product quantity tiers', COUNT(*) FROM [Products].[ProductQuantityTiers]
+UNION ALL SELECT N'Price list categories', COUNT(*) FROM [Products].[PriceListCategories]
+UNION ALL SELECT N'User groups', COUNT(*) FROM [Settings].[UserGroups]
+UNION ALL SELECT N'Staff users (domain)', COUNT(*) FROM [Settings].[StaffUsers]
+UNION ALL SELECT N'Customer product discounts', COUNT(*) FROM [Crm].[CustomerProductDiscounts]
+UNION ALL SELECT N'Contacts', COUNT(*) FROM [Customers].[Contact]
+UNION ALL SELECT N'Customer contacts', COUNT(*) FROM [Customers].[CustomerContacts]
+UNION ALL SELECT N'Stock order deliveries (GRN)', COUNT(*) FROM [Products].[StockOrderDeliveries]
+UNION ALL SELECT N'Accounting documents', COUNT(*) FROM [Accounting].[AccountingDocuments]
 UNION ALL SELECT N'Revenue YTD', ISNULL(SUM(ol.[TotalExclVat]), 0)
     FROM [Projects].[OrderLines] ol INNER JOIN [Projects].[Orders] o ON o.[Id] = ol.[OrderId]
     WHERE o.[IsAccepted] = 1 AND o.[CreatedAt] >= DATEFROMPARTS(YEAR(GETUTCDATE()), 1, 1);

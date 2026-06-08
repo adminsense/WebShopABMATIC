@@ -1,6 +1,6 @@
 # Product media — Azure Files model (legacy-aligned)
 
-![Status](https://img.shields.io/badge/Status-Specified%20%2B%20planned%20build-ffc107?style=flat-square) ![Storage](https://img.shields.io/badge/Phase%201-Local%20fictitious%20blob-0dcaf0?style=flat-square) ![Tables](https://img.shields.io/badge/Tables-AzureFiles%20%2B%20Product-512BD4?style=flat-square) ![Legacy](https://img.shields.io/badge/Model-ABMATIC%20aligned-28a745?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Phase%201%20dev%20done-28a745?style=flat-square) ![Storage](https://img.shields.io/badge/Phase%201-Local%20fictitious%20blob-0dcaf0?style=flat-square) ![Tables](https://img.shields.io/badge/Tables-AzureFiles%20%2B%20Product-512BD4?style=flat-square) ![Legacy](https://img.shields.io/badge/Model-ABMATIC%20aligned-28a745?style=flat-square)
 
 > [!IMPORTANT]
 > **Executive Summary:** Product images in WebShopABMATIC follow the **legacy ABMATIC pattern**: files are registered in `[Files].[AzureFiles]` and linked to `[Products].[Product]` via `ProductId` — not via a column on `Product`. Phase 1 uses a **fictitious Azure Blob** (local filesystem under `wwwroot/media/products/`) with the same `BlobRef` contract, so admin forms, seed data, and the storefront can be built now and swapped to real Azure Blob Storage later without changing the database model.
@@ -11,18 +11,18 @@
 |----------|-------|--------|-------|
 | **Legacy tables** | 2 | ✅ In schema | `AzureFiles`, `AzureFileFolders` |
 | **Product link** | 1 | ✅ Designed | `AzureFiles.ProductId` (logical, no FK) |
-| **Admin form upload** | 1 | ⏳ Planned | `ProductForm` + media port |
-| **Store image source** | 1 | ⏳ Planned | Query `AzureFiles` instead of hardcoded paths |
-| **Seed demo rows** | 10+ | ⏳ Planned | HDD 1–6 + webshop products |
+| **Admin form upload** | 1 | ✅ Done | `ProductForm` + media port |
+| **Store image source** | 1 | ✅ Done | `StoreCatalogService` via `IProductMediaPort` |
+| **Seed demo rows** | 10 | ✅ Done | All `ShowOnWebshop` products in `seeds.sql` |
 
 ### Implementation quality
 
 | Aspect | Status | Details |
 |--------|--------|---------|
 | **EF entities** | ✅ Complete | `AzureFile`, `AzureFileFolder` mapped |
-| **DB on MULLER** | 🟡 Schema only | `AzureFiles` exists; **0 rows** today |
+| **DB on MULLER** | ✅ Seeded | `AzureFileFolders` + `AzureFiles` via `seeds.sql` |
 | **Admin save** | ✅ Wired | `ProductAdminUseCase` + `IProductMediaPort` (local blob Phase 1) |
-| **Store catalog** | 🟡 Partial | `StoreCatalogService` via `IStoreCatalogPort`; static images fallback |
+| **Store catalog** | ✅ Done | `StoreCatalogService` via `IProductMediaPort`; static fallback if no row |
 | **Real Azure Blob** | ⏳ Phase 2 | Replace storage adapter only |
 
 ---
@@ -69,11 +69,11 @@ Files.AzureFiles
 
 | Layer | Behaviour |
 |-------|-----------|
-| **Database** | `Files.AzureFiles` created by EF migration; **empty** on `WebShopABMATIC` (MULLER) |
-| **Admin `ProductForm`** | No image field; saves `Product` fields only |
-| **`ProductEditDto`** | No media properties |
-| **Store `StoreCatalog`** | Hardcoded `ImageUrl` → `wwwroot/images/product1.png` … `product6.png` |
-| **`seeds.sql`** | Seeds `Products.Product` only; **no** `AzureFiles` rows |
+| **Database** | `Files.AzureFiles` seeded for all webshop products (`ShowOnWebshop = 1`) |
+| **Admin `ProductForm`** | Image upload + preview via `IProductMediaPort` |
+| **`ProductEditDto`** | `PrimaryImageUrl` for preview |
+| **Store `StoreCatalog`** | Reads primary image from `AzureFiles`; fallback `/images/productN.png` |
+| **`seeds.sql`** | `AzureFileFolders` (id=1 Products) + `AzureFiles` per webshop SKU |
 
 ### 2.2 Why align with legacy instead of a new column
 
@@ -184,7 +184,7 @@ Map `BlobRef` to a browser URL (local `/media/...` or future SAS URL).
 After `Products` insert:
 
 1. Insert `AzureFileFolders` (id = 1, Products).
-2. For each webshop SKU with a mock image, insert `AzureFiles` with matching `ProductId`, `IsPrimaryImage = 1`, `PublishToWeb = 1`, `BlobRef = '/images/productN.png'` (or `/media/products/N/primary.png`).
+2. For each webshop SKU (`ShowOnWebshop = 1`), insert `AzureFiles` with matching `ProductId`, `IsPrimaryImage = 1`, `PublishToWeb = 1`, `BlobRef = '/images/productN.png'` (cycles 1–6 for accessories/services).
 
 ---
 
@@ -249,11 +249,12 @@ flowchart LR
 ## 8. Implementation order (recommended)
 
 1. **Document** — this file ✅  
-2. **Seed** — `AzureFileFolders` + `AzureFiles` in `seeds.sql` for demo products  
-3. **Infrastructure** — `IProductMediaPort` + `LocalProductMediaStorage`  
-4. **Admin** — extend DTO, service, `ProductForm` upload  
-5. **Store** — catalog/detail read image from `AzureFiles`  
-6. **Docs** — update [DATA_DEMO_SEED.md](DATA_DEMO_SEED.md) and [SPEC_INFRASTRUCTURE.md](SPEC_INFRASTRUCTURE.md) media section  
+2. **Seed** — `AzureFileFolders` + `AzureFiles` in `seeds.sql` for demo products ✅  
+3. **Infrastructure** — `IProductMediaPort` + `LocalProductMediaService` ✅  
+4. **Admin** — extend DTO, service, `ProductForm` upload ✅  
+5. **Store** — catalog/detail read image from `AzureFiles` ✅  
+6. **Docs** — update [DATA_DEMO_SEED.md](DATA_DEMO_SEED.md) and [SPEC_INFRASTRUCTURE.md](SPEC_INFRASTRUCTURE.md) media section ✅  
+7. **Phase 2** — real Azure Blob adapter (prod go-live, last) ⬜
 
 ---
 

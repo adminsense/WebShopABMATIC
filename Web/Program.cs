@@ -7,6 +7,7 @@ using WebShopABMATIC.Infrastructure.Identity;
 using WebShopABMATIC.Web.Components;
 using WebShopABMATIC.Web.Components.Account;
 using WebShopABMATIC.Web.Endpoints;
+using WebShopABMATIC.Infrastructure.Seeding;
 using WebShopABMATIC.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -54,17 +55,23 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
     .AddDefaultTokenProviders();
 
 builder.Services.AddWebShopApplication();
-builder.Services.AddWebShopInfrastructure(builder.Configuration);
+builder.Services.AddWebShopInfrastructure(builder.Configuration, builder.Environment);
 builder.Services.AddScoped<StoreCartService>();
 builder.Services.AddScoped<IGridExportService, GridExportService>();
+builder.Services.AddScoped<Microsoft.AspNetCore.Components.Server.Circuits.CircuitHandler, WebShopABMATIC.Infrastructure.Audit.AuditCircuitHandler>();
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
-builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 var app = builder.Build();
 
+if (args.Contains("--seed-identity", StringComparer.OrdinalIgnoreCase))
+{
+    await IdentitySeed.SeedAsync(app.Services);
+    return;
+}
+
 if (app.Environment.IsDevelopment())
 {
-    app.UseMigrationsEndPoint();
+    app.UseDeveloperExceptionPage();
 }
 else
 {
@@ -83,6 +90,7 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.MapMollieWebhook();
+app.MapStockAdjustmentApi();
 app.MapAdditionalIdentityEndpoints();
 
 app.Run();

@@ -13,6 +13,7 @@ Visual reference (AB-MATIC admin shell): [adminsenceweb.azurewebsites.net](https
 | File | Role | Open from |
 |------|------|-----------|
 | [`docs/mock-loja.html`](../docs/mock-loja.html) | Customer **storefront** (catalog, cart, checkout) — **entry point** | Browser direct |
+| [`docs/mock-payments.html`](../docs/mock-payments.html) | **Mollie hosted checkout** (card / iDEAL) + **order confirmation** after pay | Browser direct |
 | [`docs/mock-admin.html`](../docs/mock-admin.html) | Staff **admin panel** (AB-MATIC layout) | Store **Admin Panel** button or direct |
 | [`docs/mock-shopcart.html`](../docs/mock-shopcart.html) | Redirect → `mock-loja.html` | Legacy alias |
 

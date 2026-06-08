@@ -6,7 +6,7 @@
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
 @using WebShopABMATIC.Web.Services
-@inject IProductStockLocationAdminPort AdminPort
+@inject IProductStockLocationAdminPort AdminPort
 @inject IGridExportService GridExport
 @implements IAsyncDisposable
 
@@ -16,7 +16,7 @@
     <a class="btn btn-secondary btn-back mb-3" href="/admin/hub/stock" data-enhance-nav="false"><span class="oi oi-arrow-left"></span> Back to list</a>
     <div class="entity-page-header page-header">
         <h1 class="h3 mb-1"><i class="bi bi-boxes text-primary"></i> Product stock</h1>
-        <p class="mb-0">Quantity per warehouse location.</p>
+        <p class="mb-0">Quantity per warehouse location. Rows in red are at or below minimum.</p>
     </div>
     <div class="card shadow-sm border entity-form-card admin-form-card">
                 <AdminEntityFormHeader ExportDisabled="@ExportDisabled" OnExport="ExportGridAsync">
@@ -59,27 +59,39 @@
         </div>
     </div>
     <div class="card shadow-sm border entity-grid-card">
-        <div class="card-header bg-white entity-grid-toolbar">
+        <div class="card-header bg-white entity-grid-toolbar d-flex flex-wrap align-items-center justify-content-between gap-2">
             <h2 class="h6 mb-0 fw-bold">Product stock list</h2>
-            <AdminGridSearch @bind-Value="_searchDraft" OnSearch="ApplySearchAsync" />
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn @(_filter.LowStockOnly ? "btn-outline-secondary" : "btn-primary")" @onclick="ShowAllAsync">All</button>
+                    <button type="button" class="btn @(_filter.LowStockOnly ? "btn-danger" : "btn-outline-danger")" @onclick="ShowLowStockOnlyAsync">Low stock</button>
+                </div>
+                <AdminGridSearch @bind-Value="_searchDraft" OnSearch="ApplySearchAsync" />
+            </div>
         </div>
         <div class="table-responsive">
             <table class="table table-striped table-hover mb-0">
                 <thead class="table-dark"><tr><th>Id</th>
-                        <th>ProductId</th>
-                        <th>StockLocationId</th>
-                        <th>Quantity</th>
+                        <th>Product</th>
+                        <th>Location</th>
+                        <th>On hand</th>
+                        <th>Reserved</th>
+                        <th>Available</th>
+                        <th>Min</th>
                     <th class="text-center">Actions</th></tr></thead>
                 <tbody>
-                    @if (_loading) { <tr><td colspan="5" class="text-center text-muted py-4">Loadingâ€¦</td></tr> }
-                    else if (!string.IsNullOrEmpty(_gridError)) { <tr><td colspan="5" class="text-center text-danger py-4">@_gridError</td></tr> }
-                    else if (_result is null || _result.Items.Count == 0) { <tr><td colspan="5" class="text-center text-muted py-4">No records found.</td></tr> }
+                    @if (_loading) { <tr><td colspan="8" class="text-center text-muted py-4">Loading…</td></tr> }
+                    else if (!string.IsNullOrEmpty(_gridError)) { <tr><td colspan="8" class="text-center text-danger py-4">@_gridError</td></tr> }
+                    else if (_result is null || _result.Items.Count == 0) { <tr><td colspan="8" class="text-center text-muted py-4">@(_filter.LowStockOnly ? "No low-stock rows." : "No records found.")</td></tr> }
                     else { @foreach (var item in _result.Items) {
-                        <tr @key="item.Id" class="@(_model.Id == item.Id ? "table-active" : null)">
+                        <tr @key="item.Id" class="@RowClass(item)">
                             <td>@item.Id</td>
-                                <td>@item.ProductId</td>
+                                <td>@item.ProductName <span class="text-muted">(#@item.ProductId)</span></td>
                                 <td>@item.StockLocationId</td>
                                 <td>@item.Quantity</td>
+                                <td>@item.ReservedQuantity</td>
+                                <td>@item.AvailableQuantity</td>
+                                <td>@item.MinQuantity</td>
                             <td class="text-center"><div class="btn-group btn-group-sm">
                                 <a class="btn btn-sm btn-primary" href="@($"/admin/product-stock?edit={item.Id}")" data-enhance-nav="false"><i class="bi bi-pencil"></i></a>
                                         <button type="button" class="btn btn-sm btn-danger" @onclick="() => PromptDelete(item)" title="Delete">
@@ -112,6 +124,7 @@
 
 @code {
     [SupplyParameterFromQuery(Name = "edit")] public int? EditId { get; set; }
+    [SupplyParameterFromQuery(Name = "lowStock")] public bool? LowStock { get; set; }
     private CancellationTokenSource? _cts;
     private ProductStockLocationListFilter _filter = new();
     private ProductStockLocationEditDto _model = new ProductStockLocationEditDto { StockLocationId = 1, ProductId = 1, MaxQuantity = 100 };
@@ -124,13 +137,23 @@
 
     protected override async Task OnInitializedAsync() {
         _cts = new CancellationTokenSource();
+        _filter.LowStockOnly = LowStock == true;
         await LoadGridAsync(_cts.Token);
         if (EditId is > 0) await EditAsync(EditId.Value);
         _initialized = true;
     }
     protected override async Task OnParametersSetAsync() {
-        if (!_initialized || _disposed || EditId is not > 0 || _model.Id == EditId) return;
-        await EditAsync(EditId.Value);
+        if (!_initialized || _disposed) return;
+        var lowStock = LowStock == true;
+        if (lowStock != _filter.LowStockOnly)
+        {
+            _filter.LowStockOnly = lowStock;
+            _filter.Page = 1;
+            _cts?.Cancel();
+            _cts = new CancellationTokenSource();
+            await LoadGridAsync(_cts.Token);
+        }
+        if (EditId is > 0 && _model.Id != EditId) await EditAsync(EditId.Value);
     }
     private async Task LoadGridAsync(CancellationToken ct) {
         _loading = true; _gridError = null;
@@ -140,6 +163,10 @@
         finally { _loading = false; await InvokeAsync(StateHasChanged); }
     }
     private async Task ApplySearchAsync() { _filter.Search = _searchDraft; _filter.Page = 1; _cts?.Cancel(); _cts = new CancellationTokenSource(); await LoadGridAsync(_cts.Token); }
+    private async Task ShowAllAsync() { _filter.LowStockOnly = false; _filter.Page = 1; _cts?.Cancel(); _cts = new CancellationTokenSource(); await LoadGridAsync(_cts.Token); }
+    private async Task ShowLowStockOnlyAsync() { _filter.LowStockOnly = true; _filter.Page = 1; _cts?.Cancel(); _cts = new CancellationTokenSource(); await LoadGridAsync(_cts.Token); }
+    private static string? RowClass(ProductStockLocationDto item) =>
+        item.IsLowStock ? "table-danger" : item.Quantity <= 0 ? "table-warning" : null;
 private async Task EditAsync(int id) {
         _formLoading = true; _formError = null;
         try {
@@ -186,13 +213,17 @@ private async Task EditAsync(int id) {
         return GridExportBuilder.FromRows(
             "product-stock",
             "Product stock list",
-            new[] { "Id", "ProductId", "StockLocationId", "Quantity" },
+            new[] { "Id", "ProductId", "ProductName", "StockLocationId", "OnHand", "Reserved", "Available", "MinQuantity" },
             _result?.Items.Select(item => (IReadOnlyList<string>)new[]
             {
                 GridExportBuilder.Cell(item.Id),
                 GridExportBuilder.Cell(item.ProductId),
+                GridExportBuilder.Cell(item.ProductName),
                 GridExportBuilder.Cell(item.StockLocationId),
-                GridExportBuilder.Cell(item.Quantity)
+                GridExportBuilder.Cell(item.Quantity),
+                GridExportBuilder.Cell(item.ReservedQuantity),
+                GridExportBuilder.Cell(item.AvailableQuantity),
+                GridExportBuilder.Cell(item.MinQuantity)
             }));
     }
     public async ValueTask DisposeAsync() { _disposed = true; if (_cts is not null) { await _cts.CancelAsync(); _cts.Dispose(); } }

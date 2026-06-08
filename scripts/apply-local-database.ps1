@@ -15,24 +15,11 @@ sqlcmd -S $Server -E -d $Database -i (Join-Path $PSScriptRoot "apply-pending-sch
 if ($LASTEXITCODE -ne 0) { throw "apply-pending-schema.sql failed." }
 
 if (-not $SkipSeed) {
-    Write-Host "Running demo seed ..."
-    sqlcmd -S $Server -E -d $Database -i (Join-Path $PSScriptRoot "seeds.sql")
-    if ($LASTEXITCODE -ne 0) { throw "seeds.sql failed." }
+    & (Join-Path $PSScriptRoot "seed-demo.ps1") -Server $Server -Database $Database
 }
 
 if (-not $SkipIdentitySeed) {
-    Write-Host "Seeding Identity roles, users, and audit demo rows ..."
-    Push-Location (Join-Path $root "Web")
-    try {
-        dotnet run --no-build -- --seed-identity
-        if ($LASTEXITCODE -ne 0) {
-            dotnet run -- --seed-identity
-            if ($LASTEXITCODE -ne 0) { throw "Identity seed failed." }
-        }
-    }
-    finally {
-        Pop-Location
-    }
+    & (Join-Path $PSScriptRoot "seed-identity.ps1")
 }
 
 Write-Host "Database setup completed."

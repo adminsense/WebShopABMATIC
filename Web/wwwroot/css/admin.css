@@ -906,6 +906,7 @@ a.hub-card.hub-card-link:focus-visible {
 .audit-badge-checkout { background: #20c997; }
 .audit-badge-payment { background: #fd7e14; }
 .audit-badge-password { background: #6610f2; }
+.audit-badge-stock { background: #e67e22; }
 .audit-badge-default { background: #495057; }
 
 .audit-detail-json {

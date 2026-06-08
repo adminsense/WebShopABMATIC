@@ -1,14 +1,23 @@
 using System.Globalization;
 using System.Text;
+using System.Text.Json;
 using Microsoft.JSInterop;
+using WebShopABMATIC.Application.Admin.AuditLogs;
+using WebShopABMATIC.Application.Audit;
+using WebShopABMATIC.Application.Ports.Outbound;
 
 namespace WebShopABMATIC.Web.Services;
 
 public sealed class GridExportService : IGridExportService
 {
     private readonly IJSRuntime _js;
+    private readonly IAuditService _audit;
 
-    public GridExportService(IJSRuntime js) => _js = js;
+    public GridExportService(IJSRuntime js, IAuditService audit)
+    {
+        _js = js;
+        _audit = audit;
+    }
 
     public async Task ExportAsync(string format, GridExportRequest request, CancellationToken cancellationToken = default)
     {
@@ -21,6 +30,7 @@ public sealed class GridExportService : IGridExportService
             var bytes = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(csv)).ToArray();
             var base64 = Convert.ToBase64String(bytes);
             await _js.InvokeVoidAsync("adminExport.downloadCsv", cancellationToken, $"{request.FileBaseName}.csv", base64);
+            await LogExportAsync(request, "csv", cancellationToken);
             return;
         }
 
@@ -28,11 +38,26 @@ public sealed class GridExportService : IGridExportService
         {
             var html = BuildPrintHtml(request);
             await _js.InvokeVoidAsync("adminExport.printPdf", cancellationToken, request.Title, html);
+            await LogExportAsync(request, "pdf", cancellationToken);
             return;
         }
 
         throw new ArgumentException("Format must be csv or pdf.", nameof(format));
     }
+
+    private Task LogExportAsync(GridExportRequest request, string format, CancellationToken cancellationToken) =>
+        _audit.LogAsync(new AuditLogWriteRequest
+        {
+            Action = AuditActions.ReportExport,
+            EntityName = request.FileBaseName,
+            NewValues = JsonSerializer.Serialize(new
+            {
+                reportKey = request.FileBaseName,
+                title = request.Title,
+                format,
+                rowCount = request.Rows.Count
+            })
+        }, cancellationToken);
 
     private static string BuildCsv(GridExportRequest request)
     {
