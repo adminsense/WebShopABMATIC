@@ -6,6 +6,10 @@ using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
+using WebShopABMATIC.Application.Admin.AuditLogs;
+using WebShopABMATIC.Application.Audit;
+using WebShopABMATIC.Application.Ports.Outbound;
+using WebShopABMATIC.Infrastructure.Audit;
 using WebShopABMATIC.Web.Components.Account.Pages;
 using WebShopABMATIC.Web.Components.Account.Pages.Manage;
 using WebShopABMATIC.Infrastructure.Identity;
@@ -43,8 +47,26 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
         accountGroup.MapPost("/Logout", async (
             ClaimsPrincipal user,
             SignInManager<ApplicationUser> signInManager,
+            UserManager<ApplicationUser> userManager,
+            [FromServices] IAuditService auditService,
+            [FromServices] IManualLogoutTracker logoutTracker,
             [FromForm] string returnUrl) =>
         {
+            var appUser = await userManager.GetUserAsync(user);
+            if (appUser is not null)
+            {
+                logoutTracker.MarkManualLogout(appUser.Id);
+                await auditService.LogAsync(new AuditLogWriteRequest
+                {
+                    Action = AuditActions.Logout,
+                    EntityName = "ApplicationUser",
+                    EntityId = appUser.Id,
+                    IdentityUserId = appUser.Id,
+                    UserDisplayName = appUser.Email,
+                    NewValues = JsonSerializer.Serialize(new { email = appUser.Email, reason = "ManualLogout" })
+                });
+            }
+
             await signInManager.SignOutAsync();
             return TypedResults.LocalRedirect($"~/{returnUrl}");
         });

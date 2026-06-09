@@ -1,0 +1,83 @@
+@page "/orders/{OrderId:int}"
+@layout StoreLayout
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using WebShopABMATIC.Application.Auth
+@using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Application.Ports.Outbound
+@using WebShopABMATIC.Application.Store.Checkout
+@using WebShopABMATIC.Application.Store.Orders
+@attribute [Authorize(Policy = AppPolicies.CustomerOnly)]
+@inject ICheckoutPort CheckoutPort
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Order details</PageTitle>
+
+<div class="container">
+    <NavLink href="/orders" class="btn btn-secondary btn-sm mb-3">← Back to orders</NavLink>
+    <h1 class="page-title">Order details</h1>
+
+    @if (_loading)
+    {
+        <p style="color:var(--muted)">Loading…</p>
+    }
+    else if (_order is null)
+    {
+        <p style="color:var(--muted)">Order not found.</p>
+    }
+    else
+    {
+        var (label, css) = StoreOrderPaymentDisplay.Describe(_order.IsPrePay, _order.IsPaid, _order.PaymentStatus);
+
+        <div class="summary-card" style="max-width:36rem">
+            <p><strong>Order #@(_order.OrderNumber ?? _order.OrderId)</strong></p>
+            <p class="small" style="color:var(--muted)">@_order.CreatedAt.ToLocalTime().ToString("f")</p>
+            <p>
+                Payment:
+                <span class="status @css">@label</span>
+                @if (!string.IsNullOrWhiteSpace(_order.MolliePaymentId))
+                {
+                    <span class="small" style="color:var(--muted);display:block;margin-top:.25rem">Mollie: @_order.MolliePaymentId</span>
+                }
+            </p>
+            <hr />
+            @foreach (var line in _order.Lines)
+            {
+                <div class="summary-line">
+                    <span>@line.Name × @line.Quantity</span>
+                    <span>@FormatPrice(line.LineTotal)</span>
+                </div>
+            }
+            <div class="summary-line total">
+                <span>Total (incl. VAT)</span>
+                <span>@FormatPrice(_order.TotalInclVat)</span>
+            </div>
+            @if (_order.IsPrePay && !_order.IsPaid)
+            {
+                <p class="small" style="color:var(--muted);margin-top:1rem">
+                    Payment is still processing. Refresh this page after completing Mollie checkout.
+                </p>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int OrderId { get; set; }
+
+    private CheckoutOrderSummaryDto? _order;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var auth = await AuthStateProvider.GetAuthenticationStateAsync();
+        _order = await CheckoutPort.GetOrderSummaryAsync(OrderId, new StoreUserLookup
+        {
+            Email = auth.User.Identity?.Name,
+            IdentityUserId = auth.User.FindFirstValue(ClaimTypes.NameIdentifier)
+        });
+        _loading = false;
+    }
+
+    private static string FormatPrice(decimal price) => $"€{price:F2}";
+}

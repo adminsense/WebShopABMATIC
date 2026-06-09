@@ -5,7 +5,9 @@
 @using WebShopABMATIC.Application.Common
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
-@inject IOrderStatusAdminPort AdminPort
+@using WebShopABMATIC.Web.Services
+@inject IOrderStatusAdminPort AdminPort
+@inject IGridExportService GridExport
 @implements IAsyncDisposable
 
 <PageTitle>Order status</PageTitle>
@@ -17,7 +19,9 @@
         <p class="mb-0">Order workflow statuses.</p>
     </div>
     <div class="card shadow-sm border entity-form-card admin-form-card">
-        <div class="card-header card-header-catalog"><h2 class="h6 mb-0 fw-bold">@(_isEditing ? "Edit order status" : "Create order status")</h2></div>
+                <AdminEntityFormHeader ExportDisabled="@ExportDisabled" OnExport="ExportGridAsync">
+            <Title>@(_isEditing ? "Edit order status" : "Create order status")</Title>
+        </AdminEntityFormHeader>
         <div class="card-body">
             @if (_formLoading) { <p class="text-muted mb-0">Loadingâ€¦</p> }
             else {
@@ -51,12 +55,9 @@
         </div>
     </div>
     <div class="card shadow-sm border entity-grid-card">
-        <div class="card-header bg-white border-bottom py-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="card-header bg-white entity-grid-toolbar">
             <h2 class="h6 mb-0 fw-bold">Order status list</h2>
-            <div class="grid-search-wrap"><div class="input-group input-group-sm">
-                <input type="search" class="form-control" placeholder="Searchâ€¦" @bind="_searchDraft" @bind:event="oninput" @onkeydown="OnSearchKeyDown" />
-                <span class="input-group-text"><i class="bi bi-search"></i></span>
-            </div></div>
+            <AdminGridSearch @bind-Value="_searchDraft" OnSearch="ApplySearchAsync" />
         </div>
         <div class="table-responsive">
             <table class="table table-striped table-hover mb-0">
@@ -133,8 +134,7 @@
         finally { _loading = false; await InvokeAsync(StateHasChanged); }
     }
     private async Task ApplySearchAsync() { _filter.Search = _searchDraft; _filter.Page = 1; _cts?.Cancel(); _cts = new CancellationTokenSource(); await LoadGridAsync(_cts.Token); }
-    private async Task OnSearchKeyDown(KeyboardEventArgs e) { if (e.Key == "Enter") await ApplySearchAsync(); }
-    private async Task EditAsync(int id) {
+private async Task EditAsync(int id) {
         _formLoading = true; _formError = null;
         try {
             var item = await AdminPort.GetForEditAsync(id, _cts?.Token ?? CancellationToken.None);
@@ -163,5 +163,34 @@
             CancelDelete(); await LoadGridAsync(_cts?.Token ?? CancellationToken.None);
         } finally { _deleting = false; }
     }
+
+    private bool ExportDisabled => _loading || _result is null || _result.Items.Count == 0;
+
+    private async Task ExportGridAsync(string format)
+    {
+        var request = BuildExportRequest();
+        if (request is not null)
+        {
+            await GridExport.ExportAsync(format, request);
+        }
+    }
+
+    private GridExportRequest? BuildExportRequest()
+    {
+        return GridExportBuilder.FromRows(
+            "order-statuses",
+            "Order status list",
+            new[] { "Id", "Name", "ScreenMode" },
+            _result?.Items.Select(item => (IReadOnlyList<string>)new[]
+            {
+                GridExportBuilder.Cell(item.Id),
+                GridExportBuilder.Cell(item.Name),
+                GridExportBuilder.Cell(item.ScreenMode)
+            }));
+    }
     public async ValueTask DisposeAsync() { _disposed = true; if (_cts is not null) { await _cts.CancelAsync(); _cts.Dispose(); } }
 }
+
+
+
+

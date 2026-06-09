@@ -1,9 +1,13 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using WebShopABMATIC.Application.Admin.AuditLogs;
 using WebShopABMATIC.Application.Admin.SystemUsers;
+using WebShopABMATIC.Application.Audit;
 using WebShopABMATIC.Application.Auth;
 using WebShopABMATIC.Application.Common;
 using WebShopABMATIC.Application.Ports.Outbound;
+using WebShopABMATIC.Infrastructure.Audit;
 using WebShopABMATIC.Infrastructure.Identity;
 
 namespace WebShopABMATIC.Infrastructure.Identity;
@@ -12,11 +16,16 @@ public sealed class SystemUserRepository : ISystemUserRepository
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IIdentityPasswordPort _passwordPort;
+    private readonly IAuditService _audit;
 
-    public SystemUserRepository(UserManager<ApplicationUser> userManager, IIdentityPasswordPort passwordPort)
+    public SystemUserRepository(
+        UserManager<ApplicationUser> userManager,
+        IIdentityPasswordPort passwordPort,
+        IAuditService audit)
     {
         _userManager = userManager;
         _passwordPort = passwordPort;
+        _audit = audit;
     }
 
     public async Task<PagedResult<SystemUserDto>> GetSystemUsersAsync(SystemUserListFilter filter, CancellationToken cancellationToken = default)
@@ -96,8 +105,9 @@ public sealed class SystemUserRepository : ISystemUserRepository
 
         string? temporaryPassword = null;
         ApplicationUser user;
+        var isCreate = string.IsNullOrWhiteSpace(dto.Id);
 
-        if (string.IsNullOrWhiteSpace(dto.Id))
+        if (isCreate)
         {
             var existing = await _userManager.FindByEmailAsync(dto.Email.Trim());
             if (existing is not null)
@@ -164,6 +174,22 @@ public sealed class SystemUserRepository : ISystemUserRepository
 
         await SyncRolesAsync(user, dto.IsAdmin, dto.IsManager);
         await ApplyLockoutAsync(user, dto.IsActive);
+
+        await AuditManualLogger.LogIdentityUserAsync(
+            _audit,
+            isCreate ? AuditActions.Create : AuditActions.Update,
+            user.Id,
+            user.Email,
+            new
+            {
+                email = user.Email,
+                firstName = user.FirstName,
+                lastName = user.LastName,
+                isAdmin = dto.IsAdmin,
+                isManager = dto.IsManager,
+                isActive = dto.IsActive
+            },
+            cancellationToken);
 
         return new SystemUserSaveResult
         {
