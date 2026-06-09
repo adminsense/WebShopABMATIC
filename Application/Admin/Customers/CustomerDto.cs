@@ -10,6 +10,7 @@ public sealed class CustomerDto
     public string CustomerPhone { get; init; } = string.Empty;
     public int CustomerCityId { get; init; }
     public bool Locked { get; init; }
+    public bool HasWebshopAccount { get; init; }
 }
 
 public sealed class CustomerEditDto
@@ -28,6 +29,7 @@ public sealed class CustomerEditDto
     public int DeliveryTypeId { get; set; }
     public int BetaaltermijnId { get; set; }
     public bool Locked { get; set; }
+    public bool HasWebshopAccount { get; set; }
 }
 
 public sealed class CustomerListFilter
