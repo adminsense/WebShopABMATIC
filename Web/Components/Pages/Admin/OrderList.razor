@@ -1,75 +1,228 @@
-@page "/admin/orders"
+﻿@page "/admin/orders"
 @layout AdminLayout
 @attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
 @using WebShopABMATIC.Application.Admin.Orders
 @using WebShopABMATIC.Application.Common
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
-@inject IOrderAdminPort OrderPort
+@using WebShopABMATIC.Web.Services
+@inject IOrderAdminPort AdminPort
+
+@inject IGridExportService GridExport
 @implements IAsyncDisposable
 
 <PageTitle>Order</PageTitle>
 
-<div class="list-header">
-    <h1><i class="bi bi-receipt"></i> Order</h1>
-    <button type="button" class="btn btn-success btn-sm" @onclick="RefreshAsync">
-        <i class="bi bi-arrow-repeat me-1"></i>Refresh
-    </button>
+<div class="entity-page">
+    <a class="btn btn-secondary btn-back mb-3" href="/admin/hub/sales" data-enhance-nav="false"><span class="oi oi-arrow-left"></span> Back to Sales hub</a>
+    <div class="entity-page-header page-header">
+        <h1 class="h3 mb-1"><i class="bi bi-receipt text-primary"></i> Orders</h1>
+        <p class="mb-0">Sales orders from the webshop and back office.</p>
+    </div>
+    <div class="card shadow-sm border entity-form-card admin-form-card">
+                <AdminEntityFormHeader ExportDisabled="@ExportDisabled" OnExport="ExportGridAsync">
+            <Title>@(_isEditing ? "Edit order" : "Create order")</Title>
+        </AdminEntityFormHeader>
+        <div class="card-body">
+            @if (_formLoading) { <p class="text-muted mb-0">Loading…</p> }
+            else {
+                <EditForm Model="_model" OnValidSubmit="SaveAsync">
+                    <DataAnnotationsValidator />
+                    <div class="entity-form-fields"><div class="row g-2">
+                        @if (_isEditing)
+                        {
+                            <div class="col-md-3">
+                                <label class="form-label" for="f-ordernum">Order #</label>
+                                <input id="f-ordernum" class="form-control form-control-sm" value="@(_model.OrderNumber?.ToString() ?? _model.Id.ToString())" disabled />
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label" for="f-customer">Customer</label>
+                                <input id="f-customer" class="form-control form-control-sm" value="@(_model.CustomerName)" disabled />
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="col-md-3">
+                                <label class="form-label" for="f-projectid">Customer project (internal)</label>
+                                <InputNumber id="f-projectid" class="form-control form-control-sm" @bind-Value="_model.ProjectId" required />
+                                <div class="form-text">Legacy link to customer — use project 1–4 from demo seeds.</div>
+                            </div>
+                        }
+                        <div class="col-md-3">
+                            <label class="form-label" for="f-createdat">Created at *</label>
+                            <InputDate id="f-createdat" class="form-control form-control-sm" @bind-Value="_model.CreatedAt" required />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" for="f-deliverytypeid">Delivery type *</label>
+                            <InputNumber id="f-deliverytypeid" class="form-control form-control-sm" @bind-Value="_model.DeliveryTypeId" required />
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <div class="form-check mb-1">
+                                <InputCheckbox class="form-check-input" @bind-Value="_model.IsAccepted" id="f-isaccepted" />
+                                <label class="form-check-label" for="f-isaccepted">Accepted</label>
+                            </div>
+                        </div>
+                        <div class="col-12 d-flex gap-2 pt-1">
+                            <button type="submit" class="btn btn-primary" disabled="@_saving">@(_isEditing ? "Update" : "Create")</button>
+                            <button type="button" class="btn btn-secondary" @onclick="CancelFormAsync" disabled="@_saving"><i class="bi bi-x me-1"></i>Cancel</button>
+                        </div>
+                    </div></div>
+                </EditForm>
+                @if (!string.IsNullOrEmpty(_formError)) { <div class="alert alert-danger mt-3 mb-0">@_formError</div> }
+                @if (_isEditing && _model.AdvancePayments.Count > 0)
+                {
+                    <div class="mt-4">
+                        <h3 class="h6 fw-bold">Advance payments (read-only)</h3>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered mb-0">
+                                <thead><tr>
+                                    <th>Name</th>
+                                    <th>%</th>
+                                    <th>Amount</th>
+                                    <th>Mollie status</th>
+                                    <th>Mollie id</th>
+                                    <th>Paid at</th>
+                                </tr></thead>
+                                <tbody>
+                                    @foreach (var ap in _model.AdvancePayments)
+                                    {
+                                        <tr>
+                                            <td>@ap.Name</td>
+                                            <td>@ap.Percent.ToString("0.##")</td>
+                                            <td>@(ap.Amount?.ToString("F2") ?? "—")</td>
+                                            <td>@(ap.MolliePaymentStatus ?? "—")</td>
+                                            <td class="small">@(ap.MolliePaymentId ?? "—")</td>
+                                            <td>@(ap.MolliePaidAt?.ToLocalTime().ToString("g") ?? "—")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+    <div class="card shadow-sm border entity-grid-card">
+        <div class="card-header bg-white entity-grid-toolbar">
+            <h2 class="h6 mb-0 fw-bold">Order list</h2>
+            <AdminGridSearch @bind-Value="_searchDraft" OnSearch="ApplySearchAsync" />
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="table-dark"><tr>
+                        <th>Id</th>
+                        <th>Order #</th>
+                        <th>Customer</th>
+                        <th>Created</th>
+                        <th>Payment</th>
+                        <th>Mollie id</th>
+                        <th>Accepted</th>
+                    <th class="text-center">Actions</th></tr></thead>
+                <tbody>
+                    @if (_loading) { <tr><td colspan="8" class="text-center text-muted py-4">Loading…</td></tr> }
+                    else if (!string.IsNullOrEmpty(_gridError)) { <tr><td colspan="8" class="text-center text-danger py-4">@_gridError</td></tr> }
+                    else if (_result is null || _result.Items.Count == 0) { <tr><td colspan="8" class="text-center text-muted py-4">No records found.</td></tr> }
+                    else { @foreach (var item in _result.Items) {
+                        <tr @key="item.Id" class="@(_model.Id == item.Id ? "table-active" : null)">
+                            <td>@item.Id</td>
+                            <td>@(item.OrderNumber?.ToString() ?? "—")</td>
+                            <td>@item.CustomerName</td>
+                            <td>@item.CreatedAt.ToString("yyyy-MM-dd")</td>
+                            <td>@item.PaymentStatus</td>
+                            <td class="small text-muted">@(item.MolliePaymentId ?? "—")</td>
+                            <td>@(item.IsAccepted ? "Yes" : "No")</td>
+                            <td class="text-center"><div class="btn-group btn-group-sm">
+                                <a class="btn btn-sm btn-primary" href="@($"/admin/orders?edit={item.Id}")" data-enhance-nav="false"><i class="bi bi-pencil"></i></a>
+                            </div></td>
+                        </tr> } }
+                </tbody>
+            </table>
+        </div>
+        @if (_result is not null && !_loading) { <div class="card-footer bg-white text-muted small py-2">@_result.TotalCount total · page @_result.Page</div> }
+    </div>
 </div>
 
-<a class="btn btn-outline-secondary btn-sm mb-3" href="/admin/hub/sales" data-enhance-nav="false"><span class="oi oi-arrow-left"></span> Back</a>
-
-@if (_loading) { <p class="text-muted">Loading…</p> }
-else if (_result?.Items.Count == 0) { <div class="alert alert-info">No orders found.</div> }
-else if (_result is not null)
-{
-    <div class="table-wrap">
-        <table class="table table-striped table-hover mb-0">
-            <thead class="table-dark">
-                <tr>
-                    <th>Id</th><th>CreatedAt</th><th>ProjectId</th><th>DeliveryTypeId</th><th>IsAccepted</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var o in _result.Items)
-                {
-                    <tr @key="o.Id">
-                        <td>@o.Id</td>
-                        <td>@o.CreatedAt.ToString("g")</td>
-                        <td>@o.ProjectId</td>
-                        <td>@o.DeliveryTypeId</td>
-                        <td>@(o.IsAccepted ? "true" : "false")</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-}
 
 @code {
+    [SupplyParameterFromQuery(Name = "edit")] public int? EditId { get; set; }
     private CancellationTokenSource? _cts;
     private OrderListFilter _filter = new();
-    private bool _loading = true;
+    private OrderEditDto _model = new OrderEditDto { ProjectId = 1, DeliveryTypeId = 1, CreatedAt = DateTime.UtcNow.Date };
+    private string _searchDraft = string.Empty;
+    private bool _loading = true, _formLoading, _saving, _disposed, _initialized;
+    private string? _formError, _gridError;
     private PagedResult<OrderSummaryDto>? _result;
-    private bool _loaded;
+    private bool _isEditing => _model.Id > 0;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender || _loaded) return;
+    protected override async Task OnInitializedAsync() {
         _cts = new CancellationTokenSource();
-        await LoadAsync(_cts.Token);
-        _loaded = true;
+        await LoadGridAsync(_cts.Token);
+        if (EditId is > 0) await EditAsync(EditId.Value);
+        _initialized = true;
     }
-
-    private async Task LoadAsync(CancellationToken ct)
-    {
-        _loading = true;
-        try { _result = await OrderPort.GetOrdersAsync(_filter, ct); }
-        catch (OperationCanceledException) { }
+    protected override async Task OnParametersSetAsync() {
+        if (!_initialized || _disposed || EditId is not > 0 || _model.Id == EditId) return;
+        await EditAsync(EditId.Value);
+    }
+    private async Task LoadGridAsync(CancellationToken ct) {
+        _loading = true; _gridError = null;
+        try { _result = await AdminPort.GetOrdersAsync(_filter, ct); }
+        catch (OperationCanceledException) { return; }
+        catch (Exception ex) { _result = null; _gridError = ex.Message; }
         finally { _loading = false; await InvokeAsync(StateHasChanged); }
     }
+    private async Task ApplySearchAsync() { _filter.Search = _searchDraft; _filter.Page = 1; _cts?.Cancel(); _cts = new CancellationTokenSource(); await LoadGridAsync(_cts.Token); }
+private async Task EditAsync(int id) {
+        _formLoading = true; _formError = null;
+        try {
+            var item = await AdminPort.GetForEditAsync(id, _cts?.Token ?? CancellationToken.None);
+            if (item is null) { _formError = "Record not found."; return; }
+            _model = item;
+        } finally { _formLoading = false; }
+    }
+    private async Task SaveAsync() {
+        _saving = true; _formError = null;
+        try {
+            var id = await AdminPort.SaveAsync(_model, _cts?.Token ?? CancellationToken.None);
+            await LoadGridAsync(_cts?.Token ?? CancellationToken.None);
+            await EditAsync(id);
+        } catch (Exception ex) { _formError = ex.Message; }
+        finally { _saving = false; }
+    }
+    private Task CancelFormAsync() { _formError = null; _model = new OrderEditDto { ProjectId = 1, DeliveryTypeId = 1, CreatedAt = DateTime.UtcNow.Date }; return Task.CompletedTask; }
 
-    private async Task RefreshAsync() { _cts?.Cancel(); _cts = new CancellationTokenSource(); await LoadAsync(_cts.Token); }
+    private bool ExportDisabled => _loading || _result is null || _result.Items.Count == 0;
 
-    public async ValueTask DisposeAsync() { if (_cts is not null) { await _cts.CancelAsync(); _cts.Dispose(); } }
+    private async Task ExportGridAsync(string format)
+    {
+        var request = BuildExportRequest();
+        if (request is not null)
+        {
+            await GridExport.ExportAsync(format, request);
+        }
+    }
+
+    private GridExportRequest? BuildExportRequest()
+    {
+        return GridExportBuilder.FromRows(
+            "orders",
+            "Order list",
+            new[] { "Id", "Order #", "Customer", "Payment", "Mollie id", "Accepted", "Created" },
+            _result?.Items.Select(item => (IReadOnlyList<string>)new[]
+            {
+                GridExportBuilder.Cell(item.Id),
+                GridExportBuilder.Cell(item.OrderNumber?.ToString() ?? "—"),
+                GridExportBuilder.Cell(item.CustomerName),
+                GridExportBuilder.Cell(item.PaymentStatus),
+                GridExportBuilder.Cell(item.MolliePaymentId ?? "—"),
+                GridExportBuilder.Cell(item.IsAccepted ? "Yes" : "No"),
+                GridExportBuilder.Cell(item.CreatedAt.ToString("yyyy-MM-dd"))
+            }));
+    }
+    public async ValueTask DisposeAsync() { _disposed = true; if (_cts is not null) { await _cts.CancelAsync(); _cts.Dispose(); } }
 }
+
+
+
+

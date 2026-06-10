@@ -1,7 +1,12 @@
 @page "/cart"
 @layout StoreLayout
 @using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Application.Ports.Outbound
+@using WebShopABMATIC.Application.Store.Checkout
 @inject StoreCartService CartService
+@inject ICheckoutPort CheckoutPort
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthStateProvider
 
@@ -39,39 +44,127 @@
             </div>
             <aside class="summary-card">
                 <h3>Order summary</h3>
-                <div class="summary-line"><span>Subtotal (@CartService.ItemCount items)</span><span>@FormatPrice(CartService.Subtotal)</span></div>
-                <div class="summary-line"><span>Delivery</span><span>Standard — @FormatPrice(CartService.DeliveryFee)</span></div>
-                <div class="discount-field">
-                    <input type="text" placeholder="Discount code" />
-                    <button type="button" class="btn btn-outline">Apply</button>
-                </div>
-                <div class="summary-line"><span>VAT 21%</span><span>@FormatPrice(CartService.VatAmount)</span></div>
-                <div class="summary-line total"><span>Total</span><span>@FormatPrice(CartService.Total)</span></div>
-                <div class="form-group" style="margin-top:1rem">
-                    <label>Delivery address</label>
-                    <select>
-                        <option>Warehouse — 120 Flower St, Austin TX</option>
-                        <option>Site — 500 Brazil Ave, Miami FL</option>
-                    </select>
-                </div>
-                <div class="form-group" style="margin-top:0.75rem">
-                    <label>Payment method</label>
-                    <select>
-                        <option>Bank transfer</option>
-                        <option>Invoice 30 days</option>
-                    </select>
-                </div>
-                <button type="button" class="btn btn-primary" @onclick="PlaceOrderAsync">Place order</button>
+                @if (_quote is not null)
+                {
+                    <div class="summary-line"><span>Subtotal (@CartService.ItemCount items)</span><span>@FormatPrice(_quote.Subtotal)</span></div>
+                    <div class="summary-line"><span>Delivery</span><span>Standard — @FormatPrice(_quote.DeliveryFee)</span></div>
+                    <div class="summary-line"><span>VAT 21%</span><span>@FormatPrice(_quote.VatAmount)</span></div>
+                    <div class="summary-line total"><span>Total</span><span>@FormatPrice(_quote.Total)</span></div>
+                }
+                else
+                {
+                    <div class="summary-line"><span>Subtotal (@CartService.ItemCount items)</span><span>@FormatPrice(CartService.Subtotal)</span></div>
+                    <div class="summary-line"><span>Delivery</span><span>Standard — @FormatPrice(CartService.DeliveryFee)</span></div>
+                    <div class="summary-line"><span>VAT 21%</span><span>@FormatPrice(CartService.VatAmount)</span></div>
+                    <div class="summary-line total"><span>Total</span><span>@FormatPrice(CartService.Total)</span></div>
+                }
+
+                @if (!string.IsNullOrEmpty(_checkoutError))
+                {
+                    <div class="alert alert-danger mt-2 mb-0 small">@_checkoutError</div>
+                }
+                @if (_quote?.Errors.Count > 0)
+                {
+                    <div class="alert alert-warning mt-2 mb-0 small">
+                        @foreach (var err in _quote.Errors)
+                        {
+                            <div>@err</div>
+                        }
+                    </div>
+                }
+
+                @if (_options is not null)
+                {
+                    <div class="form-group" style="margin-top:1rem">
+                        <label>Delivery address</label>
+                        <select class="form-control" @bind="_deliveryAddressId">
+                            @foreach (var addr in _options.DeliveryAddresses)
+                            {
+                                <option value="@addr.Id">@addr.Label</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-top:0.75rem">
+                        <label>Payment method</label>
+                        <select class="form-control" @bind="_paymentMethodId">
+                            @foreach (var pm in _options.PaymentMethods)
+                            {
+                                <option value="@pm.Id">@pm.Name</option>
+                            }
+                        </select>
+                    </div>
+                }
+
+                <button type="button" class="btn btn-primary" disabled="@_placing" @onclick="PlaceOrderAsync">
+                    @(_placing ? "Processing…" : "Place order")
+                </button>
             </aside>
         </div>
     }
 </div>
 
 @code {
-    protected override void OnInitialized() => CartService.Changed += () => InvokeAsync(StateHasChanged);
+    private CheckoutOptionsDto? _options;
+    private CheckoutQuoteDto? _quote;
+    private int _deliveryAddressId;
+    private int _paymentMethodId = 1;
+    private string? _checkoutError;
+    private bool _placing;
+    private string? _userEmail;
+    private string? _identityUserId;
+
+    protected override void OnInitialized() => CartService.Changed += OnCartChanged;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var auth = await AuthStateProvider.GetAuthenticationStateAsync();
+        _userEmail = auth.User.Identity?.Name;
+        _identityUserId = auth.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!string.IsNullOrEmpty(_userEmail))
+        {
+            _options = await CheckoutPort.GetOptionsAsync(UserLookup());
+            if (_options?.DeliveryAddresses.Count > 0)
+            {
+                _deliveryAddressId = _options.DeliveryAddresses[0].Id;
+            }
+            if (_options?.PaymentMethods.Count > 0)
+            {
+                _paymentMethodId = _options.PaymentMethods[0].Id;
+            }
+        }
+
+        await RefreshQuoteAsync();
+    }
+
+    private async void OnCartChanged()
+    {
+        await RefreshQuoteAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RefreshQuoteAsync()
+    {
+        if (string.IsNullOrEmpty(_userEmail) || CartService.Lines.Count == 0)
+        {
+            _quote = null;
+            return;
+        }
+
+        _quote = await CheckoutPort.BuildQuoteAsync(new CheckoutQuoteRequest
+        {
+            UserEmail = _userEmail,
+            IdentityUserId = _identityUserId,
+            Lines = CartService.Lines.Select(l => new CheckoutLineRequest
+            {
+                ProductId = l.ProductId,
+                Quantity = l.Quantity
+            }).ToList()
+        });
+    }
 
     private async Task PlaceOrderAsync()
     {
+        _checkoutError = null;
         var auth = await AuthStateProvider.GetAuthenticationStateAsync();
         if (auth.User.Identity?.IsAuthenticated != true)
         {
@@ -79,9 +172,61 @@
             return;
         }
 
-        CartService.Clear();
-        Navigation.NavigateTo("/orders");
+        var email = auth.User.Identity?.Name ?? "";
+        if (CartService.Lines.Count == 0)
+        {
+            return;
+        }
+
+        _placing = true;
+        try
+        {
+            var baseUrl = Navigation.BaseUri.TrimEnd('/');
+            var result = await CheckoutPort.PlaceOrderAsync(new CheckoutRequest
+            {
+                Lines = CartService.Lines.Select(l => new CheckoutLineRequest
+                {
+                    ProductId = l.ProductId,
+                    Quantity = l.Quantity
+                }).ToList(),
+                DeliveryAddressId = _deliveryAddressId,
+                PaymentMethodId = _paymentMethodId,
+                RedirectBaseUrl = baseUrl,
+                WebhookBaseUrl = baseUrl
+            }, new StoreUserLookup
+            {
+                Email = email,
+                IdentityUserId = auth.User.FindFirstValue(ClaimTypes.NameIdentifier)
+            });
+
+            if (!result.Success)
+            {
+                _checkoutError = string.Join(" ", result.Errors);
+                return;
+            }
+
+            CartService.Clear();
+
+            if (!string.IsNullOrEmpty(result.RedirectUrl))
+            {
+                Navigation.NavigateTo(result.RedirectUrl, forceLoad: true);
+            }
+            else if (!string.IsNullOrEmpty(result.ConfirmationUrl))
+            {
+                Navigation.NavigateTo(result.ConfirmationUrl, forceLoad: true);
+            }
+            else
+            {
+                Navigation.NavigateTo("/orders", forceLoad: true);
+            }
+        }
+        finally
+        {
+            _placing = false;
+        }
     }
 
-    private static string FormatPrice(decimal price) => $"${price:F2}";
+    private StoreUserLookup UserLookup() => new() { Email = _userEmail, IdentityUserId = _identityUserId };
+
+    private static string FormatPrice(decimal price) => $"€{price:F2}";
 }

@@ -1,0 +1,34 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using WebShopABMATIC.Application.Auth
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var auth = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = auth.User;
+        if (user.Identity?.IsAuthenticated != true)
+        {
+            return;
+        }
+
+        if (user.IsInRole(AppRoles.Customer))
+        {
+            return;
+        }
+
+        if (user.IsInRole(AppRoles.Admin) || user.IsInRole(AppRoles.Manager))
+        {
+            var path = Navigation.ToBaseRelativePath(Navigation.Uri).TrimEnd('/');
+            if (path.Equals("sign-in", StringComparison.OrdinalIgnoreCase)
+                || path.Equals("sign-up", StringComparison.OrdinalIgnoreCase)
+                || path.Equals("my-account", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            Navigation.NavigateTo("/admin", forceLoad: true);
+        }
+    }
+}
