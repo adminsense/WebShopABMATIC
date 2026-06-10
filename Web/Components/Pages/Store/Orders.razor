@@ -1,5 +1,12 @@
 @page "/orders"
 @layout StoreLayout
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Application.Ports.Outbound
+@using WebShopABMATIC.Application.Store.Orders
+@inject ICheckoutPort CheckoutPort
+@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>My orders</PageTitle>
 
@@ -8,19 +15,34 @@
 
     <AuthorizeView>
         <Authorized>
-            <div class="orders-list">
-                @foreach (var order in _orders)
-                {
-                    <article class="order-card">
-                        <div class="order-header">
-                            <span class="order-id">Order @order.OrderNumber · @order.Date.ToString("MM/dd/yyyy")</span>
-                            <span class="status @order.StatusClass">@order.Status</span>
-                        </div>
-                        <p class="order-items">@order.ItemsSummary</p>
-                        <p class="order-total">Total: @($"${order.Total:F2}")</p>
-                    </article>
-                }
-            </div>
+            @if (_loading)
+            {
+                <p style="color:var(--muted)">Loading…</p>
+            }
+            else if (_orders.Count == 0)
+            {
+                <p style="color:var(--muted)">You have no orders yet.</p>
+                <NavLink href="/" class="btn btn-primary">Browse catalog</NavLink>
+            }
+            else
+            {
+                <div class="orders-list">
+                    @foreach (var order in _orders)
+                    {
+                        <article class="order-card">
+                            <div class="order-header">
+                                <a href="@($"/orders/{order.OrderId}")" class="order-id">
+                                    Order @(order.OrderNumber ?? order.OrderId) · @order.CreatedAt.ToLocalTime().ToString("d")
+                                </a>
+                                <span class="status @order.StatusClass">@order.StatusLabel</span>
+                            </div>
+                            <p class="order-items">@order.ItemsSummary</p>
+                            <p class="order-total">Total: €@order.TotalInclVat.ToString("F2")</p>
+                            <NavLink href="@($"/orders/{order.OrderId}")" class="btn btn-secondary btn-sm">View details</NavLink>
+                        </article>
+                    }
+                </div>
+            }
         </Authorized>
         <NotAuthorized>
             <p style="color:var(--muted);margin-bottom:1rem">Sign in to view your order history.</p>
@@ -30,10 +52,21 @@
 </div>
 
 @code {
-    private static readonly StoreOrderSummary[] _orders =
-    [
-        new("1042", new DateOnly(2026, 5, 18), "Processing", "processing", "Hard drive 1 ×1, Hard drive 2 ×1", 143.97m),
-        new("1038", new DateOnly(2026, 5, 2), "Shipped", "shipped", "Hard drive 3 ×1", 81.58m),
-        new("1021", new DateOnly(2026, 4, 15), "Delivered", "delivered", "Hard drive 4 ×2, Hard drive 5 ×1", 242.37m)
-    ];
+    private IReadOnlyList<StoreOrderListItemDto> _orders = [];
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var auth = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (auth.User.Identity?.IsAuthenticated == true)
+        {
+            _orders = await CheckoutPort.GetCustomerOrdersAsync(new StoreUserLookup
+            {
+                Email = auth.User.Identity?.Name,
+                IdentityUserId = auth.User.FindFirstValue(ClaimTypes.NameIdentifier)
+            });
+        }
+
+        _loading = false;
+    }
 }

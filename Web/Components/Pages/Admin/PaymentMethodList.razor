@@ -1,0 +1,204 @@
+﻿@page "/admin/payment-methods"
+@layout AdminLayout
+@attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
+@using WebShopABMATIC.Application.Admin.PaymentMethods
+@using WebShopABMATIC.Application.Common
+@using WebShopABMATIC.Application.Auth
+@using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Web.Services
+@inject IPaymentMethodAdminPort AdminPort
+@inject IGridExportService GridExport
+@implements IAsyncDisposable
+
+<PageTitle>Payment method</PageTitle>
+
+<div class="entity-page">
+    <a class="btn btn-secondary btn-back mb-3" href="/admin/hub/settings" data-enhance-nav="false"><span class="oi oi-arrow-left"></span> Back to list</a>
+    <div class="entity-page-header page-header">
+        <h1 class="h3 mb-1"><i class="bi bi-credit-card text-primary"></i> Payment method</h1>
+        <p class="mb-0">PrePay and PostPay methods.</p>
+    </div>
+    <div class="card shadow-sm border entity-form-card admin-form-card">
+                <AdminEntityFormHeader ExportDisabled="@ExportDisabled" OnExport="ExportGridAsync">
+            <Title>@(_isEditing ? "Edit payment method" : "Create payment method")</Title>
+        </AdminEntityFormHeader>
+        <div class="card-body">
+            @if (_formLoading) { <p class="text-muted mb-0">Loadingâ€¦</p> }
+            else {
+                <EditForm Model="_model" OnValidSubmit="SaveAsync">
+                    <DataAnnotationsValidator />
+                    <div class="entity-form-fields"><div class="row g-2">
+                        <div class="col-md-4">
+                            <label class="form-label" for="f-nameen">NameEn *</label>
+                            <InputText id="f-nameen" class="form-control form-control-sm" @bind-Value="_model.NameEn" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="f-namenl">NameNl *</label>
+                            <InputText id="f-namenl" class="form-control form-control-sm" @bind-Value="_model.NameNl" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="f-namefr">NameFr *</label>
+                            <InputText id="f-namefr" class="form-control form-control-sm" @bind-Value="_model.NameFr" required />
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <div class="form-check mb-1">
+                                <InputCheckbox class="form-check-input" @bind-Value="_model.IsPrePay" id="f-isprepay" />
+                                <label class="form-check-label" for="f-isprepay">PrePay</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <div class="form-check mb-1">
+                                <InputCheckbox class="form-check-input" @bind-Value="_model.IsPostPay" id="f-ispostpay" />
+                                <label class="form-check-label" for="f-ispostpay">PostPay</label>
+                            </div>
+                        </div>
+                        <div class="col-12 d-flex gap-2 pt-1">
+                            <button type="submit" class="btn btn-primary" disabled="@_saving">@(_isEditing ? "Update" : "Create")</button>
+                            <button type="button" class="btn btn-secondary" @onclick="CancelFormAsync" disabled="@_saving"><i class="bi bi-x me-1"></i>Cancel</button>
+                        </div>
+                    </div></div>
+                </EditForm>
+                @if (!string.IsNullOrEmpty(_formError)) { <div class="alert alert-danger mt-3 mb-0">@_formError</div> }
+            }
+        </div>
+    </div>
+    <div class="card shadow-sm border entity-grid-card">
+        <div class="card-header bg-white entity-grid-toolbar">
+            <h2 class="h6 mb-0 fw-bold">Payment method list</h2>
+            <AdminGridSearch @bind-Value="_searchDraft" OnSearch="ApplySearchAsync" />
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="table-dark"><tr><th>Id</th>
+                        <th>NameEn</th>
+                        <th>IsPrePay</th>
+                    <th class="text-center">Actions</th></tr></thead>
+                <tbody>
+                    @if (_loading) { <tr><td colspan="4" class="text-center text-muted py-4">Loadingâ€¦</td></tr> }
+                    else if (!string.IsNullOrEmpty(_gridError)) { <tr><td colspan="4" class="text-center text-danger py-4">@_gridError</td></tr> }
+                    else if (_result is null || _result.Items.Count == 0) { <tr><td colspan="4" class="text-center text-muted py-4">No records found.</td></tr> }
+                    else { @foreach (var item in _result.Items) {
+                        <tr @key="item.Id" class="@(_model.Id == item.Id ? "table-active" : null)">
+                            <td>@item.Id</td>
+                                <td>@item.NameEn</td>
+                                <td>@(item.IsPrePay ? "Yes" : "No")</td>
+                            <td class="text-center"><div class="btn-group btn-group-sm">
+                                <a class="btn btn-sm btn-primary" href="@($"/admin/payment-methods?edit={item.Id}")" data-enhance-nav="false"><i class="bi bi-pencil"></i></a>
+                                        <button type="button" class="btn btn-sm btn-danger" @onclick="() => PromptDelete(item)" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                            </div></td>
+                        </tr> } }
+                </tbody>
+            </table>
+        </div>
+        @if (_result is not null && !_loading) { <div class="card-footer bg-white text-muted small py-2">@_result.TotalCount total Â· page @_result.Page</div> }
+    </div>
+</div>
+
+@if (_showDeleteConfirm && _itemToDelete is not null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0"><h5 class="modal-title">Confirm deletion</h5><button type="button" class="btn-close" @onclick="CancelDelete" disabled="@_deleting"></button></div>
+                <div class="modal-body"><p class="mb-0">Delete record <strong>#@_itemToDelete.Id</strong>?</p></div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelDelete" disabled="@_deleting">Cancel</button>
+                    <button type="button" class="btn btn-danger" @onclick="ConfirmDeleteAsync" disabled="@_deleting">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "edit")] public int? EditId { get; set; }
+    private CancellationTokenSource? _cts;
+    private PaymentMethodListFilter _filter = new();
+    private PaymentMethodEditDto _model = new PaymentMethodEditDto();
+    private string _searchDraft = string.Empty;
+    private bool _loading = true, _formLoading, _saving, _deleting, _showDeleteConfirm, _disposed, _initialized;
+    private string? _formError, _gridError;
+    private PagedResult<PaymentMethodDto>? _result;
+    private PaymentMethodDto? _itemToDelete;
+    private bool _isEditing => _model.Id > 0;
+
+    protected override async Task OnInitializedAsync() {
+        _cts = new CancellationTokenSource();
+        await LoadGridAsync(_cts.Token);
+        if (EditId is > 0) await EditAsync(EditId.Value);
+        _initialized = true;
+    }
+    protected override async Task OnParametersSetAsync() {
+        if (!_initialized || _disposed || EditId is not > 0 || _model.Id == EditId) return;
+        await EditAsync(EditId.Value);
+    }
+    private async Task LoadGridAsync(CancellationToken ct) {
+        _loading = true; _gridError = null;
+        try { _result = await AdminPort.GetPaymentMethodsAsync(_filter, ct); }
+        catch (OperationCanceledException) { return; }
+        catch (Exception ex) { _result = null; _gridError = ex.Message; }
+        finally { _loading = false; await InvokeAsync(StateHasChanged); }
+    }
+    private async Task ApplySearchAsync() { _filter.Search = _searchDraft; _filter.Page = 1; _cts?.Cancel(); _cts = new CancellationTokenSource(); await LoadGridAsync(_cts.Token); }
+private async Task EditAsync(int id) {
+        _formLoading = true; _formError = null;
+        try {
+            var item = await AdminPort.GetForEditAsync(id, _cts?.Token ?? CancellationToken.None);
+            if (item is null) { _formError = "Record not found."; return; }
+            _model = item;
+        } finally { _formLoading = false; }
+    }
+    private async Task SaveAsync() {
+        _saving = true; _formError = null;
+        try {
+            var id = await AdminPort.SaveAsync(_model, _cts?.Token ?? CancellationToken.None);
+            await LoadGridAsync(_cts?.Token ?? CancellationToken.None);
+            await EditAsync(id);
+        } catch (Exception ex) { _formError = ex.Message; }
+        finally { _saving = false; }
+    }
+    private Task CancelFormAsync() { _formError = null; _model = new PaymentMethodEditDto(); return Task.CompletedTask; }
+    private void PromptDelete(PaymentMethodDto item) { _itemToDelete = item; _showDeleteConfirm = true; }
+    private void CancelDelete() { _showDeleteConfirm = false; _itemToDelete = null; }
+    private async Task ConfirmDeleteAsync() {
+        if (_itemToDelete is null) return;
+        _deleting = true;
+        try {
+            if (!await AdminPort.DeleteAsync(_itemToDelete.Id, _cts?.Token ?? CancellationToken.None)) { _formError = "Record could not be deleted."; return; }
+            if (_model.Id == _itemToDelete.Id) await CancelFormAsync();
+            CancelDelete(); await LoadGridAsync(_cts?.Token ?? CancellationToken.None);
+        } finally { _deleting = false; }
+    }
+
+    private bool ExportDisabled => _loading || _result is null || _result.Items.Count == 0;
+
+    private async Task ExportGridAsync(string format)
+    {
+        var request = BuildExportRequest();
+        if (request is not null)
+        {
+            await GridExport.ExportAsync(format, request);
+        }
+    }
+
+    private GridExportRequest? BuildExportRequest()
+    {
+        return GridExportBuilder.FromRows(
+            "payment-methods",
+            "Payment method list",
+            new[] { "Id", "NameEn", "IsPrePay" },
+            _result?.Items.Select(item => (IReadOnlyList<string>)new[]
+            {
+                GridExportBuilder.Cell(item.Id),
+                GridExportBuilder.Cell(item.NameEn),
+                GridExportBuilder.Cell(item.IsPrePay ? "Yes" : "No")
+            }));
+    }
+    public async ValueTask DisposeAsync() { _disposed = true; if (_cts is not null) { await _cts.CancelAsync(); _cts.Dispose(); } }
+}
+
+
+
+
