@@ -17,9 +17,9 @@
 <PageTitle>Create account</PageTitle>
 
 <div class="auth-wrap">
-    <div class="auth-card">
+    <div class="auth-card" style="max-width:640px">
         <h1>Create account</h1>
-        <p>Register your company to place orders and track deliveries online.</p>
+        <p>Register as an individual customer to shop online. You will always have the <strong>Customer</strong> role; only an administrator can change that later.</p>
 
         <StatusMessage Message="@_errorMessage" />
 
@@ -42,8 +42,35 @@
                 <ValidationMessage For="() => _input.LastName" />
             </div>
             <div class="form-group">
-                <label for="signup-company">Company name</label>
-                <InputText id="signup-company" @bind-Value="_input.CompanyName" autocomplete="organization" />
+                <label for="signup-phone">Phone *</label>
+                <InputText id="signup-phone" @bind-Value="_input.Phone" autocomplete="tel" />
+                <ValidationMessage For="() => _input.Phone" />
+            </div>
+            <div class="form-group">
+                <label for="signup-street">Street *</label>
+                <InputText id="signup-street" @bind-Value="_input.Street" autocomplete="street-address" />
+                <ValidationMessage For="() => _input.Street" />
+            </div>
+            <div class="row g-2">
+                <div class="col-4 form-group">
+                    <label for="signup-number">House no. *</label>
+                    <InputText id="signup-number" @bind-Value="_input.HouseNumber" />
+                    <ValidationMessage For="() => _input.HouseNumber" />
+                </div>
+                <div class="col-4 form-group">
+                    <label for="signup-box">Box</label>
+                    <InputText id="signup-box" @bind-Value="_input.Box" />
+                </div>
+                <div class="col-4 form-group">
+                    <label for="signup-postal">Postal code *</label>
+                    <InputText id="signup-postal" @bind-Value="_input.PostalCode" autocomplete="postal-code" />
+                    <ValidationMessage For="() => _input.PostalCode" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="signup-city">City *</label>
+                <InputText id="signup-city" @bind-Value="_input.CityName" autocomplete="address-level2" />
+                <ValidationMessage For="() => _input.CityName" />
             </div>
             <div class="form-group">
                 <label for="signup-password">Password *</label>
@@ -99,7 +126,12 @@
                 Password = _input.Password,
                 FirstName = _input.FirstName,
                 LastName = _input.LastName,
-                CompanyName = _input.CompanyName
+                Phone = _input.Phone,
+                Street = _input.Street,
+                HouseNumber = _input.HouseNumber,
+                Box = _input.Box,
+                PostalCode = _input.PostalCode,
+                CityName = _input.CityName
             });
 
             if (!result.Succeeded)
@@ -135,8 +167,23 @@
         [Required, StringLength(100, MinimumLength = 1)]
         public string LastName { get; set; } = "";
 
-        [StringLength(200)]
-        public string? CompanyName { get; set; }
+        [Required, Phone]
+        public string Phone { get; set; } = "";
+
+        [Required, StringLength(200)]
+        public string Street { get; set; } = "";
+
+        [Required, StringLength(20)]
+        public string HouseNumber { get; set; } = "";
+
+        [StringLength(20)]
+        public string? Box { get; set; }
+
+        [Required, StringLength(20)]
+        public string PostalCode { get; set; } = "";
+
+        [Required, StringLength(100)]
+        public string CityName { get; set; } = "";
 
         [Required, StringLength(100, MinimumLength = 8)]
         [DataType(DataType.Password)]
