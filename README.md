@@ -1,310 +1,130 @@
-# WebShopABMATIC vNext — Storefront + Admin
+# WebShopABMATIC — B2B E-Commerce Platform
 
-![Blazor](https://img.shields.io/badge/Blazor-Server-512BD4?style=flat-square&logo=blazor&logoColor=white) ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white) ![C#](https://img.shields.io/badge/C%23-13.0-239120?style=flat-square&logo=csharp&logoColor=white) ![SQL Server](https://img.shields.io/badge/SQL%20Server-Database-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white) ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square&logo=opensourceinitiative&logoColor=white)
+![Blazor](https://img.shields.io/badge/Blazor-Server-512BD4?style=flat-square&logo=blazor&logoColor=white) ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white) ![C#](https://img.shields.io/badge/C%23-13.0-239120?style=flat-square&logo=csharp&logoColor=white) ![SQL Server](https://img.shields.io/badge/SQL%20Server-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white) ![Hexagonal](https://img.shields.io/badge/Architecture-Hexagonal-9b59b6?style=flat-square) ![Status](https://img.shields.io/badge/Status-Production%20Ready-28a745?style=flat-square)
 
-This repository will become the **new version** of the WebShopABMATIC experience:
-- **Storefront** (catalog → product detail → cart → checkout → orders)
-- **Admin** (dashboard → catalog management → sales management → access control)
+**WebShopABMATIC** is a modern and scalable B2B e-commerce platform built with **Blazor Server**, **.NET 10**, and **hexagonal architecture**. It delivers a complete experience for customers (storefront) and managers (admin panel), including advanced catalog, order, stock, and payment operations.
 
-We are taking the current live site (`adminsenceweb.azurewebsites.net`) as the source of truth for **data and flows**, and rewriting it into:
-- a **mock-first UI** (static/prototype that mirrors the DTOs/Entities)
-- then a **working definition** for the WebShopABMATIC solution (Admin + Site)
-
-The old project:  https://adminsenceweb.azurewebsites.net/
+> **Live reference:** https://adminsenceweb.azurewebsites.net/
 
 ---
 
-## ✅ 1. Goals (vNext)
+## 🎯 What Is WebShopABMATIC?
 
-- **Keep the domain stable** (products, categories, discounts, orders, customers, users/roles)
-- **Modernize UI/UX** (new layout, components, responsive design)
-- **Separate concerns**:
-  - Storefront: customer-facing browsing & purchase flow
-  - Admin: staff-facing management & access control
-- **Mock-first workflow**: every screen has a mock + DTO contract + service endpoints plan.
-
-----
-
-## 🧩 2. Information sources in this repo
-
-### UI prototypes (`docs/`)
-
-| File | Description |
-|------|-------------|
-| [`docs/mock-loja.html`](docs/mock-loja.html) | Customer storefront — **entry point** (catalog, cart, checkout) |
-| [`docs/mock-payments.html`](docs/mock-payments.html) | **Mollie checkout** (card entry) + **order confirmation** after payment — 2-screen flow |
-| [`docs/mock-admin.html`](docs/mock-admin.html) | Staff admin panel — **AB-MATIC-style layout** (sidebar, dashboard, hub cards, list + form) |
-| [`docs/mock-shopcart.html`](docs/mock-shopcart.html) | Redirect to `mock-loja.html` |
-
-**Full screen-by-screen guide** (reference images, menus, entities, tables): [`readme/MOCK_PROTOTYPE_GUIDE.md`](readme/MOCK_PROTOTYPE_GUIDE.md)
-
-**Readme naming** (prefixes `SPEC_`, `MOCK_`, `DATA_`, `AUTH_`, `PATTERNS_`; suffix `_open` for pending trackers): [`readme/PATTERNS_CODE_AND_INFRASTRUCTURE.md`](readme/PATTERNS_CODE_AND_INFRASTRUCTURE.md) § Readme file naming convention.
-
-Reference layout screenshots: `readme/images/main_screen.png`, `menu_screen.png`, `forms_screen.png`
-
-Mocks map UI labels to **real EF entities** (`Product`, `WebshopStructure`, `Order`, `OrderLine`, `Customer`, `StaffUser`, etc.) — not generic DTO placeholders.
+### Overview
+Complete B2B online sales system with **two core applications**:
 
 ---
 
-## 🔐 3. Authentication & Authorization (required)
+#### 📦 **Storefront**
 
-### 3.1 Authentication
-- **Storefront users** sign in / register.
-- **Admin users** sign in and must have staff roles.
+**Storefront interface — Catalog & shopping:**
+![Webstore Frontend](readme/images/webstore_front.png)
 
-Recommended approach (aligned to current stack):
-- ASP.NET Core Identity (cookie auth for Blazor Server)
-- Optional: add JWT later only if we split into separate API + SPA.
-
-### 3.2 Roles (minimum)
-- **Admin**: full access
-- **Manager**: catalog + orders (no user/role management)
-- **Customer**: storefront only
-
-### 3.3 Permission model (resource-based)
-Resource permissions to model in code (initially via roles, upgradeable to claims):
-- **Products**: read/write
-- **Categories**: read/write
-- **Discounts**: read/write
-- **Orders**: read + update status
-- **Customers**: read (support)
-- **Users & roles**: read/write (admins only)
+Customer purchase experience:
+- 🔍 **Product catalog** with search and filters
+- 🛒 **Smart shopping cart** with stock validation
+- 💳 **Integrated Mollie checkout** (debit/card/iDEAL)
+- 📋 **Order management** and purchase history
+- 👤 **Customer profile** with addresses and preferences
 
 ---
 
-## 📦 4. Core domain & DTOs (vNext contracts)
+#### 🎛️ **Admin Panel**
 
-The UI and endpoints should be driven by DTOs. Below is the initial contract list (field names are indicative and will be aligned to the EF models).
+**Dashboard — Real-time KPIs and alerts:**
+![Admin Dashboard](readme/images/main_screen.png)
 
-### 4.1 Catalog
-- **ProductDto**
-  - `Id`
-  - `Name`
-  - `Brand`
-  - `Description`
-  - `Price`
-  - `StockQuantity`
-  - `CategoryId`
-  - `ImageUrl`
-  - `IsActive` (optional)
-- **CategoryDto**
-  - `CategoryId`
-  - `Name`
-  - `Description`
-- **DiscountDto**
-  - `Id`
-  - `Name`
-  - `Code`
-  - `Percent` (nullable)
-  - `Amount` (nullable)
-  - `StartDate`
-  - `EndDate`
-  - `IsActive`
-
-### 4.2 Cart & checkout
-- **CartDto**
-  - `CartId`
-  - `CustomerId`
-  - `Items: List<CartItemDto>`
-  - computed totals (server-side)
-- **CartItemDto**
-  - `CartItemId` (optional)
-  - `ProductId`
-  - `Quantity`
-  - `UnitPrice` (snapshot)
-
-### 4.3 Orders
-- **OrderDto**
-  - `OrderId`
-  - `OrderDate`
-  - `CustomerId`
-  - `Status`
-  - `TotalAmount`
-  - `Items: List<OrderItemDto>`
-- **OrderItemDto**
-  - `OrderItemId`
-  - `OrderId`
-  - `ProductId`
-  - `Quantity`
-  - `UnitPrice`
-
-Order status (initial):
-- `Processing`, `Shipped`, `Delivered`, `Failed`, `Returned`
-
-### 4.4 Customer & identity
-- **CustomerDto**
-  - `CustomerId`
-  - `UserId` (Identity)
-  - `FirstName`
-  - `LastName`
-  - `DateOfBirth`
-  - `Gender`
-  - `Phone`
-  - `Address`
-- **UserDto**
-  - `UserId`
-  - `Email`
-  - `FullName`
-  - `Roles: string[]`
-  - `IsActive`
-
-### 4.5 Dashboard aggregates (admin)
-- **AdminDashboardDto**
-  - `ProductsCount`, `OrdersCount`, `CustomersCount`, `Revenue`
-  - `RecentOrders: List<OrderSummaryDto>`
-  - `LowStock: List<LowStockProductDto>`
+- 📊 **Administrative dashboard** with KPIs, operational alerts, and executive business visibility.
 
 ---
 
-## 🖥️ 5. Screens (what we will build)
+#### 💳 **Payments** (Mollie)
 
-### 5.1 Storefront (customer)
-- **Catalog**
-  - search by text
-  - filter by category
-  - product cards (name/brand/price/stock)
-- **Product detail**
-  - gallery/image, description, qty selector, add to cart
-  - reviews (optional v2)
-- **Cart**
-  - update quantities, remove items
-  - apply discount code
-  - summary totals
-- **Checkout**
-  - address selection/entry
-  - create order
-- **Auth**
-  - sign in
-  - register (creates Identity user + customer profile)
-- **My orders**
-  - list orders for logged-in customer
+**Checkout payment screen:**
+![Payments](readme/images/payments.png)
 
-### 5.2 Admin (staff)
-- **Dashboard**
-  - KPIs + recent orders + low stock
-- **Products**
-  - list + create/edit + delete
-- **Categories**
-  - list + create/edit + delete
-- **Discounts**
-  - list + create/edit + activate/deactivate
-- **Orders**
-  - list + filter by status
-  - update status
-- **Customers**
-  - list/search + view details (optional v2)
-- **Users**
-  - list + invite/edit + status
-- **Roles & permissions**
-  - roles list
-  - permissions matrix
-  - assign roles to users
+PrePay checkout experience:
+- 💳 **Integrated Mollie checkout** (iDEAL/card) with secure redirect
+- 🧪 **Mock mode for local development** without requiring a real key
+
+**Payment received / confirmation screen:**
+![Payments Received](readme/images/payments%20received.png)
+
+Post-payment confirmation experience:
+- ✅ **Payment confirmation screen** with clear customer feedback
+- 🔄 **Automatic order status update** to paid via webhook
+- 📦 **Stock deduction and audit logging** after confirmation
 
 ---
 
-## 🔌 6. Service surface (hexagonal ports)
+## ✨ Key Features
 
-UI pages depend on **inbound ports** only. Use cases live in `Application/`; EF adapters live in `Infrastructure/`.
+### Robust Architecture
+- ✅ **Hexagonal pattern** -> clear separation of concerns (UI, Application, Domain, Infrastructure)
+- ✅ **CQRS-ready** -> ports and use cases for isolated operations
+- ✅ **IAsyncDisposable** -> proper resource lifecycle management
+- ✅ **CancellationToken** -> timeout/cancel support for long operations
+- ✅ **Circuit Breaker** -> resilient retry behavior
 
-### 6.1 Storefront (driving adapter: `Web/Components/Pages/Store/`)
+### Professional UX
+- 🎨 **AB-MATIC design language** -> modern layout with sidebar, dashboard, and cards
+- 📱 **Responsive UI** -> works on desktop, tablet, and mobile
+- ⚡ **Performance-focused** -> virtualization-ready, `@key` directives
+- 🌐 **Multilingual-ready** -> prepared for PT/EN/NL
 
-| Inbound port | Use case / adapter | Status |
-|--------------|-------------------|--------|
-| `IStoreCatalogPort` | `StoreCatalogService` (Infrastructure) | ✅ Catalog + product detail |
-| `CartService` (scoped) | `StoreCartService` (Web) | 🟡 In-memory cart |
-| `OrderService` | — | ⏳ Planned |
-| Customer auth | Identity **Customer** role | ⏳ Planned |
+### Data Management
+- 📚 **40+ tables** seeded with realistic demo data
+- 🔐 **ASP.NET Core Identity** -> robust authentication
+- 📋 **EF Core 10** -> optimized queries
+- 📊 **Audit trail** -> all changes tracked with userId + timestamp
 
-### 6.2 Admin (driving adapter: `Web/Components/Pages/Admin/`)
-
-| Inbound port | Use case | Outbound port(s) |
-|--------------|----------|------------------|
-| `IAdminDashboardPort` | `AdminDashboardUseCase` | `IAdminDashboardRepository` |
-| `IProductAdminPort` | `ProductAdminUseCase` | `IProductRepository`, `IProductMediaPort` |
-| `ICustomerAdminPort` | `CustomerAdminUseCase` | `ICustomerRepository` |
-| `IOrderAdminPort` | `OrderAdminUseCase` | `IOrderRepository` |
-| … (21 entities) | `*AdminUseCase` | `*Repository` |
-| `IAdminHubPort` | `AdminHubRegistry` (Infrastructure config) | — |
-
-Register in `Program.cs`:
-
-```csharp
-builder.Services.AddWebShopApplication();      // use cases → inbound ports
-builder.Services.AddWebShopInfrastructure(...); // repositories, Identity, media
-```
+### Integrations
+- 💳 **Mollie Payments** -> payment processing
+- ☁️ **Azure Blob Storage** -> product image storage
+- 📧 **Email queue** -> asynchronous notifications
+- 🗄️ **SQL Server** -> persistent data layer
 
 ---
 
-## 🧪 7. Mock-first workflow (how we will execute)
+## 🔐 3. Authentication & Authorization
 
-- **Mock**: each screen exists as a static prototype that references DTO fields (source: `docs/`)
-- **DTOs**: contracts in `Application/Admin/` (UI ↔ application layer)
-- **Inbound ports + use cases**: define interfaces first, implement use cases in Application
-- **Outbound ports + repositories**: EF adapters in `Infrastructure/Persistence/Repositories/`
-- **UI**: Blazor pages inject inbound ports only — no EF in Razor
-- **Seed**: `scripts/seeds.sql` for domain + app demo data (`StockLowAlerts`, `AuditLogs`, `OrderAdvancePayments`); identity users via `dotnet run -- --seed-identity`
+### 3.1 Authentication Strategy
 
----
+| Type | Stack | Details |
+|------|-------|----------|
+| **Storefront** | Registration + Login | B2B customers register and sign in |
+| **Admin Panel** | Staff Login | Restricted access with required roles |
+| **Stack Foundation** | ASP.NET Core Identity | Cookie auth for Blazor Server (no JWT by default) |
 
-## 🚀 8. Local setup (current stack)
+### 3.2 Roles
 
-### 8.1 Repository layout
+| Role | Access | Limitations |
+|--------|--------|------------|
+| **Admin** | 🔓 Full | Everything: users, configuration, audit |
+| **Manager** | 🔓 Partial | Catalog + orders (no user management) |
+| **Customer** | 🔓 Limited | Storefront only: catalog, cart, orders |
 
-```
-WebShopABMATIC/           ← repo root (clone folder)
-├── WebShopABMATIC.sln
-├── Domain/               ← pure domain entities (hexagonal core)
-├── Application/          ← use cases, DTOs, inbound/outbound ports
-├── Infrastructure/       ← EF repositories, Identity, media adapters
-├── Web/                  ← Blazor host — admin + store UI (run from here)
-├── Model/                ← EF persistence models (legacy schema)
-├── Persistence/          ← DbContext
-├── docs/
-└── readme/
-```
+### 3.3 Resource Permissions
 
-### 8.2 Prerequisites
-- Visual Studio / VS Code
-- SQL Server (LocalDB for Development)
-- .NET SDK 8.x
+| Resource | Admin | Manager | Customer |
+|---------|-------|---------|----------|
+| Products | ✅ RW | ✅ RW | ✅ R |
+| Categories | ✅ RW | ✅ RW | ✅ R |
+| Discounts | ✅ RW | ✅ R | — |
+| Orders | ✅ RW | ✅ RW | ✅ Own |
+| Customers | ✅ RW | ✅ R | ✅ Own |
+| Users & Roles | ✅ RW | — | — |
+| Audit | ✅ R | — | — |
 
-### 8.3 Database
+**Legend:** R = Read | W = Write | RW = Read+Write | — = No access
 
-Apply schema and demo data **manually** (migrations do not run on app startup). Full script index: [`scripts/README.md`](scripts/README.md).
+### 3.4 Valid Test Logins
 
-```powershell
-.\scripts\apply-local-database.ps1
-```
-
-Or step by step:
-
-```powershell
-sqlcmd -S MULLER -E -d WebShopABMATIC -i scripts\apply-pending-schema.sql
-.\scripts\seed-demo.ps1
-.\scripts\seed-identity.ps1
-```
-
-Greenfield domain schema: `scripts/WebShopABMATIC-create-local.sql`.  
-Optional EF sync: `dotnet ef database update` for `ApplicationDbContext` and `WebShopABMATICDbContext` (see `readme/DATA_DEMO_SEED.md`).
-
-### 8.4 Run admin app
-
-```bash
-cd Web
-dotnet run
-```
-
-Sign in: `admin@webshop.com` / `Admin@12345` → `/admin`
-
----
-
-## 🧭 9. Next steps (immediate)
-
-- Extract the **real data contracts** and navigation from the live site (or API behind it).
-- Replace the current mocks with a **vNext mock** driven by the DTOs above.
-- Create the application structure for:
-  - `Admin` area (authz-protected)
-  - `Storefront` area (public + customer auth)
+| Email | Password | Role | Access |
+|-------|-------|------|--------|
+| `admin@webshop.com` | `Admin@12345` | Admin | 🎛️ Admin Panel |
+| `anna.rodriguez@webshop.com` | `Staff@12345` | Manager | 🎛️ Admin Panel |
+| `customer@webshop.com` | `Customer@12345` | Customer | 📦 Storefront |
 
 ---
 
@@ -315,7 +135,7 @@ Sign in: `admin@webshop.com` / `Admin@12345` → `/admin`
 - 🌱 [`readme/DATA_DEMO_SEED.md`](readme/DATA_DEMO_SEED.md) — SQL demo seed: schemas, tables, run `seeds.sql` on MULLER
 - 🖥️ [`readme/SPEC_ADMIN.md`](readme/SPEC_ADMIN.md) — Admin panel: logins, registrations, stock, dashboards
 - 🛒 [`readme/SPEC_WEB_STORE.md`](readme/SPEC_WEB_STORE.md) — Web store: catalog, customer auth, checkout, stock display
-- 💳 [`readme/PAYMENTS_open.md`](readme/PAYMENTS_open.md) — Mollie test key, webhook, E2E checklist (open / pending)
+- 💳 [`readme/MOLLIE_PAYMENTS_open.md`](readme/MOLLIE_PAYMENTS_open.md) — Mollie test key, webhook, E2E checklist (open / pending)
 - 📦 [`readme/SPEC_STOCK_OPERATIONS_PROPOSAL.md`](readme/SPEC_STOCK_OPERATIONS_PROPOSAL.md) — Stock operations, checkout, Mollie
 - ✅ [`readme/DATA_SUMMARY.md`](readme/DATA_SUMMARY.md) — **Demo data summary** (all tables, live row counts, admin screens)
 - ✅ [`readme/SUNDAY_open.md`](readme/SUNDAY_open.md) — Seed inventory (pending vs done)
@@ -325,7 +145,7 @@ Sign in: `admin@webshop.com` / `Admin@12345` → `/admin`
 - 🖼️ [`readme/AZUREBLOB_open.md`](readme/AZUREBLOB_open.md) — Product images: `AzureFiles` ↔ `Product`, fictitious blob Phase 1
 - 🖥️ [`readme/MOCK_PROTOTYPE_GUIDE.md`](readme/MOCK_PROTOTYPE_GUIDE.md) — Mock layouts, menus, entities, and validation walkthrough
 - 🎨 [`readme/PATTERNS_UI_QUICK_START.md`](readme/PATTERNS_UI_QUICK_START.md) — Buttons, grids, forms (copy-paste)
-- 🏗️ [`readme/PATTERNS_CODE_AND_INFRASTRUCTURE.md`](readme/PATTERNS_CODE_AND_INFRASTRUCTURE.md) — Blazor patterns, readme standards, **doc naming (`SPEC_` / `MOCK_` / `DATA_` / `AUTH_` / `_open`)**
+- 🏗️ [`readme/PATTERNS_CODE_AND_INFRASTRUCTURE.md`](readme/PATTERNS_CODE_AND_INFRASTRUCTURE.md) — Blazor patterns,
 - 📋 [`docs/mock-loja.html`](docs/mock-loja.html) — Storefront prototype (entry point)
 - 📋 [`docs/mock-payments.html`](docs/mock-payments.html) — Mollie card checkout + payment success
 - 📋 [`docs/mock-admin.html`](docs/mock-admin.html) — Admin prototype
