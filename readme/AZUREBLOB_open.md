@@ -20,7 +20,7 @@
 | Aspect | Status | Details |
 |--------|--------|---------|
 | **EF entities** | ✅ Complete | `AzureFile`, `AzureFileFolder` mapped |
-| **DB on MULLER** | ✅ Seeded | `AzureFileFolders` + `AzureFiles` via `seeds.sql` |
+| **DB on Azure SQL (`abmatic.database.windows.net`)** | ✅ Seeded | `AzureFileFolders` + `AzureFiles` via `seeds.sql` |
 | **Admin save** | ✅ Wired | `ProductAdminUseCase` + `IProductMediaPort` (local blob Phase 1) |
 | **Store catalog** | ✅ Done | `StoreCatalogService` via `IProductMediaPort`; static fallback if no row |
 | **Real Azure Blob** | ⏳ Phase 2 | Replace storage adapter only |

@@ -36,15 +36,13 @@ Inventory of seeded tables: [`readme/DATA_SUMMARY.md`](../readme/DATA_SUMMARY.md
 
 ---
 
-## Codegen / migration helpers
+## Codegen helpers
 
 | Script | Purpose |
 |--------|---------|
 | [`generate-from-sql.ps1`](generate-from-sql.ps1) | Regenerate English SQL + EF model from legacy SQL |
-| [`generate-admin-razor-pages.ps1`](generate-admin-razor-pages.ps1) | Admin Razor page codegen |
-| [`migrate-to-hexagonal.ps1`](migrate-to-hexagonal.ps1) | Hexagonal migration helper |
-| [`migrate-admin-hexagonal.ps1`](migrate-admin-hexagonal.ps1) | Admin hexagonal migration |
-| [`fix-admin-hexagonal.ps1`](fix-admin-hexagonal.ps1) | Admin hexagonal fixes |
+
+> **EF migrations** are never run by the app or by scripts — apply them manually with `dotnet ef database update`.
 
 ---
 

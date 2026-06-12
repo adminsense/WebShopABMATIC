@@ -12,8 +12,8 @@
 
 | Item | Value |
 |------|--------|
-| **Target database** | `WebShopABMATIC` |
-| **SQL Server instance** | `MULLER` (Windows authentication) |
+| **Target database** | `abmatic_test` |
+| **SQL Server instance** | `abmatic.database.windows.net` (Azure SQL, SQL authentication) |
 | **Seed script** | `scripts/seeds.sql` |
 | **Prerequisite** | EF schema applied (`InitialIdentity` + `InitialDomain` + `OrderAdvancePaymentMollieColumns` + `CustomerIdentityUserId` + `ApplicationUserCustomerId`) |
 | **Schemas with data** | `Crm`, `Customers`, `Accounting`, `Projects`, `Products`, **`Files`**, **`Settings`**, **`Emails`** (queues + demo messages) |
@@ -29,16 +29,16 @@ The application reads **`DefaultConnection`** (Identity) and **`connWebShopABMAT
 
 | File | Database |
 |------|----------|
-| `Web/appsettings.json` | `WebShopABMATIC` on `MULLER` |
-| `Web/appsettings.Development.json` | Same as above (Development overrides LocalDB) |
+| `Web/appsettings.json` | `abmatic_test` on `abmatic.database.windows.net` (Azure SQL) |
+| `Web/appsettings.Development.json` | Same as above |
 
-Example:
+Example (credentials not shown — see `appsettings.json` / User Secrets):
 
 ```text
-Server=MULLER;Database=WebShopABMATIC;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True
+Server=tcp:abmatic.database.windows.net,1433;Database=abmatic_test;User Id=<user>;Password=<password>;MultipleActiveResultSets=true;Encrypt=True;TrustServerCertificate=False;
 ```
 
-Both contexts use the **same database** in development so admin lists and Identity login share one server catalog.
+Both contexts use the **same database** so admin lists and Identity login share one server catalog.
 
 ---
 
@@ -46,10 +46,10 @@ Both contexts use the **same database** in development so admin lists and Identi
 
 `seeds.sql` only **INSERT**s demo rows. Tables must already exist.
 
-Apply migrations once against `WebShopABMATIC` on `MULLER`:
+Apply migrations once against `abmatic_test` on `abmatic.database.windows.net`:
 
 ```powershell
-sqlcmd -S MULLER -E -d WebShopABMATIC -i scripts\apply-pending-schema.sql
+sqlcmd -S abmatic.database.windows.net -d abmatic_test -U <user> -P <password> -i scripts\apply-pending-schema.sql
 ```
 
 Or the all-in-one script:
@@ -61,7 +61,7 @@ Or the all-in-one script:
 Alternative (EF CLI — keeps `__EFMigrationsHistory` in sync if you prefer):
 
 ```powershell
-$c = "Server=MULLER;Database=WebShopABMATIC;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True"
+$c = "Server=tcp:abmatic.database.windows.net,1433;Database=abmatic_test;User Id=<user>;Password=<password>;MultipleActiveResultSets=true;Encrypt=True;TrustServerCertificate=False;"
 
 dotnet ef database update `
   --project Infrastructure\WebShopABMATIC.Infrastructure.csproj `
@@ -89,7 +89,7 @@ CREATE DATABASE [WebShopABMATIC] COLLATE Latin1_General_CI_AS;
 From the repository root:
 
 ```powershell
-sqlcmd -S MULLER -E -d WebShopABMATIC -i "scripts\seeds.sql"
+sqlcmd -S abmatic.database.windows.net -d abmatic_test -U <user> -P <password> -i "scripts\seeds.sql"
 ```
 
 The script is **idempotent**: it deletes prior demo rows in dependency order, reseeds identities, then inserts fresh data. Safe to re-run before a demo.
@@ -263,10 +263,11 @@ Checkout resolves customer by **`IdentityUserId` first**, then falls back to `We
 | Symptom | Likely cause | Action |
 |---------|--------------|--------|
 | Invalid object name | Schema not migrated | Run EF `database update` (section 2) |
-| Cannot open database | DB missing on `MULLER` | `CREATE DATABASE [WebShopABMATIC]` |
-| App shows zeros | Wrong connection string | Confirm `appsettings.Development.json` → `MULLER` / `WebShopABMATIC` |
+| Cannot open database | DB missing on `abmatic.database.windows.net` | Create `abmatic_test` on the Azure SQL server |
+| App shows zeros | Wrong connection string | Confirm `appsettings.Development.json` → `abmatic.database.windows.net` / `abmatic_test` |
 | FK / duplicate key on re-run | Partial failed run | Re-run full `seeds.sql` (deletes demo tables first) |
-| SSMS shows old DB only | Wrong instance | Connect to **MULLER**, not `(localdb)` |
+| SSMS shows old DB only | Wrong instance | Connect to **abmatic.database.windows.net**, not a local instance |
+| Login failed / firewall error | Azure SQL firewall | Add your client IP in the Azure SQL server firewall rules |
 
 ---
 
@@ -283,7 +284,7 @@ The repository also references a **full legacy ABMATIC database export**: **`ABM
 
 ### Why not import locally
 
-Importing `ABMATIC.bacpac` into a **local SQL Server** instance (e.g. `MULLER`, LocalDB) is **not recommended** for day-to-day development:
+Importing `ABMATIC.bacpac` into a **local SQL Server** instance (e.g. LocalDB) is **not recommended** for day-to-day development:
 
 - The restored database consumes **substantial disk space** (often several times the `.bacpac` size).
 - Most developers only need **admin lists, dashboard KPIs, and storefront smoke tests** — covered by `seeds.sql` on the English `WebShopABMATIC` schema.

@@ -228,13 +228,13 @@ WebShopABMATIC/                 ← repo root (solution parent)
 ### 4.1 Database
 
 - **SQL Server** as the primary persistence.  
-  ✅ LocalDB in Development; SQL Server in Staging/Production config
+  ✅ Azure SQL `abmatic.database.windows.net` (database `abmatic_test`) in all environments
 
 - EF Core migrations committed to repo.  
   ✅ Identity: `Infrastructure/Identity/Migrations/InitialIdentity`
 
 - Domain DB: `WebShopABMATICDbContext` → connection `connWebShopABMATIC`  
-  ✅ Same server/database as Identity in dev; legacy schema from `scripts/WebShopABMATIC-create-local.sql`
+  ✅ Same server/database as Identity; legacy schema from `scripts/WebShopABMATIC-create-local.sql`
 
 ### 4.2 Migrations workflow
 
@@ -282,11 +282,11 @@ Seed strategy:
 ### 5.1 Environments
 
 - `Development`  
-  ✅ `appsettings.Development.json` → LocalDB `WebShopABMATIC_Dev`
+  ✅ `appsettings.Development.json` → Azure SQL `abmatic.database.windows.net` / `abmatic_test`
 - `Staging`  
-  ✅ `appsettings.Staging.json` (Azure SQL placeholders)
+  ✅ `appsettings.Staging.json` (Azure SQL `abmatic.database.windows.net`)
 - `Production`  
-  ✅ `appsettings.Production.json` (Azure SQL placeholders)
+  ✅ `appsettings.Production.json` (Azure SQL `abmatic.database.windows.net`)
 
 ### 5.2 Configuration sources
 
@@ -302,7 +302,7 @@ Seed strategy:
 ### 5.3 Secrets (do not commit)
 
 - DB connection string  
-  ✅ Placeholders only in repo; use User Secrets / env vars locally
+  ✅ Official server: Azure SQL `abmatic.database.windows.net`; credentials never in docs — prefer User Secrets / env vars
 - Identity secrets (if any custom)  
   ✅ Default Identity; no custom secrets in repo
 - External providers (if added later)  
@@ -445,7 +445,7 @@ dotnet run
 ### 9.2 Database hosting
 
 - Azure SQL Database  
-  ⏳ Connection string placeholders in Staging/Production appsettings
+  ✅ Official server `abmatic.database.windows.net` (database `abmatic_test`), referenced in all appsettings
 
 ### 9.3 Deployment model
 

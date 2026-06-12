@@ -1,8 +1,8 @@
 # 📊 Demo data summary — seeds + admin screens
 
-![Status](https://img.shields.io/badge/Status-Live%20on%20MULLER-28a745?style=flat-square) ![Script](https://img.shields.io/badge/Script-seeds.sql-0d47a1?style=flat-square) ![Tables](https://img.shields.io/badge/Seeded%20tables-40%2B-512BD4?style=flat-square) ![Database](https://img.shields.io/badge/Database-WebShopABMATIC-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white)
+![Status](https://img.shields.io/badge/Status-Live%20on%20Azure%20SQL-28a745?style=flat-square) ![Script](https://img.shields.io/badge/Script-seeds.sql-0d47a1?style=flat-square) ![Tables](https://img.shields.io/badge/Seeded%20tables-40%2B-512BD4?style=flat-square) ![Database](https://img.shields.io/badge/Database-abmatic__test-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white)
 
-> **Purpose:** Single merged view — every demo table, **live row count** on `MULLER`, related admin/store screen, and seed status.  
+> **Purpose:** Single merged view — every demo table, **live row count** on the Azure SQL server `abmatic.database.windows.net`, related admin/store screen, and seed status.  
 > **Refresh data:** `.\scripts\seed-demo.ps1` · **Full setup:** `.\scripts\apply-local-database.ps1` · **Login users:** `.\scripts\seed-identity.ps1`  
 > **Detail / pending work:** [SUNDAY_open.md](./SUNDAY_open.md) · [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) · [scripts/README.md](../scripts/README.md)
 
@@ -12,7 +12,7 @@
 
 | Item | Value |
 |------|--------|
-| **Target database** | `WebShopABMATIC` on SQL Server `MULLER` |
+| **Target database** | `abmatic_test` on Azure SQL `abmatic.database.windows.net` |
 | **Seed script** | [`scripts/seeds.sql`](../scripts/seeds.sql) — idempotent INSERTs |
 | **Identity users** | [`scripts/seed-identity.ps1`](../scripts/seed-identity.ps1) — not in SQL |
 | **Schemas with data** | `Crm`, `Customers`, `Accounting`, `Projects`, `Products`, `Files`, `Settings`, `Emails`, `dbo` (alerts + audit) |
