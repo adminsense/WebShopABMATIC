@@ -1,3 +1,4 @@
+using WebShopABMATIC.Application.Admin.AuditLogs;
 using WebShopABMATIC.Application.Admin.CustomerDeliveryAddresses;
 using WebShopABMATIC.Application.Admin.CustomerProductDiscounts;
 using WebShopABMATIC.Application.Admin.Customers;
@@ -17,9 +18,11 @@ using WebShopABMATIC.Application.Admin.Products;
 using WebShopABMATIC.Application.Admin.ProductStockLocations;
 using WebShopABMATIC.Application.Admin.StaffUsers;
 using WebShopABMATIC.Application.Admin.SystemUsers;
+using WebShopABMATIC.Application.Admin.UserAccounts;
 using WebShopABMATIC.Application.Admin.Stock;
 using WebShopABMATIC.Application.Admin.StockLocations;
 using WebShopABMATIC.Application.Admin.Suppliers;
+using WebShopABMATIC.Application.Stock;
 using WebShopABMATIC.Application.Admin.UserGroups;
 using WebShopABMATIC.Application.Admin.VatTypes;
 using WebShopABMATIC.Application.Admin.WebshopProductStructures;
@@ -34,6 +37,7 @@ namespace WebShopABMATIC.Application.Ports;
 public interface IAdminDashboardPort
 {
     Task<AdminDashboardDto> GetDashboardAsync(CancellationToken cancellationToken = default);
+    Task MarkStockAlertsReadAsync(CancellationToken cancellationToken = default);
 }
 
 public interface IAdminHubPort
@@ -211,6 +215,14 @@ public interface ISystemUserAdminPort
     Task<PasswordResetResult> ResetPasswordAsync(string userId, string? newPassword = null, CancellationToken cancellationToken = default);
 }
 
+public interface IApplicationUserAccountAdminPort
+{
+    Task<PagedResult<ApplicationUserAccountDto>> GetAccountsAsync(ApplicationUserAccountListFilter filter, CancellationToken cancellationToken = default);
+    Task<ApplicationUserAccountEditDto?> GetForEditAsync(string id, CancellationToken cancellationToken = default);
+    Task<ApplicationUserAccountSaveResult> SaveAsync(ApplicationUserAccountEditDto dto, CancellationToken cancellationToken = default);
+    Task<PasswordResetResult> ResetPasswordAsync(string userId, string? newPassword = null, CancellationToken cancellationToken = default);
+}
+
 public interface IUserGroupAdminPort
 {
     Task<PagedResult<UserGroupDto>> GetUserGroupsAsync(UserGroupListFilter filter, CancellationToken cancellationToken = default);
@@ -235,4 +247,17 @@ public interface IStockOverviewPort
 public interface IStockMovementAdminPort
 {
     Task<PagedResult<StockMovementDto>> GetMovementsAsync(StockMovementListFilter filter, CancellationToken cancellationToken = default);
+}
+
+public interface IStockAdjustmentPort
+{
+    Task<StockAdjustmentLookupsDto> GetLookupsAsync(CancellationToken cancellationToken = default);
+    Task<StockAdjustmentPreviewDto?> GetPreviewAsync(int productId, int stockLocationId, CancellationToken cancellationToken = default);
+    Task<StockApplyResult> ApplyAsync(StockAdjustmentRequest request, CancellationToken cancellationToken = default);
+}
+
+public interface IAuditLogAdminPort
+{
+    Task<PagedResult<AuditLogListItemDto>> GetAuditLogsAsync(AuditLogListFilter filter, CancellationToken cancellationToken = default);
+    Task<AuditLogDetailDto?> GetAuditLogDetailAsync(long id, CancellationToken cancellationToken = default);
 }
