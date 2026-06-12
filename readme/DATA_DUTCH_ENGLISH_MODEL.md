@@ -1,4 +1,4 @@
-﻿# ðŸ—‚ï¸ Dutch â†’ English Data Model Mapping
+# 🗂️ Dutch → English Data Model Mapping
 
 ![Status](https://img.shields.io/badge/Status-Complete-28a745?style=flat-square) ![Tables](https://img.shields.io/badge/Tables-139-0d47a1?style=flat-square) ![Schemas](https://img.shields.io/badge/Schemas-11-512BD4?style=flat-square) ![Coverage](https://img.shields.io/badge/Coverage-100%25-ff6f00?style=flat-square)
 
@@ -7,10 +7,10 @@
 
 ---
 
-## ðŸ“‹ Overview
+## 📋 Overview
 
 > [!NOTE]
-> All mappings are **generated from SQL** â€” not from the old LLBLGen code. The generator reads the backup schema and produces English DDL, EF entities, and DbContext configuration.
+> All mappings are **generated from SQL** — not from the old LLBLGen code. The generator reads the backup schema and produces English DDL, EF entities, and DbContext configuration.
 
 | Category | Source | Output |
 |----------|--------|--------|
@@ -30,57 +30,57 @@ dotnet build Persistence/WebShopABMATIC.Data.Persistence.csproj
 
 ---
 
-## ðŸ“ˆ Coverage Statistics
+## 📈 Coverage Statistics
 
 | Metric | Count | Status | Notes |
 |--------|-------|--------|-------|
-| **Tables in backup** | 146 | â„¹ï¸ Reference | Includes staging tables |
-| **Business tables migrated** | 139 | âœ… Complete | All mapped to English |
-| **Tables excluded** | 7 | âœ… Documented | Staging + legacy backups |
-| **English schemas** | 11 | âœ… Complete | NL â†’ EN rename |
-| **EF entities generated** | 139 | âœ… Complete | Build passes |
-| **TypedList read models** | ~60 | ðŸŸ¡ Pending | Not in SQL â€” recreate in Application |
+| **Tables in backup** | 146 | ℹ️ Reference | Includes staging tables |
+| **Business tables migrated** | 139 | ✅ Complete | All mapped to English |
+| **Tables excluded** | 7 | ✅ Documented | Staging + legacy backups |
+| **English schemas** | 11 | ✅ Complete | NL → EN rename |
+| **EF entities generated** | 139 | ✅ Complete | Build passes |
+| **TypedList read models** | ~60 | 🟡 Pending | Not in SQL — recreate in Application |
 
 ---
 
-## ðŸ“Š Schema Summary
+## 📊 Schema Summary
 
 | English schema | Dutch schema | Tables | Domain |
 |----------------|--------------|--------|--------|
-| ðŸ“ **Files** | `Bestanden` | 4 | Azure blobs, stored files |
-| ðŸ’° **Accounting** | `Boekhouding` | 6 | Invoices, VAT, Intrastat |
-| ðŸ¤ **Crm** | `Crm` | 28 | Calendar, tasks, suppliers |
-| ðŸ‘¤ **Customers** | `Klanten` | 4 | Customer master, contacts |
-| ðŸ“§ **Emails** | `Emails` | 3 | Messages, attachments |
-| âš™ï¸ **Settings** | `Instellingen` | 18 | Staff, document types, config |
-| ðŸ“ **Logging** | `Logging` | 2 | Errors, project activity |
-| ðŸ“¦ **Products** | `Products` | 38 | Catalog, pricing, stock |
-| ðŸ—ï¸ **Projects** | `Projecten` | 31 | Orders, projects, timesheets |
-| âœ… **Tasks** | `Taken` | 4 | Task definitions, dependencies |
-| ðŸ‘¥ **Users** | `Users` | 1 | Sick leave |
+| 📁 **Files** | `Bestanden` | 4 | Azure blobs, stored files |
+| 💰 **Accounting** | `Boekhouding` | 6 | Invoices, VAT, Intrastat |
+| 🤝 **Crm** | `Crm` | 28 | Calendar, tasks, suppliers |
+| 👤 **Customers** | `Klanten` | 4 | Customer master, contacts |
+| 📧 **Emails** | `Emails` | 3 | Messages, attachments |
+| ⚙️ **Settings** | `Instellingen` | 18 | Staff, document types, config |
+| 📝 **Logging** | `Logging` | 2 | Errors, project activity |
+| 📦 **Products** | `Products` | 38 | Catalog, pricing, stock |
+| 🏗️ **Projects** | `Projecten` | 31 | Orders, projects, timesheets |
+| ✅ **Tasks** | `Taken` | 4 | Task definitions, dependencies |
+| 👥 **Users** | `Users` | 1 | Sick leave |
 
 ---
 
-## âœ… Implementation Quality
+## ✅ Implementation Quality
 
 | Aspect | Status | Details |
 |--------|--------|---------|
-| **Schema mapping** | âœ… Complete | 11 schemas NL â†’ EN |
-| **Table mapping** | âœ… Complete | 139 / 139 business tables |
-| **Column mapping** | âœ… Complete | `$ColumnReplacements` in generator |
-| **FK normalization** | âœ… Complete | `KlantKlantId` â†’ `CustomerId`, etc. |
-| **Duplicate resolution** | âœ… Complete | e.g. `SupplierId` / `RelatedSupplierId` |
-| **Entity XML docs** | âœ… Complete | Legacy name in every entity summary |
-| **TypedLists** | ðŸŸ¡ Pending | ~60 query models to recreate |
+| **Schema mapping** | ✅ Complete | 11 schemas NL → EN |
+| **Table mapping** | ✅ Complete | 139 / 139 business tables |
+| **Column mapping** | ✅ Complete | `$ColumnReplacements` in generator |
+| **FK normalization** | ✅ Complete | `KlantKlantId` → `CustomerId`, etc. |
+| **Duplicate resolution** | ✅ Complete | e.g. `SupplierId` / `RelatedSupplierId` |
+| **Entity XML docs** | ✅ Complete | Legacy name in every entity summary |
+| **TypedLists** | 🟡 Pending | ~60 query models to recreate |
 
 ---
 
-## ðŸ”„ 1. Source of truth
+## 🔄 1. Source of truth
 
 | Artifact | Path | Role |
 |----------|------|------|
-| Legacy SQL | `Bkp_Db/ABMATIC-create-local.sql` | **Input** â€” Dutch schema from backup |
-| English SQL | `Bkp_Db/WebShopABMATIC-create-local.sql` | **Output** â€” vNext DDL |
+| Legacy SQL | `Bkp_Db/ABMATIC-create-local.sql` | **Input** — Dutch schema from backup |
+| English SQL | `Bkp_Db/WebShopABMATIC-create-local.sql` | **Output** — vNext DDL |
 | Generator | `scripts/generate-from-sql.ps1` | Parses SQL, applies mapping, codegen |
 | Entities | `Model/Entities/` | 139 EF POCOs (`WebShopABMATIC.Data`) |
 | DbContext | `Persistence/WebShopABMATICDbContext.cs` | EF Core entry point |
@@ -92,12 +92,12 @@ Each generated entity documents its mapping:
 
 ```csharp
 /// Entity for [Projects].[Orders] (legacy: [Projecten].[Bestelling]).
-public class Order { â€¦ }
+public class Order { … }
 ```
 
 ---
 
-## ðŸ—ºï¸ 2. Schema mapping
+## 🗺️ 2. Schema mapping
 
 | Dutch schema | English schema | Purpose |
 |--------------|----------------|---------|
@@ -117,7 +117,7 @@ Legacy `dbo.*` import/staging tables are **not** migrated.
 
 ---
 
-## ðŸ·ï¸ 3. Key domain renames
+## 🏷️ 3. Key domain renames
 
 | Dutch (legacy UI / DB) | English (vNext) | Entity | Notes |
 |------------------------|-------------------|--------|-------|
@@ -133,26 +133,26 @@ Legacy `dbo.*` import/staging tables are **not** migrated.
 
 ---
 
-## ðŸš« 4. Tables intentionally excluded
+## 🚫 4. Tables intentionally excluded
 
 | Dutch table | Reason | Status |
 |-------------|--------|--------|
-| `dbo.abm$` | Product import staging | âŒ Excluded |
-| `dbo.imp_Intrastat2` | Intrastat import staging | âŒ Excluded |
-| `dbo.impStockPlaatsen` | Stock location import | âŒ Excluded |
-| `dbo.instrastatimp` | Intrastat import | âŒ Excluded |
-| `dbo.instrastatproductenupdateimport` | Product update import | âŒ Excluded |
-| `Boekhouding.DocumentDetailold` | Legacy backup of document lines | âŒ Excluded |
-| `Products.stockreserveringbackup` | Stock reservation backup | âŒ Excluded |
+| `dbo.abm$` | Product import staging | ❌ Excluded |
+| `dbo.imp_Intrastat2` | Intrastat import staging | ❌ Excluded |
+| `dbo.impStockPlaatsen` | Stock location import | ❌ Excluded |
+| `dbo.instrastatimp` | Intrastat import | ❌ Excluded |
+| `dbo.instrastatproductenupdateimport` | Product update import | ❌ Excluded |
+| `Boekhouding.DocumentDetailold` | Legacy backup of document lines | ❌ Excluded |
+| `Products.stockreserveringbackup` | Stock reservation backup | ❌ Excluded |
 
 ---
 
-## ðŸ“‹ 5. Entity & table mapping (all 139 tables)
+## 📋 5. Entity & table mapping (all 139 tables)
 
 Grouped by English schema. SQL table names are plural; C# entity names are singular. Expand each section to see the full table list.
 
 <details open>
-<summary><strong>5.1 ðŸ“ Files (<code>Bestanden</code>) â€” 4 tables</strong></summary>
+<summary><strong>5.1 📁 Files (<code>Bestanden</code>) — 4 tables</strong></summary>
 
 | Dutch table | English table | Entity |
 |-------------|---------------|--------|
@@ -164,7 +164,7 @@ Grouped by English schema. SQL table names are plural; C# entity names are singu
 </details>
 
 <details>
-<summary><strong>5.2 ðŸ’° Accounting (<code>Boekhouding</code>) â€” 6 tables</strong></summary>
+<summary><strong>5.2 💰 Accounting (<code>Boekhouding</code>) — 6 tables</strong></summary>
 
 | Dutch table | English table | Entity |
 |-------------|---------------|--------|
@@ -178,7 +178,7 @@ Grouped by English schema. SQL table names are plural; C# entity names are singu
 </details>
 
 <details>
-<summary><strong>5.3 ðŸ¤ Crm â€” 28 tables</strong></summary>
+<summary><strong>5.3 🤝 Crm — 28 tables</strong></summary>
 
 | Dutch table | English table | Entity |
 |-------------|---------------|--------|
@@ -214,7 +214,7 @@ Grouped by English schema. SQL table names are plural; C# entity names are singu
 </details>
 
 <details>
-<summary><strong>5.4 ðŸ‘¤ Customers (<code>Klanten</code>) â€” 4 tables</strong></summary>
+<summary><strong>5.4 👤 Customers (<code>Klanten</code>) — 4 tables</strong></summary>
 
 | Dutch table | English table | Entity |
 |-------------|---------------|--------|
@@ -226,7 +226,7 @@ Grouped by English schema. SQL table names are plural; C# entity names are singu
 </details>
 
 <details>
-<summary><strong>5.5 ðŸ“§ Emails â€” 3 tables</strong></summary>
+<summary><strong>5.5 📧 Emails — 3 tables</strong></summary>
 
 | Dutch table | English table | Entity |
 |-------------|---------------|--------|
@@ -237,7 +237,7 @@ Grouped by English schema. SQL table names are plural; C# entity names are singu
 </details>
 
 <details>
-<summary><strong>5.6 âš™ï¸ Settings (<code>Instellingen</code>) â€” 18 tables</strong></summary>
+<summary><strong>5.6 ⚙️ Settings (<code>Instellingen</code>) — 18 tables</strong></summary>
 
 | Dutch table | English table | Entity |
 |-------------|---------------|--------|
@@ -263,7 +263,7 @@ Grouped by English schema. SQL table names are plural; C# entity names are singu
 </details>
 
 <details>
-<summary><strong>5.7 ðŸ“ Logging â€” 2 tables</strong></summary>
+<summary><strong>5.7 📝 Logging — 2 tables</strong></summary>
 
 | Dutch table | English table | Entity |
 |-------------|---------------|--------|
@@ -273,7 +273,7 @@ Grouped by English schema. SQL table names are plural; C# entity names are singu
 </details>
 
 <details>
-<summary><strong>5.8 ðŸ“¦ Products â€” 38 tables</strong></summary>
+<summary><strong>5.8 📦 Products — 38 tables</strong></summary>
 
 | Dutch table | English table | Entity |
 |-------------|---------------|--------|
@@ -319,7 +319,7 @@ Grouped by English schema. SQL table names are plural; C# entity names are singu
 </details>
 
 <details open>
-<summary><strong>5.9 ðŸ—ï¸ Projects (<code>Projecten</code>) â€” 31 tables</strong></summary>
+<summary><strong>5.9 🏗️ Projects (<code>Projecten</code>) — 31 tables</strong></summary>
 
 | Dutch table | English table | Entity |
 |-------------|---------------|--------|
@@ -358,7 +358,7 @@ Grouped by English schema. SQL table names are plural; C# entity names are singu
 </details>
 
 <details>
-<summary><strong>5.10 âœ… Tasks (<code>Taken</code>) â€” 4 tables</strong></summary>
+<summary><strong>5.10 ✅ Tasks (<code>Taken</code>) — 4 tables</strong></summary>
 
 | Dutch table | English table | Entity |
 |-------------|---------------|--------|
@@ -370,7 +370,7 @@ Grouped by English schema. SQL table names are plural; C# entity names are singu
 </details>
 
 <details>
-<summary><strong>5.11 ðŸ‘¥ Users â€” 1 table</strong></summary>
+<summary><strong>5.11 👥 Users — 1 table</strong></summary>
 
 | Dutch table | English table | Entity |
 |-------------|---------------|--------|
@@ -380,19 +380,19 @@ Grouped by English schema. SQL table names are plural; C# entity names are singu
 
 ---
 
-## ðŸ”¤ 6. Common column / property terms
+## 🔤 6. Common column / property terms
 
 | Dutch | English | Example |
 |-------|---------|---------|
-| `Naam` | `Name` | `KlantNaam` â†’ `CustomerName` |
+| `Naam` | `Name` | `KlantNaam` → `CustomerName` |
 | `Omschrijving` | `Description` | |
 | `Opmerking` | `Notes` | |
 | `Aantal` | `Quantity` | |
 | `PrijsPerEenheid` | `UnitPrice` | |
 | `StukPrijs` | `PieceUnitPrice` | When both exist on same table |
-| `Bestelling` / `Dossier` | `Order` | `DossierId` â†’ `OrderId` |
-| `Klant` (FK column) | `CustomerId` | `KlantKlantId` â†’ `CustomerId` |
-| `Leverancier` | `Supplier` | `SupplierSupplierId` â†’ `SupplierId` |
+| `Bestelling` / `Dossier` | `Order` | `DossierId` → `OrderId` |
+| `Klant` (FK column) | `CustomerId` | `KlantKlantId` → `CustomerId` |
+| `Leverancier` | `Supplier` | `SupplierSupplierId` → `SupplierId` |
 | `GemaaktOp` / `AangemaaktOp` | `CreatedAt` | |
 | `AangemaaktDoor` | `CreatedBy` | |
 | `AangepastOp` | `ModifiedAt` | |
@@ -406,15 +406,15 @@ Grouped by English schema. SQL table names are plural; C# entity names are singu
 
 | Pattern | Resolution | Example |
 |---------|------------|---------|
-| LLBLGen double FK | Canonical English name | `KlantKlantId` â†’ `CustomerId` |
-| Duplicate property | Fallback suffix | `SupplierId` â†’ `RelatedSupplierId` |
-| Price columns | Distinct names | `StukPrijs` â†’ `PieceUnitPrice` |
+| LLBLGen double FK | Canonical English name | `KlantKlantId` → `CustomerId` |
+| Duplicate property | Fallback suffix | `SupplierId` → `RelatedSupplierId` |
+| Price columns | Distinct names | `StukPrijs` → `PieceUnitPrice` |
 
 Column mappings live in `$ColumnReplacements` inside `scripts/generate-from-sql.ps1`.
 
 ---
 
-## ðŸ“Š 7. Read models (former TypedLists)
+## 📊 7. Read models (former TypedLists)
 
 | Aspect | Legacy | vNext plan |
 |--------|--------|------------|
@@ -425,15 +425,15 @@ Column mappings live in `$ColumnReplacements` inside `scripts/generate-from-sql.
 
 ---
 
-## ðŸ” 8. Legacy â†’ vNext identity
+## 🔐 8. Legacy → vNext identity
 
 | Legacy | vNext | Status |
 |--------|-------|--------|
-| `Instellingen.User` (`StaffUser`) | ASP.NET Core Identity (staff) | ðŸŸ¡ Planned |
-| `Klanten.Klant.LoginWebShopABMATIC` | Storefront customer auth | ðŸŸ¡ Planned |
-| `Klanten.Contact.ContactLogin` | Contact portal login | ðŸŸ¡ Evaluate per screen |
+| `Instellingen.User` (`StaffUser`) | ASP.NET Core Identity (staff) | 🟡 Planned |
+| `Klanten.Klant.LoginWebShopABMATIC` | Storefront customer auth | 🟡 Planned |
+| `Klanten.Contact.ContactLogin` | Contact portal login | 🟡 Evaluate per screen |
 
-Staff permissions today live as bit flags on `StaffUser` (`Admin`, `Bestellingen`, `Productie`, â€¦). vNext maps these to **roles/policies** (`Admin`, `Manager`, `Customer`).
+Staff permissions today live as bit flags on `StaffUser` (`Admin`, `Bestellingen`, `Productie`, …). vNext maps these to **roles/policies** (`Admin`, `Manager`, `Customer`).
 
 ---
 
@@ -470,8 +470,8 @@ WebShopABMATIC/              ← repo root
 |------|--------|------------------|
 | 1 | Restore legacy DB | `ABMATIC.bacpac` or `ABMATIC-create-local.sql` |
 | 2 | Create English DB | `sqlcmd -S localhost -E -i Bkp_Db/WebShopABMATIC-create-local.sql` |
-| 3 | ETL data | `INSERTâ€¦SELECT` using this mapping |
-| 4 | Point vNext | Connection string â†’ English `WebShopABMATIC` DB |
+| 3 | ETL data | `INSERT…SELECT` using this mapping |
+| 4 | Point vNext | Connection string → English `WebShopABMATIC` DB |
 | 5 | Future changes | EF Core migrations (baseline = generated SQL) |
 
 
