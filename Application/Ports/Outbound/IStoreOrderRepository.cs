@@ -1,4 +1,5 @@
 using WebShopABMATIC.Application.Store.Checkout;
+using WebShopABMATIC.Application.Store.Orders;
 
 namespace WebShopABMATIC.Application.Ports.Outbound;
 
@@ -19,6 +20,8 @@ public interface IStoreOrderRepository
     Task<IReadOnlyDictionary<int, string>> GetProductNamesAsync(IEnumerable<int> productIds, CancellationToken cancellationToken = default);
 
     Task UpdateAdvancePaymentMollieAsync(int orderId, string paymentId, string status, string checkoutUrl, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<StoreOrderListItemDto>> GetOrdersForCustomerAsync(int customerId, CancellationToken cancellationToken = default);
 }
 
 public sealed class StoreOrderCreateCommand

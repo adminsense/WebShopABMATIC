@@ -1,11 +1,17 @@
 @using Microsoft.AspNetCore.Identity
+@using WebShopABMATIC.Application.Admin.AuditLogs
+@using WebShopABMATIC.Application.Audit
 @using WebShopABMATIC.Application.Auth
+@using WebShopABMATIC.Application.Ports.Outbound
 @using WebShopABMATIC.Infrastructure.Identity
+@using WebShopABMATIC.Infrastructure.Audit
 @inject NavigationManager Navigation
 @inject StoreCartService Cart
 @inject AuthenticationStateProvider AuthStateProvider
 @inject UserManager<ApplicationUser> UserManager
 @inject SignInManager<ApplicationUser> SignInManager
+@inject IAuditService AuditService
+@inject IManualLogoutTracker LogoutTracker
 
 <header class="site-header">
     <div class="header-inner">
@@ -17,7 +23,11 @@
         <nav class="nav-actions">
             <NavLink href="/" class="nav-link" Match="NavLinkMatch.All">Catalog</NavLink>
             <NavLink href="/orders" class="nav-link">My orders</NavLink>
-            @if (_isStaff)
+            @if (_isCustomer)
+            {
+                <NavLink href="/my-account" class="nav-link">My account</NavLink>
+            }
+            @if (_isStaff && _isCustomer)
             {
                 <button type="button" class="btn-admin visible" title="Admin panel" @onclick="GoToAdminAsync">⚙ Admin Panel</button>
             }
@@ -44,6 +54,7 @@
     private string _search = "";
     private bool _isAuthenticated;
     private bool _isStaff;
+    private bool _isCustomer;
     private string _displayName = "";
 
     [Parameter] public EventCallback<string> OnSearch { get; set; }
@@ -62,6 +73,7 @@
         var user = auth.User;
         _isAuthenticated = user.Identity?.IsAuthenticated == true;
         _isStaff = user.IsInRole(AppRoles.Admin) || user.IsInRole(AppRoles.Manager);
+        _isCustomer = user.IsInRole(AppRoles.Customer);
 
         if (_isAuthenticated)
         {
@@ -74,6 +86,22 @@
 
     private async Task SignOutAsync()
     {
+        var auth = await AuthStateProvider.GetAuthenticationStateAsync();
+        var appUser = await UserManager.GetUserAsync(auth.User);
+        if (appUser is not null)
+        {
+            LogoutTracker.MarkManualLogout(appUser.Id);
+            await AuditService.LogAsync(new AuditLogWriteRequest
+            {
+                Action = AuditActions.Logout,
+                EntityName = "ApplicationUser",
+                EntityId = appUser.Id,
+                IdentityUserId = appUser.Id,
+                UserDisplayName = appUser.Email,
+                NewValues = System.Text.Json.JsonSerializer.Serialize(new { email = appUser.Email, reason = "StoreSignOut" })
+            });
+        }
+
         await SignInManager.SignOutAsync();
         Navigation.NavigateTo("/", forceLoad: true);
     }
