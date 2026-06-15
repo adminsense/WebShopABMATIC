@@ -37,6 +37,8 @@ dotnet build Persistence/WebShopABMATIC.Data.Persistence.csproj
 | **Tables in backup** | 146 | ℹ️ Reference | Includes staging tables |
 | **Business tables migrated** | 139 | ✅ Complete | All mapped to English |
 | **Tables excluded** | 7 | ✅ Documented | Staging + legacy backups |
+| **vNext-only tables** | 9 (+1 EF) | ✅ Documented | Identity, audit, alerts — no Dutch legacy |
+| **vNext column patches** | 2 tables | ✅ Documented | Mollie + Identity link on existing Dutch tables |
 | **English schemas** | 11 | ✅ Complete | NL → EN rename |
 | **EF entities generated** | 139 | ✅ Complete | Build passes |
 | **TypedList read models** | ~60 | 🟡 Pending | Not in SQL — recreate in Application |
@@ -144,6 +146,65 @@ Legacy `dbo.*` import/staging tables are **not** migrated.
 | `dbo.instrastatproductenupdateimport` | Product update import | ❌ Excluded |
 | `Boekhouding.DocumentDetailold` | Legacy backup of document lines | ❌ Excluded |
 | `Products.stockreserveringbackup` | Stock reservation backup | ❌ Excluded |
+
+---
+
+## ➕ 4.1 vNext-only additions (beyond the 139)
+
+The **139 business tables** exist in both the Dutch legacy database (`abmatic_test` on Azure) and the English vNext model (1:1 mapping in sections 5.1–5.11). The vNext application adds **extra objects** that never existed in ABMATIC — they are created on the **same Dutch database** via EF migrations (`dotnet ef database update`), without renaming legacy tables.
+
+### Summary
+
+| Category | Count | Schema | In Dutch DB today? |
+|----------|-------|--------|-------------------|
+| Legacy business (mapped) | 139 | NL schemas | ✅ Yes |
+| Legacy excluded (staging/backup) | 7 | `dbo`, etc. | ✅ Yes (ignored by vNext) |
+| **vNext new tables** | **9** | `dbo` | ❌ No — must be added |
+| **EF migration history** | **1** | `dbo` | ❌ No — created by EF |
+| **vNext new columns** | **5 cols on 2 tables** | existing NL tables | ❌ No — must be added |
+
+**Total objects the app expects on Azure:** 139 legacy + 9 new tables + 1 EF history table + 5 new columns.
+
+### New tables (no Dutch legacy equivalent)
+
+All live in **`dbo`**. English names are used in code and migrations; there is no Dutch rename.
+
+| # | Table | Purpose | EF migration / context |
+|---|-------|---------|----------------------|
+| 1 | `AspNetUsers` | Store + staff login users | `InitialIdentity` · `ApplicationDbContext` |
+| 2 | `AspNetRoles` | Roles (`Admin`, `Manager`, `Customer`) | `InitialIdentity` |
+| 3 | `AspNetUserRoles` | User ↔ role | `InitialIdentity` |
+| 4 | `AspNetUserClaims` | Per-user claims | `InitialIdentity` |
+| 5 | `AspNetUserLogins` | External logins (future) | `InitialIdentity` |
+| 6 | `AspNetUserTokens` | Password reset / 2FA tokens | `InitialIdentity` |
+| 7 | `AspNetRoleClaims` | Per-role claims | `InitialIdentity` |
+| 8 | `AuditLogs` | vNext audit trail (action, user, IP, old/new values) | `AuditLogs` · `ApplicationDbContext` |
+| 9 | `StockLowAlerts` | Low-stock notifications for admin | `StockLowAlerts` · `ApplicationDbContext` |
+| — | `__EFMigrationsHistory` | EF migration tracking (automatic) | Both contexts |
+
+> [!NOTE]
+> `AspNetUsers` includes **`CustomerId`** (int, nullable) — reverse link from Identity user to domain customer. Added by migration `ApplicationUserCustomerId`.
+
+### New columns on existing Dutch tables
+
+These columns are added to **legacy Dutch tables** (not new tables). English property names in C#; physical column names below are what EF migrations apply when targeting the Dutch database.
+
+| Dutch table (Azure) | English entity / table | New column(s) | Purpose |
+|---------------------|------------------------|---------------|---------|
+| `Projecten.DossierVoorschot` | `OrderAdvancePayment` / `Projects.OrderAdvancePayments` | `MollieCheckoutUrl`, `MolliePaidAt`, `MolliePaymentId`, `MolliePaymentStatus` | Mollie advance payment tracking |
+| `Klanten.Klant` | `Customer` / `Customers.Customers` | `IdentityUserId` (nvarchar 450, unique filtered index) | Link storefront customer to `AspNetUsers` |
+
+**Migrations:** `OrderAdvancePaymentMollieColumns`, `CustomerIdentityUserId`, `ApplicationUserCustomerId` (see `scripts/apply-pending-schema.sql` for idempotent SQL equivalent).
+
+### Azure deployment model (current)
+
+| Aspect | Value |
+|--------|--------|
+| **Server** | `abmatic.database.windows.net` |
+| **Database** | `abmatic_test` |
+| **Legacy data** | 146 tables (139 business + 7 excluded) — Dutch names, unchanged |
+| **vNext step** | Apply pending EF migrations → adds 9 tables + 5 columns + Identity seed |
+| **Code mapping** | EF entities stay English; `ModelBuilder` will map to Dutch table/column names |
 
 ---
 
@@ -378,6 +439,28 @@ Grouped by English schema. SQL table names are plural; C# entity names are singu
 
 </details>
 
+<details>
+<summary><strong>5.12 🆕 vNext-only (<code>dbo</code>) — 9 tables + EF history</strong></summary>
+
+No Dutch legacy source. Created only by vNext EF migrations on the shared Azure database.
+
+| Dutch table | English table | Entity / type | Notes |
+|-------------|---------------|---------------|-------|
+| — | `AspNetUsers` | `ApplicationUser` | Identity; includes `CustomerId` |
+| — | `AspNetRoles` | `IdentityRole` | |
+| — | `AspNetUserRoles` | `IdentityUserRole` | |
+| — | `AspNetUserClaims` | `IdentityUserClaim` | |
+| — | `AspNetUserLogins` | `IdentityUserLogin` | |
+| — | `AspNetUserTokens` | `IdentityUserToken` | |
+| — | `AspNetRoleClaims` | `IdentityRoleClaim` | |
+| — | `AuditLogs` | `AuditLog` | Application audit |
+| — | `StockLowAlerts` | `StockLowAlert` | Low-stock alerts |
+| — | `__EFMigrationsHistory` | — | EF Core (not an entity) |
+
+**Column patches on legacy tables** (see §4.1): `Projecten.DossierVoorschot` (+4 Mollie cols), `Klanten.Klant` (+`IdentityUserId`).
+
+</details>
+
 ---
 
 ## 🔤 6. Common column / property terms
@@ -429,11 +512,13 @@ Column mappings live in `$ColumnReplacements` inside `scripts/generate-from-sql.
 
 | Legacy | vNext | Status |
 |--------|-------|--------|
-| `Instellingen.User` (`StaffUser`) | ASP.NET Core Identity (staff) | 🟡 Planned |
-| `Klanten.Klant.LoginWebShopABMATIC` | Storefront customer auth | 🟡 Planned |
+| `Instellingen.User` (`StaffUser`) | ASP.NET Core Identity (`dbo.AspNetUsers`) | ✅ Tables defined — apply migrations + seed |
+| `Klanten.Klant.LoginWebShopABMATIC` | Storefront customer auth via `AspNetUsers` + `Klanten.Klant.IdentityUserId` | 🟡 Column + seed pending on Azure |
 | `Klanten.Contact.ContactLogin` | Contact portal login | 🟡 Evaluate per screen |
 
 Staff permissions today live as bit flags on `StaffUser` (`Admin`, `Bestellingen`, `Productie`, …). vNext maps these to **roles/policies** (`Admin`, `Manager`, `Customer`).
+
+**vNext-only Identity tables:** see §4.1 and §5.12 (`AspNetUsers` … `AspNetRoleClaims`).
 
 ---
 
@@ -468,11 +553,12 @@ WebShopABMATIC/              ← repo root
 
 | Step | Action | Command / artifact |
 |------|--------|------------------|
-| 1 | Restore legacy DB | `ABMATIC.bacpac` or `ABMATIC-create-local.sql` |
-| 2 | Create English DB | `sqlcmd -S localhost -E -i Bkp_Db/WebShopABMATIC-create-local.sql` |
-| 3 | ETL data | `INSERT…SELECT` using this mapping |
-| 4 | Point vNext | Connection string → English `WebShopABMATIC` DB |
-| 5 | Future changes | EF Core migrations (baseline = generated SQL) |
+| 1 | Legacy DB on Azure | `abmatic_test` on `abmatic.database.windows.net` (Dutch, 139 business tables) |
+| 2 | Add vNext objects | `dotnet ef database update` (Identity + domain contexts) — adds §4.1 tables/columns |
+| 3 | Seed Identity users | `dotnet run --project Web -- --seed-identity` or `scripts/seed-identity.ps1` |
+| 4 | Map EF to Dutch names | `WebShopABMATICModelBuilder` → Dutch schema/table/column names |
+| 5 | Optional ETL | `INSERT…SELECT` Dutch → English only if a separate English DB is needed later |
+| 6 | Future changes | EF Core migrations only (never at app startup) |
 
 
 ## Documentation
