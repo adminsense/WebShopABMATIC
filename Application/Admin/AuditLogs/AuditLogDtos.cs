@@ -1,3 +1,5 @@
+using WebShopABMATIC.Application.Common;
+
 namespace WebShopABMATIC.Application.Admin.AuditLogs;
 
 using WebShopABMATIC.Application.Audit;
@@ -46,7 +48,7 @@ public sealed class AuditLogListFilter
     public bool? SuccessOnly { get; set; }
     public bool? FailuresOnly { get; set; }
     public int Page { get; set; } = 1;
-    public int PageSize { get; set; } = 50;
+    public int PageSize { get; set; } = AdminGridDefaults.PageSize;
 }
 
 public sealed class AuditLogWriteRequest

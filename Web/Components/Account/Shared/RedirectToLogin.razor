@@ -3,10 +3,17 @@
 @code {
     protected override void OnInitialized()
     {
-        var relative = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        var relative = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).TrimEnd('/');
+        if (relative.StartsWith("admin/login", StringComparison.OrdinalIgnoreCase)
+            || relative.StartsWith("sign-in", StringComparison.OrdinalIgnoreCase)
+            || relative.StartsWith("sign-up", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
         var isAdmin = relative.StartsWith("admin", StringComparison.OrdinalIgnoreCase);
         var loginPath = isAdmin ? "admin/login" : "sign-in";
-        var returnUrl = Uri.EscapeDataString(NavigationManager.Uri);
+        var returnUrl = Uri.EscapeDataString(NavigationManager.ToBaseRelativePath(NavigationManager.Uri));
         NavigationManager.NavigateTo($"{loginPath}?returnUrl={returnUrl}", forceLoad: true);
     }
 }
