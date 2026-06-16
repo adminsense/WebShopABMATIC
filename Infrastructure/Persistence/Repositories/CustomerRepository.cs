@@ -3,6 +3,7 @@ using WebShopABMATIC.Application.Admin.Customers;
 using WebShopABMATIC.Application.Auth;
 using WebShopABMATIC.Application.Common;
 using WebShopABMATIC.Application.Ports.Outbound;
+using WebShopABMATIC.Infrastructure.Auth;
 using WebShopABMATIC.Infrastructure.Persistence;
 using WebShopABMATIC.Data.Entities;
 using WebShopABMATIC.Data.Persistence;
@@ -12,16 +13,13 @@ namespace WebShopABMATIC.Infrastructure.Persistence.Repositories;
 public sealed class CustomerRepository : ICustomerRepository
 {
     private readonly WebShopABMATICDbContext _db;
-    private readonly IIdentityPasswordPort _passwordPort;
     private readonly ICurrentUserContext _currentUser;
 
     public CustomerRepository(
         WebShopABMATICDbContext db,
-        IIdentityPasswordPort passwordPort,
         ICurrentUserContext currentUser)
     {
         _db = db;
-        _passwordPort = passwordPort;
         _currentUser = currentUser;
     }
 
@@ -135,12 +133,8 @@ public sealed class CustomerRepository : ICustomerRepository
 
     public async Task<PasswordResetResult> ResetWebshopPasswordAsync(int customerId, string? newPassword = null, CancellationToken cancellationToken = default)
     {
-        var identityUserId = await _db.Customers.AsNoTracking()
-            .Where(c => c.CustomerId == customerId)
-            .Select(c => c.IdentityUserId)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (string.IsNullOrWhiteSpace(identityUserId))
+        var customer = await _db.Customers.FirstOrDefaultAsync(c => c.CustomerId == customerId, cancellationToken);
+        if (customer is null || string.IsNullOrWhiteSpace(customer.WebshopLogin))
         {
             return new PasswordResetResult
             {
@@ -149,6 +143,19 @@ public sealed class CustomerRepository : ICustomerRepository
             };
         }
 
-        return await _passwordPort.ResetPasswordAsync(identityUserId, newPassword, cancellationToken);
+        var password = string.IsNullOrWhiteSpace(newPassword)
+            ? LegacyPasswordGenerator.GenerateTemporaryPassword()
+            : newPassword;
+
+        var (hash, salt) = LegacyWebshopPasswordVerifier.CreateHash(password);
+        customer.WebshopPasswordHash = hash;
+        customer.WebshopPasswordSalt = salt;
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return new PasswordResetResult
+        {
+            Succeeded = true,
+            TemporaryPassword = string.IsNullOrWhiteSpace(newPassword) ? password : null
+        };
     }
 }

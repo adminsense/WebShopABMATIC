@@ -60,20 +60,31 @@
       border: 1px solid var(--border);
       border-radius: 999px;
       font: inherit;
-      background: var(--bg);
+      background: var(--surface);
+      color: var(--text);
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    .search-bar input::-webkit-search-decoration,
+    .search-bar input::-webkit-search-cancel-button {
+      -webkit-appearance: none;
+      display: none;
     }
     .search-bar input:focus {
       outline: 2px solid var(--accent);
       outline-offset: 0;
       border-color: transparent;
     }
-    .search-bar::before {
-      content: 'âŒ•';
+    .search-bar .search-icon {
       position: absolute;
       left: 0.9rem;
       top: 50%;
       transform: translateY(-50%);
       color: var(--muted);
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      line-height: 0;
     }
     .nav-actions {
       display: flex;
@@ -81,6 +92,38 @@
       gap: 0.35rem;
       margin-left: auto;
       flex-wrap: wrap;
+    }
+    .nav-btn {
+      padding: 0.45rem 0.85rem;
+      border: 1px solid var(--border);
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: var(--radius);
+      font: inherit;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      white-space: nowrap;
+      box-shadow: 0 1px 2px rgba(59, 130, 246, .1);
+      transition: background .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease;
+    }
+    .nav-btn:hover {
+      background: #dbeafe;
+      color: var(--accent-hover);
+      border-color: #bfdbfe;
+    }
+    .nav-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 2px 6px rgba(37, 99, 235, .25);
+    }
+    .nav-btn-text {
+      font: inherit;
     }
     .nav-link {
       padding: 0.45rem 0.75rem;
@@ -95,42 +138,11 @@
     }
     .nav-link:hover, .nav-link.active { color: var(--text); background: var(--bg); }
     .btn-admin {
-      padding: 0.45rem 0.85rem;
-      background: var(--admin-soft);
-      color: var(--admin);
-      border: 1px solid #bfdbfe;
-      border-radius: var(--radius);
-      font: inherit;
-      font-weight: 600;
-      font-size: 0.85rem;
-      cursor: pointer;
-      text-decoration: none;
       display: none;
-      align-items: center;
-      gap: 0.35rem;
-      white-space: nowrap;
     }
-    .btn-admin.visible { display: inline-flex; }
-    .btn-admin:hover { background: #dbeafe; }
-    .btn-cart {
-      position: relative;
-      padding: 0.5rem 1rem;
+    .cart-badge {
       background: var(--accent);
       color: #fff;
-      border: none;
-      border-radius: var(--radius);
-      font: inherit;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      font-size: 0.9rem;
-    }
-    .btn-cart:hover { background: var(--accent-hover); }
-    .cart-badge {
-      background: #fff;
-      color: var(--accent);
       font-size: 0.7rem;
       min-width: 1.25rem;
       height: 1.25rem;
@@ -138,13 +150,16 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      font-weight: 700;
+    }
+    .nav-btn.active .cart-badge {
+      background: #fff;
+      color: var(--accent);
     }
     .user-menu {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      padding-left: 0.5rem;
-      border-left: 1px solid var(--border);
+      gap: 0.35rem;
     }
     .user-display-name {
       font-size: 0.875rem;
