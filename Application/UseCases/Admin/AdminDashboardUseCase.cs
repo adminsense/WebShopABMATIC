@@ -1,4 +1,5 @@
 using WebShopABMATIC.Application.Admin.Dashboard;
+using WebShopABMATIC.Application.Admin.Stock;
 using WebShopABMATIC.Application.Ports;
 using WebShopABMATIC.Application.Ports.Outbound;
 
@@ -23,9 +24,21 @@ public sealed class AdminDashboardUseCase : IAdminDashboardPort
     public async Task<AdminDashboardDto> GetDashboardAsync(CancellationToken cancellationToken = default)
     {
         var core = await _repository.GetDashboardAsync(cancellationToken);
-        var lowStockProducts = await _lowStock.GetLowStockProductsAsync(25, cancellationToken);
-        var unreadAlerts = await _alerts.GetUnreadAlertsAsync(10, cancellationToken);
-        var unreadCount = await _alerts.GetUnreadCountAsync(cancellationToken);
+
+        IReadOnlyList<LowStockProductDto> lowStockProducts = [];
+        IReadOnlyList<StockLowAlertDto> unreadAlerts = [];
+        var unreadCount = 0;
+
+        try
+        {
+            lowStockProducts = await _lowStock.GetLowStockProductsAsync(25, cancellationToken);
+            unreadAlerts = await _alerts.GetUnreadAlertsAsync(10, cancellationToken);
+            unreadCount = await _alerts.GetUnreadCountAsync(cancellationToken);
+        }
+        catch
+        {
+            // Dashboard core metrics still load when optional widgets fail.
+        }
 
         return new AdminDashboardDto
         {
