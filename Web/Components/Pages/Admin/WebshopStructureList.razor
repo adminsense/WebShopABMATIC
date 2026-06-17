@@ -1,4 +1,4 @@
-﻿@page "/admin/webshop-structures"
+@page "/admin/webshop-structures"
 @layout AdminLayout
 @attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
 @using WebShopABMATIC.Application.Admin.WebshopStructures
@@ -23,7 +23,7 @@
             <Title>@(_isEditing ? "Edit webshop structure" : "Create webshop structure")</Title>
         </AdminEntityFormHeader>
         <div class="card-body">
-            @if (_formLoading) { <p class="text-muted mb-0">Loadingâ€¦</p> }
+            @if (_formLoading) { <p class="text-muted mb-0">Loading…</p> }
             else {
                 <EditForm Model="_model" OnValidSubmit="SaveAsync">
                     <DataAnnotationsValidator />
@@ -62,7 +62,7 @@
                         <th>SortOrder</th>
                     <th class="text-center">Actions</th></tr></thead>
                 <tbody>
-                    @if (_loading) { <tr><td colspan="4" class="text-center text-muted py-4">Loadingâ€¦</td></tr> }
+                    @if (_loading) { <tr><td colspan="4" class="text-center text-muted py-4">Loading…</td></tr> }
                     else if (!string.IsNullOrEmpty(_gridError)) { <tr><td colspan="4" class="text-center text-danger py-4">@_gridError</td></tr> }
                     else if (_result is null || _result.Items.Count == 0) { <tr><td colspan="4" class="text-center text-muted py-4">No records found.</td></tr> }
                     else { @foreach (var item in _result.Items) {
@@ -80,7 +80,7 @@
                 </tbody>
             </table>
         </div>
-        @if (_result is not null && !_loading) { <div class="card-footer bg-white text-muted small py-2">@_result.TotalCount total Â· page @_result.Page</div> }
+        <AdminGridPagination TotalCount="@(_result?.TotalCount ?? 0)" Page="@(_filter.Page)" PageSize="@(_filter.PageSize)" Loading="@_loading" OnPageChanged="ChangePageAsync" />
     </div>
 </div>
 
@@ -183,6 +183,14 @@ private async Task EditAsync(int id) {
                 GridExportBuilder.Cell(item.NameNl),
                 GridExportBuilder.Cell(item.SortOrder)
             }));
+    }
+    private async Task ChangePageAsync(int page)
+    {
+        if (page < 1) return;
+        _filter.Page = page;
+        _cts?.Cancel();
+        _cts = new CancellationTokenSource();
+        await LoadGridAsync(_cts.Token);
     }
     public async ValueTask DisposeAsync() { _disposed = true; if (_cts is not null) { await _cts.CancelAsync(); _cts.Dispose(); } }
 }

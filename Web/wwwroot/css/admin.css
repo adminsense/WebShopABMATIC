@@ -132,6 +132,8 @@
 .admin-content {
   padding: 1.25rem 1.5rem 2rem;
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .admin-content:has(.dash-page) {
@@ -286,6 +288,54 @@
 .portfolio-card--compact .pill {
   font-size: 0.62rem;
   padding: 0.12rem 0.4rem;
+}
+
+.low-stock-dashboard-card .card-header {
+  padding: 0.5rem 0.75rem;
+}
+
+.low-stock-dashboard-card .card-header h2 {
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.low-stock-dashboard-card .table {
+  font-size: 0.8125rem;
+}
+
+.low-stock-dashboard-card .table th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.4rem 0.65rem;
+}
+
+.low-stock-dashboard-card .table td {
+  padding: 0.35rem 0.65rem;
+  vertical-align: middle;
+}
+
+.low-stock-dashboard-card .table td strong {
+  font-weight: 600;
+  font-size: 0.8125rem;
+}
+
+.low-stock-dashboard-card .table td .text-muted {
+  font-size: 0.75rem;
+}
+
+.low-stock-dashboard-card .badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.low-stock-dashboard-card .btn-sm {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+}
+
+.low-stock-dashboard-card .table-responsive {
+  max-height: 220px;
+  overflow-y: auto;
 }
 
 .dash-section-label {
@@ -756,8 +806,32 @@ a.hub-card.hub-card-link:focus-visible {
   font-size: 0.75rem;
 }
 
+.admin-content .entity-grid-card {
+  margin-bottom: 1.25rem;
+  background: #fff;
+}
+
 .admin-content .entity-grid-card .card-header {
   padding: 0.75rem 1.25rem;
+}
+
+.admin-content .entity-grid-card .table-responsive {
+  max-height: 360px;
+  overflow-y: auto;
+  overflow-x: auto;
+  border-top: 1px solid #e9ecef;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.admin-content .entity-grid-card .table-responsive thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.admin-content .entity-grid-card .admin-grid-pagination {
+  border-top: 1px solid #dee2e6;
+  background: #f8f9fa !important;
 }
 
 .admin-content .entity-grid-card .form-control {
