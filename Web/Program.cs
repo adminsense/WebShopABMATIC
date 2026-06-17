@@ -1,5 +1,8 @@
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Server;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
 using WebShopABMATIC.Application;
 using WebShopABMATIC.Application.Auth;
 using WebShopABMATIC.Infrastructure;
@@ -9,6 +12,28 @@ using WebShopABMATIC.Web.Endpoints;
 using WebShopABMATIC.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var azureHosting = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME"));
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+if (azureHosting)
+{
+    var home = Environment.GetEnvironmentVariable("HOME");
+    if (!string.IsNullOrWhiteSpace(home))
+    {
+        var keysPath = Path.Combine(home, "data", "keys");
+        Directory.CreateDirectory(keysPath);
+        builder.Services.AddDataProtection()
+            .PersistKeysToFileSystem(new DirectoryInfo(keysPath))
+            .SetApplicationName("WebShopABMATIC");
+    }
+}
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents(options =>
@@ -30,24 +55,38 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     {
         options.LoginPath = "/sign-in";
         options.AccessDeniedPath = "/sign-in";
+        options.Cookie.Name = ".WebShopABMATIC.Auth";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         options.Events = new CookieAuthenticationEvents
         {
             OnRedirectToLogin = context =>
             {
-                var returnUrl = Uri.EscapeDataString(context.Request.Path + context.Request.QueryString);
-                var loginPath = context.Request.Path.StartsWithSegments("/admin")
-                    ? $"/admin/login?returnUrl={returnUrl}"
-                    : $"/sign-in?returnUrl={returnUrl}";
-                context.Response.Redirect(loginPath);
+                if (context.Request.Path.StartsWithSegments("/admin"))
+                {
+                    var returnUrl = Uri.EscapeDataString(context.Request.Path + context.Request.QueryString);
+                    context.Response.Redirect($"/admin/login?returnUrl={returnUrl}");
+                }
+                else
+                {
+                    context.Response.Redirect(context.RedirectUri);
+                }
+
                 return Task.CompletedTask;
             },
             OnRedirectToAccessDenied = context =>
             {
-                var returnUrl = Uri.EscapeDataString(context.Request.Path + context.Request.QueryString);
-                var loginPath = context.Request.Path.StartsWithSegments("/admin")
-                    ? $"/admin/login?returnUrl={returnUrl}"
-                    : $"/sign-in?returnUrl={returnUrl}";
-                context.Response.Redirect(loginPath);
+                if (context.Request.Path.StartsWithSegments("/admin"))
+                {
+                    var returnUrl = Uri.EscapeDataString(context.Request.Path + context.Request.QueryString);
+                    context.Response.Redirect($"/admin/login?returnUrl={returnUrl}");
+                }
+                else
+                {
+                    context.Response.Redirect(context.RedirectUri);
+                }
+
                 return Task.CompletedTask;
             }
         };
@@ -64,6 +103,8 @@ builder.Services.AddScoped<StoreCartService>();
 builder.Services.AddScoped<IGridExportService, GridExportService>();
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 if (app.Environment.IsDevelopment())
 {
@@ -85,6 +126,7 @@ app.UseAuthorization();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
+app.MapLoginEndpoints();
 app.MapStockAdjustmentApi();
 
 app.MapPost("/account/logout", async (HttpContext context, string? returnUrl) =>

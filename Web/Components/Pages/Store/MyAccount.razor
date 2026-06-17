@@ -3,20 +3,15 @@
 @attribute [Authorize(Policy = AppPolicies.CustomerOnly)]
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.AspNetCore.Identity
 @using WebShopABMATIC.Application.Auth
-@using WebShopABMATIC.Application.Admin.AuditLogs
-@using WebShopABMATIC.Application.Audit
 @using WebShopABMATIC.Application.Ports
 @using WebShopABMATIC.Application.Ports.Outbound
 @using WebShopABMATIC.Application.Store.Profile
-@using WebShopABMATIC.Infrastructure.Identity
+@using WebShopABMATIC.Infrastructure.Auth
 
 @inject IStoreProfilePort ProfilePort
-@inject IAuditService AuditService
-@inject UserManager<ApplicationUser> UserManager
-@inject SignInManager<ApplicationUser> SignInManager
-@inject AuthenticationStateProvider AuthStateProvider
+@inject ICurrentUserContext CurrentUser
+@inject LegacyCustomerPasswordService CustomerPassword
 
 <PageTitle>My account</PageTitle>
 
@@ -163,13 +158,6 @@
                 return;
             }
 
-            var auth = await AuthStateProvider.GetAuthenticationStateAsync();
-            var user = await UserManager.GetUserAsync(auth.User);
-            if (user is not null)
-            {
-                await SignInManager.RefreshSignInAsync(user);
-            }
-
             _profile = await ProfilePort.GetMyProfileAsync();
             if (_profile is not null)
             {
@@ -187,37 +175,29 @@
 
     private async Task ChangePasswordAsync()
     {
-        var auth = await AuthStateProvider.GetAuthenticationStateAsync();
-        var user = await UserManager.GetUserAsync(auth.User);
-        if (user is null) return;
+        var current = await CurrentUser.GetCurrentUserAsync();
+        if (current.CustomerId is not int customerId)
+        {
+            return;
+        }
 
         _saving = true;
         _statusMessage = null;
         try
         {
-            var result = await UserManager.ChangePasswordAsync(
-                user,
+            var (succeeded, error) = await CustomerPassword.ChangePasswordAsync(
+                customerId,
                 _passwordModel.CurrentPassword,
                 _passwordModel.NewPassword);
 
-            if (!result.Succeeded)
+            if (!succeeded)
             {
                 _statusIsError = true;
-                _statusMessage = string.Join(" ", result.Errors.Select(e => e.Description));
+                _statusMessage = error ?? "Could not update password.";
                 return;
             }
 
-            await SignInManager.RefreshSignInAsync(user);
             _passwordModel = new PasswordInputModel();
-            await AuditService.LogAsync(new AuditLogWriteRequest
-            {
-                Action = AuditActions.PasswordReset,
-                EntityName = "ApplicationUser",
-                EntityId = user.Id,
-                IdentityUserId = user.Id,
-                UserDisplayName = user.Email,
-                NewValues = System.Text.Json.JsonSerializer.Serialize(new { profile = "store", selfService = true })
-            });
             _statusIsError = false;
             _statusMessage = "Password updated.";
         }

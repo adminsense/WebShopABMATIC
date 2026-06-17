@@ -1,4 +1,4 @@
-﻿@page "/admin/products"
+@page "/admin/products"
 @layout AdminLayout
 @attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
 @using WebShopABMATIC.Application.Admin.Products
@@ -7,7 +7,7 @@
 @using WebShopABMATIC.Application.Ports
 @using WebShopABMATIC.Web.Services
 @inject IProductAdminPort ProductPort
-@inject NavigationManager Navigation
+@inject NavigationManager Navigation
 @inject IGridExportService GridExport
 @implements IAsyncDisposable
 
@@ -30,7 +30,7 @@
         <div class="card-body">
             @if (_formLoading)
             {
-                <p class="text-muted mb-0">Loadingâ€¦</p>
+                <p class="text-muted mb-0">Loading…</p>
             }
             else
             {
@@ -119,7 +119,7 @@
             <h2 class="h6 mb-0 fw-bold">Product list</h2>
             <AdminGridSearch @bind-Value="_searchDraft" OnSearch="ApplySearchAsync" />
         </div>
-        <div class="table-responsive">
+        <div class="table-responsive entity-grid-table">
             <table class="table table-striped table-hover mb-0">
                 <thead class="table-dark">
                     <tr>
@@ -135,7 +135,7 @@
                     @if (_loading)
                     {
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-4">Loadingâ€¦</td>
+                            <td colspan="6" class="text-center text-muted py-4">Loading…</td>
                         </tr>
                     }
                     else if (!string.IsNullOrEmpty(_gridError))
@@ -181,12 +181,7 @@
                 </tbody>
             </table>
         </div>
-        @if (_result is not null && !_loading)
-        {
-            <div class="card-footer bg-white text-muted small py-2">
-                @_result.TotalCount total Â· page @_result.Page
-            </div>
-        }
+        <AdminGridPagination TotalCount="@(_result?.TotalCount ?? 0)" Page="@(_filter.Page)" PageSize="@(_filter.PageSize)" Loading="@_loading" OnPageChanged="ChangePageAsync" />
     </div>
 </div>
 
@@ -496,6 +491,14 @@
                 GridExportBuilder.Cell(item.SupplierId),
                 GridExportBuilder.Cell(item.ManufacturerId)
             }));
+    }
+    private async Task ChangePageAsync(int page)
+    {
+        if (page < 1) return;
+        _filter.Page = page;
+        _cts?.Cancel();
+        _cts = new CancellationTokenSource();
+        await LoadGridAsync(_cts.Token);
     }
     public async ValueTask DisposeAsync()
     {

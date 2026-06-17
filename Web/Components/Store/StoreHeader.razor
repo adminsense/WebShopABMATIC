@@ -1,51 +1,44 @@
-@using Microsoft.AspNetCore.Identity
-@using WebShopABMATIC.Application.Admin.AuditLogs
-@using WebShopABMATIC.Application.Audit
 @using WebShopABMATIC.Application.Auth
-@using WebShopABMATIC.Application.Ports.Outbound
-@using WebShopABMATIC.Infrastructure.Identity
-@using WebShopABMATIC.Infrastructure.Audit
 @inject NavigationManager Navigation
 @inject StoreCartService Cart
 @inject AuthenticationStateProvider AuthStateProvider
-@inject UserManager<ApplicationUser> UserManager
-@inject SignInManager<ApplicationUser> SignInManager
-@inject IAuditService AuditService
-@inject IManualLogoutTracker LogoutTracker
+@inject IHttpContextAccessor HttpContextAccessor
 
 <header class="site-header">
     <div class="header-inner">
         <a href="/" class="logo">Web<span>Shop</span></a>
         <div class="search-bar">
-            <input type="search" placeholder="Search products…" aria-label="Search"
+            <span class="search-icon" aria-hidden="true">
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
+                    <circle cx="6.75" cy="6.75" r="4.25" />
+                    <path d="M10.25 10.25 14 14" />
+                </svg>
+            </span>
+            <input type="search" placeholder="Search products..." aria-label="Search"
                    @bind="_search" @bind:event="oninput" @onkeyup="OnSearchKey" />
         </div>
         <nav class="nav-actions">
-            <NavLink href="/" class="nav-link" Match="NavLinkMatch.All">Catalog</NavLink>
-            <NavLink href="/orders" class="nav-link">My orders</NavLink>
+            <NavLink href="/" class="nav-btn" Match="NavLinkMatch.All">Catalog</NavLink>
+            <NavLink href="/orders" class="nav-btn">My orders</NavLink>
             @if (_isCustomer)
             {
-                <NavLink href="/my-account" class="nav-link">My account</NavLink>
+                <NavLink href="/my-account" class="nav-btn">My account</NavLink>
             }
-            @if (_isStaff && _isCustomer)
-            {
-                <button type="button" class="btn-admin visible" title="Admin panel" @onclick="GoToAdminAsync">⚙ Admin Panel</button>
-            }
-            <NavLink href="/cart" class="btn-cart">
+            <NavLink href="/cart" class="nav-btn">
                 Cart <span class="cart-badge">@Cart.ItemCount</span>
             </NavLink>
             <div class="user-menu">
                 @if (_isAuthenticated)
                 {
                     <span class="user-display-name @(_isStaff ? "staff-user" : "")" title="@_displayName">@_displayName</span>
-                    <button type="button" class="nav-link" style="cursor:pointer;border:none;background:none" @onclick="SignOutAsync">Sign out</button>
+                    <button type="button" class="nav-btn nav-btn-text" @onclick="SignOutAsync">Sign out</button>
                 }
                 else
                 {
-                    <a href="/sign-in" class="nav-link" data-enhance-nav="false">Sign in</a>
-                    <a href="/sign-in" class="avatar" title="Guest" data-enhance-nav="false">?</a>
+                    <NavLink href="/sign-in" class="nav-btn" data-enhance-nav="false">Sign in</NavLink>
                 }
             </div>
+            <a href="@AdminHref" class="nav-btn" data-enhance-nav="false" title="Staff admin panel">Admin</a>
         </nav>
     </div>
 </header>
@@ -77,32 +70,22 @@
 
         if (_isAuthenticated)
         {
-            var appUser = await UserManager.GetUserAsync(user);
-            _displayName = appUser?.DisplayName ?? user.Identity?.Name ?? "Account";
+            _displayName = user.FindFirst(LegacyAuthClaims.DisplayName)?.Value
+                ?? user.Identity?.Name
+                ?? "Account";
         }
     }
 
-    private void GoToAdminAsync() => Navigation.NavigateTo("/admin", forceLoad: true);
+    private string AdminHref => _isStaff ? "/admin" : "/admin/login";
 
     private async Task SignOutAsync()
     {
-        var auth = await AuthStateProvider.GetAuthenticationStateAsync();
-        var appUser = await UserManager.GetUserAsync(auth.User);
-        if (appUser is not null)
+        var httpContext = HttpContextAccessor.HttpContext;
+        if (httpContext is not null)
         {
-            LogoutTracker.MarkManualLogout(appUser.Id);
-            await AuditService.LogAsync(new AuditLogWriteRequest
-            {
-                Action = AuditActions.Logout,
-                EntityName = "ApplicationUser",
-                EntityId = appUser.Id,
-                IdentityUserId = appUser.Id,
-                UserDisplayName = appUser.Email,
-                NewValues = System.Text.Json.JsonSerializer.Serialize(new { email = appUser.Email, reason = "StoreSignOut" })
-            });
+            await Infrastructure.Auth.LegacyCookieAuthentication.SignOutAsync(httpContext);
         }
 
-        await SignInManager.SignOutAsync();
         Navigation.NavigateTo("/", forceLoad: true);
     }
 

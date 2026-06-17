@@ -156,18 +156,32 @@ public sealed class LocalProductMediaService : IProductMediaPort
         return folder.Id;
     }
 
-    private static string? ResolvePublicUrl(string? blobRef)
+    private string? ResolvePublicUrl(string? blobRef)
     {
         if (string.IsNullOrWhiteSpace(blobRef))
         {
             return null;
         }
 
-        if (blobRef.StartsWith('/'))
+        if (blobRef.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+            || blobRef.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
         {
             return blobRef;
         }
 
-        return $"/{blobRef.TrimStart('/')}";
+        var relativePath = blobRef.StartsWith('/')
+            ? blobRef
+            : $"/{blobRef.TrimStart('/')}";
+
+        if (!relativePath.StartsWith("/media/", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var physicalPath = Path.Combine(
+            _environment.WebRootPath,
+            relativePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+
+        return File.Exists(physicalPath) ? relativePath : null;
     }
 }
