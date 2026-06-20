@@ -1,4 +1,4 @@
-﻿@page "/admin/stock/movements"
+@page "/admin/stock/movements"
 @layout AdminLayout
 @attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
 @using WebShopABMATIC.Application.Admin.Stock
@@ -34,7 +34,7 @@
                 </div>
                 <div>
                     <label class="form-label small mb-0">Search product</label>
-                    <input type="search" class="form-control form-control-sm" placeholder="Name or IDâ€¦" @bind="_searchDraft" @bind:event="oninput" />
+                    <input type="search" class="form-control form-control-sm" placeholder="Name or ID…" @bind="_searchDraft" @bind:event="oninput" />
                 </div>
                 <div class="form-check mb-1">
                     <input type="checkbox" class="form-check-input" id="f-res" @bind="_reservationsOnly" />
@@ -59,7 +59,7 @@
                 <tbody>
                     @if (_loading)
                     {
-                        <tr><td colspan="7" class="text-center text-muted py-4">Loadingâ€¦</td></tr>
+                        <tr><td colspan="7" class="text-center text-muted py-4">Loading…</td></tr>
                     }
                     else if (_result is null || _result.Items.Count == 0)
                     {
@@ -73,23 +73,20 @@
                                 <td>@item.Timestamp.ToLocalTime().ToString("g")</td>
                                 <td>
                                     <strong>@item.ProductName</strong>
-                                    <div class="small text-muted">#@item.ProductId Â· @item.PartNumber</div>
+                                    <div class="small text-muted">#@item.ProductId · @item.PartNumber</div>
                                 </td>
                                 <td>@item.LocationName</td>
                                 <td class="text-end @(item.Quantity >= 0 ? "text-success" : "text-danger")">@item.Quantity.ToString("+0.####;-0.####;0")</td>
-                                <td>@(item.IsReservation ? "Yes" : "â€”")</td>
-                                <td>@(item.OrderLineId?.ToString() ?? "â€”")</td>
-                                <td class="small">@(item.Notes ?? "â€”")</td>
+                                <td>@(item.IsReservation ? "Yes" : "—")</td>
+                                <td>@(item.OrderLineId?.ToString() ?? "—")</td>
+                                <td class="small">@(item.Notes ?? "—")</td>
                             </tr>
                         }
                     }
                 </tbody>
             </table>
         </div>
-        @if (_result is not null && !_loading)
-        {
-            <div class="card-footer bg-white text-muted small py-2">@_result.TotalCount total Â· page @_result.Page</div>
-        }
+        <AdminGridPagination TotalCount="@(_result?.TotalCount ?? 0)" Page="@(_filter.Page)" PageSize="@(_filter.PageSize)" Loading="@_loading" OnPageChanged="ChangePageAsync" />
     </div>
 </div>
 
@@ -120,6 +117,12 @@
         }
     }
 
+    private async Task ChangePageAsync(int page)
+    {
+        if (page < 1) return;
+        _filter.Page = page;
+        await LoadGridAsync();
+    }
     private async Task ApplyFiltersAsync()
     {
         _filter.Search = string.IsNullOrWhiteSpace(_searchDraft) ? null : _searchDraft.Trim();
@@ -150,11 +153,11 @@
             _result?.Items.Select(item => (IReadOnlyList<string>)new[]
             {
                 GridExportBuilder.Cell(item.Timestamp.ToLocalTime().ToString("g")),
-                GridExportBuilder.Cell($"{item.ProductName} (#{item.ProductId} · {item.PartNumber})"),
+                GridExportBuilder.Cell($"{item.ProductName} (#{item.ProductId} � {item.PartNumber})"),
                 GridExportBuilder.Cell(item.LocationName),
                 GridExportBuilder.Cell(item.Quantity.ToString("+0.####;-0.####;0")),
-                GridExportBuilder.Cell(item.IsReservation ? "Yes" : "—"),
-                GridExportBuilder.Cell(item.Notes ?? "—")
+                GridExportBuilder.Cell(item.IsReservation ? "Yes" : "�"),
+                GridExportBuilder.Cell(item.Notes ?? "�")
             }));
     }
     public async ValueTask DisposeAsync()
