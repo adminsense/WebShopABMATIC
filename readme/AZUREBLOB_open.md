@@ -7,23 +7,44 @@
 
 ### Coverage statistics
 
-| Category | Count | Status | Notes |
-|----------|-------|--------|-------|
-| **Legacy tables** | 2 | ✅ In schema | `AzureFiles`, `AzureFileFolders` |
-| **Product link** | 1 | ✅ Designed | `AzureFiles.ProductId` (logical, no FK) |
-| **Admin form upload** | 1 | ✅ Done | `ProductForm` + media port |
-| **Store image source** | 1 | ✅ Done | `StoreCatalogService` via `IProductMediaPort` |
-| **Seed demo rows** | 10 | ✅ Done | All `ShowOnWebshop` products in `seeds.sql` |
+<table>
+<colgroup>
+<col style="width:24%">
+<col style="width:8%">
+<col style="width:14%">
+<col style="width:54%">
+</colgroup>
+<thead>
+<tr><th>Category</th><th>Count</th><th>Status</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Legacy tables</strong></td><td>2</td><td>✅ In schema</td><td><code>AzureFiles</code>, <code>AzureFileFolders</code></td></tr>
+<tr><td><strong>Product link</strong></td><td>1</td><td>✅ Designed</td><td><code>AzureFiles.ProductId</code> (logical, no FK)</td></tr>
+<tr><td><strong>Admin form upload</strong></td><td>1</td><td>✅ Done</td><td><code>ProductForm</code> + media port</td></tr>
+<tr><td><strong>Store image source</strong></td><td>1</td><td>✅ Done</td><td><code>StoreCatalogService</code> via <code>IProductMediaPort</code></td></tr>
+<tr><td><strong>Seed demo rows</strong></td><td>10</td><td>✅ Done</td><td>All <code>ShowOnWebshop</code> products in <code>seeds.sql</code></td></tr>
+</tbody>
+</table>
 
 ### Implementation quality
 
-| Aspect | Status | Details |
-|--------|--------|---------|
-| **EF entities** | ✅ Complete | `AzureFile`, `AzureFileFolder` mapped |
-| **DB on Azure SQL (`abmatic.database.windows.net`)** | ✅ Seeded | `AzureFileFolders` + `AzureFiles` via `seeds.sql` |
-| **Admin save** | ✅ Wired | `ProductAdminUseCase` + `IProductMediaPort` (local blob Phase 1) |
-| **Store catalog** | ✅ Done | `StoreCatalogService` via `IProductMediaPort`; static fallback if no row |
-| **Real Azure Blob** | ⏳ Phase 2 | Replace storage adapter only |
+<table>
+<colgroup>
+<col style="width:32%">
+<col style="width:14%">
+<col style="width:54%">
+</colgroup>
+<thead>
+<tr><th>Aspect</th><th>Status</th><th>Details</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>EF entities</strong></td><td>✅ Complete</td><td><code>AzureFile</code>, <code>AzureFileFolder</code> mapped</td></tr>
+<tr><td><strong>DB on Azure SQL</strong></td><td>✅ Seeded</td><td><code>AzureFileFolders</code> + <code>AzureFiles</code> via <code>seeds.sql</code></td></tr>
+<tr><td><strong>Admin save</strong></td><td>✅ Wired</td><td><code>ProductAdminUseCase</code> + <code>IProductMediaPort</code> (local blob Phase 1)</td></tr>
+<tr><td><strong>Store catalog</strong></td><td>✅ Done</td><td><code>StoreCatalogService</code> via <code>IProductMediaPort</code>; static fallback if no row</td></tr>
+<tr><td><strong>Real Azure Blob</strong></td><td>⏳ Phase 2</td><td>Replace storage adapter only</td></tr>
+</tbody>
+</table>
 
 ---
 
@@ -46,20 +67,39 @@ Files.AzureFiles
   └── AzureFileFolderId → folder (Files.AzureFileFolders)
 ```
 
-| Design choice | Legacy behaviour |
-|---------------|------------------|
-| Column on `Product` for image | **No** — no `ImageUrl`, no `AzureFileId` on `Product` |
-| Foreign key `AzureFiles → Product` | **No** — logical link only; app enforces integrity |
-| One product, many files | **Yes** — multiple `AzureFiles` per `ProductId` |
-| Storefront image | Row with `IsPrimaryImage = 1` and `PublishToWeb = 1` |
+<table>
+<colgroup>
+<col style="width:38%">
+<col style="width:62%">
+</colgroup>
+<thead>
+<tr><th>Design choice</th><th>Legacy behaviour</th></tr>
+</thead>
+<tbody>
+<tr><td>Column on <code>Product</code> for image</td><td><strong>No</strong> — no <code>ImageUrl</code>, no <code>AzureFileId</code> on <code>Product</code></td></tr>
+<tr><td>Foreign key <code>AzureFiles → Product</code></td><td><strong>No</strong> — logical link only; app enforces integrity</td></tr>
+<tr><td>One product, many files</td><td><strong>Yes</strong> — multiple <code>AzureFiles</code> per <code>ProductId</code></td></tr>
+<tr><td>Storefront image</td><td>Row with <code>IsPrimaryImage = 1</code> and <code>PublishToWeb = 1</code></td></tr>
+</tbody>
+</table>
 
 ### 1.2 Other file tables (not used for catalog images)
 
-| Table | Role | Product catalog? |
-|-------|------|----------------|
-| `Files.StoredFiles` | Binary `varbinary(max)` in SQL Server | ❌ Attachments (orders, emails) |
-| `Products.ProductManuals` | `ProductId` + `Path` for PDFs/manuals | ❌ Manuals, not shop photos |
-| `Files.AzureFileFolders` | Organises `AzureFiles` (`IsForProduct`, etc.) | ✅ Required parent for product files |
+<table>
+<colgroup>
+<col style="width:32%">
+<col style="width:38%">
+<col style="width:30%">
+</colgroup>
+<thead>
+<tr><th>Table</th><th>Role</th><th>Product catalog?</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Files.StoredFiles</code></td><td>Binary <code>varbinary(max)</code> in SQL Server</td><td>❌ Attachments (orders, emails)</td></tr>
+<tr><td><code>Products.ProductManuals</code></td><td><code>ProductId</code> + <code>Path</code> for PDFs/manuals</td><td>❌ Manuals, not shop photos</td></tr>
+<tr><td><code>Files.AzureFileFolders</code></td><td>Organises <code>AzureFiles</code> (<code>IsForProduct</code>, etc.)</td><td>✅ Required parent for product files</td></tr>
+</tbody>
+</table>
 
 ---
 
@@ -67,13 +107,22 @@ Files.AzureFiles
 
 ### 2.1 What exists today
 
-| Layer | Behaviour |
-|-------|-----------|
-| **Database** | `Files.AzureFiles` seeded for all webshop products (`ShowOnWebshop = 1`) |
-| **Admin `ProductForm`** | Image upload + preview via `IProductMediaPort` |
-| **`ProductEditDto`** | `PrimaryImageUrl` for preview |
-| **Store `StoreCatalog`** | Reads primary image from `AzureFiles`; fallback `/images/productN.png` |
-| **`seeds.sql`** | `AzureFileFolders` (id=1 Products) + `AzureFiles` per webshop SKU |
+<table>
+<colgroup>
+<col style="width:28%">
+<col style="width:72%">
+</colgroup>
+<thead>
+<tr><th>Layer</th><th>Behaviour</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Database</strong></td><td><code>Files.AzureFiles</code> seeded for all webshop products (<code>ShowOnWebshop = 1</code>)</td></tr>
+<tr><td><strong>Admin ProductForm</strong></td><td>Image upload + preview via <code>IProductMediaPort</code></td></tr>
+<tr><td><strong>ProductEditDto</strong></td><td><code>PrimaryImageUrl</code> for preview</td></tr>
+<tr><td><strong>Store Catalog</strong></td><td>Reads primary image from <code>AzureFiles</code>; fallback <code>/images/productN.png</code></td></tr>
+<tr><td><strong>seeds.sql</strong></td><td><code>AzureFileFolders</code> (id=1 Products) + <code>AzureFiles</code> per webshop SKU</td></tr>
+</tbody>
+</table>
 
 ### 2.2 Why align with legacy instead of a new column
 
@@ -89,12 +138,21 @@ No Azure subscription is required for the first implementation. **Behaviour and 
 
 ### 3.1 Local storage layout
 
-| Item | Value |
-|------|--------|
-| **Physical path** | `Web/wwwroot/media/products/{productId}/` |
-| **Public URL** | `/media/products/{productId}/{fileName}` |
-| **`BlobRef` value** | Logical key, e.g. `products/42/primary.png` or the public URL above |
-| **`ThumbRef`** | Same file initially, or omitted until thumbnail generation exists |
+<table>
+<colgroup>
+<col style="width:22%">
+<col style="width:78%">
+</colgroup>
+<thead>
+<tr><th>Item</th><th>Value</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Physical path</strong></td><td><code>Web/wwwroot/media/products/{productId}/</code></td></tr>
+<tr><td><strong>Public URL</strong></td><td><code>/media/products/{productId}/{fileName}</code></td></tr>
+<tr><td><strong>BlobRef value</strong></td><td>Logical key, e.g. <code>products/42/primary.png</code> or the public URL above</td></tr>
+<tr><td><strong>ThumbRef</strong></td><td>Same file initially, or omitted until thumbnail generation exists</td></tr>
+</tbody>
+</table>
 
 ### 3.2 Storage adapter (planned)
 
@@ -112,31 +170,49 @@ Swapping Phase 1 → Phase 2 changes **only** the infrastructure adapter; `Azure
 
 ### 3.3 Minimum `AzureFiles` row per product image
 
-| Column | Typical value |
-|--------|----------------|
-| `ProductId` | `Products.Product.ProductId` |
-| `Name` | Original or display file name |
-| `Extension` | `.jpg`, `.png`, `.webp` |
-| `AzureFileFolderId` | Seed folder “Products” (`IsForProduct = 1`) |
-| `BlobRef` | Fictitious blob key or `/media/products/...` URL |
-| `ThumbRef` | Optional thumbnail key |
-| `IsPrimaryImage` | `true` for catalog hero |
-| `PublishToWeb` | `true` when shown on storefront |
-| `Description` | Short label or empty string |
-| `Created` | UTC timestamp |
-| `CreatedByUserId` | Current staff user id |
-| `SendToCustomer` / `SendOnSupplierOrder` | `false` for catalog images |
+<table>
+<colgroup>
+<col style="width:32%">
+<col style="width:68%">
+</colgroup>
+<thead>
+<tr><th>Column</th><th>Typical value</th></tr>
+</thead>
+<tbody>
+<tr><td><code>ProductId</code></td><td><code>Products.Product.ProductId</code></td></tr>
+<tr><td><code>Name</code></td><td>Original or display file name</td></tr>
+<tr><td><code>Extension</code></td><td><code>.jpg</code>, <code>.png</code>, <code>.webp</code></td></tr>
+<tr><td><code>AzureFileFolderId</code></td><td>Seed folder “Products” (<code>IsForProduct = 1</code>)</td></tr>
+<tr><td><code>BlobRef</code></td><td>Fictitious blob key or <code>/media/products/...</code> URL</td></tr>
+<tr><td><code>ThumbRef</code></td><td>Optional thumbnail key</td></tr>
+<tr><td><code>IsPrimaryImage</code></td><td><code>true</code> for catalog hero</td></tr>
+<tr><td><code>PublishToWeb</code></td><td><code>true</code> when shown on storefront</td></tr>
+<tr><td><code>Description</code></td><td>Short label or empty string</td></tr>
+<tr><td><code>Created</code></td><td>UTC timestamp</td></tr>
+<tr><td><code>CreatedByUserId</code></td><td>Current staff user id</td></tr>
+<tr><td><code>SendToCustomer</code> / <code>SendOnSupplierOrder</code></td><td><code>false</code> for catalog images</td></tr>
+</tbody>
+</table>
 
 ### 3.4 Seed folder (`AzureFileFolders`)
 
 One demo folder satisfies `AzureFileFolderId` NOT NULL semantics:
 
-| Field | Value |
-|-------|--------|
-| `Name` | `Products` |
-| `IsForProduct` | `true` |
-| Other `IsFor*` flags | `false` |
-| `SortOrder` | `1` |
+<table>
+<colgroup>
+<col style="width:28%">
+<col style="width:72%">
+</colgroup>
+<thead>
+<tr><th>Field</th><th>Value</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Name</code></td><td><code>Products</code></td></tr>
+<tr><td><code>IsForProduct</code></td><td><code>true</code></td></tr>
+<tr><td>Other <code>IsFor*</code> flags</td><td><code>false</code></td></tr>
+<tr><td><code>SortOrder</code></td><td><code>1</code></td></tr>
+</tbody>
+</table>
 
 Demo seed can link HDD 1–6 `AzureFiles` rows to seeded `ProductId` values with `BlobRef` pointing at existing mock assets (`/images/product1.png`, etc.) or copied files under `/media/products/`.
 
@@ -146,22 +222,41 @@ Demo seed can link HDD 1–6 `AzureFiles` rows to seeded `ProductId` values with
 
 ### 4.1 Admin — product form
 
-| Step | Create product | Edit product |
-|------|----------------|--------------|
-| 1 | Save `Product` → obtain `ProductId` | Load `Product` + primary `AzureFiles` |
-| 2 | If upload present → save file locally | Show image preview from `BlobRef` |
-| 3 | Insert `AzureFiles` with `ProductId`, flags | Replace file → update or supersede row |
-| 4 | — | Clear upload → optional delete / unpublish |
+<table>
+<colgroup>
+<col style="width:8%">
+<col style="width:46%">
+<col style="width:46%">
+</colgroup>
+<thead>
+<tr><th>Step</th><th>Create product</th><th>Edit product</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>Save <code>Product</code> → obtain <code>ProductId</code></td><td>Load <code>Product</code> + primary <code>AzureFiles</code></td></tr>
+<tr><td>2</td><td>If upload present → save file locally</td><td>Show image preview from <code>BlobRef</code></td></tr>
+<tr><td>3</td><td>Insert <code>AzureFiles</code> with <code>ProductId</code>, flags</td><td>Replace file → update or supersede row</td></tr>
+<tr><td>4</td><td>—</td><td>Clear upload → optional delete / unpublish</td></tr>
+</tbody>
+</table>
 
 **UI additions:** `InputFile`, preview `<img>`, validation (size, extension).
 
 ### 4.2 Application layer
 
-| Artifact | Purpose |
-|----------|---------|
-| `ProductEditDto.PrimaryImageUrl` | Read-only preview for form |
-| `IProductMediaPort` | Upload, resolve URL, publish flag (outbound port) |
-| `ProductAdminUseCase` | Orchestrate product domain + media on save |
+<table>
+<colgroup>
+<col style="width:38%">
+<col style="width:62%">
+</colgroup>
+<thead>
+<tr><th>Artifact</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><code>ProductEditDto.PrimaryImageUrl</code></td><td>Read-only preview for form</td></tr>
+<tr><td><code>IProductMediaPort</code></td><td>Upload, resolve URL, publish flag (outbound port)</td></tr>
+<tr><td><code>ProductAdminUseCase</code></td><td>Orchestrate product domain + media on save</td></tr>
+</tbody>
+</table>
 
 ### 4.3 Storefront
 
@@ -223,13 +318,23 @@ flowchart LR
 
 ## 6. Phase 2 — real Azure Blob Storage
 
-| Concern | Phase 1 (now) | Phase 2 (production) |
-|---------|---------------|----------------------|
-| Bytes on disk | `wwwroot/media/products/` | Azure Blob container |
-| `BlobRef` | Local key or site URL | Container + blob name |
-| Thumbnails | Optional copy / skip | Azure Functions or SDK resize |
-| CDN | Static files middleware | Azure CDN + SAS or public container |
-| Configuration | None | `AzureStorage:ConnectionString`, container name |
+<table>
+<colgroup>
+<col style="width:22%">
+<col style="width:39%">
+<col style="width:39%">
+</colgroup>
+<thead>
+<tr><th>Concern</th><th>Phase 1 (now)</th><th>Phase 2 (production)</th></tr>
+</thead>
+<tbody>
+<tr><td>Bytes on disk</td><td><code>wwwroot/media/products/</code></td><td>Azure Blob container</td></tr>
+<tr><td><code>BlobRef</code></td><td>Local key or site URL</td><td>Container + blob name</td></tr>
+<tr><td>Thumbnails</td><td>Optional copy / skip</td><td>Azure Functions or SDK resize</td></tr>
+<tr><td>CDN</td><td>Static files middleware</td><td>Azure CDN + SAS or public container</td></tr>
+<tr><td>Configuration</td><td>None</td><td><code>AzureStorage:ConnectionString</code>, container name</td></tr>
+</tbody>
+</table>
 
 **No migration** of `AzureFiles` rows expected — only `BlobRef` values may be rewritten if blobs are uploaded to Azure.
 
@@ -237,12 +342,21 @@ flowchart LR
 
 ## 7. Scope and limitations (Phase 1)
 
-| In scope | Out of scope (later) |
-|----------|----------------------|
-| One **primary** image per product | Multi-image gallery UI |
-| Local fictitious blob | Real Azure SDK upload |
-| `AzureFiles` + `PublishToWeb` | `StoredFiles` binary-in-SQL for catalog |
-| Admin create/edit + seed + store read | Image cropping, virus scan, CDN rules |
+<table>
+<colgroup>
+<col style="width:50%">
+<col style="width:50%">
+</colgroup>
+<thead>
+<tr><th>In scope</th><th>Out of scope (later)</th></tr>
+</thead>
+<tbody>
+<tr><td>One <strong>primary</strong> image per product</td><td>Multi-image gallery UI</td></tr>
+<tr><td>Local fictitious blob</td><td>Real Azure SDK upload</td></tr>
+<tr><td><code>AzureFiles</code> + <code>PublishToWeb</code></td><td><code>StoredFiles</code> binary-in-SQL for catalog</td></tr>
+<tr><td>Admin create/edit + seed + store read</td><td>Image cropping, virus scan, CDN rules</td></tr>
+</tbody>
+</table>
 
 ---
 
