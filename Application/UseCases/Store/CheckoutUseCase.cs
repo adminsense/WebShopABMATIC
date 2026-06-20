@@ -54,7 +54,13 @@ public sealed class CheckoutUseCase : ICheckoutPort
             return EmptyQuote(["Your cart is empty."]);
         }
 
-        var lookup = new StoreUserLookup { IdentityUserId = request.IdentityUserId, Email = request.UserEmail };
+        var current = await _currentUser.GetCurrentUserAsync(cancellationToken);
+        var lookup = new StoreUserLookup
+        {
+            IdentityUserId = request.IdentityUserId,
+            Email = request.UserEmail,
+            CustomerId = current.CustomerId
+        };
         var ctx = await _customers.GetForStoreUserAsync(lookup, cancellationToken);
         if (ctx is null)
         {
@@ -161,57 +167,11 @@ public sealed class CheckoutUseCase : ICheckoutPort
 
         if (paymentMethod.IsPrePay)
         {
-            var created = await _orders.CreateWebshopOrderAsync(new StoreOrderCreateCommand
+            return new CheckoutResult
             {
-                CustomerId = ctx.CustomerId,
-                ProjectId = ctx.ProjectId,
-                CustomerTypeId = ctx.CustomerTypeId,
-                DeliveryTypeId = ctx.DeliveryTypeId,
-                BetaaltermijnId = ctx.BetaaltermijnId,
-                DeliveryAddressId = request.DeliveryAddressId,
-                PaymentMethodId = request.PaymentMethodId,
-                CreatedByUserId = createdByUserId,
-                IsPrePay = true,
-                DeliveryFee = quote.DeliveryFee,
-                VatPercentage = VatPercentage,
-                Lines = lineCreates,
-                MolliePaymentStatus = "open"
-            }, cancellationToken);
-
-            try
-            {
-                var redirectUrl = $"{request.RedirectBaseUrl.TrimEnd('/')}/orders/{created.OrderId}/payment-return";
-                var webhookUrl = $"{request.WebhookBaseUrl.TrimEnd('/')}/api/webhooks/mollie/payments";
-                var payment = await _mollie.CreatePaymentAsync(new CreateMolliePaymentCommand
-                {
-                    Amount = created.TotalInclVat,
-                    Currency = "EUR",
-                    Description = $"Webshop order #{created.OrderNumber ?? created.OrderId}",
-                    RedirectUrl = redirectUrl,
-                    WebhookUrl = webhookUrl,
-                    MetadataJson = $"{{\"orderId\":{created.OrderId}}}"
-                }, cancellationToken);
-
-                await _orders.UpdateAdvancePaymentMollieAsync(created.OrderId, payment.PaymentId, payment.Status, payment.CheckoutUrl, cancellationToken);
-
-                await LogCheckoutStartedAsync(created.OrderId, created.OrderNumber, created.TotalInclVat, paymentMethod.IsPrePay, ctx.CustomerId, cancellationToken);
-
-                return new CheckoutResult
-                {
-                    Success = true,
-                    OrderId = created.OrderId,
-                    RedirectUrl = payment.CheckoutUrl
-                };
-            }
-            catch (Exception ex)
-            {
-                return new CheckoutResult
-                {
-                    Success = false,
-                    OrderId = created.OrderId,
-                    Errors = [$"Payment could not be started: {ex.Message}"]
-                };
-            }
+                Success = false,
+                Errors = ["Online payment is not available. Please choose an invoice or post-payment method."]
+            };
         }
 
         var postPayCreated = await _orders.CreateWebshopOrderAsync(new StoreOrderCreateCommand
