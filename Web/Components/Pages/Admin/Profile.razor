@@ -1,17 +1,13 @@
-﻿@page "/admin/profile"
+@page "/admin/profile"
 @layout AdminLayout
 @attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
 @using System.ComponentModel.DataAnnotations
-@using Microsoft.AspNetCore.Identity
-@using WebShopABMATIC.Application.Admin.AuditLogs
-@using WebShopABMATIC.Application.Audit
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports.Outbound
-@using WebShopABMATIC.Infrastructure.Identity
-@inject UserManager<ApplicationUser> UserManager
-@inject SignInManager<ApplicationUser> SignInManager
-@inject AuthenticationStateProvider AuthStateProvider
-@inject IAuditService AuditService
+@using WebShopABMATIC.Infrastructure.Auth
+
+@inject LegacyStaffProfileService StaffProfile
+@inject ICurrentUserContext CurrentUser
 
 <PageTitle>My profile</PageTitle>
 
@@ -19,14 +15,14 @@
     <a class="btn btn-secondary btn-back mb-3" href="/admin/hub/profile" data-enhance-nav="false"><span class="oi oi-arrow-left"></span> Back to profile hub</a>
     <div class="entity-page-header page-header">
         <h1 class="h3 mb-1"><i class="bi bi-person text-primary"></i> My profile</h1>
-        <p class="mb-0">Update your account details.</p>
+        <p class="mb-0">Update your legacy staff account (<c>Instellingen.User</c>).</p>
     </div>
 
     @if (_loading)
     {
-        <p class="text-muted">Loadingâ€¦</p>
+        <p class="text-muted">Loading…</p>
     }
-    else if (_user is null)
+    else if (_profile is null)
     {
         <div class="alert alert-danger">Could not load your profile.</div>
     }
@@ -45,6 +41,14 @@
                     <div class="entity-form-fields">
                         <div class="row g-2">
                             <div class="col-md-6">
+                                <label class="form-label" for="f-login">Login</label>
+                                <input id="f-login" class="form-control form-control-sm" value="@_profile.Login" disabled />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="f-email">Email</label>
+                                <input id="f-email" type="email" class="form-control form-control-sm" value="@_profile.Email" disabled />
+                            </div>
+                            <div class="col-md-6">
                                 <label class="form-label" for="f-first">First name</label>
                                 <InputText id="f-first" class="form-control form-control-sm" @bind-Value="_profileModel.FirstName" />
                                 <ValidationMessage For="() => _profileModel.FirstName" />
@@ -53,10 +57,6 @@
                                 <label class="form-label" for="f-last">Last name</label>
                                 <InputText id="f-last" class="form-control form-control-sm" @bind-Value="_profileModel.LastName" />
                                 <ValidationMessage For="() => _profileModel.LastName" />
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" for="f-email">Email</label>
-                                <input id="f-email" type="email" class="form-control form-control-sm" value="@_user.Email" disabled />
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label" for="f-phone">Phone</label>
@@ -106,26 +106,31 @@
 </div>
 
 @code {
-    private ApplicationUser? _user;
+    private LegacyStaffProfileDto? _profile;
     private ProfileInputModel _profileModel = new();
     private PasswordInputModel _passwordModel = new();
     private bool _loading = true;
     private bool _saving;
     private string? _statusMessage;
     private bool _statusIsError;
+    private int? _staffUserId;
 
     protected override async Task OnInitializedAsync()
     {
-        var auth = await AuthStateProvider.GetAuthenticationStateAsync();
-        _user = await UserManager.GetUserAsync(auth.User);
-        if (_user is not null)
+        var current = await CurrentUser.GetCurrentUserAsync();
+        _staffUserId = current.StaffUserId;
+        if (_staffUserId is int staffUserId)
         {
-            _profileModel = new ProfileInputModel
+            _profile = await StaffProfile.GetAsync(staffUserId);
+            if (_profile is not null)
             {
-                FirstName = _user.FirstName,
-                LastName = _user.LastName,
-                PhoneNumber = _user.PhoneNumber
-            };
+                _profileModel = new ProfileInputModel
+                {
+                    FirstName = _profile.FirstName,
+                    LastName = _profile.LastName,
+                    PhoneNumber = _profile.Phone
+                };
+            }
         }
 
         _loading = false;
@@ -133,7 +138,7 @@
 
     private async Task SaveProfileAsync()
     {
-        if (_user is null)
+        if (_staffUserId is not int staffUserId)
         {
             return;
         }
@@ -142,34 +147,21 @@
         _statusMessage = null;
         try
         {
-            _user.FirstName = _profileModel.FirstName?.Trim() ?? "";
-            _user.LastName = _profileModel.LastName?.Trim() ?? "";
-            _user.PhoneNumber = _profileModel.PhoneNumber?.Trim();
+            var (succeeded, error) = await StaffProfile.SaveAsync(staffUserId, new LegacyStaffProfileUpdate
+            {
+                FirstName = _profileModel.FirstName ?? "",
+                LastName = _profileModel.LastName ?? "",
+                Phone = _profileModel.PhoneNumber
+            });
 
-            var result = await UserManager.UpdateAsync(_user);
-            if (!result.Succeeded)
+            if (!succeeded)
             {
                 _statusIsError = true;
-                _statusMessage = string.Join(" ", result.Errors.Select(e => e.Description));
+                _statusMessage = error ?? "Could not save profile.";
                 return;
             }
 
-            await SignInManager.RefreshSignInAsync(_user);
-            await AuditService.LogAsync(new AuditLogWriteRequest
-            {
-                Action = AuditActions.Update,
-                EntityName = "ApplicationUser",
-                EntityId = _user.Id,
-                IdentityUserId = _user.Id,
-                UserDisplayName = _user.Email,
-                NewValues = System.Text.Json.JsonSerializer.Serialize(new
-                {
-                    profile = "admin",
-                    firstName = _user.FirstName,
-                    lastName = _user.LastName,
-                    phone = _user.PhoneNumber
-                })
-            });
+            _profile = await StaffProfile.GetAsync(staffUserId);
             _statusIsError = false;
             _statusMessage = "Profile saved.";
         }
@@ -181,7 +173,7 @@
 
     private async Task ChangePasswordAsync()
     {
-        if (_user is null)
+        if (_staffUserId is not int staffUserId)
         {
             return;
         }
@@ -190,33 +182,19 @@
         _statusMessage = null;
         try
         {
-            var result = await UserManager.ChangePasswordAsync(
-                _user,
+            var (succeeded, error) = await StaffProfile.ChangePasswordAsync(
+                staffUserId,
                 _passwordModel.CurrentPassword,
                 _passwordModel.NewPassword);
 
-            if (!result.Succeeded)
+            if (!succeeded)
             {
                 _statusIsError = true;
-                _statusMessage = string.Join(" ", result.Errors.Select(e => e.Description));
+                _statusMessage = error ?? "Could not update password.";
                 return;
             }
 
-            await SignInManager.RefreshSignInAsync(_user);
             _passwordModel = new PasswordInputModel();
-            await AuditService.LogAsync(new AuditLogWriteRequest
-            {
-                Action = AuditActions.PasswordReset,
-                EntityName = "ApplicationUser",
-                EntityId = _user.Id,
-                IdentityUserId = _user.Id,
-                UserDisplayName = _user.Email,
-                NewValues = System.Text.Json.JsonSerializer.Serialize(new
-                {
-                    profile = "admin",
-                    selfService = true
-                })
-            });
             _statusIsError = false;
             _statusMessage = "Password updated.";
         }
@@ -246,7 +224,7 @@
         public string CurrentPassword { get; set; } = "";
 
         [Required]
-        [StringLength(100, MinimumLength = 8)]
+        [StringLength(100, MinimumLength = 1)]
         public string NewPassword { get; set; } = "";
 
         [Required]
@@ -254,6 +232,3 @@
         public string ConfirmPassword { get; set; } = "";
     }
 }
-
-
-

@@ -2,16 +2,13 @@
 @layout StoreLayout
 
 @using System.ComponentModel.DataAnnotations
-@using Microsoft.AspNetCore.Identity
 @using WebShopABMATIC.Application.Ports
 @using WebShopABMATIC.Application.Store.Registration
-@using WebShopABMATIC.Infrastructure.Identity
-@using WebShopABMATIC.Web.Components.Account
+@using WebShopABMATIC.Infrastructure.Auth
 @using WebShopABMATIC.Web.Components.Account.Shared
 
 @inject ICustomerRegistrationPort RegistrationPort
-@inject SignInManager<ApplicationUser> SignInManager
-@inject IdentityRedirectManager RedirectManager
+@inject LegacySignInService LegacySignIn
 @inject NavigationManager Navigation
 
 <PageTitle>Create account</PageTitle>
@@ -105,14 +102,6 @@
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
 
-    protected override void OnParametersSet()
-    {
-        if (HttpContext is null)
-        {
-            Navigation.Refresh(forceReload: true);
-        }
-    }
-
     private async Task RegisterAsync()
     {
         _submitting = true;
@@ -140,15 +129,22 @@
                 return;
             }
 
-            var signIn = await SignInManager.PasswordSignInAsync(_input.Email, _input.Password, isPersistent: false, lockoutOnFailure: false);
-            if (!signIn.Succeeded)
+            if (HttpContext is null)
             {
-                RedirectManager.RedirectTo("/sign-in");
+                Navigation.NavigateTo("/sign-in", forceLoad: true);
                 return;
             }
 
+            var signIn = await LegacySignIn.SignInCustomerAsync(_input.Email, _input.Password);
+            if (!signIn.Succeeded || signIn.Principal is null)
+            {
+                Navigation.NavigateTo("/sign-in", forceLoad: true);
+                return;
+            }
+
+            await LegacyCookieAuthentication.SignInAsync(HttpContext, signIn.Principal, isPersistent: false);
             var destination = string.IsNullOrWhiteSpace(ReturnUrl) ? "/" : ReturnUrl;
-            RedirectManager.RedirectTo(destination);
+            Navigation.NavigateTo(destination, forceLoad: true);
         }
         finally
         {

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using WebShopABMATIC.Application.Admin.Dashboard;
+using WebShopABMATIC.Application.Common;
 using WebShopABMATIC.Application.Ports.Outbound;
 using WebShopABMATIC.Data.Persistence;
 
@@ -14,129 +15,112 @@ public sealed class AdminDashboardRepository : IAdminDashboardRepository
     public async Task<AdminDashboardDto> GetDashboardAsync(CancellationToken cancellationToken = default)
     {
         var now = DateTime.UtcNow;
+        var recentStart = now.Date.AddDays(-DashboardDefaults.RecentDays);
         var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-        var yearStart = new DateTime(now.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        var totalProducts = await SafeCountAsync(
+        var totalProductsTask = SafeCountAsync(
             () => _db.Products.AsNoTracking().CountAsync(p => !p.IsInactive, cancellationToken));
-
-        var productsOnWebshop = await SafeCountAsync(
+        var productsOnWebshopTask = SafeCountAsync(
             () => _db.Products.AsNoTracking().CountAsync(p => !p.IsInactive && p.ShowOnWebshop == true, cancellationToken));
-
-        var webshopNodes = await SafeCountAsync(
+        var webshopNodesTask = SafeCountAsync(
             () => _db.WebshopStructures.AsNoTracking().CountAsync(cancellationToken));
-
-        var productImages = await SafeCountAsync(
+        var productImagesTask = SafeCountAsync(
             () => _db.AzureFiles.AsNoTracking()
                 .CountAsync(f => f.ProductId != null && f.IsPrimaryImage == true, cancellationToken));
-
-        var totalCustomers = await SafeCountAsync(
+        var totalCustomersTask = SafeCountAsync(
             () => _db.Customers.AsNoTracking().CountAsync(cancellationToken));
-
-        var totalProjects = await SafeCountAsync(
+        var totalProjectsTask = SafeCountAsync(
             () => _db.Projects.AsNoTracking().CountAsync(cancellationToken));
 
-        var ordersThisMonth = await SafeCountAsync(
+        var ordersRecentTask = SafeCountAsync(
+            () => _db.Orders.AsNoTracking().CountAsync(o => o.CreatedAt >= recentStart, cancellationToken));
+        var acceptedOrdersRecentTask = SafeCountAsync(
+            () => _db.Orders.AsNoTracking().CountAsync(o => o.CreatedAt >= recentStart && o.IsAccepted, cancellationToken));
+        var pendingOrdersTask = SafeCountAsync(
+            () => _db.Orders.AsNoTracking().CountAsync(o => !o.IsAccepted && o.CreatedAt >= recentStart, cancellationToken));
+        var ordersMonthTask = SafeCountAsync(
             () => _db.Orders.AsNoTracking().CountAsync(o => o.CreatedAt >= monthStart, cancellationToken));
-
-        var acceptedOrdersThisMonth = await SafeCountAsync(
+        var acceptedOrdersMonthTask = SafeCountAsync(
             () => _db.Orders.AsNoTracking().CountAsync(o => o.CreatedAt >= monthStart && o.IsAccepted, cancellationToken));
 
-        var pendingOrders = await SafeCountAsync(
-            () => _db.Orders.AsNoTracking().CountAsync(o => !o.IsAccepted, cancellationToken));
-
-        var ordersYtd = await SafeCountAsync(
-            () => _db.Orders.AsNoTracking().CountAsync(o => o.CreatedAt >= yearStart, cancellationToken));
-
-        var itemsSoldThisMonth = await SafeSumAsync(async () =>
+        var itemsSoldRecentTask = SafeSumAsync(async () =>
             await (from line in _db.OrderLines.AsNoTracking()
                    join order in _db.Orders.AsNoTracking() on line.OrderId equals order.Id
-                   where order.CreatedAt >= monthStart
+                   where order.CreatedAt >= recentStart
                    select (decimal?)line.Quantity).SumAsync(cancellationToken) ?? 0m);
 
-        var itemsSoldYtd = await SafeSumAsync(async () =>
+        var revenueRecentTask = SafeSumAsync(async () =>
             await (from line in _db.OrderLines.AsNoTracking()
                    join order in _db.Orders.AsNoTracking() on line.OrderId equals order.Id
-                   where order.CreatedAt >= yearStart
-                   select (decimal?)line.Quantity).SumAsync(cancellationToken) ?? 0m);
-
-        var revenueThisMonth = await SafeSumAsync(async () =>
-            await (from line in _db.OrderLines.AsNoTracking()
-                   join order in _db.Orders.AsNoTracking() on line.OrderId equals order.Id
-                   where order.IsAccepted && order.CreatedAt >= monthStart
+                   where order.IsAccepted && order.CreatedAt >= recentStart
                    select (decimal?)line.TotalExclVat).SumAsync(cancellationToken) ?? 0m);
 
-        var pendingOrderValue = await SafeSumAsync(async () =>
+        var pendingOrderValueTask = SafeSumAsync(async () =>
             await (from line in _db.OrderLines.AsNoTracking()
                    join order in _db.Orders.AsNoTracking() on line.OrderId equals order.Id
-                   where !order.IsAccepted
+                   where !order.IsAccepted && order.CreatedAt >= recentStart
                    select (decimal?)line.TotalExclVat).SumAsync(cancellationToken) ?? 0m);
 
-        var lowStock = await SafeCountAsync(
-            () => _db.ProductStockLocations.AsNoTracking()
-                .CountAsync(x => x.Quantity <= x.MinQuantity, cancellationToken));
-
-        var outOfStock = await SafeCountAsync(
-            () => _db.ProductStockLocations.AsNoTracking()
-                .CountAsync(x => x.Quantity <= 0, cancellationToken));
-
-        var totalStockUnits = await SafeSumAsync(async () =>
-            await _db.ProductStockLocations.AsNoTracking()
-                .SumAsync(x => (decimal?)x.Quantity, cancellationToken) ?? 0m);
-
-        var totalStockCapacity = await SafeSumAsync(async () =>
-            await _db.ProductStockLocations.AsNoTracking()
-                .SumAsync(x => (decimal?)x.MaxQuantity, cancellationToken) ?? 0m);
-
-        var sevenDaysAgo = DateTime.UtcNow.Date.AddDays(-7);
-        var movementsLast7Days = await SafeCountAsync(
-            () => _db.StockMovements.AsNoTracking().CountAsync(m => m.Timestamp >= sevenDaysAgo, cancellationToken));
-
-        var openPurchaseOrders = await SafeCountAsync(
-            () => _db.StockOrders.AsNoTracking().CountAsync(o => !o.IsCompleted, cancellationToken));
-
-        var revenueYtd = await SafeSumAsync(async () =>
+        var costsRecentTask = SafeSumAsync(async () =>
             await (from line in _db.OrderLines.AsNoTracking()
                    join order in _db.Orders.AsNoTracking() on line.OrderId equals order.Id
-                   where order.IsAccepted && order.CreatedAt >= yearStart
-                   select (decimal?)line.TotalExclVat).SumAsync(cancellationToken) ?? 0m);
-
-        var costsYtd = await SafeSumAsync(async () =>
-            await (from line in _db.OrderLines.AsNoTracking()
-                   join order in _db.Orders.AsNoTracking() on line.OrderId equals order.Id
-                   where order.IsAccepted && order.CreatedAt >= yearStart
+                   where order.IsAccepted && order.CreatedAt >= recentStart
                    select (decimal?)(line.NettoAankoopPrijs * line.Quantity)).SumAsync(cancellationToken) ?? 0m);
 
-        var paidRevenueYtd = revenueYtd;
-        var outstandingRevenueYtd = pendingOrderValue;
+        var lowStockTask = SafeCountAsync(
+            () => _db.ProductStockLocations.AsNoTracking()
+                .CountAsync(x => x.Quantity <= x.MinQuantity, cancellationToken));
+        var outOfStockTask = SafeCountAsync(
+            () => _db.ProductStockLocations.AsNoTracking()
+                .CountAsync(x => x.Quantity <= 0, cancellationToken));
+        var totalStockUnitsTask = SafeSumAsync(async () =>
+            await _db.ProductStockLocations.AsNoTracking()
+                .SumAsync(x => (decimal?)x.Quantity, cancellationToken) ?? 0m);
+        var totalStockCapacityTask = SafeSumAsync(async () =>
+            await _db.ProductStockLocations.AsNoTracking()
+                .SumAsync(x => (decimal?)x.MaxQuantity, cancellationToken) ?? 0m);
+        var movementsRecentTask = SafeCountAsync(
+            () => _db.StockMovements.AsNoTracking().CountAsync(m => m.Timestamp >= recentStart, cancellationToken));
+        var openPurchaseOrdersTask = SafeCountAsync(
+            () => _db.StockOrders.AsNoTracking().CountAsync(o => !o.IsCompleted, cancellationToken));
+
+        await Task.WhenAll(
+            totalProductsTask, productsOnWebshopTask, webshopNodesTask, productImagesTask,
+            totalCustomersTask, totalProjectsTask, ordersRecentTask, acceptedOrdersRecentTask,
+            pendingOrdersTask, ordersMonthTask, acceptedOrdersMonthTask, itemsSoldRecentTask,
+            revenueRecentTask, pendingOrderValueTask, costsRecentTask, lowStockTask, outOfStockTask,
+            totalStockUnitsTask, totalStockCapacityTask, movementsRecentTask, openPurchaseOrdersTask);
+
+        var revenueRecent = await revenueRecentTask;
+        var costsRecent = await costsRecentTask;
 
         return new AdminDashboardDto
         {
-            TotalProducts = totalProducts,
-            ProductsOnWebshop = productsOnWebshop,
-            WebshopStructureNodes = webshopNodes,
-            ProductImages = productImages,
-            TotalCustomers = totalCustomers,
-            TotalProjects = totalProjects,
-            OrdersThisMonth = ordersThisMonth,
-            AcceptedOrdersThisMonth = acceptedOrdersThisMonth,
-            PendingOrders = pendingOrders,
-            OrdersYtd = ordersYtd,
-            ItemsSoldThisMonth = itemsSoldThisMonth,
-            ItemsSoldYtd = itemsSoldYtd,
-            RevenueThisMonth = revenueThisMonth,
-            PendingOrderValue = pendingOrderValue,
-            LowStockAlerts = lowStock,
-            OutOfStockProducts = outOfStock,
-            TotalStockUnits = totalStockUnits,
-            TotalStockCapacity = totalStockCapacity,
-            StockMovementsLast7Days = movementsLast7Days,
-            OpenPurchaseOrders = openPurchaseOrders,
-            RevenueYtd = revenueYtd,
-            CostsYtd = costsYtd,
-            NetYtd = revenueYtd - costsYtd,
-            PaidRevenueYtd = paidRevenueYtd,
-            OutstandingRevenueYtd = outstandingRevenueYtd
+            TotalProducts = await totalProductsTask,
+            ProductsOnWebshop = await productsOnWebshopTask,
+            WebshopStructureNodes = await webshopNodesTask,
+            ProductImages = await productImagesTask,
+            TotalCustomers = await totalCustomersTask,
+            TotalProjects = await totalProjectsTask,
+            OrdersThisMonth = await ordersMonthTask,
+            AcceptedOrdersThisMonth = await acceptedOrdersMonthTask,
+            PendingOrders = await pendingOrdersTask,
+            OrdersYtd = await ordersRecentTask,
+            ItemsSoldThisMonth = await itemsSoldRecentTask,
+            ItemsSoldYtd = await itemsSoldRecentTask,
+            RevenueThisMonth = revenueRecent,
+            PendingOrderValue = await pendingOrderValueTask,
+            LowStockAlerts = await lowStockTask,
+            OutOfStockProducts = await outOfStockTask,
+            TotalStockUnits = await totalStockUnitsTask,
+            TotalStockCapacity = await totalStockCapacityTask,
+            StockMovementsLast7Days = await movementsRecentTask,
+            OpenPurchaseOrders = await openPurchaseOrdersTask,
+            RevenueYtd = revenueRecent,
+            CostsYtd = costsRecent,
+            NetYtd = revenueRecent - costsRecent,
+            PaidRevenueYtd = revenueRecent,
+            OutstandingRevenueYtd = await pendingOrderValueTask
         };
     }
 

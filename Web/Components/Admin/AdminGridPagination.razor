@@ -1,0 +1,30 @@
+@using WebShopABMATIC.Application.Common
+
+<div class="card-footer admin-grid-pagination bg-white d-flex flex-wrap align-items-center justify-content-between gap-2 py-2">
+    @if (Loading)
+    {
+        <span class="text-muted small">Loading...</span>
+    }
+    else
+    {
+        <span class="text-muted small">@TotalCount total | page @Page of @TotalPages (@PageSize per page)</span>
+        @if (TotalPages > 1)
+        {
+            <div class="btn-group btn-group-sm">
+                <button type="button" class="btn btn-outline-primary" disabled="@(Page <= 1)" @onclick="() => OnPageChanged.InvokeAsync(Page - 1)">Previous</button>
+                <button type="button" class="btn btn-outline-primary" disabled="@(!HasNextPage)" @onclick="() => OnPageChanged.InvokeAsync(Page + 1)">Next</button>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public int TotalCount { get; set; }
+    [Parameter] public int Page { get; set; } = 1;
+    [Parameter] public int PageSize { get; set; } = AdminGridDefaults.PageSize;
+    [Parameter] public bool Loading { get; set; }
+    [Parameter] public EventCallback<int> OnPageChanged { get; set; }
+
+    private int TotalPages => PageSize <= 0 ? 1 : Math.Max(1, (int)Math.Ceiling(TotalCount / (double)PageSize));
+    private bool HasNextPage => Page * PageSize < TotalCount;
+}
