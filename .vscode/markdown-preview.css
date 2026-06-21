@@ -36,12 +36,16 @@ table {
   width: 100%;
   margin: 1em 0;
   background-color: #ffffff;
+  table-layout: fixed;
 }
 
 th, td {
   border: 1px solid #d0d7de;
   padding: 8px 12px;
   text-align: left;
+  vertical-align: top;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 th {
