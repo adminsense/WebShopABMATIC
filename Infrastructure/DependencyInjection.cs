@@ -6,14 +6,13 @@ using WebShopABMATIC.Application.Ports;
 using WebShopABMATIC.Application.Ports.Outbound;
 using WebShopABMATIC.Data.Persistence;
 using WebShopABMATIC.Infrastructure.Admin;
-using WebShopABMATIC.Infrastructure.Audit;
-using WebShopABMATIC.Infrastructure.Identity;
+using WebShopABMATIC.Infrastructure.Auth;
 using WebShopABMATIC.Infrastructure.Media;
 using WebShopABMATIC.Infrastructure.Notifications;
-using WebShopABMATIC.Infrastructure.Payments;
 using WebShopABMATIC.Infrastructure.Persistence.Repositories;
 using WebShopABMATIC.Infrastructure.Stock;
 using WebShopABMATIC.Infrastructure.Store;
+using WebShopABMATIC.Infrastructure.Audit;
 
 namespace WebShopABMATIC.Infrastructure;
 
@@ -24,27 +23,22 @@ public static class DependencyInjection
         IConfiguration configuration,
         IHostEnvironment environment)
     {
-        var identityConnection = configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is required.");
-
         var domainConnection = configuration.GetConnectionString("connWebShopABMATIC")
-            ?? identityConnection;
+            ?? configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("Connection string 'connWebShopABMATIC' or 'DefaultConnection' is required.");
 
-        services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlServer(identityConnection));
+        services.AddDbContext<WebShopABMATICDbContext>(options =>
+            options.UseSqlServer(domainConnection));
 
-        services.AddScoped<AuditSaveChangesInterceptor>();
+        services.AddScoped<LegacySignInService>();
+        services.AddScoped<LegacyCustomerPasswordService>();
+        services.AddScoped<LegacyStaffProfileService>();
         services.AddScoped<IAuditSuppressionContext, AuditSuppressionContext>();
-        services.AddDbContext<WebShopABMATICDbContext>((serviceProvider, options) =>
-            options.UseSqlServer(domainConnection)
-                .AddInterceptors(serviceProvider.GetRequiredService<AuditSaveChangesInterceptor>()));
 
-        // Driving adapters (configuration / external systems)
         services.AddSingleton<IAdminHubPort, AdminHubRegistry>();
         services.AddScoped<IProductMediaPort, LocalProductMediaService>();
         services.AddScoped<IStoreCatalogPort, StoreCatalogService>();
 
-        // Driven adapters (persistence / outbound ports)
         services.AddScoped<IAdminDashboardRepository, AdminDashboardRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IWebshopStructureRepository, WebshopStructureRepository>();
@@ -67,9 +61,8 @@ public static class DependencyInjection
         services.AddScoped<IStockLocationRepository, StockLocationRepository>();
         services.AddScoped<IPaymentMethodRepository, PaymentMethodRepository>();
         services.AddScoped<IStaffUserRepository, StaffUserRepository>();
-        services.AddScoped<ISystemUserRepository, SystemUserRepository>();
-        services.AddScoped<IApplicationUserAccountRepository, ApplicationUserAccountRepository>();
-        services.AddScoped<IIdentityPasswordPort, IdentityPasswordService>();
+        services.AddScoped<ISystemUserRepository, LegacyUnsupportedSystemUserRepository>();
+        services.AddScoped<IApplicationUserAccountRepository, LegacyUnsupportedApplicationUserAccountRepository>();
         services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
         services.AddScoped<ICustomerRegistrationRepository, CustomerRegistrationRepository>();
         services.AddScoped<IUserGroupRepository, UserGroupRepository>();
@@ -77,17 +70,16 @@ public static class DependencyInjection
         services.AddScoped<IStockOverviewRepository, StockOverviewRepository>();
         services.AddScoped<IStockMovementRepository, StockMovementRepository>();
         services.AddScoped<ILowStockReadRepository, LowStockReadRepository>();
-        services.AddScoped<ILowStockAlertService, LowStockAlertService>();
+        services.AddScoped<ILowStockAlertService, NullLowStockAlertService>();
         services.AddScoped<IStockAdjustmentRepository, StockAdjustmentRepository>();
-        services.AddScoped<IAuditLogRepository, AuditLogRepository>();
-        services.AddScoped<IAuditService, AuditService>();
-        services.AddSingleton<IManualLogoutTracker, ManualLogoutTracker>();
+        services.AddScoped<IAuditLogRepository, NullAuditLogRepository>();
+        services.AddScoped<IAuditService, NullAuditService>();
         services.AddScoped<IStoreCustomerRepository, StoreCustomerRepository>();
         services.AddScoped<IStoreProfileRepository, StoreProfileRepository>();
         services.AddScoped<IStoreOrderRepository, StoreOrderRepository>();
         services.AddScoped<IStockMovementService, StockMovementService>();
+        services.AddScoped<IMolliePaymentPort, NullMolliePaymentPort>();
 
-        services.AddWebShopMollie(configuration, environment);
         services.AddWebShopNotifications(configuration, environment);
 
         return services;
