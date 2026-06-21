@@ -1,4 +1,4 @@
-﻿@page "/admin/stock/overview"
+@page "/admin/stock/overview"
 @layout AdminLayout
 @attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
 @using WebShopABMATIC.Application.Admin.Stock
@@ -21,7 +21,7 @@
 
     @if (_loading)
     {
-        <p class="text-muted">Loadingâ€¦</p>
+        <p class="text-muted">Loading...</p>
     }
     else if (_overview is null)
     {
@@ -36,7 +36,7 @@
                     <div class="stat-band">
                         <div>
                             <div class="stat-band-label">SKUs in stock</div>
-                            <div class="stat-band-value">@_overview.SkusInStock SKUs Â· @_overview.TotalOnHand.ToString("N0") units</div>
+                            <div class="stat-band-value">@_overview.SkusInStock SKUs | @_overview.TotalOnHand.ToString("N0") units</div>
                         </div>
                         <span class="pill pill-green">@_overview.TotalAvailable.ToString("N0") avail.</span>
                     </div>
@@ -66,7 +66,7 @@
                     <div class="stat-band">
                         <div>
                             <div class="stat-band-label">Out of stock / overstock</div>
-                            <div class="stat-band-value">@_overview.OutOfStockCount zero Â· @_overview.OverstockCount over max</div>
+                            <div class="stat-band-value">@_overview.OutOfStockCount zero | @_overview.OverstockCount over max</div>
                         </div>
                     </div>
                 </div>
@@ -78,7 +78,7 @@
                     <div class="stat-band">
                         <div>
                             <div class="stat-band-label">Movements today</div>
-                            <div class="stat-band-value">@_overview.MovementsToday today Â· @_overview.MovementsLast7Days last 7 days</div>
+                            <div class="stat-band-value">@_overview.MovementsToday today | @_overview.MovementsLast7Days last 7 days</div>
                         </div>
                         <a class="pill pill-blue" href="/admin/stock/movements" data-enhance-nav="false">Journal</a>
                     </div>
@@ -87,7 +87,7 @@
                     <div class="stat-band">
                         <div>
                             <div class="stat-band-label">Purchase orders</div>
-                            <div class="stat-band-value">@_overview.OpenPurchaseOrders open Â· @_overview.PoLinesAwaitingDelivery lines awaiting delivery</div>
+                            <div class="stat-band-value">@_overview.OpenPurchaseOrders open | @_overview.PoLinesAwaitingDelivery lines awaiting delivery</div>
                         </div>
                     </div>
                 </div>

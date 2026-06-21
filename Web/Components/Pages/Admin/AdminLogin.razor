@@ -1,169 +1,85 @@
 ﻿@page "/admin/login"
 @layout AdminLoginLayout
 
-@using System.ComponentModel.DataAnnotations
-@using Microsoft.AspNetCore.Authentication
-@using Microsoft.AspNetCore.Identity
 @using WebShopABMATIC.Application.Auth
-@using WebShopABMATIC.Infrastructure.Identity
-@using WebShopABMATIC.Web.Components.Account
 @using WebShopABMATIC.Web.Components.Account.Shared
-
-@using WebShopABMATIC.Application.Audit
-@using WebShopABMATIC.Application.Admin.AuditLogs
-@using WebShopABMATIC.Application.Ports.Outbound
-@inject SignInManager<ApplicationUser> SignInManager
-@inject UserManager<ApplicationUser> UserManager
-@inject ILogger<AdminLogin> Logger
-@inject IdentityRedirectManager RedirectManager
-@inject NavigationManager Navigation
-@inject IAuditService AuditService
 
 <PageTitle>Staff log in</PageTitle>
 
 <div class="auth-card">
     <h1>Staff log in</h1>
-    <p>Sign in with your admin or manager account.</p>
+    <p>Sign in with your legacy staff login (Instellingen.User).</p>
 
     <StatusMessage Message="@_errorMessage" />
 
-    <EditForm Model="_input" method="post" OnValidSubmit="LoginAsync" FormName="admin-login">
-        <DataAnnotationsValidator />
-        <ValidationSummary class="text-danger mb-3" role="alert" />
+    <form method="post" action="/account/admin-login">
+        <input type="hidden" name="returnUrl" value="@(ReturnUrl ?? "")" />
         <div class="form-group">
-            <label for="admin-email">Email</label>
-            <InputText id="admin-email" @bind-Value="_input.Email" autocomplete="username" />
-            <ValidationMessage For="() => _input.Email" />
+            <label for="admin-login">Login or email</label>
+            <input id="admin-login" name="login" class="form-control" value="@_login" autocomplete="username" required />
         </div>
         <div class="form-group">
             <label for="admin-password">Password</label>
-            <InputText id="admin-password" type="password" @bind-Value="_input.Password" autocomplete="current-password" />
-            <ValidationMessage For="() => _input.Password" />
+            <input id="admin-password" name="password" type="password" class="form-control" autocomplete="current-password" required />
         </div>
         <div class="form-check mb-3">
-            <InputCheckbox class="form-check-input" @bind-Value="_input.RememberMe" id="admin-remember" />
+            <input class="form-check-input" type="checkbox" name="rememberMe" value="true" id="admin-remember" />
             <label class="form-check-label" for="admin-remember">Remember me</label>
         </div>
         <button type="submit" class="btn btn-primary">Log in</button>
-    </EditForm>
+    </form>
 
     <p class="mt-3 mb-0" style="font-size:0.85rem;color:var(--muted)">
-        <a href="/">â† Back to store</a>
-        Â· <a href="Account/ForgotPassword">Forgot password?</a>
+        <a href="/">← Back to store</a>
     </p>
 </div>
 
 @code {
     private string? _errorMessage;
+    private string _login = "";
 
     [CascadingParameter]
     private HttpContext? HttpContext { get; set; }
 
-    [SupplyParameterFromForm]
-    private LoginInput _input { get; set; } = new();
-
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
 
-    protected override void OnParametersSet()
+    [SupplyParameterFromQuery(Name = "error")]
+    private string? Error { get; set; }
+
+    protected override void OnInitialized()
     {
+        if (!string.IsNullOrWhiteSpace(Error))
+        {
+            _errorMessage = Error;
+        }
+
         if (HttpContext is null)
         {
-            Navigation.Refresh(forceReload: true);
-        }
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        if (HttpContext is null)
-        {
             return;
         }
 
-        if (HttpMethods.IsGet(HttpContext.Request.Method))
+        if (HttpMethods.IsGet(HttpContext.Request.Method)
+            && HttpContext.User.Identity?.IsAuthenticated == true
+            && (HttpContext.User.IsInRole(AppRoles.Admin) || HttpContext.User.IsInRole(AppRoles.Manager)))
         {
-            await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
-
-            if (HttpContext.User.Identity?.IsAuthenticated == true
-                && (HttpContext.User.IsInRole(AppRoles.Admin) || HttpContext.User.IsInRole(AppRoles.Manager)))
-            {
-                var target = string.IsNullOrEmpty(ReturnUrl) ? "/admin" : ReturnUrl;
-                RedirectManager.RedirectTo(target);
-            }
+            var destination = ResolveReturnUrl(ReturnUrl);
+            HttpContext.Response.Redirect(destination);
         }
     }
 
-    private async Task LoginAsync()
+    private static string ResolveReturnUrl(string? returnUrl)
     {
-        var result = await SignInManager.PasswordSignInAsync(_input.Email, _input.Password, _input.RememberMe, lockoutOnFailure: false);
-        if (result.Succeeded)
+        if (string.IsNullOrWhiteSpace(returnUrl))
         {
-            Logger.LogInformation("Staff user logged in.");
-            var user = await UserManager.FindByEmailAsync(_input.Email);
-            if (user is not null)
-            {
-                var roles = await UserManager.GetRolesAsync(user);
-                if (roles.Contains(AppRoles.Admin) || roles.Contains(AppRoles.Manager))
-                {
-                    await AuditService.LogAsync(new AuditLogWriteRequest
-                    {
-                        Action = AuditActions.Login,
-                        EntityName = "ApplicationUser",
-                        EntityId = user.Id,
-                        IdentityUserId = user.Id,
-                        UserDisplayName = user.Email,
-                        NewValues = System.Text.Json.JsonSerializer.Serialize(new { email = user.Email, roles })
-                    });
-                    RedirectManager.RedirectTo(string.IsNullOrEmpty(ReturnUrl) ? "/admin" : ReturnUrl);
-                    return;
-                }
-            }
-
-            _errorMessage = "This account is not authorized for the admin panel.";
-            await AuditService.LogAsync(new AuditLogWriteRequest
-            {
-                Action = AuditActions.LoginFailed,
-                EntityName = "ApplicationUser",
-                UserDisplayName = _input.Email,
-                Success = false,
-                Severity = AuditSeverity.Warning,
-                ErrorMessage = "Not authorized for admin panel",
-                NewValues = System.Text.Json.JsonSerializer.Serialize(new { email = _input.Email, reason = "UnauthorizedRole" })
-            });
-            await SignInManager.SignOutAsync();
-            return;
+            return "/admin";
         }
 
-        if (result.IsLockedOut)
+        if (returnUrl.StartsWith('/') && !returnUrl.StartsWith("//", StringComparison.Ordinal))
         {
-            RedirectManager.RedirectTo("Account/Lockout");
-            return;
+            return returnUrl;
         }
 
-        _errorMessage = "Invalid email or password.";
-        await AuditService.LogAsync(new AuditLogWriteRequest
-        {
-            Action = AuditActions.LoginFailed,
-            EntityName = "ApplicationUser",
-            UserDisplayName = _input.Email,
-            Success = false,
-            Severity = AuditSeverity.Warning,
-            ErrorMessage = "Invalid email or password",
-            NewValues = System.Text.Json.JsonSerializer.Serialize(new { email = _input.Email, reason = "InvalidPassword" })
-        });
-    }
-
-    private sealed class LoginInput
-    {
-        [Required, EmailAddress]
-        public string Email { get; set; } = "";
-
-        [Required, DataType(DataType.Password)]
-        public string Password { get; set; } = "";
-
-        public bool RememberMe { get; set; }
+        return "/admin";
     }
 }
-
-
-

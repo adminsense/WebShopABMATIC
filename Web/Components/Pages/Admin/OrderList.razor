@@ -1,4 +1,4 @@
-ï»¿@page "/admin/orders"
+@page "/admin/orders"
 @layout AdminLayout
 @attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
 @using WebShopABMATIC.Application.Admin.Orders
@@ -24,7 +24,7 @@
             <Title>@(_isEditing ? "Edit order" : "Create order")</Title>
         </AdminEntityFormHeader>
         <div class="card-body">
-            @if (_formLoading) { <p class="text-muted mb-0">Loadingâ€¦</p> }
+            @if (_formLoading) { <p class="text-muted mb-0">Loading…</p> }
             else {
                 <EditForm Model="_model" OnValidSubmit="SaveAsync">
                     <DataAnnotationsValidator />
@@ -45,7 +45,7 @@
                             <div class="col-md-3">
                                 <label class="form-label" for="f-projectid">Customer project (internal)</label>
                                 <InputNumber id="f-projectid" class="form-control form-control-sm" @bind-Value="_model.ProjectId" required />
-                                <div class="form-text">Legacy link to customer â€” use project 1â€“4 from demo seeds.</div>
+                                <div class="form-text">Legacy link to customer — use project 1–4 from demo seeds.</div>
                             </div>
                         }
                         <div class="col-md-3">
@@ -89,10 +89,10 @@
                                         <tr>
                                             <td>@ap.Name</td>
                                             <td>@ap.Percent.ToString("0.##")</td>
-                                            <td>@(ap.Amount?.ToString("F2") ?? "â€”")</td>
-                                            <td>@(ap.MolliePaymentStatus ?? "â€”")</td>
-                                            <td class="small">@(ap.MolliePaymentId ?? "â€”")</td>
-                                            <td>@(ap.MolliePaidAt?.ToLocalTime().ToString("g") ?? "â€”")</td>
+                                            <td>@(ap.Amount?.ToString("F2") ?? "—")</td>
+                                            <td>@(ap.MolliePaymentStatus ?? "—")</td>
+                                            <td class="small">@(ap.MolliePaymentId ?? "—")</td>
+                                            <td>@(ap.MolliePaidAt?.ToLocalTime().ToString("g") ?? "—")</td>
                                         </tr>
                                     }
                                 </tbody>
@@ -120,17 +120,17 @@
                         <th>Accepted</th>
                     <th class="text-center">Actions</th></tr></thead>
                 <tbody>
-                    @if (_loading) { <tr><td colspan="8" class="text-center text-muted py-4">Loadingâ€¦</td></tr> }
+                    @if (_loading) { <tr><td colspan="8" class="text-center text-muted py-4">Loading…</td></tr> }
                     else if (!string.IsNullOrEmpty(_gridError)) { <tr><td colspan="8" class="text-center text-danger py-4">@_gridError</td></tr> }
                     else if (_result is null || _result.Items.Count == 0) { <tr><td colspan="8" class="text-center text-muted py-4">No records found.</td></tr> }
                     else { @foreach (var item in _result.Items) {
                         <tr @key="item.Id" class="@(_model.Id == item.Id ? "table-active" : null)">
                             <td>@item.Id</td>
-                            <td>@(item.OrderNumber?.ToString() ?? "â€”")</td>
+                            <td>@(item.OrderNumber?.ToString() ?? "—")</td>
                             <td>@item.CustomerName</td>
                             <td>@item.CreatedAt.ToString("yyyy-MM-dd")</td>
                             <td>@item.PaymentStatus</td>
-                            <td class="small text-muted">@(item.MolliePaymentId ?? "â€”")</td>
+                            <td class="small text-muted">@(item.MolliePaymentId ?? "—")</td>
                             <td>@(item.IsAccepted ? "Yes" : "No")</td>
                             <td class="text-center"><div class="btn-group btn-group-sm">
                                 <a class="btn btn-sm btn-primary" href="@($"/admin/orders?edit={item.Id}")" data-enhance-nav="false"><i class="bi bi-pencil"></i></a>
@@ -139,7 +139,7 @@
                 </tbody>
             </table>
         </div>
-        @if (_result is not null && !_loading) { <div class="card-footer bg-white text-muted small py-2">@_result.TotalCount total Â· page @_result.Page</div> }
+        <AdminGridPagination TotalCount="@(_result?.TotalCount ?? 0)" Page="@(_filter.Page)" PageSize="@(_filter.PageSize)" Loading="@_loading" OnPageChanged="ChangePageAsync" />
     </div>
 </div>
 
@@ -212,13 +212,21 @@ private async Task EditAsync(int id) {
             _result?.Items.Select(item => (IReadOnlyList<string>)new[]
             {
                 GridExportBuilder.Cell(item.Id),
-                GridExportBuilder.Cell(item.OrderNumber?.ToString() ?? "â€”"),
+                GridExportBuilder.Cell(item.OrderNumber?.ToString() ?? "—"),
                 GridExportBuilder.Cell(item.CustomerName),
                 GridExportBuilder.Cell(item.PaymentStatus),
-                GridExportBuilder.Cell(item.MolliePaymentId ?? "â€”"),
+                GridExportBuilder.Cell(item.MolliePaymentId ?? "—"),
                 GridExportBuilder.Cell(item.IsAccepted ? "Yes" : "No"),
                 GridExportBuilder.Cell(item.CreatedAt.ToString("yyyy-MM-dd"))
             }));
+    }
+    private async Task ChangePageAsync(int page)
+    {
+        if (page < 1) return;
+        _filter.Page = page;
+        _cts?.Cancel();
+        _cts = new CancellationTokenSource();
+        await LoadGridAsync(_cts.Token);
     }
     public async ValueTask DisposeAsync() { _disposed = true; if (_cts is not null) { await _cts.CancelAsync(); _cts.Dispose(); } }
 }

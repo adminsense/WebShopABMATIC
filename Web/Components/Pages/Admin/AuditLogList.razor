@@ -162,16 +162,7 @@
                 </tbody>
             </table>
         </div>
-        @if (_result is not null && !_loading)
-        {
-            <div class="card-footer bg-white d-flex flex-wrap align-items-center justify-content-between gap-2 py-2">
-                <span class="text-muted small">@_result.TotalCount total · page @_result.Page</span>
-                <div class="btn-group btn-group-sm">
-                    <button type="button" class="btn btn-outline-secondary" disabled="@(_filter.Page <= 1 || _loading)" @onclick="() => ChangePageAsync(_filter.Page - 1)">Previous</button>
-                    <button type="button" class="btn btn-outline-secondary" disabled="@(!HasNextPage || _loading)" @onclick="() => ChangePageAsync(_filter.Page + 1)">Next</button>
-                </div>
-            </div>
-        }
+        <AdminGridPagination TotalCount="@(_result?.TotalCount ?? 0)" Page="@(_filter.Page)" PageSize="@(_filter.PageSize)" Loading="@_loading" OnPageChanged="ChangePageAsync" />
     </div>
 </div>
 
