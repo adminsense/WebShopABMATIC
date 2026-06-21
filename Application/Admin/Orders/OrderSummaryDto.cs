@@ -1,3 +1,5 @@
+using WebShopABMATIC.Application.Common;
+
 namespace WebShopABMATIC.Application.Admin.Orders;
 
 public sealed class OrderSummaryDto
@@ -47,5 +49,5 @@ public sealed class OrderListFilter
     public string? Search { get; set; }
     public bool? IsAccepted { get; set; }
     public int Page { get; set; } = 1;
-    public int PageSize { get; set; } = 25;
+    public int PageSize { get; set; } = AdminGridDefaults.PageSize;
 }

@@ -7,11 +7,11 @@
 @using WebShopABMATIC.Application.Ports
 @using WebShopABMATIC.Application.Ports.Outbound
 @using WebShopABMATIC.Application.Store.Profile
-@using WebShopABMATIC.Infrastructure.Auth
+@using WebShopABMATIC.Web.Forms
 
 @inject IStoreProfilePort ProfilePort
 @inject ICurrentUserContext CurrentUser
-@inject LegacyCustomerPasswordService CustomerPassword
+@inject ILegacyCustomerPasswordPort CustomerPassword
 
 <PageTitle>My account</PageTitle>
 
@@ -126,8 +126,8 @@
 
 @code {
     private StoreProfileDto? _profile;
-    private ProfileInputModel _profileModel = new();
-    private PasswordInputModel _passwordModel = new();
+    private StoreAccountProfileFormModel _profileModel = new();
+    private StoreAccountPasswordFormModel _passwordModel = new();
     private bool _loading = true;
     private bool _saving;
     private string? _statusMessage;
@@ -138,7 +138,7 @@
         _profile = await ProfilePort.GetMyProfileAsync();
         if (_profile is not null)
         {
-            _profileModel = ProfileInputModel.FromDto(_profile);
+            _profileModel = StoreAccountProfileFormModel.FromDto(_profile);
         }
 
         _loading = false;
@@ -161,7 +161,7 @@
             _profile = await ProfilePort.GetMyProfileAsync();
             if (_profile is not null)
             {
-                _profileModel = ProfileInputModel.FromDto(_profile);
+                _profileModel = StoreAccountProfileFormModel.FromDto(_profile);
             }
 
             _statusIsError = false;
@@ -197,7 +197,7 @@
                 return;
             }
 
-            _passwordModel = new PasswordInputModel();
+            _passwordModel = new StoreAccountPasswordFormModel();
             _statusIsError = false;
             _statusMessage = "Password updated.";
         }
@@ -205,68 +205,5 @@
         {
             _saving = false;
         }
-    }
-
-    private sealed class ProfileInputModel
-    {
-        [Required, StringLength(100)]
-        public string FirstName { get; set; } = "";
-
-        [Required, StringLength(100)]
-        public string LastName { get; set; } = "";
-
-        [Required, Phone]
-        public string Phone { get; set; } = "";
-
-        [Required, StringLength(200)]
-        public string Street { get; set; } = "";
-
-        [Required, StringLength(20)]
-        public string HouseNumber { get; set; } = "";
-
-        [StringLength(20)]
-        public string? Box { get; set; }
-
-        [Required, StringLength(20)]
-        public string PostalCode { get; set; } = "";
-
-        [Required, StringLength(100)]
-        public string CityName { get; set; } = "";
-
-        public static ProfileInputModel FromDto(StoreProfileDto dto) => new()
-        {
-            FirstName = dto.FirstName,
-            LastName = dto.LastName,
-            Phone = dto.Phone,
-            Street = dto.Street,
-            HouseNumber = dto.HouseNumber,
-            Box = string.IsNullOrWhiteSpace(dto.Box) ? null : dto.Box,
-            PostalCode = dto.PostalCode,
-            CityName = dto.CityName
-        };
-
-        public StoreProfileUpdateDto ToUpdateDto() => new()
-        {
-            FirstName = FirstName,
-            LastName = LastName,
-            Phone = Phone,
-            Street = Street,
-            HouseNumber = HouseNumber,
-            Box = Box,
-            PostalCode = PostalCode,
-            CityName = CityName
-        };
-    }
-
-    private sealed class PasswordInputModel
-    {
-        [Required]
-        public string CurrentPassword { get; set; } = "";
-
-        [Required, StringLength(100, MinimumLength = 8)]
-        public string NewPassword { get; set; } = "";
-
-        [Required, Compare(nameof(NewPassword))]
-        public string ConfirmPassword { get; set; } = "";
     }
 }

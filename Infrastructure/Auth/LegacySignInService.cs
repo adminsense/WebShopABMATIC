@@ -1,22 +1,14 @@
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using WebShopABMATIC.Application.Auth;
+using WebShopABMATIC.Application.Ports.Outbound;
 using WebShopABMATIC.Data.Persistence;
 
 namespace WebShopABMATIC.Infrastructure.Auth;
 
-public sealed class LegacySignInResult
+public sealed class LegacySignInService(WebShopABMATICDbContext db) : ILegacySignInPort
 {
-    public bool Succeeded { get; init; }
-    public string? Error { get; init; }
-    public ClaimsPrincipal? Principal { get; init; }
-}
-
-public sealed class LegacySignInService
-{
-    private readonly WebShopABMATICDbContext _db;
-
-    public LegacySignInService(WebShopABMATICDbContext db) => _db = db;
+    private readonly WebShopABMATICDbContext _db = db;
 
     public async Task<LegacySignInResult> SignInStaffAsync(string loginOrEmail, string password, CancellationToken cancellationToken = default)
     {
