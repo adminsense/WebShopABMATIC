@@ -371,5 +371,16 @@ appsettings.*.json
 !**/appsettings.example.json
 !**/appsettings.Production.json
 
+# Accidental dotnet publish output copied into project root (not bin/)
+/Web/*.dll
+/Web/*.pdb
+/Web/*.deps.json
+/Web/*.runtimeconfig.json
+/Web/runtimes/
+
+# Local tooling scratch
+/tools/**/bin/
+/tools/**/obj/
+
 # PDA release binaries (build with tools/publish-pda-apk.ps1)
 dist/
