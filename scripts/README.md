@@ -32,7 +32,7 @@ Run from repo root, e.g. `.\scripts\apply-local-database.ps1`.
 
 Identity seed **implementation** is C# ([`Infrastructure/Seeding/IdentitySeed.cs`](../Infrastructure/Seeding/IdentitySeed.cs)) — invoked by `seed-identity.ps1` via `dotnet run -- --seed-identity`. SQL cannot insert hashed passwords into `AspNetUsers`.
 
-Inventory of seeded tables: [`readme/DATA_SUMMARY.md`](../readme/DATA_SUMMARY.md) · [`readme/SUNDAY_open.md`](../readme/SUNDAY_open.md).
+Inventory of seeded tables: [`readme/DATA_SUMMARY.md`](../readme/DATA_SUMMARY.md) · [`readme/SUNDAY.md`](../readme/SUNDAY.md).
 
 ---
 

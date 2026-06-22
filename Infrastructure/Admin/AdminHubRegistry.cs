@@ -11,12 +11,12 @@ public sealed class AdminHubRegistry : IAdminHubPort
         {
             Id = "webshop",
             Title = "Webshop",
-            Subtitle = "Storefront structure: navigation and product categories",
+            Subtitle = "Storefront navigation (WebshopStructuur) and ERP categories (ProductStructuur)",
             IconClass = "oi-globe",
             Cards =
             [
-                Card("WebshopStructure", "Webshop structure", "Manage catalog navigation tree", "/admin/webshop-structures", "oi-folder"),
-                Card("WebshopProductStructure", "Product categories", "Webshop product grouping", "/admin/webshop-product-structures", "oi-list")
+                Card("WebshopStructure", "Webshop navigation", "Optional menu tree — used on storefront when populated", "/admin/webshop-structures", "oi-folder"),
+                Card("WebshopProductStructure", "Webshop categories (legacy)", "ProductStructuurWebshop — storefront uses ProductStructuur from ERP when empty", "/admin/webshop-product-structures", "oi-list")
             ]
         },
         new()

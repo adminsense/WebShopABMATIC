@@ -15,6 +15,7 @@ public sealed class StoreUserLookup
 {
     public string? IdentityUserId { get; init; }
     public string? Email { get; init; }
+    public int? CustomerId { get; init; }
 }
 
 public sealed class StoreCustomerContext

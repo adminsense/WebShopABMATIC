@@ -18,6 +18,7 @@ using WebShopABMATIC.Application.Admin.Suppliers;
 using WebShopABMATIC.Application.Admin.UserAccounts;
 using WebShopABMATIC.Application.Admin.UserGroups;
 using WebShopABMATIC.Application.Admin.VatTypes;
+using WebShopABMATIC.Application.Admin.ProductStockLocations;
 using WebShopABMATIC.Application.Admin.WebshopProductStructures;
 using WebShopABMATIC.Application.Admin.WebshopStructures;
 using WebShopABMATIC.Application.Validation;
@@ -81,6 +82,7 @@ public class AdminEditFormValidatorTests
         [new PriceListCategoryEditDto { Name = "Standard", NameFr = "Standard" }],
         [new WebshopStructureEditDto { NameNl = "Category" }],
         [new WebshopProductStructureEditDto { NameEn = "Group", NameNl = "Groep", NameFr = "Groupe" }],
+        [new ProductStockLocationEditDto { StockLocationId = 1, ProductId = 1 }],
         [new OrderEditDto
         {
             ProjectId = 1,

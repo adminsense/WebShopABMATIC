@@ -12,9 +12,7 @@ public static class NotificationDependencyInjection
         IConfiguration configuration,
         IHostEnvironment environment)
     {
-        var useMock = configuration.GetValue(
-            "Notifications:LowStock:UseMock",
-            environment.IsDevelopment());
+        var useMock = configuration.GetValue("Notifications:LowStock:UseMock", true);
 
         if (useMock)
         {

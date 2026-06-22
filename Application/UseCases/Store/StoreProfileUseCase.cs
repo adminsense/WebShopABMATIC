@@ -19,12 +19,12 @@ public sealed class StoreProfileUseCase : IStoreProfilePort
     public async Task<StoreProfileDto?> GetMyProfileAsync(CancellationToken cancellationToken = default)
     {
         var current = await _currentUser.GetCurrentUserAsync(cancellationToken);
-        if (string.IsNullOrWhiteSpace(current.IdentityUserId))
+        if (current.CustomerId is not > 0)
         {
             return null;
         }
 
-        return await _repository.GetAsync(current.IdentityUserId, cancellationToken);
+        return await _repository.GetByCustomerIdAsync(current.CustomerId.Value, cancellationToken);
     }
 
     public async Task<StoreProfileSaveResult> SaveMyProfileAsync(
@@ -32,11 +32,11 @@ public sealed class StoreProfileUseCase : IStoreProfilePort
         CancellationToken cancellationToken = default)
     {
         var current = await _currentUser.GetCurrentUserAsync(cancellationToken);
-        if (string.IsNullOrWhiteSpace(current.IdentityUserId))
+        if (current.CustomerId is not > 0)
         {
             return new StoreProfileSaveResult { Succeeded = false, Errors = ["Not signed in."] };
         }
 
-        return await _repository.SaveAsync(current.IdentityUserId, profile, cancellationToken);
+        return await _repository.SaveByCustomerIdAsync(current.CustomerId.Value, profile, cancellationToken);
     }
 }
