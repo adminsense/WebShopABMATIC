@@ -25,9 +25,9 @@
 
 | System | Tables | Login today? | Linked to domain? |
 |--------|--------|--------------|-------------------|
-| **ASP.NET Identity** | `AspNetUsers`, `AspNetRoles`, … | ✅ Yes | ❌ No FK to `Customers` / `StaffUsers` |
-| **Legacy staff** | `Settings.StaffUsers` | ❌ CRUD only | ❌ Plaintext password field (legacy) |
-| **Legacy customer** | `Customers.Customers` | ❌ | ⚠️ `WebshopLogin` email match only |
+| **ASP.NET Identity** | `AspNetUsers`, `AspNetRoles`, … | ⏳ Not runtime | Migrations in repo; login not wired in `Program.cs` |
+| **Legacy staff** | `Settings.StaffUsers` | ✅ Admin login | Plaintext `Login` + `Password` |
+| **Legacy customer** | `Customers.Customers` | ✅ Store login | `WebshopLogin` + `PasswordWebshop` / `SaltWebshop` |
 
 **AspNet tables:** created by this project (`Infrastructure/Identity/Migrations/InitialIdentity`), **not** from the legacy ERP schema. Same SQL Server database, separate concern from domain tables.
 
@@ -77,15 +77,17 @@ A user may hold **more than one role** (e.g. Admin + Manager, or Admin + Custome
 
 **Staff-only login redirect:** users with Admin/Manager roles **without** Customer are sent to **`/admin`** after sign-in (not the store homepage).
 
-### Dev seed accounts
+### Demo logins (`seeds.sql` on `abmatic_test`)
 
-| Email | Password | Roles |
-|-------|----------|-------|
-| `admin@webshop.com` | `Admin@12345` | Admin, Manager |
-| `manager@webshop.com` | `Manager@12345` | Manager |
-| `customer@webshop.com` | `Customer@12345` | Customer |
+| Login | Password | Access |
+|-------|----------|--------|
+| `admin@webshop.com` | `demo` | Admin + Manager (`StaffUsers`) |
+| `manager@webshop.com` | `demo` | Manager |
+| `customer@webshop.com` | `demo` | Store customer |
 
-> **Legacy note:** `[Settings].[StaffUsers]` remains for HR / legacy data and is **not** used for login. Authentication is always ASP.NET Identity (`AspNetUsers`) with the three roles above.
+> **Not valid:** `Admin@12345`, `Manager@12345`, `Customer@12345` — those were AspNet Identity demo passwords. Runtime auth uses legacy tables above.
+
+> **Azure ERP data:** when `abmatic_test` has real client rows, use credentials from `[Settings].[StaffUsers]` and `[Customers].[Customers]` in the database.
 
 ---
 

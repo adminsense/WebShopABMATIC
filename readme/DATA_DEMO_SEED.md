@@ -18,7 +18,7 @@
 | **Prerequisite** | EF schema applied (`InitialIdentity` + `InitialDomain` + `OrderAdvancePaymentMollieColumns` + `CustomerIdentityUserId` + `ApplicationUserCustomerId`) |
 | **Schemas with data** | `Crm`, `Customers`, `Accounting`, `Projects`, `Products`, **`Files`**, **`Settings`**, **`Emails`** (queues + demo messages) |
 | **Schemas not seeded** | `Tasks`, `Emails`, `Logging`, and most optional `Projects` / `Products` tables |
-| **Identity users** | Not in `seeds.sql` — created on first dev run via `IdentitySeed` (`admin@webshop.com`, etc.) |
+| **Identity users** | Not used for login — credentials in `StaffUsers` + `Customers` via `seeds.sql` |
 | **Full legacy DB** | `ABMATIC.bacpac` exists (~3 GB) — **not** for local import; see [section 10](#10-full-legacy-database-abmaticbacpac) |
 
 ---
@@ -116,7 +116,7 @@ The full EF model defines **11 schemas** and **139+ tables**. The demo seed touc
 | **App (dbo)** | **`StockLowAlerts`**, **`AuditLogs`** | Dashboard alerts + audit |
 | **Emails** | **`EmailQueues`**, **`EmailMessages`** (2 demo) | Queued low-stock demo |
 
-Inventory detail: [DATA_SUMMARY.md](./DATA_SUMMARY.md) · [SUNDAY_open.md](./SUNDAY_open.md).
+Inventory detail: [DATA_SUMMARY.md](./DATA_SUMMARY.md) · [SUNDAY.md](./SUNDAY.md).
 
 ### 4.2 Not populated (empty after seed)
 
@@ -209,41 +209,29 @@ After a successful run, expect approximately:
 | Queued demo emails | 2 | `Emails.EmailMessages` |
 | Revenue YTD | ~29,384 | Sum of `OrderLines.TotalExclVat` on accepted orders in current UTC year |
 
-Full inventory: [SUNDAY_open.md](./SUNDAY_open.md).
+Full inventory: [SUNDAY.md](./SUNDAY.md).
 
 Admin dashboard reads these via `IAdminDashboardPort` / `AdminDashboardUseCase`.
 
 ---
 
-## 7. Sample identities (not in SQL)
+## 7. Login accounts (legacy — in `seeds.sql`)
 
-Login accounts are **not** inserted by `seeds.sql`. **`AuditLogs`** demo rows **are** in SQL; `dotnet run -- --seed-identity` only adds audit rows if the table is empty (skip after `seeds.sql`).
+Runtime auth uses **legacy ABMATIC cookie auth** (`LegacySignInService`) — **not** `AspNetUsers`.
 
-Run once after schema + domain seed:
+| Portal | Table | Demo login (after `seeds.sql`) | Password |
+|--------|-------|----------------------------------|----------|
+| Admin | `Settings.StaffUsers` | `admin@webshop.com` | `demo` |
+| Admin | `Settings.StaffUsers` | `manager@webshop.com` | `demo` |
+| Store | `Customers.Customers` | `customer@webshop.com` | `demo` |
 
-```powershell
-cd Web
-dotnet run -- --seed-identity
-```
+Staff passwords are **plaintext** in `StaffUsers.Password`. Store passwords use `PasswordWebshop` / `SaltWebshop` (demo customer uses plaintext hash with NULL salt).
 
-Or use `.\scripts\apply-local-database.ps1` (runs schema, `seeds.sql`, and identity seed).
+**Azure with real ERP data:** use credentials that already exist in those tables — do not assume demo passwords.
 
-| Email | Password | Roles |
-|-------|----------|-------|
-| `admin@webshop.com` | `Admin@12345` | Admin, Manager |
-| `manager@webshop.com` | `Manager@12345` | Manager |
-| `customer@webshop.com` | `Customer@12345` | Customer |
+`scripts/seed-identity.ps1` and `IdentitySeed.cs` are **deprecated** for login (not wired in current `Program.cs`).
 
-Domain row for storefront: `Customers.Customers.WebshopLogin = customer@webshop.com` (seeded in SQL).
-
-On first dev run after Auth-1, `IdentitySeed` also sets:
-
-| Column | Table | Value |
-|--------|-------|--------|
-| `IdentityUserId` | `Customers.Customers` | `AspNetUsers.Id` for matching email |
-| `CustomerId` | `AspNetUsers` | `4` for `customer@webshop.com` |
-
-Checkout resolves customer by **`IdentityUserId` first**, then falls back to `WebshopLogin` / `CustomerEmail`.
+**Audit demo rows** are in `seeds.sql` (`AuditLogs`); no separate identity step required.
 
 ---
 

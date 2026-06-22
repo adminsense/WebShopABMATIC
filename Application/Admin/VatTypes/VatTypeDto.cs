@@ -1,3 +1,5 @@
+using WebShopABMATIC.Application.Common;
+
 namespace WebShopABMATIC.Application.Admin.VatTypes;
 
 public sealed class VatTypeDto
@@ -26,5 +28,5 @@ public sealed class VatTypeListFilter
 {
     public string? Search { get; set; }
     public int Page { get; set; } = 1;
-    public int PageSize { get; set; } = 25;
+    public int PageSize { get; set; } = AdminGridDefaults.PageSize;
 }

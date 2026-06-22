@@ -31,7 +31,7 @@
 
 | Artifact | Path | Role |
 |----------|------|------|
-| **Blazor app** | `Web/` | Runnable admin UI (`admin@webshop.com / Admin@12345`) |
+| **Blazor app** | `Web/` | Runnable admin + store UI (legacy login — see §2.4) |
 | **HTML prototype** | `docs/mock-admin.html` | Visual reference before Blazor |
 | **Layout screenshots** | `readme/images/*_screen.png` | Approved shell patterns |
 | **UI patterns** | `readme/PATTERNS_UI_QUICK_START.md` | Buttons, grids, forms |
@@ -92,7 +92,7 @@ The admin UI is defined by **three screen types**. These match the legacy AB-MAT
 | **Content** | 2×2 **portfolio cards** with KPIs, progress indicators, and action pills |
 | **Footer** | Current date + application version (`v1.0`) |
 
-**Blazor route:** `/admin`   (admin@webshop.com / Admin@12345)
+**Blazor route:** `/admin`   (`admin@webshop.com` / `demo` after demo seed on `StaffUsers`)
 **Purpose:** Landing page after login. Read-only summary with drill-down links to hubs (e.g. Webshop catalog → **Manage** → `/admin/hub/webshop`).
 
 #### Dashboard widgets (vNext)
@@ -170,16 +170,19 @@ The admin UI is defined by **three screen types**. These match the legacy AB-MAT
 
 Registration uses `ICustomerRegistrationPort` → links `Customers.IdentityUserId` and `ApplicationUser.CustomerId`, then auto sign-in.
 
-### 2.4 Development seed accounts
+### 2.4 Development / demo logins (legacy auth)
 
-| Email | Password | Roles |
-|-------|----------|-------|
-| `admin@webshop.com` | `Admin@12345` | Admin, Manager |
-| `manager@webshop.com` | `Manager@12345` | Manager |
+Runtime login: `LegacySignInService` → `Settings.StaffUsers` (admin) and `Customers.Customers` (store). **Not** AspNetUsers.
 
-| `customer@webshop.com` | `Customer@12345` | Customer (linked to Customer #4) |
+| Login | Password | Roles / access |
+|-------|----------|----------------|
+| `admin@webshop.com` | `demo` | Admin, Manager |
+| `manager@webshop.com` | `demo` | Manager |
+| `customer@webshop.com` | `demo` | Customer (CustomerId 4 — Tailspin Toys) |
 
-Seeded via `dotnet run -- --seed-identity` (or `apply-local-database.ps1`). Seed skips users that already exist.
+Seeded in `scripts/seeds.sql` (`StaffUsers.Password` plaintext; `Customers.PasswordWebshop` for store).
+
+On **Azure `abmatic_test` with real ERP data**, use existing staff/customer credentials from the database.
 
 ### 2.5 Logout
 
@@ -450,7 +453,7 @@ dotnet run
 ```
 
 1. Open the HTTPS URL from the console.
-2. Sign in: `admin@webshop.com` / `Admin@12345`.
+2. Sign in: `admin@webshop.com` / `demo` (after demo seed) or your `StaffUsers` login on Azure.
 3. Land on `/admin`.
 
 > [!NOTE]

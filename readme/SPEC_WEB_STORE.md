@@ -140,7 +140,7 @@ sequenceDiagram
 | 3 | On success: session cookie; load `CustomerId` for pricing and addresses |
 | 4 | On failure: generic error (no user enumeration) |
 
-**Development seed (shared with admin app):** `customer@webshop.com` / `Customer@12345` (Identity); map to a `Customer` row when domain DB is seeded.
+**Store login (legacy):** `Customers.WebshopLogin` + `PasswordWebshop` / `SaltWebshop`. Demo seed: `customer@webshop.com` / `demo`. On Azure with ERP data, use real customer credentials from the database.
 
 ### 2.3 Logout
 

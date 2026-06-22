@@ -17,7 +17,7 @@ Visual reference (AB-MATIC admin shell): [adminsenceweb.azurewebsites.net](https
 | [`docs/mock-admin.html`](../docs/mock-admin.html) | Staff **admin panel** (AB-MATIC layout) | Store **Admin Panel** button or direct |
 | [`docs/mock-shopcart.html`](../docs/mock-shopcart.html) | Redirect → `mock-loja.html` | Legacy alias |
 
-**Admin entry:** In the store, sign in with the **StaffUser.Admin** demo account (`anna.rodriguez@webshop.com`). The **Admin Panel** button appears in the header and opens `mock-admin.html`.
+**Admin entry:** In the store, sign in with a **StaffUsers** account that has admin rights (demo: `admin@webshop.com` / `demo`). The **Admin Panel** button appears in the header.
 
 ---
 
@@ -450,7 +450,7 @@ Same table as **Settings → StaffUser**, opened **directly in form view** (`for
 
 Open `docs/mock-loja.html` and walk through:
 
-1. **Store** → demo login **StaffUser.Admin** → **Admin Panel** visible.
+1. **Store** → demo login `admin@webshop.com` / `demo` → **Admin Panel** visible.
 2. **Admin Start** — matches `main_screen.png` layout (sidebar, top bar, 4 cards, footer).
 3. **Catalog** hub — matches `menu_screen.png` (back link, cards, form buttons).
 4. **Product** → list — matches `forms_screen.png` (filters, Apply/Clear, dark table, edit icon).

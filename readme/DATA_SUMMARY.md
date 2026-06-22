@@ -3,8 +3,8 @@
 ![Status](https://img.shields.io/badge/Status-Live%20on%20Azure%20SQL-28a745?style=flat-square) ![Script](https://img.shields.io/badge/Script-seeds.sql-0d47a1?style=flat-square) ![Tables](https://img.shields.io/badge/Seeded%20tables-40%2B-512BD4?style=flat-square) ![Database](https://img.shields.io/badge/Database-abmatic__test-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white)
 
 > **Purpose:** Single merged view — every demo table, **live row count** on the Azure SQL server `abmatic.database.windows.net`, related admin/store screen, and seed status.  
-> **Refresh data:** `.\scripts\seed-demo.ps1` · **Full setup:** `.\scripts\apply-local-database.ps1` · **Login users:** `.\scripts\seed-identity.ps1`  
-> **Detail / pending work:** [SUNDAY_open.md](./SUNDAY_open.md) · [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) · [scripts/README.md](../scripts/README.md)
+> **Refresh data:** `.\scripts\seed-demo.ps1` · **Full setup:** `.\scripts\apply-local-database.ps1`  
+> **Detail / pending work:** [SUNDAY.md](./SUNDAY.md) · [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) · [scripts/README.md](../scripts/README.md)
 
 ---
 
@@ -14,7 +14,7 @@
 |------|--------|
 | **Target database** | `abmatic_test` on Azure SQL `abmatic.database.windows.net` |
 | **Seed script** | [`scripts/seeds.sql`](../scripts/seeds.sql) — idempotent INSERTs |
-| **Identity users** | [`scripts/seed-identity.ps1`](../scripts/seed-identity.ps1) — not in SQL |
+| **Login** | `StaffUsers` + `Customers` in `seeds.sql` (legacy) |
 | **Schemas with data** | `Crm`, `Customers`, `Accounting`, `Projects`, `Products`, `Files`, `Settings`, `Emails`, `dbo` (alerts + audit) |
 | **Storefront coverage** | 10 products, 10 images, 12 navigation nodes, 11 category labels |
 | **Admin coverage** | Orders, stock, CRM, catalog extras, accounting demo, email queue |
@@ -42,7 +42,7 @@
 | **Sales & payments** | ✅ Complete | Orders, lines, advance payments (Mollie mock) |
 | **Stock & PO demo** | 🟢 Seeded | Locations, movements, open PO + partial GRN row |
 | **Email queue** | 🔷 Demo only | Queued rows ✅ — SMTP worker = **prod** |
-| **Identity login** | 🔷 Separate script | `AspNetUsers` via `seed-identity.ps1` |
+| **Login (legacy)** | ✅ In SQL | `StaffUsers` + `Customers.PasswordWebshop` in `seeds.sql` |
 
 ### 📋 Categories summary
 
@@ -52,7 +52,7 @@
 | ⚙️ **Settings** | 4 | 8 | User groups, staff users, base company | ✅ |
 | 👤 **Customers & CRM** | 7 | 19 | Customers, addresses, discounts, suppliers | ✅ |
 | 📦 **Catalog** | 10 | 74 | Products, prices, structures, options, tiers | ✅ |
-| 🖼️ **Media** | 2 | 11 | Product images (local blob Phase 1) | ✅ |
+| 🖼️ **Media** | 2 | 11 | Product images (Azure Blob `files` or local fallback) | ✅ |
 | 📊 **Stock** | 6 | 27 | Locations, movements, PO, GRN demo | ✅ |
 | 🛍️ **Sales** | 4 | 76 | Orders, lines, advance payments | ✅ |
 | 🔔 **Alerts & audit** | 2 | 15 | Dashboard KPIs, audit logs | ✅ |
@@ -77,13 +77,13 @@
 | **Settings** | `Settings.UserGroups` | 3 | `/admin/user-groups` | ✅ | Sales, Warehouse, Installation |
 | | `Settings.BaseCompany` | 1 | Accounting / company | ✅ | Demo BV |
 | | `Settings.BaseCompanyVatNumber` | 1 | Accounting | ✅ | Linked to company |
-| | `Settings.StaffUsers` | 3 | `/admin/staff-users` | ✅ | Legacy domain users (≠ Identity) |
+| | `Settings.StaffUsers` | 3 | `/admin/staff-users` + **admin login** | ✅ | `Login` / `Password` (legacy plaintext) |
 | **Accounting** | `Accounting.DocumentTypes` | 2 | Spec only | ✅ | Invoice + credit note |
 | | `Accounting.AccountingDocuments` | 1 | Spec only (no admin list) | ✅ | Paid invoice → order `2026009` |
 | **CRM** | `Crm.Manufacturer` | 1 | `/admin/manufacturers` | ✅ | Demo Manufacturer |
 | | `Crm.Supplier` | 1 | `/admin/suppliers` | ✅ | Demo Supplier |
 | | `Crm.CustomerProductDiscounts` | 3 | `/admin/customer-discounts` | ✅ | Customers 1, 2, 4 |
-| **Customers** | `Customers.Customers` | 4 | `/admin/customers` | ✅ | incl. `customer@webshop.com` |
+| **Customers** | `Customers.Customers` | 4 | `/admin/customers`, `/sign-in` | ✅ | incl. `customer@webshop.com` + `PasswordWebshop` |
 | | `Crm.CustomerDeliveryAddresses` | 5 | `/admin/delivery-addresses` + checkout | ✅ | 2 addresses for customer 4 |
 | | `Customers.Contact` | 3 | CRM (no dedicated list) | ✅ | Buyers + supplier contact |
 | | `Customers.CustomerContacts` | 3 | CRM (no dedicated list) | ✅ | Linked to customers |
@@ -127,14 +127,17 @@
 
 ---
 
-## 3. Outside `seeds.sql` (Identity — login)
+## 3. Login (legacy — in `seeds.sql`)
 
-| Item | How | Screen |
-|------|-----|--------|
-| `AspNetUsers` + roles | `.\scripts\seed-identity.ps1` | `/admin/login`, `/store` login |
-| Demo accounts | `admin@`, `manager@`, `customer@` | See [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) §7 |
+| Portal | Login | Password (demo seed) | Table |
+|--------|-------|----------------------|-------|
+| Admin | `admin@webshop.com` | `demo` | `Settings.StaffUsers` |
+| Admin | `manager@webshop.com` | `demo` | `Settings.StaffUsers` |
+| Store | `customer@webshop.com` | `demo` | `Customers.Customers` |
 
-Implementation: `Infrastructure/Seeding/IdentitySeed.cs` (hashed passwords — cannot go in SQL).
+On **Azure `abmatic_test` with real ERP data**, use credentials from those tables in SSMS — not AspNetUsers.
+
+`seed-identity.ps1` is deprecated for login.
 
 ---
 
@@ -156,11 +159,8 @@ Implementation: `Infrastructure/Seeding/IdentitySeed.cs` (hashed passwords — c
 # Re-apply all demo INSERTs (idempotent)
 .\scripts\seed-demo.ps1
 
-# Schema + seed + Identity
+# Schema + seed (login included in seeds.sql)
 .\scripts\apply-local-database.ps1
-
-# Login users only
-.\scripts\seed-identity.ps1
 ```
 
 ---

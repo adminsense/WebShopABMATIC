@@ -1,3 +1,5 @@
+using WebShopABMATIC.Application.Common;
+
 namespace WebShopABMATIC.Application.Admin.Products;
 
 public sealed class ProductDto
@@ -32,5 +34,5 @@ public sealed class ProductListFilter
     public bool? ShowOnWebshop { get; set; }
     public bool ModifiedOnly { get; set; }
     public int Page { get; set; } = 1;
-    public int PageSize { get; set; } = 25;
+    public int PageSize { get; set; } = AdminGridDefaults.PageSize;
 }

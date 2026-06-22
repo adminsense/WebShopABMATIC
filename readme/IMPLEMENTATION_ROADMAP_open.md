@@ -5,7 +5,7 @@
 > **Purpose:** Single delivery tracker for WebShopABMATIC — phased checkboxes, open backlog, and **dev-first** priority.  
 > **Mark ✅ when done · ⬜ when pending · 🔶 partial.**  
 > **Analysis:** [SPEC_STOCK_OPERATIONS_PROPOSAL.md](./SPEC_STOCK_OPERATIONS_PROPOSAL.md)  
-> **Related:** [PAYMENTS_open.md](./PAYMENTS_open.md) · [AUDITS_open.md](./AUDITS_open.md) · [AZUREBLOB_open.md](./AZUREBLOB_open.md) · [AUTH_IDENTITY_ROADMAP_open.md](./AUTH_IDENTITY_ROADMAP_open.md)
+> **Related:** [PAYMENTS_open.md](./PAYMENTS_open.md) · [AUDITS_open.md](./AUDITS_open.md) · [AZUREBLOB.md](./AZUREBLOB.md) · [AUTH_IDENTITY_ROADMAP_open.md](./AUTH_IDENTITY_ROADMAP_open.md)
 
 ### Delivery model (owner rule)
 
@@ -26,7 +26,7 @@
 | **C** | Store & admin order visibility | ✅ Done | — |
 | **D** | Stock writes + low-stock in-app | ✅ Done | — |
 | **3b** | Low stock email | ✅ Done (mock + in-app) | ⬜ SMTP worker — last |
-| **M** | Product images | ✅ Dev done | ⬜ Azure Blob — last |
+| **M** | Product images | ✅ Done | ✅ Azure Blob (`files`) |
 | **E** | PO / GRN / transfer / reservation | ⬜ Pending | — |
 | **F** | SignalR real-time stock (optional) | ⬜ Pending | — |
 | **G** | Audit `StockAdjust` badge | ✅ Done | — |
@@ -44,8 +44,7 @@
 Do **not** start until dev track above is complete:
 
 1. **3b** — SMTP / background worker for low-stock queue  
-2. **M.5** — Real Azure Blob storage adapter  
-3. **B.9** — Mollie real E2E — [PAYMENTS_open.md](./PAYMENTS_open.md)
+2. **B.9** — Mollie real E2E — [PAYMENTS_open.md](./PAYMENTS_open.md)
 
 ---
 
@@ -96,9 +95,9 @@ See [AUDITS_open.md](./AUDITS_open.md).
 | Code + `MollieMockPaymentAdapter` | ✅ | n/a |
 | `Mollie:ApiKey`, webhook, E2E checklist | n/a | ⬜ — [PAYMENTS_open.md](./PAYMENTS_open.md) |
 
-### M.5 — Azure Blob (production)
+### M.5 — Azure Blob (production) ✅
 
-- ⬜ Real Azure Blob storage adapter — [AZUREBLOB_open.md](./AZUREBLOB_open.md)
+- ✅ Real Azure Blob storage adapter — [AZUREBLOB.md](./AZUREBLOB.md) (container `files`, SAS URLs)
 
 ---
 
@@ -112,6 +111,7 @@ See [AUDITS_open.md](./AUDITS_open.md).
 | Audit `StockAdjust` (Phase G) | ✅ |
 | Mollie integration + dev mock (B.9a) | ✅ |
 | Product media + seeds (Phase M dev) | ✅ |
+| Azure Blob production adapter (M.5) | ✅ |
 | `ReservedQuantity` display + available calc | ✅ display only |
 
 ---
@@ -188,15 +188,15 @@ See [AUDITS_open.md](./AUDITS_open.md).
 
 ---
 
-## Phase M — Product media ✅ (dev) · ⬜ (prod)
+## Phase M — Product media ✅
 
-Detail: [AZUREBLOB_open.md](./AZUREBLOB_open.md)
+Detail: [AZUREBLOB.md](./AZUREBLOB.md)
 
 - ✅ **M.1** `IProductMediaPort` + `LocalProductMediaService`
 - ✅ **M.2** Admin product upload
 - ✅ **M.3** Store catalog reads `AzureFiles` (fallback images)
 - ✅ **M.4** Seed `AzureFileFolders` + `AzureFiles` in `seeds.sql` (all `ShowOnWebshop` products)
-- ⬜ **M.5** Real Azure Blob storage adapter — **prod go-live (last)**
+- ✅ **M.5** Real Azure Blob storage adapter (account `abmatic`, container `files`, SAS URLs)
 
 ---
 
@@ -255,7 +255,7 @@ Phase B   [██████████] dev mock ✅
 Phase C   [██████████] 5/5
 Phase D   [█████████░] D.7 → Phase E
 Phase 3b  [██████████] dev mock ✅
-Phase M   [██████████] dev ✅ · M.5 prod last
+Phase M   [██████████] M.1–M.5 ✅
 Phase E   [░░░░░░░░░░] ⬜ PO / GRN / transfer / reserve
 Phase F   [░░░░░░░░░░] ⬜ optional SignalR
 Phase G   [██████████] StockAdjust audit ✅
@@ -263,7 +263,7 @@ Phase G   [██████████] StockAdjust audit ✅
 PROD GO-LIVE (last — after dev 100%)
 B.9 Mollie E2E     ⬜
 3b SMTP worker     ⬜
-M.5 Azure Blob     ⬜
+M.5 Azure Blob     ✅
 ```
 
 ---

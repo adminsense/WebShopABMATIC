@@ -1,3 +1,5 @@
+using WebShopABMATIC.Application.Common;
+
 namespace WebShopABMATIC.Application.Admin.StockLocations;
 
 public sealed class StockLocationDto
@@ -18,5 +20,5 @@ public sealed class StockLocationListFilter
 {
     public string? Search { get; set; }
     public int Page { get; set; } = 1;
-    public int PageSize { get; set; } = 25;
+    public int PageSize { get; set; } = AdminGridDefaults.PageSize;
 }

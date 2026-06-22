@@ -555,7 +555,7 @@ WebShopABMATIC/              ← repo root
 |------|--------|------------------|
 | 1 | Legacy DB on Azure | `abmatic_test` on `abmatic.database.windows.net` (Dutch, 139 business tables) |
 | 2 | Add vNext objects | `dotnet ef database update` (Identity + domain contexts) — adds §4.1 tables/columns |
-| 3 | Seed Identity users | `dotnet run --project Web -- --seed-identity` or `scripts/seed-identity.ps1` |
+| 3 | Demo login rows (optional) | `scripts/seeds.sql` — `StaffUsers` + `Customers.PasswordWebshop` (legacy auth) |
 | 4 | Map EF to Dutch names | `WebShopABMATICModelBuilder` → Dutch schema/table/column names |
 | 5 | Optional ETL | `INSERT…SELECT` Dutch → English only if a separate English DB is needed later |
 | 6 | Future changes | EF Core migrations only (never at app startup) |

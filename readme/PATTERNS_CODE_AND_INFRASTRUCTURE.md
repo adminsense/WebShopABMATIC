@@ -896,19 +896,19 @@ Use `_open` on roadmaps, ops runbooks with pending steps, and feature backlogs �
 
 | File | Scope |
 |------|--------|
-| `SUNDAY_open.md` | **Seed inventory** — what `seeds.sql` populates vs pending |
+| `SUNDAY.md` | **Seed inventory** — what `seeds.sql` populates |
 | `IMPLEMENTATION_ROADMAP_open.md` | **Main delivery tracker** — dev-first priorities + prod go-live (last) |
 | `IMPLEMENTATION_ROADMAP_open.md` | Phased checklist (0 → E) |
 | `PAYMENTS_open.md` | Mollie go-live (API key, webhook, E2E) |
 | `AUTH_IDENTITY_ROADMAP_open.md` | Identity ↔ domain |
 | `AUDITS_open.md` | Audit system (+ SMTP worker pending) |
-| `AZUREBLOB_open.md` | Product images / `AzureFiles` |
+| `AZUREBLOB.md` | Product images / `AzureFiles` / Azure Blob |
 
 ### Proper names (exceptions)
 
 Some files use a **descriptive name + `_open`** instead of a prefix when the name is clearer for the team:
 
-- `IMPLEMENTATION_ROADMAP_open.md`, `PAYMENTS_open.md`, `AUDITS_open.md`, `AZUREBLOB_open.md`
+- `IMPLEMENTATION_ROADMAP_open.md`, `PAYMENTS_open.md`, `AUDITS_open.md`, `AZUREBLOB.md`
 
 New docs should **prefer the prefix table** unless Marco assigns a proper name.
 

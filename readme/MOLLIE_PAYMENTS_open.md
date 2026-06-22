@@ -70,7 +70,7 @@ Use the ngrok **https** URL as the site you open in the browser when testing che
 
 ## 3. Manual E2E checklist (B.9)
 
-1. Sign in as `customer@webshop.com` / `Customer@12345`.
+1. Sign in as `customer@webshop.com` / `demo` (after demo seed) or a real `WebshopLogin` from Azure.
 2. Add products to cart → **Place order** with **iDEAL / card (Mollie)**.
 3. Confirm redirect to Mollie hosted checkout.
 4. Complete payment with Mollie test method (e.g. paid status in test dashboard).

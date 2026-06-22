@@ -4,10 +4,10 @@ namespace WebShopABMATIC.Application.Ports.Outbound;
 
 public interface IStoreProfileRepository
 {
-    Task<StoreProfileDto?> GetAsync(string identityUserId, CancellationToken cancellationToken = default);
+    Task<StoreProfileDto?> GetByCustomerIdAsync(int customerId, CancellationToken cancellationToken = default);
 
-    Task<StoreProfileSaveResult> SaveAsync(
-        string identityUserId,
+    Task<StoreProfileSaveResult> SaveByCustomerIdAsync(
+        int customerId,
         StoreProfileUpdateDto profile,
         CancellationToken cancellationToken = default);
 }
