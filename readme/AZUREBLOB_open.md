@@ -1,6 +1,6 @@
 # Product media — Azure Files model (legacy-aligned)
 
-![Status](https://img.shields.io/badge/Status-Phase%201%20dev%20done-28a745?style=flat-square) ![Storage](https://img.shields.io/badge/Phase%201-Local%20fictitious%20blob-0dcaf0?style=flat-square) ![Tables](https://img.shields.io/badge/Tables-AzureFiles%20%2B%20Product-512BD4?style=flat-square) ![Legacy](https://img.shields.io/badge/Model-ABMATIC%20aligned-28a745?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Phase%202%20integrated-28a745?style=flat-square) ![Storage](https://img.shields.io/badge/Storage-Azure%20Blob%20%60files%60-0dcaf0?style=flat-square) ![Tables](https://img.shields.io/badge/Tables-AzureFiles%20%2B%20Product-512BD4?style=flat-square) ![Legacy](https://img.shields.io/badge/Model-ABMATIC%20aligned-28a745?style=flat-square)
 
 > [!IMPORTANT]
 > **Executive Summary:** Product images in WebShopABMATIC follow the **legacy ABMATIC pattern**: files are registered in `[Files].[AzureFiles]` and linked to `[Products].[Product]` via `ProductId` — not via a column on `Product`. Phase 1 uses a **fictitious Azure Blob** (local filesystem under `wwwroot/media/products/`) with the same `BlobRef` contract, so admin forms, seed data, and the storefront can be built now and swapped to real Azure Blob Storage later without changing the database model.
@@ -42,7 +42,7 @@
 <tr><td><strong>DB on Azure SQL</strong></td><td>✅ Seeded</td><td><code>AzureFileFolders</code> + <code>AzureFiles</code> via <code>seeds.sql</code></td></tr>
 <tr><td><strong>Admin save</strong></td><td>✅ Wired</td><td><code>ProductAdminUseCase</code> + <code>IProductMediaPort</code> (local blob Phase 1)</td></tr>
 <tr><td><strong>Store catalog</strong></td><td>✅ Done</td><td><code>StoreCatalogService</code> via <code>IProductMediaPort</code>; static fallback if no row</td></tr>
-<tr><td><strong>Real Azure Blob</strong></td><td>⏳ Phase 2</td><td>Replace storage adapter only</td></tr>
+<tr><td><strong>Real Azure Blob</strong></td><td>✅ Phase 2</td><td><code>AzureBlobProductMediaService</code> + <code>AzureStorage</code> config</td></tr>
 </tbody>
 </table>
 
@@ -325,7 +325,7 @@ flowchart LR
 <col style="width:39%">
 </colgroup>
 <thead>
-<tr><th>Concern</th><th>Phase 1 (now)</th><th>Phase 2 (production)</th></tr>
+<tr><th>Concern</th><th>Phase 1 (dev fallback)</th><th>Phase 2 (production) ✅</th></tr>
 </thead>
 <tbody>
 <tr><td>Bytes on disk</td><td><code>wwwroot/media/products/</code></td><td>Azure Blob container</td></tr>
@@ -352,7 +352,7 @@ flowchart LR
 </thead>
 <tbody>
 <tr><td>One <strong>primary</strong> image per product</td><td>Multi-image gallery UI</td></tr>
-<tr><td>Local fictitious blob</td><td>Real Azure SDK upload</td></tr>
+<tr><td>Local fictitious blob</td><td>Real Azure SDK upload ✅</td></tr>
 <tr><td><code>AzureFiles</code> + <code>PublishToWeb</code></td><td><code>StoredFiles</code> binary-in-SQL for catalog</td></tr>
 <tr><td>Admin create/edit + seed + store read</td><td>Image cropping, virus scan, CDN rules</td></tr>
 </tbody>
@@ -368,7 +368,81 @@ flowchart LR
 4. **Admin** — extend DTO, service, `ProductForm` upload ✅  
 5. **Store** — catalog/detail read image from `AzureFiles` ✅  
 6. **Docs** — update [DATA_DEMO_SEED.md](DATA_DEMO_SEED.md) and [SPEC_INFRASTRUCTURE.md](SPEC_INFRASTRUCTURE.md) media section ✅  
-7. **Phase 2** — real Azure Blob adapter (prod go-live, last) ⬜
+7. **Phase 2** — real Azure Blob adapter (prod go-live) ✅
+
+---
+
+## 9. Production integration (ABMATIC client — integrated)
+
+<table>
+<colgroup>
+<col style="width:28%">
+<col style="width:72%">
+</colgroup>
+<thead>
+<tr><th>Item</th><th>Value</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>SQL database</strong></td><td><code>abmatic_test</code> on <code>abmatic.database.windows.net</code></td></tr>
+<tr><td><strong>Image metadata table</strong></td><td><code>[Bestanden].[AzureFile]</code> (EF: <code>AzureFiles</code>)</td></tr>
+<tr><td><strong>Storage type</strong></td><td>Azure <strong>Blob Storage</strong> (not File Share for catalog images)</td></tr>
+<tr><td><strong>Storage account</strong></td><td><code>abmatic</code></td></tr>
+<tr><td><strong>Blob container</strong></td><td><code>files</code> (conta <code>abmatic</code> — não File Share)</td></tr>
+<tr><td><strong>Blob endpoint</strong></td><td><code>https://abmatic.blob.core.windows.net</code></td></tr>
+<tr><td><strong>File Share (ERP only)</strong></td><td><code>abmaticprojecten</code> / share <code>projecten</code> — not used for webshop catalog</td></tr>
+</tbody>
+</table>
+
+### `BlobRef` format (verified on `abmatic_test`)
+
+<table>
+<colgroup>
+<col style="width:18%">
+<col style="width:42%">
+<col style="width:40%">
+</colgroup>
+<thead>
+<tr><th>ProductId</th><th>BlobRef</th><th>Extension</th></tr>
+</thead>
+<tbody>
+<tr><td>11234</td><td><code>19-10-2022-10-58-4567322bc1-30f9-4f2e-afb7-aa07c44ffda5</code></td><td><code>.jpg</code></td></tr>
+<tr><td>11235</td><td><code>6-6-2024-01-45-1726eb3dd5-94a3-44ec-86e9-d9987eb3e250</code></td><td><code>.JPG</code></td></tr>
+</tbody>
+</table>
+
+- `BlobRef` = blob object name in container (legacy ABMATIC: **without** extension in the key).
+- `Extension` column holds <code>.jpg</code> / <code>.PNG</code> — metadata only; do not append when resolving URLs.
+- `ThumbRef` = <code>thumbnails/{BlobRef}</code> (thumbnail path; storefront uses primary `BlobRef`).
+- Store filter: <code>IsPrimaryImage = 1</code> AND <code>PublishToWeb = 1</code>.
+
+### App configuration
+
+Set in **Azure App Service → Configuration** (never commit secrets to git):
+
+```json
+"AzureStorage": {
+  "ConnectionString": "<DefaultEndpointsProtocol=https;AccountName=abmatic;AccountKey=…>",
+  "ContainerName": "files",
+  "UseSasUrls": true,
+  "SasValidityHours": 12
+}
+```
+
+Local dev (User Secrets):
+
+```powershell
+dotnet user-secrets set "AzureStorage:ConnectionString" "<connection string>" --project Web/WebShopABMATIC.Web.csproj
+```
+
+When `ConnectionString` is empty, the app falls back to <code>LocalProductMediaService</code> (Phase 1).
+
+### Code
+
+| Component | Role |
+|-----------|------|
+| `AzureBlobProductMediaService` | Read/write blobs; SAS URLs for private container |
+| `BlobReferenceResolver` | Map `BlobRef` + `Extension` → blob name |
+| `ProductMediaDependencyInjection` | Azure when configured, else local |
 
 ---
 
