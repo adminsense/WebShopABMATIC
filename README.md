@@ -118,13 +118,26 @@ Post-payment confirmation experience:
 
 **Legend:** R = Read | W = Write | RW = Read+Write | — = No access
 
-### 3.4 Valid Test Logins
+### 3.4 Valid test logins (legacy auth — Azure `abmatic_test`)
 
-| Email | Password | Role | Access |
-|-------|-------|------|--------|
-| `admin@webshop.com` | `Admin@12345` | Admin | 🎛️ Admin Panel |
-| `anna.rodriguez@webshop.com` | `Staff@12345` | Manager | 🎛️ Admin Panel |
-| `customer@webshop.com` | `Customer@12345` | Customer | 📦 Storefront |
+Login uses **legacy ABMATIC tables**, not ASP.NET Identity (`AspNetUsers` is not used at runtime).
+
+| Portal | URL | Table | Credential fields |
+|--------|-----|-------|-------------------|
+| **Admin** | `/admin/login` | `Settings.StaffUsers` | `Login` + `Password` (plaintext) |
+| **Store** | `/sign-in` | `Customers.Customers` | `WebshopLogin` + `PasswordWebshop` / `SaltWebshop` |
+
+**After demo seed** (`Sql/seeds.sql` on `abmatic_test`):
+
+| Login | Password | Access |
+|-------|----------|--------|
+| `admin@webshop.com` | `demo` | Admin + Manager |
+| `manager@webshop.com` | `demo` | Manager |
+| `customer@webshop.com` | `demo` | Store customer (Tailspin Toys) |
+
+**Real ERP data on Azure:** when the database has client ABMATIC rows (hundreds of webshop products, real staff), use credentials from `[Settings].[StaffUsers]` and `[Customers].[Customers]` in SSMS — **not** the old Identity passwords (`Admin@12345`, etc.).
+
+> Login credentials are in `Sql/seeds.sql` (`StaffUsers` + `Customers`) — not AspNet Identity.
 
 ---
 
@@ -138,11 +151,11 @@ Post-payment confirmation experience:
 - 💳 [`readme/MOLLIE_PAYMENTS_open.md`](readme/MOLLIE_PAYMENTS_open.md) — Mollie test key, webhook, E2E checklist (open / pending)
 - 📦 [`readme/SPEC_STOCK_OPERATIONS_PROPOSAL.md`](readme/SPEC_STOCK_OPERATIONS_PROPOSAL.md) — Stock operations, checkout, Mollie
 - ✅ [`readme/DATA_SUMMARY.md`](readme/DATA_SUMMARY.md) — **Demo data summary** (all tables, live row counts, admin screens)
-- ✅ [`readme/SUNDAY_open.md`](readme/SUNDAY_open.md) — Seed inventory (pending vs done)
+- ✅ [`readme/SUNDAY.md`](readme/SUNDAY.md) — Seed inventory (`seeds.sql` — complete)
 - ✅ [`readme/IMPLEMENTATION_ROADMAP_open.md`](readme/IMPLEMENTATION_ROADMAP_open.md) — **Main delivery tracker** (dev 100% first · prod go-live last)
 - 🔐 [`readme/AUTH_IDENTITY_ROADMAP_open.md`](readme/AUTH_IDENTITY_ROADMAP_open.md) — Identity, roles, customers, user IDs on writes
 - 📋 [`readme/AUDITS_open.md`](readme/AUDITS_open.md) — Audit log plan (CRUD / Login / Report / Logout badges + checklist)
-- 🖼️ [`readme/AZUREBLOB_open.md`](readme/AZUREBLOB_open.md) — Product images: `AzureFiles` ↔ `Product`, fictitious blob Phase 1
+- ✅ [`readme/AZUREBLOB.md`](readme/AZUREBLOB.md) — Product images: `AzureFiles` ↔ `Product`, Azure Blob `files` + SAS
 - 🖥️ [`readme/MOCK_PROTOTYPE_GUIDE.md`](readme/MOCK_PROTOTYPE_GUIDE.md) — Mock layouts, menus, entities, and validation walkthrough
 - 🎨 [`readme/PATTERNS_UI_QUICK_START.md`](readme/PATTERNS_UI_QUICK_START.md) — Buttons, grids, forms (copy-paste)
 - 🏗️ [`readme/PATTERNS_CODE_AND_INFRASTRUCTURE.md`](readme/PATTERNS_CODE_AND_INFRASTRUCTURE.md) — Blazor patterns,

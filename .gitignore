@@ -372,11 +372,12 @@ appsettings.*.json
 !**/appsettings.Production.json
 
 # Accidental dotnet publish output copied into project root (not bin/)
-/Web/*.dll
-/Web/*.pdb
-/Web/*.deps.json
-/Web/*.runtimeconfig.json
-/Web/runtimes/
+/WebShopABMATIC/*.dll
+/WebShopABMATIC/*.exe
+/WebShopABMATIC/*.pdb
+/WebShopABMATIC/*.deps.json
+/WebShopABMATIC/*.runtimeconfig.json
+/WebShopABMATIC/runtimes/
 
 # Local tooling scratch
 /tools/**/bin/

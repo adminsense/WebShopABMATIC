@@ -4,7 +4,7 @@
 
 **Idempotent demo dataset** for local testing of the admin dashboard, product/customer/order lists, and webshop-related KPIs.
 
-**Script:** [`scripts/seeds.sql`](../scripts/seeds.sql)
+**Script:** [`Sql/seeds.sql`](../Sql/seeds.sql)
 
 ---
 
@@ -14,7 +14,7 @@
 |------|--------|
 | **Target database** | `abmatic_test` |
 | **SQL Server instance** | `abmatic.database.windows.net` (Azure SQL, SQL authentication) |
-| **Seed script** | `scripts/seeds.sql` |
+| **Seed script** | `Sql/seeds.sql` |
 | **Prerequisite** | EF schema applied (`InitialIdentity` + `InitialDomain` + `OrderAdvancePaymentMollieColumns` + `CustomerIdentityUserId` + `ApplicationUserCustomerId`) |
 | **Schemas with data** | `Crm`, `Customers`, `Accounting`, `Projects`, `Products`, **`Files`**, **`Settings`**, **`Emails`** (queues + demo messages) |
 | **Schemas not seeded** | `Tasks`, `Emails`, `Logging`, and most optional `Projects` / `Products` tables |
@@ -48,19 +48,12 @@ Both contexts use the **same database** so admin lists and Identity login share 
 
 Apply migrations once against `abmatic_test` on `abmatic.database.windows.net`:
 
-```powershell
-sqlcmd -S abmatic.database.windows.net -d abmatic_test -U <user> -P <password> -i scripts\apply-pending-schema.sql
-```
-
-Or the all-in-one script:
-
-```powershell
-.\scripts\apply-local-database.ps1
+```text
+sqlcmd -S abmatic.database.windows.net -d abmatic_test -U <user> -P <password> -i Sql\apply-pending-schema.sql
+sqlcmd -S abmatic.database.windows.net -d abmatic_test -U <user> -P <password> -i Sql\seeds.sql
 ```
 
 Alternative (EF CLI — keeps `__EFMigrationsHistory` in sync if you prefer):
-
-```powershell
 $c = "Server=tcp:abmatic.database.windows.net,1433;Database=abmatic_test;User Id=<user>;Password=<password>;MultipleActiveResultSets=true;Encrypt=True;TrustServerCertificate=False;"
 
 dotnet ef database update `
@@ -229,7 +222,7 @@ Staff passwords are **plaintext** in `StaffUsers.Password`. Store passwords use 
 
 **Azure with real ERP data:** use credentials that already exist in those tables — do not assume demo passwords.
 
-`scripts/seed-identity.ps1` and `IdentitySeed.cs` are **deprecated** for login (not wired in current `Program.cs`).
+Login credentials are in `Sql/seeds.sql` (`StaffUsers` + `Customers`) — AspNet Identity seed is not used at runtime.
 
 **Audit demo rows** are in `seeds.sql` (`AuditLogs`); no separate identity step required.
 
@@ -278,7 +271,7 @@ Importing `ABMATIC.bacpac` into a **local SQL Server** instance (e.g. LocalDB) i
 - Most developers only need **admin lists, dashboard KPIs, and storefront smoke tests** — covered by `seeds.sql` on the English `WebShopABMATIC` schema.
 - Local machines rarely have room for both the full legacy DB and the vNext `WebShopABMATIC` database comfortably.
 
-For local work, use **`scripts/seeds.sql`** on `WebShopABMATIC` after EF migrations (sections 2–3 above).
+For local work, use **`Sql/seeds.sql`** on `WebShopABMATIC` after EF migrations (sections 2–3 above).
 
 ### Production / Azure integration path
 
@@ -291,7 +284,7 @@ For **posterior integrations** with real legacy data (ETL, validation against li
 
 > **Note:** Production imports affect cost, storage, and security. Restrict access to the Azure instance used for bacpac restore and treat it as **non-production** unless explicitly approved for live cutover.
 
-Alternative without bacpac: `scripts/ABMATIC-create-local.sql` or `Bkp_Db/WebShopABMATIC-create-local.sql` for schema-only or smaller local setups.
+Alternative without bacpac: `Sql/ABMATIC-create-local.sql` or `Bkp_Db/WebShopABMATIC-create-local.sql` for schema-only or smaller local setups.
 
 ---
 

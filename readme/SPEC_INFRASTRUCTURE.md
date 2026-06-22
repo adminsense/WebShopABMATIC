@@ -140,7 +140,7 @@ WebShopABMATIC/                 ← repo root (solution parent)
 ├── Persistence/                  ← DbContext + ModelBuilder
 ├── docs/                         ← HTML mocks
 ├── readme/                       ← documentation
-└── scripts/                      ← SQL + codegen
+└── Sql/                      ← SQL + codegen
 ```
 
 - `docs/` — static prototypes (HTML mocks)  
@@ -256,7 +256,7 @@ WebShopABMATIC/                 ← repo root (solution parent)
   ✅ Identity: `Infrastructure/Identity/Migrations/InitialIdentity`
 
 - Domain DB: `WebShopABMATICDbContext` → connection `connWebShopABMATIC`  
-  ✅ Same server/database as Identity; legacy schema from `scripts/WebShopABMATIC-create-local.sql`
+  ✅ Same server/database as Identity; legacy schema from `Sql/WebShopABMATIC-create-local.sql`
 
 ### 4.2 Migrations workflow
 
@@ -264,7 +264,7 @@ WebShopABMATIC/                 ← repo root (solution parent)
   ```bash
   dotnet ef database update --project Infrastructure/WebShopABMATIC.Infrastructure.csproj --startup-project Web/WebShopABMATIC.Web.csproj --context ApplicationDbContext
   ```
-  ✅ Applied manually via `scripts/apply-pending-schema.sql` or `scripts/apply-local-database.ps1` — **not** on app startup
+  ✅ Applied manually via `Sql/apply-pending-schema.sql` — **not** on app startup
 
 - For CI/Prod: run migrations as part of release  
   ⏳ Pipeline not configured yet
@@ -286,7 +286,7 @@ WebShopABMATIC/                 ← repo root (solution parent)
 **Domain / catalog seed (implemented)**
 
 - Products, prices, stock, orders, CRM, alerts, audit demo rows  
-  ✅ `scripts/seeds.sql` — full inventory in [SUNDAY.md](SUNDAY.md) · [DATA_SUMMARY.md](DATA_SUMMARY.md)
+  ✅ `Sql/seeds.sql` — full inventory in [SUNDAY.md](SUNDAY.md) · [DATA_SUMMARY.md](DATA_SUMMARY.md)
 - Product images metadata (`AzureFileFolders` + `AzureFiles` for all `ShowOnWebshop` SKUs)  
   ✅ Blob bytes in Azure container `files` when `AzureStorage:ConnectionString` is set — [AZUREBLOB.md](AZUREBLOB.md)
 - Customer product discounts  
@@ -294,12 +294,10 @@ WebShopABMATIC/                 ← repo root (solution parent)
 
 Seed strategy:
 
-- **SQL demo:** `.\scripts\seed-demo.ps1` against `abmatic_test`  
-  ✅ Idempotent `seeds.sql`
-- **Schema:** `scripts/apply-pending-schema.sql` or `apply-local-database.ps1`  
+- **SQL demo:** `sqlcmd … -i Sql\seeds.sql` against `abmatic_test`  
+  ✅ Idempotent `Sql/seeds.sql`
+- **Schema:** `Sql/apply-pending-schema.sql`  
   ✅ See [DATA_DEMO_SEED.md](DATA_DEMO_SEED.md)
-- **Identity seed script** (`seed-identity.ps1`) — deprecated; login is legacy SQL only  
-  ⏳ Historical — do not use for Azure login
 
 ---
 
@@ -425,7 +423,7 @@ dotnet run
 
 **IIS / Visual Studio:** `Web/web.config` points to `.\bin\Debug\net8.0\WebShopABMATIC.Web.dll`. Rebuild after code changes; do not commit stray DLLs from `Web/` root (see `.gitignore`).
 
-> **Data:** Lists read from `abmatic_test`. Run `.\scripts\seed-demo.ps1` for demo rows — [DATA_DEMO_SEED.md](DATA_DEMO_SEED.md). Dashboard KPIs return `0` if tables are empty.
+> **Data:** Lists read from `abmatic_test`. Run `Sql\seeds.sql` for demo rows — [DATA_DEMO_SEED.md](DATA_DEMO_SEED.md).
 
 ### HTML prototypes and Blazor storefront
 

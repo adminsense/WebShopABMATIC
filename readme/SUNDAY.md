@@ -2,9 +2,9 @@
 
 ![Status](https://img.shields.io/badge/Status-Complete-28a745?style=flat-square) ![Script](https://img.shields.io/badge/Source-scripts%2Fseeds.sql-0d47a1?style=flat-square) ![Tables](https://img.shields.io/badge/Seeded%20tables-40%2B-512BD4?style=flat-square)
 
-> **Purpose:** Inventory of what `scripts/seeds.sql` populates and which admin screens receive demo data.  
+> **Purpose:** Inventory of what `Sql/seeds.sql` populates and which admin screens receive demo data.  
 > **Merged summary (rows + screens):** [DATA_SUMMARY.md](./DATA_SUMMARY.md)  
-> **Run seed:** [`scripts/README.md`](../scripts/README.md) · [`scripts/seed-demo.ps1`](../scripts/seed-demo.ps1) · [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md)
+> **Run seed:** [`Sql/README.md`](../Sql/README.md) · [`Sql/seeds.sql`](../Sql/seeds.sql) · [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md)
 
 **Login (legacy):** credentials in `seeds.sql` — `StaffUsers` + `Customers` (`PasswordWebshop`). See [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) §7.
 
@@ -79,7 +79,7 @@
 | `EmailMessages` | sem lista admin | ✅ 2 | Fila `LowStockAlerts` — **worker SMTP = prod** |
 | `Contact` / `CustomerContacts` | sem lista dedicada | ✅ 3 + 3 | Dados para CRM / futuro ecrã |
 
-Todas as listas admin da tabela acima com ✅ têm dados após `.\scripts\seed-demo.ps1`.
+Todas as listas admin da tabela acima com ✅ têm dados após correr `Sql\seeds.sql`.
 
 ---
 
@@ -88,7 +88,7 @@ Todas as listas admin da tabela acima com ✅ têm dados após `.\scripts\seed-d
 | O quê | Como |
 |-------|------|
 | Login `admin@` / store `customer@` | `StaffUsers` + `Customers` in `seeds.sql` (`demo` password) |
-| Setup completo | `.\scripts\apply-local-database.ps1` |
+| Setup schema + seed | `sqlcmd … -i Sql\apply-pending-schema.sql` then `-i Sql\seeds.sql` |
 
 ---
 
@@ -123,8 +123,8 @@ Todas as listas admin da tabela acima com ✅ têm dados após `.\scripts\seed-d
 
 ## Resumo
 
-- **Um ficheiro:** `scripts/seeds.sql` (idempotente).
-- **Re-seed:** `.\scripts\seed-demo.ps1`
+- **Um ficheiro:** `Sql/seeds.sql` (idempotente).
+- **Re-seed:** `sqlcmd … -i Sql\seeds.sql`
 - **Inventário completo:** [DATA_SUMMARY.md](./DATA_SUMMARY.md)
 - **Imagens em produção:** [AZUREBLOB.md](./AZUREBLOB.md)
 
@@ -133,7 +133,7 @@ Todas as listas admin da tabela acima com ✅ têm dados após `.\scripts\seed-d
 ## Documentation
 
 - 🏠 [Main Documentation](../README.md)
-- 📋 [Scripts index](../scripts/README.md)
+- 📋 [Sql index](../Sql/README.md)
 - 📋 [Demo seed runbook](./DATA_DEMO_SEED.md)
 - 🗺️ [Implementation roadmap](./IMPLEMENTATION_ROADMAP_open.md)
 

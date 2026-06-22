@@ -180,7 +180,7 @@ Runtime login: `LegacySignInService` → `Settings.StaffUsers` (admin) and `Cust
 | `manager@webshop.com` | `demo` | Manager |
 | `customer@webshop.com` | `demo` | Customer (CustomerId 4 — Tailspin Toys) |
 
-Seeded in `scripts/seeds.sql` (`StaffUsers.Password` plaintext; `Customers.PasswordWebshop` for store).
+Seeded in `Sql/seeds.sql` (`StaffUsers.Password` plaintext; `Customers.PasswordWebshop` for store).
 
 On **Azure `abmatic_test` with real ERP data**, use existing staff/customer credentials from the database.
 

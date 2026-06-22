@@ -3,8 +3,8 @@
 ![Status](https://img.shields.io/badge/Status-Live%20on%20Azure%20SQL-28a745?style=flat-square) ![Script](https://img.shields.io/badge/Script-seeds.sql-0d47a1?style=flat-square) ![Tables](https://img.shields.io/badge/Seeded%20tables-40%2B-512BD4?style=flat-square) ![Database](https://img.shields.io/badge/Database-abmatic__test-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white)
 
 > **Purpose:** Single merged view — every demo table, **live row count** on the Azure SQL server `abmatic.database.windows.net`, related admin/store screen, and seed status.  
-> **Refresh data:** `.\scripts\seed-demo.ps1` · **Full setup:** `.\scripts\apply-local-database.ps1`  
-> **Detail / pending work:** [SUNDAY.md](./SUNDAY.md) · [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) · [scripts/README.md](../scripts/README.md)
+> **Refresh data:** `sqlcmd … -i Sql\seeds.sql` · **Schema:** `Sql\apply-pending-schema.sql`  
+> **Detail:** [SUNDAY.md](./SUNDAY.md) · [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) · [Sql/README.md](../Sql/README.md)
 
 ---
 
@@ -13,7 +13,7 @@
 | Item | Value |
 |------|--------|
 | **Target database** | `abmatic_test` on Azure SQL `abmatic.database.windows.net` |
-| **Seed script** | [`scripts/seeds.sql`](../scripts/seeds.sql) — idempotent INSERTs |
+| **Seed script** | [`Sql/seeds.sql`](../Sql/seeds.sql) — idempotent INSERTs |
 | **Login** | `StaffUsers` + `Customers` in `seeds.sql` (legacy) |
 | **Schemas with data** | `Crm`, `Customers`, `Accounting`, `Projects`, `Products`, `Files`, `Settings`, `Emails`, `dbo` (alerts + audit) |
 | **Storefront coverage** | 10 products, 10 images, 12 navigation nodes, 11 category labels |
@@ -137,11 +137,12 @@
 
 On **Azure `abmatic_test` with real ERP data**, use credentials from those tables in SSMS — not AspNetUsers.
 
-`seed-identity.ps1` is deprecated for login.
+Login is in `Sql/seeds.sql` — not AspNetUsers.
 
----
-
-## 4. ⬜ Not seeded / prod (quick reference)
+```text
+sqlcmd -S abmatic.database.windows.net -d abmatic_test -U <user> -P <password> -i Sql\seeds.sql
+sqlcmd -S abmatic.database.windows.net -d abmatic_test -U <user> -P <password> -i Sql\apply-pending-schema.sql
+```
 
 | Item | Reason |
 |------|--------|
@@ -155,12 +156,9 @@ On **Azure `abmatic_test` with real ERP data**, use credentials from those table
 
 ## 5. Commands
 
-```powershell
-# Re-apply all demo INSERTs (idempotent)
-.\scripts\seed-demo.ps1
-
-# Schema + seed (login included in seeds.sql)
-.\scripts\apply-local-database.ps1
+```text
+sqlcmd -S abmatic.database.windows.net -d abmatic_test -U <user> -P <password> -i Sql\apply-pending-schema.sql
+sqlcmd -S abmatic.database.windows.net -d abmatic_test -U <user> -P <password> -i Sql\seeds.sql
 ```
 
 ---

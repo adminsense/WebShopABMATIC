@@ -118,7 +118,7 @@ See [AUDITS_open.md](./AUDITS_open.md).
 
 ## Phase 0 — Foundation ✅
 
-- ✅ **0.1** Seed `ProductPrices` in `scripts/seeds.sql`
+- ✅ **0.1** Seed `ProductPrices` in `Sql/seeds.sql`
 - ✅ **0.2** Seed `PaymentMethods` + `PaymentTerms`
 - ✅ **0.3** Seed `OrderStatuses` with `ReserveStock` / `AffectsStock` flags
 - ✅ **0.4** `IProductPricingPort` + repository

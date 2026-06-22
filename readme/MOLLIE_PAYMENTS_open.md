@@ -32,7 +32,7 @@ To switch to real Mollie: set `Mollie:ApiKey`, set `Mollie:UseMock` to `false`, 
 
 ## Prerequisites
 
-- SQL schema + seeds applied (`scripts/apply-local-database.ps1`)
+- SQL schema + seeds applied (`Sql/seeds.sql` on `abmatic_test`)
 - `PaymentMethods` row **iDEAL / card (Mollie)** with `IsPrePay = 1` (in `seeds.sql`)
 - Public HTTPS URL reachable by Mollie (ngrok, Cloudflare Tunnel, or deployed dev slot)
 

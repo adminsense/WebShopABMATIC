@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>WebShopABMATIC.Web</RootNamespace>
+    <AssemblyName>WebShopABMATIC.Client</AssemblyName>
+    <StaticWebAssetProjectMode>Default</StaticWebAssetProjectMode>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WebShopABMATIC\Application\WebShopABMATIC.Application.csproj" />
+    <ProjectReference Include="..\WebShopABMATIC\Infrastructure\WebShopABMATIC.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="WebShopABMATIC.Tests" />
+  </ItemGroup>
+
+</Project>
