@@ -1,6 +1,7 @@
 @page "/"
 @layout StoreLayout
 @using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Application.Store
 @inject IStoreCatalogPort CatalogPort
 @inject NavigationManager Navigation
 
@@ -9,8 +10,8 @@
 <section class="hero container">
     <div class="hero-grid">
         <div>
-            <h1>Storage solutions, light and simple</h1>
-            <p>Browse our hard drive catalog, add to cart, and check out in a few clicks.</p>
+            <h1>ABMATIC webshop</h1>
+            <p>Browse our product catalog, add to cart, and check out in a few clicks.</p>
             <div class="hero-cta">
                 <a href="#products" class="btn btn-primary">Browse catalog</a>
                 <NavLink href="/cart" class="btn btn-outline">View cart</NavLink>
@@ -24,13 +25,22 @@
 
 <section class="container" id="products">
     <h2 class="section-title">Categories</h2>
-    <div class="categories">
-        @foreach (var cat in StoreCategories.All)
-        {
-            <button type="button" class="chip @(cat.Key == _category ? "active" : "")"
-                    @onclick="() => SetCategory(cat.Key)">@cat.Label</button>
-        }
-    </div>
+    @if (_categories.Count == 0 && !_loading)
+    {
+        <p class="text-muted">No categories configured for the webshop yet.</p>
+    }
+    else
+    {
+        <div class="categories">
+            <button type="button" class="chip @(_selectedCategoryId is null ? "active" : "")"
+                    @onclick="() => SelectCategoryAsync(null)">All</button>
+            @foreach (var cat in _categories)
+            {
+                <button type="button" class="chip @(_selectedCategoryId == cat.Id ? "active" : "")"
+                        @onclick="() => SelectCategoryAsync(cat.Id)">@cat.Name (@cat.ProductCount)</button>
+            }
+        </div>
+    }
 
     <h2 class="section-title">Products</h2>
     @if (_loading)
@@ -39,12 +49,12 @@
     }
     else if (_products.Count == 0)
     {
-        <p class="text-muted">No products available on the webshop.</p>
+        <p class="text-muted">No products available in this category.</p>
     }
     else
     {
         <div class="product-grid">
-            @foreach (var p in FilteredProducts())
+            @foreach (var p in _products)
             {
                 <article class="product-card" @onclick="() => GoToProduct(p.Id)">
                     <div class="img-wrap"><img src="@p.ImageUrl" alt="@p.Name" /></div>
@@ -53,7 +63,7 @@
                         <h3>@p.Name</h3>
                         <p class="brand">@p.Description</p>
                         <div class="price-row">
-                            <span class="price">@FormatPrice(p.Price)</span>
+                            <span class="price @(!p.HasPrice ? "text-muted" : "")">@StorePriceFormatter.Format(p.Price)</span>
                             <span class="stock @(p.IsOutOfStock ? "out" : p.IsLowStock ? "low" : "")">@(p.IsOutOfStock ? "Out of stock" : $"{p.Stock} in stock")</span>
                         </div>
                     </div>
@@ -64,8 +74,11 @@
 </section>
 
 @code {
-    private string _category = "all";
+    private const int HomePageProductLimit = 12;
+
+    private int? _selectedCategoryId;
     private bool _loading = true;
+    private IReadOnlyList<StoreCatalogCategoryDto> _categories = [];
     private IReadOnlyList<StoreProduct> _products = [];
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
@@ -75,7 +88,8 @@
         _loading = true;
         try
         {
-            var items = await CatalogPort.GetCatalogAsync();
+            _categories = await CatalogPort.GetCategoriesAsync();
+            var items = await CatalogPort.GetCatalogAsync(HomePageProductLimit, _selectedCategoryId);
             _products = items.Select(StoreProductMapper.ToModel).ToList();
         }
         finally
@@ -84,14 +98,11 @@
         }
     }
 
-    private IEnumerable<StoreProduct> FilteredProducts() =>
-        _category == "all"
-            ? _products
-            : _products.Where(p => p.Category.Equals(_category, StringComparison.OrdinalIgnoreCase));
-
-    private void SetCategory(string category) => _category = category;
+    private async Task SelectCategoryAsync(int? categoryId)
+    {
+        _selectedCategoryId = categoryId;
+        await LoadAsync();
+    }
 
     private void GoToProduct(int id) => Navigation.NavigateTo($"/product/{id}");
-
-    private static string FormatPrice(decimal price) => $"${price:F2}";
 }

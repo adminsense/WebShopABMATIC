@@ -9,11 +9,11 @@ Run from repo root, e.g. `.\scripts\apply-local-database.ps1`.
 
 | Script | Purpose |
 |--------|---------|
-| [`apply-local-database.ps1`](apply-local-database.ps1) | **All-in-one:** schema + demo seed + Identity |
+| [`apply-local-database.ps1`](apply-local-database.ps1) | **All-in-one:** schema + demo seed (optional legacy identity script) |
 | [`apply-pending-schema.sql`](apply-pending-schema.sql) | EF migrations / pending schema on `WebShopABMATIC` |
 | [`seeds.sql`](seeds.sql) | Demo domain data (products, orders, stock, images, audit, …) |
 | [`seed-demo.ps1`](seed-demo.ps1) | Run `seeds.sql` only |
-| [`seed-identity.ps1`](seed-identity.ps1) | Identity roles + demo users (`admin@`, `customer@`, …) |
+| [`seed-identity.ps1`](seed-identity.ps1) | **Deprecated** — AspNetUsers seed (not used for login) |
 | [`WebShopABMATIC-create-local.sql`](WebShopABMATIC-create-local.sql) | Greenfield English schema (generated) |
 | [`ABMATIC-create-local.sql`](ABMATIC-create-local.sql) | Legacy Dutch schema source |
 
@@ -23,14 +23,15 @@ Run from repo root, e.g. `.\scripts\apply-local-database.ps1`.
 .\scripts\apply-local-database.ps1
 ```
 
+**Login (demo):** `seeds.sql` inserts `StaffUsers` + `Customers.PasswordWebshop` — see [DATA_DEMO_SEED.md](../readme/DATA_DEMO_SEED.md) §7 (`admin@webshop.com` / `demo`, etc.).
+
 **Re-seed demo data only:**
 
 ```powershell
 .\scripts\seed-demo.ps1
-.\scripts\seed-identity.ps1   # if users missing or customer link needed
 ```
 
-Identity seed **implementation** is C# ([`Infrastructure/Seeding/IdentitySeed.cs`](../Infrastructure/Seeding/IdentitySeed.cs)) — invoked by `seed-identity.ps1` via `dotnet run -- --seed-identity`. SQL cannot insert hashed passwords into `AspNetUsers`.
+`seed-identity.ps1` is **deprecated** for login — runtime uses legacy `StaffUsers` / `Customers` (`LegacySignInService`).
 
 Inventory of seeded tables: [`readme/DATA_SUMMARY.md`](../readme/DATA_SUMMARY.md) · [`readme/SUNDAY.md`](../readme/SUNDAY.md).
 

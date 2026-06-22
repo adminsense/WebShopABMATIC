@@ -5,12 +5,15 @@ public sealed record StoreProduct(
     string Name,
     string Description,
     string ImageUrl,
-    decimal Price,
+    decimal? Price,
+    bool HasPrice,
     int Stock,
     decimal MinQuantity,
     bool IsLowStock,
     bool IsOutOfStock,
-    string Category,
+    int? CategoryId,
+    int? CategoryRootId,
+    string CategoryName,
     string Tag);
 
 public sealed class CartLine
@@ -30,3 +33,9 @@ public sealed record StoreOrderSummary(
     string StatusClass,
     string ItemsSummary,
     decimal Total);
+
+public static class StorePriceFormatter
+{
+    public static string Format(decimal? price) =>
+        price.HasValue ? $"€{price.Value:F2}" : "Price on request";
+}

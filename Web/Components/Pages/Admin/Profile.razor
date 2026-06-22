@@ -4,9 +4,9 @@
 @using System.ComponentModel.DataAnnotations
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports.Outbound
-@using WebShopABMATIC.Infrastructure.Auth
+@using WebShopABMATIC.Web.Forms
 
-@inject LegacyStaffProfileService StaffProfile
+@inject ILegacyStaffProfilePort StaffProfile
 @inject ICurrentUserContext CurrentUser
 
 <PageTitle>My profile</PageTitle>
@@ -107,8 +107,8 @@
 
 @code {
     private LegacyStaffProfileDto? _profile;
-    private ProfileInputModel _profileModel = new();
-    private PasswordInputModel _passwordModel = new();
+    private AdminProfileFormModel _profileModel = new();
+    private AdminPasswordFormModel _passwordModel = new();
     private bool _loading = true;
     private bool _saving;
     private string? _statusMessage;
@@ -124,7 +124,7 @@
             _profile = await StaffProfile.GetAsync(staffUserId);
             if (_profile is not null)
             {
-                _profileModel = new ProfileInputModel
+                _profileModel = new AdminProfileFormModel
                 {
                     FirstName = _profile.FirstName,
                     LastName = _profile.LastName,
@@ -194,7 +194,7 @@
                 return;
             }
 
-            _passwordModel = new PasswordInputModel();
+            _passwordModel = new AdminPasswordFormModel();
             _statusIsError = false;
             _statusMessage = "Password updated.";
         }
@@ -202,33 +202,5 @@
         {
             _saving = false;
         }
-    }
-
-    private sealed class ProfileInputModel
-    {
-        [Required]
-        [StringLength(100)]
-        public string? FirstName { get; set; }
-
-        [Required]
-        [StringLength(100)]
-        public string? LastName { get; set; }
-
-        [Phone]
-        public string? PhoneNumber { get; set; }
-    }
-
-    private sealed class PasswordInputModel
-    {
-        [Required]
-        public string CurrentPassword { get; set; } = "";
-
-        [Required]
-        [StringLength(100, MinimumLength = 1)]
-        public string NewPassword { get; set; } = "";
-
-        [Required]
-        [Compare(nameof(NewPassword))]
-        public string ConfirmPassword { get; set; } = "";
     }
 }

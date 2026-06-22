@@ -2,6 +2,7 @@
 @layout StoreLayout
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
+@using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
 @using WebShopABMATIC.Application.Ports.Outbound
 @using WebShopABMATIC.Application.Store.Checkout
@@ -112,6 +113,7 @@
     private bool _placing;
     private string? _userEmail;
     private string? _identityUserId;
+    private int? _customerId;
 
     protected override void OnInitialized() => CartService.Changed += OnCartChanged;
 
@@ -120,6 +122,10 @@
         var auth = await AuthStateProvider.GetAuthenticationStateAsync();
         _userEmail = auth.User.Identity?.Name;
         _identityUserId = auth.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (int.TryParse(auth.User.FindFirstValue(LegacyAuthClaims.CustomerId), out var customerId))
+        {
+            _customerId = customerId;
+        }
         if (!string.IsNullOrEmpty(_userEmail))
         {
             _options = await CheckoutPort.GetOptionsAsync(UserLookup());
@@ -193,11 +199,7 @@
                 PaymentMethodId = _paymentMethodId,
                 RedirectBaseUrl = baseUrl,
                 WebhookBaseUrl = baseUrl
-            }, new StoreUserLookup
-            {
-                Email = email,
-                IdentityUserId = auth.User.FindFirstValue(ClaimTypes.NameIdentifier)
-            });
+            }, UserLookup());
 
             if (!result.Success)
             {
@@ -226,7 +228,12 @@
         }
     }
 
-    private StoreUserLookup UserLookup() => new() { Email = _userEmail, IdentityUserId = _identityUserId };
+    private StoreUserLookup UserLookup() => new()
+    {
+        Email = _userEmail,
+        IdentityUserId = _identityUserId,
+        CustomerId = _customerId
+    };
 
     private static string FormatPrice(decimal price) => $"€{price:F2}";
 }

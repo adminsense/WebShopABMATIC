@@ -11,10 +11,13 @@ public static class StoreProductMapper
             dto.Description,
             dto.ImageUrl,
             dto.Price,
+            dto.HasPrice,
             dto.Stock,
             dto.MinQuantity,
             dto.IsLowStock,
             dto.IsOutOfStock,
-            dto.Category,
+            dto.CategoryId,
+            dto.CategoryRootId,
+            dto.CategoryName,
             dto.Tag);
 }

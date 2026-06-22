@@ -32,15 +32,17 @@ else
             <div class="detail-info">
                 <p class="detail-meta">@_product.Tag · @StockStatusLabel(_product)</p>
                 <h1>@_product.Name</h1>
-                <p class="detail-price">@FormatPrice(_product.Price)</p>
+                <p class="detail-price @(!_product.HasPrice ? "text-muted" : "")">@StorePriceFormatter.Format(_product.Price)</p>
                 <p class="detail-desc">@_product.Description</p>
                 <div class="qty-row">
                     <div class="qty-control">
-                        <button type="button" aria-label="Decrease" @onclick="DecreaseQty">−</button>
+                        <button type="button" aria-label="Decrease" @onclick="DecreaseQty" disabled="@(!_product.HasPrice)">−</button>
                         <span>@_quantity</span>
-                        <button type="button" aria-label="Increase" @onclick="IncreaseQty">+</button>
+                        <button type="button" aria-label="Increase" @onclick="IncreaseQty" disabled="@(!_product.HasPrice)">+</button>
                     </div>
-                    <button type="button" class="btn btn-primary" @onclick="AddToCartAsync">Add to cart</button>
+                    <button type="button" class="btn btn-primary" disabled="@(!_product.HasPrice || _product.IsOutOfStock)" @onclick="AddToCartAsync">
+                        @(_product.HasPrice ? "Add to cart" : "Price on request")
+                    </button>
                 </div>
                 <p class="stock @(_product.IsOutOfStock ? "out" : _product.IsLowStock ? "low" : "")" style="font-size:0.85rem">@StockStatusLabel(_product)</p>
             </div>
@@ -84,12 +86,10 @@ else
 
     private async Task AddToCartAsync()
     {
-        if (_product is null) return;
+        if (_product is null || !_product.HasPrice) return;
         await Cart.AddProductAsync(_product.Id, _quantity);
         Navigation.NavigateTo("/cart");
     }
-
-    private static string FormatPrice(decimal price) => $"${price:F2}";
 
     private static string StockStatusLabel(StoreProduct product) =>
         product.IsOutOfStock ? "Out of stock" : $"{product.Stock} in stock";

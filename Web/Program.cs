@@ -38,7 +38,7 @@ if (azureHosting)
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents(options =>
     {
-        options.DetailedErrors = builder.Environment.IsDevelopment();
+        options.DetailedErrors = true;
     });
 
 builder.Services.Configure<Microsoft.AspNetCore.SignalR.HubOptions>(options =>
@@ -105,16 +105,7 @@ builder.Services.AddScoped<IGridExportService, GridExportService>();
 var app = builder.Build();
 
 app.UseForwardedHeaders();
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseDeveloperExceptionPage();
-}
-else
-{
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    app.UseHsts();
-}
+app.UseDeveloperExceptionPage();
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

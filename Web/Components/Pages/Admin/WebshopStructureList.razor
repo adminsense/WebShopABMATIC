@@ -6,7 +6,7 @@
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
 @using WebShopABMATIC.Web.Services
-@inject IWebshopStructureAdminPort AdminPort
+@inject IWebshopStructureAdminPort AdminPort
 @inject IGridExportService GridExport
 @implements IAsyncDisposable
 
@@ -16,7 +16,10 @@
     <a class="btn btn-secondary btn-back mb-3" href="/admin/hub/webshop" data-enhance-nav="false"><span class="oi oi-arrow-left"></span> Back to list</a>
     <div class="entity-page-header page-header">
         <h1 class="h3 mb-1"><i class="bi bi-diagram-3 text-primary"></i> Webshop structure</h1>
-        <p class="mb-0">Catalog navigation tree nodes.</p>
+        <p class="mb-0">Catalog navigation tree (<code>Products.WebshopStructuur</code>). When empty, the storefront builds category chips from <code>Products.ProductStructuur</code>.</p>
+    </div>
+    <div class="alert alert-info mb-3">
+        Storefront category filters read <strong>ProductStructuur</strong> via each product's <code>ProductStructuurId</code> until you populate this navigation table.
     </div>
     <div class="card shadow-sm border entity-form-card admin-form-card">
                 <AdminEntityFormHeader ExportDisabled="@ExportDisabled" OnExport="ExportGridAsync">

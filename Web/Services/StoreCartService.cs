@@ -32,6 +32,11 @@ public sealed class StoreCartService
         }
 
         var product = StoreProductMapper.ToModel(dto);
+        if (!product.HasPrice)
+        {
+            return;
+        }
+
         var line = _lines.FirstOrDefault(l => l.ProductId == productId);
         if (line is null)
         {
@@ -40,7 +45,7 @@ public sealed class StoreCartService
                 ProductId = product.Id,
                 Name = product.Name,
                 ImageUrl = product.ImageUrl,
-                UnitPrice = product.Price,
+                UnitPrice = product.Price!.Value,
                 Quantity = quantity
             });
         }

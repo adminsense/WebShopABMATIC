@@ -228,6 +228,9 @@ INSERT INTO [Customers].[Customers] (
 (4, N'BE0123456792', N'', N'4', N'Tailspin Toys', N'Demo Street 4', 1, N'+32 2 111 0004', N'', N'customer@webshop.com', 1, 1, 1, 1, 0, N'', 6400, 0, 0, 1, 0, 1, 1, N'Demo', 0, 0, 0, 0, 0, 0, 1, N'customer@webshop.com', 1);
 SET IDENTITY_INSERT [Customers].[Customers] OFF;
 
+-- Demo store password (legacy: plaintext in PasswordWebshop when SaltWebshop is NULL)
+UPDATE [Customers].[Customers] SET [PasswordWebshop] = N'demo' WHERE [CustomerId] = 4;
+
 SET IDENTITY_INSERT [Products].[StockLocations] ON;
 INSERT INTO [Products].[StockLocations] ([Id], [Name], [IsWarehouse]) VALUES (1, N'Main warehouse', 1);
 SET IDENTITY_INSERT [Products].[StockLocations] OFF;
