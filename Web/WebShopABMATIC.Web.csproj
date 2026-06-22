@@ -20,4 +20,8 @@
     <ProjectReference Include="..\Infrastructure\WebShopABMATIC.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="WebShopABMATIC.Tests" />
+  </ItemGroup>
+
 </Project>
