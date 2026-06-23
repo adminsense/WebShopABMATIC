@@ -26,7 +26,7 @@ This completes **dev** checkout. **B.9 prod** remains ⬜ until you configure a 
 
 To switch to real Mollie: set `Mollie:ApiKey`, set `Mollie:UseMock` to `false`, expose a public webhook URL.
 
-**UI prototype:** [docs/mock-payments.html](../docs/mock-payments.html) — Mollie card checkout + confirmation after pay.
+**UI prototype:** [docs/mock-payments.html](docs/mock-payments.html) — Mollie card checkout + confirmation after pay.
 
 ---
 
