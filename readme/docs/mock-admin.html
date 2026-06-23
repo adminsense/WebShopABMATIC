@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WebShopABMATIC — Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/open-iconic/1.1.1/font/css/open-iconic-bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --nav-bg: #1e2a3a;
+      --nav-bg-hover: #263545;
+      --nav-active: #3d5a80;
+      --content-bg: #eef1f5;
+      --card-shadow: 0 2px 8px rgba(0,0,0,.08);
+    }
+    body { background: var(--content-bg); font-family: "Segoe UI", system-ui, sans-serif; }
+    .app-shell { display: flex; min-height: 100vh; }
+
+    /* Sidebar — AB-MATIC style */
+    .sidebar {
+      width: 240px;
+      background: var(--nav-bg);
+      color: #b8c5d6;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .brand-box {
+      margin: 1rem;
+      padding: 0.75rem 1rem;
+      background: #fff;
+      border-radius: 4px;
+      text-align: center;
+      font-weight: 800;
+      font-size: 0.85rem;
+      color: #1e2a3a;
+      letter-spacing: 0.02em;
+    }
+    .brand-box span { display: block; font-size: 0.65rem; font-weight: 600; color: #64748b; margin-top: 0.15rem; }
+    .sidebar-nav { flex: 1; padding: 0 0.5rem; overflow-y: auto; }
+    .nav-link-item {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      width: 100%;
+      padding: 0.55rem 0.85rem;
+      border: none;
+      background: none;
+      color: #b8c5d6;
+      font-size: 0.875rem;
+      text-align: left;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 2px;
+    }
+    .nav-link-item:hover { background: var(--nav-bg-hover); color: #fff; }
+    .nav-link-item.active { background: var(--nav-active); color: #fff; }
+    .nav-link-item .oi, .nav-link-item .bi { width: 1.1rem; opacity: 0.9; }
+    .sidebar-footer {
+      padding: 0.75rem 1rem 1rem;
+      font-size: 0.7rem;
+      color: #6b7c93;
+      border-top: 1px solid rgba(255,255,255,.06);
+    }
+
+    /* Main + top bar */
+    .main-wrap { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .top-bar {
+      background: var(--nav-bg);
+      color: #fff;
+      padding: 0.5rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 1rem;
+      font-size: 0.9rem;
+    }
+    .btn-logout {
+      background: #dc3545;
+      border: none;
+      color: #fff;
+      padding: 0.35rem 0.85rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .btn-logout:hover { background: #bb2d3b; color: #fff; }
+    .content-area { padding: 1.25rem 1.5rem 2rem; flex: 1; }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* Dashboard portfolio cards */
+    .dash-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem; }
+    @media (max-width: 992px) { .dash-grid { grid-template-columns: 1fr; } }
+    .portfolio-card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: var(--card-shadow);
+      padding: 1.25rem;
+      min-height: 220px;
+    }
+    .portfolio-card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+    .icon-circle {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1rem;
+    }
+    .icon-circle.purple { background: #7c6cf0; }
+    .icon-circle.red { background: #e85d5d; }
+    .icon-circle.blue { background: #5b8def; }
+    .icon-circle.green { background: #3cb371; }
+    .stat-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #f0f2f5;
+      font-size: 0.85rem;
+    }
+    .stat-row:last-child { border-bottom: none; }
+    .pill {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      border: 1px solid;
+      white-space: nowrap;
+    }
+    .pill-blue { color: #0d6efd; border-color: #0d6efd; background: #eff6ff; }
+    .pill-green { color: #198754; border-color: #198754; background: #ecfdf5; }
+    .pill-red { color: #dc3545; border-color: #dc3545; background: #fef2f2; }
+    .pill-purple { color: #6f42c1; border-color: #6f42c1; background: #f3e8ff; }
+    .progress-thin { height: 6px; background: #e9ecef; border-radius: 3px; margin: 0.35rem 0; overflow: hidden; }
+    .progress-thin > span { display: block; height: 100%; background: #198754; border-radius: 3px; }
+    .mini-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 0.75rem; }
+    .mini-metric {
+      border: 1px solid #e9ecef;
+      border-radius: 6px;
+      padding: 0.5rem;
+      text-align: center;
+      font-size: 0.65rem;
+    }
+    .mini-metric strong { display: block; font-size: 0.8rem; color: #1e2a3a; margin-top: 0.15rem; }
+
+    /* Hub cards (sub-menu) */
+    .page-header { margin-bottom: 1.25rem; }
+    .page-header h1 { font-size: 1.35rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+    .page-header p { color: #64748b; font-size: 0.9rem; margin: 0.35rem 0 0; }
+    .hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+    .hub-card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: var(--card-shadow);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      min-height: 200px;
+    }
+    .hub-card .hub-icon {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1.15rem;
+      margin-bottom: 0.75rem;
+    }
+    .hub-card h4 { font-size: 1rem; font-weight: 700; margin-bottom: 0.35rem; }
+    .hub-card p { font-size: 0.85rem; color: #64748b; flex: 1; margin-bottom: 1rem; }
+    .hub-card .entity-tag { font-size: 0.65rem; color: #0d6efd; font-weight: 600; margin-bottom: 0.5rem; }
+    .hub-card .btn-form {
+      width: 100%;
+      border: 1px solid #0d6efd;
+      color: #0d6efd;
+      background: #fff;
+      padding: 0.45rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .hub-card .btn-form:hover { background: #eff6ff; }
+
+    /* List / filter panel — UI patterns */
+    .list-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .list-header h2 { font-size: 1.15rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.5rem; }
+    .filter-panel {
+      background: #fff;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .filter-actions { display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.75rem; }
+    .table-wrap { background: #fff; border-radius: 6px; box-shadow: var(--card-shadow); overflow: hidden; }
+
+    .mock-banner {
+      background: #0f172a;
+      color: #94a3b8;
+      font-size: 0.7rem;
+      text-align: center;
+      padding: 0.3rem;
+    }
+    .mock-banner a { color: #93c5fd; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand-box">
+        WS<br>WEBSHOP ABMATIC
+        <span>Admin panel</span>
+      </div>
+      <nav class="sidebar-nav">
+        <button type="button" class="nav-link-item active" data-view="dashboard"><span class="oi oi-home"></span> Start</button>
+        <button type="button" class="nav-link-item" data-view="hub" data-hub="webshop"><span class="oi oi-globe"></span> Webshop</button>
+        <button type="button" class="nav-link-item" data-view="hub" data-hub="catalog"><span class="oi oi-cog"></span> Catalog</button>
+        <button type="button" class="nav-link-item" data-view="hub" data-hub="customers"><span class="oi oi-people"></span> Customers</button>
+        <button type="button" class="nav-link-item" data-view="hub" data-hub="sales"><span class="oi oi-cart"></span> Sales</button>
+        <button type="button" class="nav-link-item" data-view="hub" data-hub="stock"><span class="oi oi-box"></span> Stock</button>
+        <button type="button" class="nav-link-item" data-view="hub" data-hub="settings"><span class="oi oi-wrench"></span> Settings</button>
+        <button type="button" class="nav-link-item" data-view="hub" data-hub="profile"><span class="oi oi-person"></span> My profile</button>
+      </nav>
+      <div class="sidebar-footer">
+        <div id="sidebar-date">30/05/2026</div>
+        <div>v1.0 · WebShopABMATIC</div>
+      </div>
+    </aside>
+
+    <div class="main-wrap">
+      <header class="top-bar">
+        <span>Hello, <strong>ANNA RODRIGUEZ</strong></span>
+        <a href="mock-loja.html" class="btn-logout"><span class="oi oi-power-standby"></span> Logout</a>
+      </header>
+
+      <div class="content-area">
+
+        <!-- START / DASHBOARD -->
+        <div id="view-dashboard" class="view active">
+          <div class="dash-grid">
+            <div class="portfolio-card">
+              <h3><span class="icon-circle purple"><span class="oi oi-cog"></span></span> Webshop catalog</h3>
+              <div class="stat-row">
+                <span>Products · ShowOnWebshop</span>
+                <span class="pill pill-blue">186 active</span>
+              </div>
+              <div class="stat-row">
+                <span>WebshopStructure nodes</span>
+                <span class="pill pill-green">12</span>
+              </div>
+              <div class="stat-row">
+                <span>WebshopProductStructure</span>
+                <button type="button" class="pill pill-blue" style="cursor:pointer;border:none" data-view="hub" data-hub="webshop">Manage</button>
+              </div>
+            </div>
+            <div class="portfolio-card">
+              <h3><span class="icon-circle red"><span class="oi oi-cart"></span></span> Sales &amp; orders</h3>
+              <div class="stat-row"><span>Orders this month</span><span>142</span></div>
+              <div class="stat-row">
+                <span>Accepted (IsAccepted)</span>
+                <span class="pill pill-green">89%</span>
+              </div>
+              <p style="font-size:0.75rem;color:#64748b;margin:0.35rem 0">Delivery completion</p>
+              <div class="progress-thin"><span style="width:72%"></span></div>
+              <div class="stat-row"><span>Pending acceptance</span><span class="pill pill-red">18</span></div>
+            </div>
+            <div class="portfolio-card">
+              <h3><span class="icon-circle blue"><span class="oi oi-wrench"></span></span> Stock operations</h3>
+              <div class="stat-row"><span>Low stock alerts</span><span class="pill pill-red">7</span></div>
+              <div class="stat-row"><span>ProductStockLocation</span><span class="pill pill-purple">Review</span></div>
+              <div class="stat-row"><span>Reserved quantity</span><span>24 units</span></div>
+            </div>
+            <div class="portfolio-card">
+              <h3><span class="icon-circle green"><span class="oi oi-dollar"></span></span> Financial · YTD</h3>
+              <div class="mini-metrics">
+                <div class="mini-metric"><span class="text-success"><i class="bi bi-wallet2"></i></span><strong>$84k</strong>Revenue</div>
+                <div class="mini-metric"><span class="text-danger"><i class="bi bi-receipt"></i></span><strong>$12k</strong>Costs</div>
+                <div class="mini-metric"><span class="text-primary"><i class="bi bi-piggy-bank"></i></span><strong>$72k</strong>Net</div>
+              </div>
+              <div class="mini-metrics" style="margin-top:0.5rem">
+                <div class="mini-metric"><strong>$18k</strong>To pay</div>
+                <div class="mini-metric"><strong>$66k</strong>Paid</div>
+                <div class="mini-metric"><strong>$18k</strong>Outstanding</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- HUB VIEWS (sub-menu cards) -->
+        <div id="view-hub" class="view">
+          <div class="page-header">
+            <button type="button" class="btn btn-outline-secondary btn-sm mb-2" id="hub-back">
+              <span class="oi oi-arrow-left"></span> Back to start
+            </button>
+            <h1 id="hub-title"><span class="oi oi-cog"></span> Catalog</h1>
+            <p id="hub-subtitle">Core catalog entities: products, prices, and suppliers</p>
+          </div>
+          <div class="hub-grid" id="hub-grid"></div>
+        </div>
+
+        <!-- LIST VIEW (filters + table) -->
+        <div id="view-list" class="view">
+          <div class="list-header">
+            <h2 id="list-title"><i class="bi bi-tags"></i> Product</h2>
+            <button type="button" class="btn btn-success btn-sm"><i class="bi bi-arrow-repeat me-1"></i>Refresh</button>
+          </div>
+          <button type="button" class="btn btn-outline-secondary btn-sm mb-3" id="list-back">
+            <span class="oi oi-arrow-left"></span> Back
+          </button>
+
+          <div class="filter-panel">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label small">Menu</label>
+                <select class="form-select form-select-sm" id="filter-menu"><option>Catalog</option></select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small">Entity</label>
+                <select class="form-select form-select-sm" id="filter-entity"><option>Product</option></select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small">Search</label>
+                <input type="search" class="form-control form-control-sm" placeholder="Search by name, part number…">
+              </div>
+              <div class="col-md-2 d-flex align-items-end">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="filter-modified">
+                  <label class="form-check-label small" for="filter-modified">Modified only</label>
+                </div>
+              </div>
+            </div>
+            <div class="filter-actions">
+              <button type="button" class="btn btn-primary"><i class="bi bi-funnel-fill me-1"></i>Apply Filters</button>
+              <button type="button" class="btn btn-danger"><i class="bi bi-x-circle-fill me-1"></i>Clear</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <div class="table-responsive">
+              <table class="table table-striped table-hover mb-0">
+                <thead class="table-dark" id="list-thead"></thead>
+                <tbody id="list-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- FORM VIEW -->
+        <div id="view-form" class="view">
+          <button type="button" class="btn btn-outline-secondary btn-sm mb-3" id="form-back">
+            <span class="oi oi-arrow-left"></span> Back to list
+          </button>
+          <div class="card shadow-sm">
+            <div class="card-header bg-white">
+              <h2 class="h5 mb-0" id="form-title">Product form</h2>
+              <small class="text-muted" id="form-entity-tag">Product</small>
+            </div>
+            <div class="card-body" id="form-body"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const hubs = {
+      webshop: {
+        title: 'Webshop',
+        subtitle: 'Storefront structure: navigation and product categories',
+        icon: 'oi-globe',
+        cards: [
+          { entity: 'WebshopStructure', color: '#5b8def', icon: 'bi-diagram-3', title: 'Webshop structure', desc: 'Manage catalog navigation tree (NameNl, SortOrder)', list: 'webshop-structure' },
+          { entity: 'WebshopProductStructure', color: '#7c6cf0', icon: 'bi-folder2', title: 'Product categories', desc: 'Webshop product grouping (NameEn, NameFr, NameNl)', list: 'webshop-product-structure' }
+        ]
+      },
+      catalog: {
+        title: 'Catalog',
+        subtitle: 'Core catalog entities: products, prices, options, and suppliers',
+        icon: 'oi-cog',
+        cards: [
+          { entity: 'Product', color: '#5b8def', icon: 'bi-box-seam', title: 'Product', desc: 'Manage products, ShowOnWebshop, webshop descriptions', list: 'product' },
+          { entity: 'ProductPrice', color: '#3cb371', icon: 'bi-currency-dollar', title: 'Product price', desc: 'GrossSalesPrice, NetPurchasePrice, validity dates', list: 'product-price' },
+          { entity: 'ProductQuantityTier', color: '#e8a838', icon: 'bi-bar-chart-steps', title: 'Quantity tiers', desc: 'MinimumQuantity and tier discounts', list: 'product-tier' },
+          { entity: 'ProductOption', color: '#6f42c1', icon: 'bi-sliders', title: 'Product options', desc: 'Configurable options per product', list: 'product-option' },
+          { entity: 'PriceListCategory', color: '#20c997', icon: 'bi-tags', title: 'Price list category', desc: 'Price list grouping and sort order', list: 'price-list-category' },
+          { entity: 'Manufacturer', color: '#e85d5d', icon: 'bi-building', title: 'Manufacturer', desc: 'Manufacturer master data', list: 'manufacturer' },
+          { entity: 'Supplier', color: '#64748b', icon: 'bi-truck', title: 'Supplier', desc: 'Supplier master data and price lists', list: 'supplier' }
+        ]
+      },
+      customers: {
+        title: 'Customers',
+        subtitle: 'Customer accounts, addresses, and discounts',
+        icon: 'oi-people',
+        cards: [
+          { entity: 'Customer', color: '#5b8def', icon: 'bi-person-badge', title: 'Customer', desc: 'CustomerName, WebshopLogin, CustomerTypeId', list: 'customer' },
+          { entity: 'CustomerDeliveryAddress', color: '#3cb371', icon: 'bi-geo-alt', title: 'Delivery address', desc: 'Shipping addresses per customer', list: 'delivery-address' },
+          { entity: 'CustomerProductDiscount', color: '#e8a838', icon: 'bi-percent', title: 'Product discount', desc: 'Customer-specific product discounts', list: 'customer-discount' },
+          { entity: 'CustomerType', color: '#6f42c1', icon: 'bi-diagram-2', title: 'Customer type', desc: 'Dealer, contractor, consumer types', list: 'customer-type' }
+        ]
+      },
+      sales: {
+        title: 'Sales',
+        subtitle: 'Orders, statuses, and delivery types',
+        icon: 'oi-cart',
+        cards: [
+          { entity: 'Order', color: '#5b8def', icon: 'bi-receipt', title: 'Order', desc: 'Orders and OrderLine items', list: 'order' },
+          { entity: 'OrderStatus', color: '#3cb371', icon: 'bi-flag', title: 'Order status', desc: 'Workflow statuses and stock flags', list: 'order-status' },
+          { entity: 'DeliveryType', color: '#e85d5d', icon: 'bi-truck-flatbed', title: 'Delivery type', desc: 'Pickup, delivery, installation', list: 'delivery-type' }
+        ]
+      },
+      stock: {
+        title: 'Stock',
+        subtitle: 'Inventory locations and product stock levels',
+        icon: 'oi-box',
+        cards: [
+          { entity: 'ProductStockLocation', color: '#5b8def', icon: 'bi-boxes', title: 'Product stock', desc: 'Quantity, reserved, min/max per location', list: 'product-stock' },
+          { entity: 'StockLocation', color: '#64748b', icon: 'bi-house-gear', title: 'Stock location', desc: 'Warehouses and storage locations', list: 'stock-location' }
+        ]
+      },
+      settings: {
+        title: 'Settings',
+        subtitle: 'Payment, users, groups, and VAT',
+        icon: 'oi-wrench',
+        cards: [
+          { entity: 'PaymentMethod', color: '#3cb371', icon: 'bi-credit-card', title: 'Payment method', desc: 'PrePay and PostPay methods', list: 'payment-method' },
+          { entity: 'StaffUser', color: '#5b8def', icon: 'bi-person-gear', title: 'Staff user', desc: 'Admin, ProductBeheer, Bestellingen flags', list: 'staff-user' },
+          { entity: 'UserGroup', color: '#6f42c1', icon: 'bi-people', title: 'User group', desc: 'Staff user groups and teams', list: 'user-group' },
+          { entity: 'VatType', color: '#e8a838', icon: 'bi-receipt-cutoff', title: 'VAT type', desc: 'VAT percentages and invoice text', list: 'vat-type' }
+        ]
+      },
+      profile: {
+        title: 'My profile',
+        subtitle: 'StaffUser profile and preferences',
+        icon: 'oi-person',
+        cards: [
+          { entity: 'StaffUser', color: '#5b8def', icon: 'bi-person-circle', title: 'Profile', desc: 'Edit your staff user profile', list: 'staff-user', formOnly: true }
+        ]
+      }
+    };
+
+    const listData = {
+      'product': {
+        title: 'Product',
+        cols: ['ProductId', 'NameEn', 'ShowOnWebshop', 'SupplierId', 'ManufacturerId', 'Actions'],
+        rows: [
+          ['101', 'Sliding Gate Motor 600kg', 'true', '8', '12'],
+          ['205', '4-Channel Remote Control', 'true', '5', '5'],
+          ['310', 'Photocell Pair Set', 'true', '8', '12']
+        ]
+      },
+      'webshop-structure': {
+        title: 'WebshopStructure',
+        cols: ['Id', 'NameNl', 'ParentTaskId', 'SortOrder', 'Actions'],
+        rows: [['1', 'Gates & automation', '—', '1'], ['2', '↳ Sliding motors', '1', '1'], ['3', 'Accessories', '—', '2']]
+      },
+      'webshop-product-structure': {
+        title: 'WebshopProductStructure',
+        cols: ['Id', 'NameEn', 'NameFr', 'NameNl', 'Actions'],
+        rows: [['1', 'Gates', 'Portails', 'Poorten'], ['2', 'Accessories', 'Accessoires', 'Accessoires']]
+      },
+      'product-price': {
+        title: 'ProductPrice',
+        cols: ['Id', 'ProductId', 'GrossSalesPrice', 'NetPurchasePrice', 'Actions'],
+        rows: [['501', '101', '$1,249.00', '$890.00'], ['502', '205', '$89.00', '$52.00']]
+      },
+      'product-tier': {
+        title: 'ProductQuantityTier',
+        cols: ['Id', 'ProductId', 'MinimumQuantity', 'Discount', 'Actions'],
+        rows: [['1', '101', '5', '3%'], ['2', '101', '10', '7%']]
+      },
+      'product-option': {
+        title: 'ProductOption',
+        cols: ['Id', 'ProductId', 'NameEn', 'IsRequired', 'Actions'],
+        rows: [['1', '101', 'Rail length', 'true'], ['2', '101', 'Control box color', 'false']]
+      },
+      'price-list-category': {
+        title: 'PriceListCategory',
+        cols: ['Id', 'Name', 'SortOrder', 'HasOptions', 'Actions'],
+        rows: [['1', 'Automation', '1', 'true'], ['2', 'Installation', '2', 'false']]
+      },
+      'manufacturer': {
+        title: 'Manufacturer',
+        cols: ['ManufacturerId', 'Name', 'Email', 'VatNumber', 'Actions'],
+        rows: [['12', 'GateTech Industries', 'sales@gatetech.com', 'BE0123456789']]
+      },
+      'supplier': {
+        title: 'Supplier',
+        cols: ['SupplierId', 'Name', 'IsInactive', 'PriceListName', 'Actions'],
+        rows: [['8', 'ABMATIC Supply', 'false', 'Standard 2026']]
+      },
+      'customer': {
+        title: 'Customer',
+        cols: ['CustomerId', 'CustomerName', 'WebshopLogin', 'CustomerTypeId', 'Actions'],
+        rows: [['12', 'BuildCo LLC', 'mary.smith@buildco.com', '2'], ['8', 'GateInstall Pro', 'john@gatespro.com', '1']]
+      },
+      'delivery-address': {
+        title: 'CustomerDeliveryAddress',
+        cols: ['Id', 'CustomerId', 'Name', 'Straat', 'CityId', 'Actions'],
+        rows: [['1', '12', 'Warehouse', 'Flower St 120', '42']]
+      },
+      'customer-discount': {
+        title: 'CustomerProductDiscount',
+        cols: ['Id', 'CustomerId', 'ProductId', 'DiscountPercentage', 'Actions'],
+        rows: [['1', '12', '—', '5%']]
+      },
+      'customer-type': {
+        title: 'CustomerType',
+        cols: ['KlantTypeId', 'CustomerTypeName', 'BaseDiscount', 'DeliveryTypeId', 'Actions'],
+        rows: [['1', 'Dealer', '5%', '1'], ['2', 'Contractor', '3%', '2']]
+      },
+      'order': {
+        title: 'Order · OrderLine',
+        cols: ['Id', 'CreatedAt', 'ProjectId', 'DeliveryTypeId', 'IsAccepted', 'Actions'],
+        rows: [['1042', '05/18/2026', '340', '2', 'true'], ['1041', '05/17/2026', '338', '1', 'true']]
+      },
+      'order-status': {
+        title: 'OrderStatus',
+        cols: ['Id', 'Name', 'ReserveStock', 'AffectsStock', 'Actions'],
+        rows: [['2', 'Processing', 'true', 'false'], ['3', 'Shipped', 'false', 'true']]
+      },
+      'delivery-type': {
+        title: 'DeliveryType',
+        cols: ['Id', 'Name', 'IncludeInstallationCost', 'IsDefault', 'Actions'],
+        rows: [['1', 'Pickup', 'false', 'true'], ['2', 'Standard delivery', 'false', 'false']]
+      },
+      'product-stock': {
+        title: 'ProductStockLocation',
+        cols: ['Id', 'ProductId', 'StockLocationId', 'Quantity', 'MinQuantity', 'Actions'],
+        rows: [['1', '101', '1', '18', '5'], ['2', '205', '1', '3', '10']]
+      },
+      'stock-location': {
+        title: 'StockLocation',
+        cols: ['Id', 'Name', 'IsWarehouse', 'Actions'],
+        rows: [['1', 'Main warehouse', 'true'], ['2', 'Showroom', 'false']]
+      },
+      'payment-method': {
+        title: 'PaymentMethod',
+        cols: ['Id', 'NameEn', 'IsPrePay', 'IsPostPay', 'Actions'],
+        rows: [['1', 'Bank transfer', 'true', 'false'], ['2', 'Invoice 30 days', 'false', 'true']]
+      },
+      'staff-user': {
+        title: 'StaffUser',
+        cols: ['Id', 'Login', 'FirstName', 'Admin', 'ProductBeheer', 'Actions'],
+        rows: [['1', 'anna.rodriguez', 'Anna', '✓', '✓'], ['2', 'john.sales', 'John', '—', '—']]
+      },
+      'user-group': {
+        title: 'UserGroup',
+        cols: ['Id', 'Name', 'IsInstallationTeam', 'Actions'],
+        rows: [['1', 'Administration', 'false'], ['2', 'Installation team', 'true']]
+      },
+      'vat-type': {
+        title: 'VatType',
+        cols: ['Id', 'Name', 'Percentage', 'IsDefault', 'Actions'],
+        rows: [['1', 'Standard VAT', '21%', 'true'], ['2', 'Reduced VAT', '6%', 'false']]
+      }
+    };
+
+    const formFields = {
+      'product': [
+        ['NameEn *', 'Sliding Gate Motor 600kg'],
+        ['OrderPartNumber', 'SGM-600'],
+        ['SupplierId *', '8'],
+        ['ManufacturerId *', '12'],
+        ['WebshopDescriptionNl', 'Heavy-duty operator for sliding gates up to 600kg.'],
+        ['ShowOnWebshop', 'checkbox:checked'],
+        ['EanCode', '']
+      ],
+      'customer': [
+        ['CustomerName *', 'BuildCo LLC'],
+        ['CustomerEmail *', 'mary.smith@buildco.com'],
+        ['WebshopLogin', 'mary.smith@buildco.com'],
+        ['CustomerTypeId *', '2'],
+        ['DeliveryTypeId', '2'],
+        ['CustomerStreet', '120 Flower St']
+      ]
+    };
+
+    let currentHub = 'catalog';
+    let currentList = 'product';
+
+    function hideAllViews() {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.nav-link-item').forEach(n => n.classList.remove('active'));
+    }
+
+    function showDashboard() {
+      hideAllViews();
+      document.getElementById('view-dashboard').classList.add('active');
+      document.querySelector('[data-view="dashboard"]').classList.add('active');
+    }
+
+    function showHub(hubId) {
+      currentHub = hubId;
+      const hub = hubs[hubId];
+      hideAllViews();
+      document.getElementById('view-hub').classList.add('active');
+      document.querySelector(`[data-hub="${hubId}"]`)?.classList.add('active');
+
+      document.getElementById('hub-title').innerHTML = `<span class="oi ${hub.icon}"></span> ${hub.title}`;
+      document.getElementById('hub-subtitle').textContent = hub.subtitle;
+
+      const grid = document.getElementById('hub-grid');
+      grid.innerHTML = hub.cards.map(c => `
+        <div class="hub-card">
+          <div class="hub-icon" style="background:${c.color}"><i class="bi ${c.icon}"></i></div>
+          <div class="entity-tag">${c.entity}</div>
+          <h4>${c.title}</h4>
+          <p>${c.desc}</p>
+          <button type="button" class="btn-form" data-list="${c.list}" data-form="${c.formOnly ? '1' : '0'}">${c.title} form</button>
+        </div>
+      `).join('');
+
+      grid.querySelectorAll('.btn-form').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (btn.dataset.form === '1') showForm(btn.dataset.list);
+          else showList(btn.dataset.list);
+        });
+      });
+    }
+
+    function showList(listId) {
+      currentList = listId;
+      const data = listData[listId];
+      if (!data) return;
+      hideAllViews();
+      document.getElementById('view-list').classList.add('active');
+
+      document.getElementById('list-title').innerHTML = `<i class="bi bi-table"></i> ${data.title}`;
+      document.getElementById('filter-entity').innerHTML = `<option>${data.title}</option>`;
+
+      const thead = document.getElementById('list-thead');
+      thead.innerHTML = '<tr>' + data.cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
+
+      const tbody = document.getElementById('list-tbody');
+      tbody.innerHTML = data.rows.map(row => {
+        const cells = row.map(c => `<td>${c}</td>`).join('');
+        const edit = `<td class="text-center"><button type="button" class="btn btn-sm btn-primary" data-form="${listId}" title="Edit"><i class="bi bi-pencil"></i></button></td>`;
+        return `<tr>${cells}${edit}</tr>`;
+      }).join('');
+
+      tbody.querySelectorAll('[data-form]').forEach(btn => {
+        btn.addEventListener('click', () => showForm(btn.dataset.form));
+      });
+    }
+
+    function showForm(listId) {
+      currentList = listId;
+      hideAllViews();
+      document.getElementById('view-form').classList.add('active');
+      const data = listData[listId];
+      document.getElementById('form-title').textContent = (data?.title || listId) + ' — create / edit';
+      document.getElementById('form-entity-tag').textContent = data?.title || listId;
+
+      const fields = formFields[listId] || formFields['product'];
+      document.getElementById('form-body').innerHTML = `
+        <form class="row g-3" style="max-width:640px">
+          ${fields.map(([label, val]) => {
+            if (val.startsWith('checkbox')) {
+              const checked = val.includes('checked') ? 'checked' : '';
+              return `<div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" id="f-${label}" ${checked}><label class="form-check-label" for="f-${label}">${label.replace(' *','')}</label></div></div>`;
+            }
+            const req = label.includes('*');
+            return `<div class="col-md-6"><label class="form-label">${label}</label><input type="text" class="form-control" value="${val}" ${req ? 'required' : ''}></div>`;
+          }).join('')}
+          <div class="col-12 d-flex gap-2 mt-2">
+            <button type="button" class="btn btn-primary"><i class="bi bi-check-circle me-2"></i>Save</button>
+            <button type="button" class="btn btn-secondary" id="form-cancel"><i class="bi bi-x me-1"></i>Cancel</button>
+          </div>
+        </form>`;
+      document.getElementById('form-cancel').addEventListener('click', () => showList(listId));
+    }
+
+    document.querySelectorAll('.nav-link-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const view = item.dataset.view;
+        if (view === 'dashboard') showDashboard();
+        else if (view === 'hub') showHub(item.dataset.hub);
+      });
+    });
+
+    document.getElementById('hub-back').addEventListener('click', showDashboard);
+    document.getElementById('list-back').addEventListener('click', () => showHub(currentHub));
+    document.getElementById('form-back').addEventListener('click', () => showList(currentList));
+
+    document.querySelectorAll('[data-view="hub"]').forEach(el => {
+      if (el.classList.contains('pill')) return;
+    });
+
+    document.querySelectorAll('[data-hub]').forEach(el => {
+      if (el.tagName === 'BUTTON' && el.classList.contains('pill')) {
+        el.addEventListener('click', () => showHub(el.dataset.hub));
+      }
+    });
+
+    document.getElementById('sidebar-date').textContent = new Date().toLocaleDateString('en-GB');
+  </script>
+</body>
+</html>

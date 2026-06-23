@@ -870,19 +870,19 @@ private GridExportRequest? BuildExportRequest() =>
 | Location | Format | Purpose |
 |----------|--------|---------|
 | `/readme/` | `*.md` | Specifications, roadmaps, data docs, patterns |
-| `/docs/` | `mock-*.html` | Static HTML UI prototypes (self-contained; images in `docs/images/`) |
+| `/readme/docs/` | `mock-*.html` | Static HTML UI prototypes (self-contained; images in `readme/docs/images/`) |
 
 ### Prefixes (functional area)
 
 | Prefix | Use when | Examples |
 |--------|----------|----------|
 | **`SPEC_`** | Functional or technical **specifications** (admin, store, infra, stock, proposals) | `SPEC_ADMIN.md`, `SPEC_WEB_STORE.md`, `SPEC_INFRASTRUCTURE.md`, `SPEC_STOCK_OPERATIONS_PROPOSAL.md` |
-| **`MOCK_`** | Documentation **about HTML mocks** in `/docs/` (screens, entity mapping, walkthrough) | `MOCK_PROTOTYPE_GUIDE.md` |
+| **`MOCK_`** | Documentation **about HTML mocks** in `/readme/docs/` (screens, entity mapping, walkthrough) | `MOCK_PROTOTYPE_GUIDE.md` |
 | **`DATA_`** | **Database**: schema mapping, seeds, demo data, SQL/EF reference | `DATA_DEMO_SEED.md`, `DATA_SUMMARY.md`, `DATA_DUTCH_ENGLISH_MODEL.md` |
 | **`AUTH_`** | **Authentication & identity** (Identity, roles, customers, staff users) | `AUTH_IDENTITY_ROADMAP_open.md` |
 | **`PATTERNS_`** | **Implementation patterns** (code, UI, infra conventions — this file) | `PATTERNS_CODE_AND_INFRASTRUCTURE.md`, `PATTERNS_UI_QUICK_START.md` |
 
-**HTML mocks (not in `/readme/`):** use lowercase `mock-<topic>.html` under `/docs/` — e.g. `mock-loja.html`, `mock-admin.html`, `mock-payments.html`.
+**HTML mocks:** use lowercase `mock-<topic>.html` under `/readme/docs/` — e.g. `mock-loja.html`, `mock-admin.html`, `mock-payments.html`.
 
 ### Suffix `_open`
 
@@ -918,7 +918,7 @@ New docs should **prefer the prefix table** unless Marco assigns a proper name.
 |----------------|--------|
 | **Spec** (admin, store, stock, infra, feature behaviour) | `readme/SPEC_<Topic>.md` — stable spec; add `_open` only if it is primarily a pending checklist |
 | **Auth / identity** | `readme/AUTH_<Topic>_open.md` while work is open |
-| **Mock** (HTML prototype doc) | Update or add `readme/MOCK_<Topic>.md` + `docs/mock-<topic>.html` |
+| **Mock** (HTML prototype doc) | Update or add `readme/MOCK_<Topic>.md` + `readme/docs/mock-<topic>.html` |
 | **Data / DB / seeds** | `readme/DATA_<Topic>.md` |
 | **Patterns / conventions** | `readme/PATTERNS_<Area>.md` |
 | **Tracker with pending tasks** | `<NAME>_open.md` with ⬜ items and “Mark ✅ when done” in the header |
