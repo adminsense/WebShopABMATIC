@@ -8,13 +8,13 @@
 
 ## Mock prototype layout (WebShopABMATIC)
 
-The HTML admin mock in `docs/mock-admin.html` follows the **AB-MATIC** admin shell. Three screen types map to the reference images in `readme/images/`:
+The HTML admin mock in `docs/mock-admin.html` follows the **AB-MATIC** admin shell. Three screen types map to the reference images in `images/`:
 
 | Screen | Image | Mock file / view |
 |--------|-------|------------------|
-| **Dashboard** — sidebar, top bar, portfolio cards, logout, version | ![Main](../readme/images/main_screen.png) | `docs/mock-admin.html` → **Start** |
-| **Hub** — back link, entity cards, “X form” buttons | ![Menu](../readme/images/menu_screen.png) | `docs/mock-admin.html` → sidebar menus (Webshop, Catalog, …) |
-| **List + form** — filters, Apply/Clear, `table-dark` grid, edit form | ![Forms](../readme/images/forms_screen.png) | `docs/mock-admin.html` → entity list / form views |
+| **Dashboard** — sidebar, top bar, portfolio cards, logout, version | ![Main](images/main_screen.png) | `docs/mock-admin.html` → **Start** |
+| **Hub** — back link, entity cards, “X form” buttons | ![Menu](images/menu_screen.png) | `docs/mock-admin.html` → sidebar menus (Webshop, Catalog, …) |
+| **List + form** — filters, Apply/Clear, `table-dark` grid, edit form | ![Forms](images/forms_screen.png) | `docs/mock-admin.html` → entity list / form views |
 
 Storefront + admin entry: `docs/mock-loja.html` (**Admin Panel** after `StaffUser.Admin` login).
 

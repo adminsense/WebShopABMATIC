@@ -16,4 +16,11 @@ public interface IStockMovementService
     Task<StockApplyResult> ApplyManualAdjustmentAsync(
         StockManualAdjustmentCommand command,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Moves stock between two locations (paired out/in movements).
+    /// </summary>
+    Task<StockApplyResult> ApplyLocationTransferAsync(
+        StockLocationTransferCommand command,
+        CancellationToken cancellationToken = default);
 }
