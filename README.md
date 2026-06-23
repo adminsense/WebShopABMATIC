@@ -159,9 +159,9 @@ Login uses **legacy ABMATIC tables**, not ASP.NET Identity (`AspNetUsers` is not
 - 🖥️ [`readme/MOCK_PROTOTYPE_GUIDE.md`](readme/MOCK_PROTOTYPE_GUIDE.md) — Mock layouts, menus, entities, and validation walkthrough
 - 🎨 [`readme/PATTERNS_UI_QUICK_START.md`](readme/PATTERNS_UI_QUICK_START.md) — Buttons, grids, forms (copy-paste)
 - 🏗️ [`readme/PATTERNS_CODE_AND_INFRASTRUCTURE.md`](readme/PATTERNS_CODE_AND_INFRASTRUCTURE.md) — Blazor patterns,
-- 📋 [`docs/mock-loja.html`](docs/mock-loja.html) — Storefront prototype (entry point)
-- 📋 [`docs/mock-payments.html`](docs/mock-payments.html) — Mollie card checkout + payment success
-- 📋 [`docs/mock-admin.html`](docs/mock-admin.html) — Admin prototype
+- 📋 [`readme/docs/mock-loja.html`](readme/docs/mock-loja.html) — Storefront prototype (entry point)
+- 📋 [`readme/docs/mock-payments.html`](readme/docs/mock-payments.html) — Mollie card checkout + payment success
+- 📋 [`readme/docs/mock-admin.html`](readme/docs/mock-admin.html) — Admin prototype
 
 ---
 
