@@ -22,6 +22,64 @@ public sealed class LocalProductMediaService : IProductMediaPort
 
     public async Task<string?> GetPrimaryImageUrlAsync(int productId, bool webPublishedOnly = false, CancellationToken cancellationToken = default)
     {
+        var blobRef = await QueryPrimaryBlobRefAsync(productId, webPublishedOnly, cancellationToken);
+        return ResolvePublicUrl(blobRef);
+    }
+
+    public async Task<IReadOnlyDictionary<int, string>> GetPrimaryImageUrlsAsync(
+        IReadOnlyList<int> productIds,
+        bool webPublishedOnly = false,
+        CancellationToken cancellationToken = default)
+    {
+        if (productIds.Count == 0)
+        {
+            return new Dictionary<int, string>();
+        }
+
+        var ids = productIds.Distinct().ToList();
+        var rows = await _db.AzureFiles.AsNoTracking()
+            .Where(f => f.ProductId != null
+                        && ids.Contains(f.ProductId.Value)
+                        && f.IsPrimaryImage == true
+                        && (f.Deleted == null || f.Deleted == false))
+            .Select(f => new
+            {
+                ProductId = f.ProductId!.Value,
+                f.BlobRef,
+                PublishToWeb = f.PublishToWeb == true,
+                f.Created
+            })
+            .ToListAsync(cancellationToken);
+
+        var result = new Dictionary<int, string>();
+        foreach (var productId in ids)
+        {
+            var candidates = rows.Where(r => r.ProductId == productId).ToList();
+            if (candidates.Count == 0)
+            {
+                continue;
+            }
+
+            var blobRef = webPublishedOnly
+                ? candidates.Where(r => r.PublishToWeb).OrderByDescending(r => r.Created).Select(r => r.BlobRef).FirstOrDefault()
+                  ?? candidates.OrderByDescending(r => r.Created).Select(r => r.BlobRef).FirstOrDefault()
+                : candidates.OrderByDescending(r => r.Created).Select(r => r.BlobRef).FirstOrDefault();
+
+            var url = ResolvePublicUrl(blobRef);
+            if (!string.IsNullOrWhiteSpace(url))
+            {
+                result[productId] = url;
+            }
+        }
+
+        return result;
+    }
+
+    private async Task<string?> QueryPrimaryBlobRefAsync(
+        int productId,
+        bool webPublishedOnly,
+        CancellationToken cancellationToken)
+    {
         var query = _db.AzureFiles.AsNoTracking()
             .Where(f => f.ProductId == productId
                         && f.IsPrimaryImage == true
@@ -32,12 +90,10 @@ public sealed class LocalProductMediaService : IProductMediaPort
             query = query.Where(f => f.PublishToWeb == true);
         }
 
-        var blobRef = await query
+        return await query
             .OrderByDescending(f => f.Created)
             .Select(f => f.BlobRef)
             .FirstOrDefaultAsync(cancellationToken);
-
-        return ResolvePublicUrl(blobRef);
     }
 
     public async Task SavePrimaryImageAsync(

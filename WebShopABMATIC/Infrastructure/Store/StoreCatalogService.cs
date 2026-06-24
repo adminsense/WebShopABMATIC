@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using WebShopABMATIC.Application.Ports;
 using WebShopABMATIC.Application.Ports.Outbound;
 using WebShopABMATIC.Application.Store;
@@ -9,15 +10,23 @@ namespace WebShopABMATIC.Infrastructure.Store;
 
 public sealed class StoreCatalogService : IStoreCatalogPort
 {
+    private const string ProductStructuresCacheKey = "store:product-structures";
+
     private readonly WebShopABMATICDbContext _db;
     private readonly IProductMediaPort _media;
     private readonly IProductPricingPort _pricing;
+    private readonly IMemoryCache _cache;
 
-    public StoreCatalogService(WebShopABMATICDbContext db, IProductMediaPort media, IProductPricingPort pricing)
+    public StoreCatalogService(
+        WebShopABMATICDbContext db,
+        IProductMediaPort media,
+        IProductPricingPort pricing,
+        IMemoryCache cache)
     {
         _db = db;
         _media = media;
         _pricing = pricing;
+        _cache = cache;
     }
 
     public async Task<IReadOnlyList<StoreCatalogCategoryDto>> GetCategoriesAsync(CancellationToken cancellationToken = default)
@@ -77,51 +86,43 @@ public sealed class StoreCatalogService : IStoreCatalogPort
         try
         {
             var structures = await LoadProductStructuresAsync(cancellationToken);
-            HashSet<int>? allowedStructureIds = null;
-            if (categoryId is > 0)
-            {
-                var webshopNavExists = await _db.WebshopStructures.AsNoTracking()
-                    .AnyAsync(s => s.Id == categoryId, cancellationToken);
-                if (webshopNavExists)
-                {
-                    allowedStructureIds = null;
-                }
-                else if (structures.ContainsKey(categoryId.Value))
-                {
-                    allowedStructureIds = CatalogCategoryTree.CollectDescendantIds(categoryId.Value, structures);
-                }
-            }
 
             var query = _db.Products.AsNoTracking()
                 .Where(p => p.ShowOnWebshop == true && !p.IsInactive);
 
-            if (allowedStructureIds is not null)
-            {
-                query = query.Where(p => p.ProductStructureId != null && allowedStructureIds.Contains(p.ProductStructureId.Value));
-            }
-
             var ordered = query.OrderBy(p => p.NameEn)
-                .Select(p => new
-                {
+                .Select(p => new CatalogProductRow(
                     p.ProductId,
                     p.NameEn,
                     p.WebshopDescriptionNl,
                     p.ProductStructureId,
-                    p.HasNoPrice
-                });
+                    p.HasNoPrice));
 
-            var products = take is > 0
-                ? await ordered.Take(take.Value).ToListAsync(cancellationToken)
-                : await ordered.ToListAsync(cancellationToken);
+            List<CatalogProductRow> products;
+            if (categoryId is > 0)
+            {
+                var rows = await ordered.ToListAsync(cancellationToken);
+                var filtered = rows
+                    .Where(p => p.ProductStructureId is int structureId
+                                && CatalogCategoryTree.ResolveRootId(structureId, structures) == categoryId.Value)
+                    .ToList();
+                products = take is > 0 ? filtered.Take(take.Value).ToList() : filtered;
+            }
+            else
+            {
+                products = take is > 0
+                    ? await ordered.Take(take.Value).ToListAsync(cancellationToken)
+                    : await ordered.ToListAsync(cancellationToken);
+            }
 
             var productIds = products.Select(p => p.ProductId).ToList();
             var prices = await _pricing.GetCatalogPricesAsync(productIds, cancellationToken: cancellationToken);
             var stockLevels = await GetDefaultStockLevelsAsync(productIds, cancellationToken);
+            var imageUrls = await _media.GetPrimaryImageUrlsAsync(productIds, webPublishedOnly: true, cancellationToken);
 
             var items = new List<StoreProductDto>();
             foreach (var p in products)
             {
-                prices.TryGetValue(p.ProductId, out var price);
                 stockLevels.TryGetValue(p.ProductId, out var level);
                 var (categoryIdValue, categoryRootId, categoryName) = ResolveCategory(p.ProductStructureId, structures);
 
@@ -129,10 +130,10 @@ public sealed class StoreCatalogService : IStoreCatalogPort
                     p.ProductId,
                     p.NameEn,
                     p.WebshopDescriptionNl,
-                    FallbackImage(p.ProductId),
+                    imageUrls.GetValueOrDefault(p.ProductId) ?? FallbackImage(p.ProductId),
                     level.Quantity,
                     level.MinQuantity,
-                    p.HasNoPrice ? null : price,
+                    ResolveStorePrice(p.HasNoPrice, prices, p.ProductId),
                     categoryIdValue,
                     categoryRootId,
                     categoryName));
@@ -182,7 +183,7 @@ public sealed class StoreCatalogService : IStoreCatalogPort
                     ?? FallbackImage(productId),
                 level.Quantity,
                 level.MinQuantity,
-                p.HasNoPrice ? null : price,
+                ResolveStorePrice(p.HasNoPrice, price),
                 categoryIdValue,
                 categoryRootId,
                 categoryName);
@@ -195,8 +196,16 @@ public sealed class StoreCatalogService : IStoreCatalogPort
 
     private async Task<Dictionary<int, ProductStructure>> LoadProductStructuresAsync(CancellationToken cancellationToken)
     {
+        if (_cache.TryGetValue(ProductStructuresCacheKey, out Dictionary<int, ProductStructure>? cached)
+            && cached is not null)
+        {
+            return cached;
+        }
+
         var rows = await _db.ProductStructures.AsNoTracking().ToListAsync(cancellationToken);
-        return rows.ToDictionary(s => s.Id);
+        var structures = rows.ToDictionary(s => s.Id);
+        _cache.Set(ProductStructuresCacheKey, structures, TimeSpan.FromMinutes(10));
+        return structures;
     }
 
     private static (int? CategoryId, int? CategoryRootId, string CategoryName) ResolveCategory(
@@ -231,6 +240,32 @@ public sealed class StoreCatalogService : IStoreCatalogPort
             x => ((int)Math.Max(0, x.Quantity - x.ReservedQuantity), x.MinQuantity));
     }
 
+    private static decimal? ResolveStorePrice(
+        bool hasNoPrice,
+        IReadOnlyDictionary<int, decimal> prices,
+        int productId)
+    {
+        if (hasNoPrice || !prices.TryGetValue(productId, out var price))
+        {
+            return null;
+        }
+
+        return price;
+    }
+
+    private static decimal? ResolveStorePrice(bool hasNoPrice, decimal? price) =>
+        hasNoPrice ? null : price;
+
+    private static string FallbackImage(int productId) =>
+        productId is >= 1 and <= 6 ? $"/images/product{productId}.png" : "/images/product1.png";
+
+    private sealed record CatalogProductRow(
+        int ProductId,
+        string NameEn,
+        string WebshopDescriptionNl,
+        int? ProductStructureId,
+        bool HasNoPrice);
+
     private static StoreProductDto MapProduct(
         int id,
         string name,
@@ -255,7 +290,4 @@ public sealed class StoreCatalogService : IStoreCatalogPort
             CategoryRootId = categoryRootId,
             CategoryName = categoryName
         };
-
-    private static string FallbackImage(int productId) =>
-        productId is >= 1 and <= 6 ? $"/images/product{productId}.png" : "/images/product1.png";
 }

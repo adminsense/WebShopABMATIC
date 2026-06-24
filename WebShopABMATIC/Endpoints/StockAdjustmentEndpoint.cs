@@ -41,6 +41,38 @@ public static class StockAdjustmentEndpoint
             return preview is null ? Results.NotFound() : Results.Ok(preview);
         });
 
+        group.MapPost("/transfers", async (
+            StockTransferRequest request,
+            IStockTransferPort port,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await port.ApplyAsync(request, cancellationToken);
+            if (result.Status == StockApplyStatus.Failed)
+            {
+                return Results.BadRequest(new { errors = result.Errors });
+            }
+
+            return Results.Ok(new
+            {
+                status = result.Status.ToString(),
+                outMovementId = result.OutMovementId,
+                inMovementId = result.InMovementId,
+                fromNewBalance = result.FromNewBalance,
+                toNewBalance = result.ToNewBalance
+            });
+        }).DisableAntiforgery();
+
+        group.MapGet("/transfers/preview", async (
+            int productId,
+            int fromStockLocationId,
+            int toStockLocationId,
+            IStockTransferPort port,
+            CancellationToken cancellationToken) =>
+        {
+            var preview = await port.GetPreviewAsync(productId, fromStockLocationId, toStockLocationId, cancellationToken);
+            return preview is null ? Results.NotFound() : Results.Ok(preview);
+        });
+
         return group;
     }
 }
