@@ -29,7 +29,8 @@ public class AdminEntityListFormRazorTests
         { typeof(WebshopProductStructureList), "f-nameen" },
         { typeof(OrderList), "f-projectid" },
         { typeof(ProductStockList), "f-stocklocationid" },
-        { typeof(StockAdjustment), "adj-product" }
+        { typeof(StockAdjustment), "adj-product" },
+        { typeof(StockTransfer), "xfer-product" }
     };
 
     [Theory]

@@ -106,8 +106,8 @@ Web/                  ← Blazor driving adapter
 
 ### 1.3 Data flow (mock-first → real)
 
-- **Static mocks** (`docs/`) define screen requirements and reference DTO fields  
-  ✅ `docs/mock-admin.html`, `docs/mock-loja.html`, [MOCK_PROTOTYPE_GUIDE.md](MOCK_PROTOTYPE_GUIDE.md)
+- **Static mocks** (`readme/docs/`) define screen requirements and reference DTO fields
+  ✅ `readme/docs/mock-admin.html`, `readme/docs/mock-loja.html`, [MOCK_PROTOTYPE_GUIDE.md](MOCK_PROTOTYPE_GUIDE.md)
 
 - **DTOs** become the contract between UI and Application services  
   ✅ `ProductDto`, `CustomerDto`, `OrderSummaryDto`, `AdminDashboardDto`, etc.
@@ -132,34 +132,18 @@ Repository root (`WebShopABMATIC/` — git repo):
 ```
 WebShopABMATIC/                 ← repo root (solution parent)
 ├── WebShopABMATIC.sln
-├── Domain/                       ← domain entities (hexagonal core)
-├── Application/                  ← use cases, DTOs, inbound/outbound ports
-├── Infrastructure/               ← driven adapters (EF repos, Identity, media)
-├── Web/                          ← driving adapter (Blazor UI)
-├── Model/                        ← EF persistence models (legacy entities)
-├── Persistence/                  ← DbContext + ModelBuilder
-├── docs/                         ← HTML mocks
+├── WebShopABMATIC/               ← host + Application, Domain, Infrastructure, …
+├── WebShopABMATIC.Client/        ← Blazor UI (Components, wwwroot)
+├── WebShopABMATIC.Tests/
 ├── readme/                       ← documentation
-└── Sql/                      ← SQL + codegen
+│   └── docs/                     ← HTML mocks
+└── Sql/                          ← SQL scripts
 ```
 
-- `docs/` — static prototypes (HTML mocks)  
+- `readme/docs/` — static prototypes (HTML mocks)  
   ✅
 - `readme/` — project documentation  
   ✅
-- Solution projects (flat at repo root):
-  - `Web/` — Blazor UI (driving adapter)  
-    ✅
-  - `Application/` — use cases, DTOs, port interfaces  
-    ✅
-  - `Domain/` — pure domain entities  
-    ✅
-  - `Infrastructure/` — outbound adapters, Identity, seed  
-    ✅
-  - `Model/` — EF persistence models  
-    ✅
-  - `Persistence/` — `WebShopABMATICDbContext`, model builder  
-    ✅
 
 ---
 
@@ -383,7 +367,7 @@ This section records everything delivered beyond the baseline items 1–5 above.
 
 ### Admin UI (AB-MATIC-style layout)
 
-Matches `docs/mock-admin.html` and [PATTERNS_UI_QUICK_START.md](PATTERNS_UI_QUICK_START.md):
+Matches `readme/docs/mock-admin.html` and [PATTERNS_UI_QUICK_START.md](PATTERNS_UI_QUICK_START.md):
 
 | Route | Screen | Status |
 |-------|--------|--------|
@@ -427,7 +411,7 @@ dotnet run
 
 ### HTML prototypes and Blazor storefront
 
-✅ `docs/mock-loja.html` — light-blue storefront reference  
+✅ `readme/docs/mock-loja.html` — light-blue storefront reference  
 ✅ **Blazor store:** `/` catalog (12 products), `/product/{id}`, `/cart`, `/orders`, `/sign-in`, `/my-account` — `IStoreCatalogPort` → `StoreCatalogService`  
 ✅ Categories from ERP `ProductStructuur` on client DB; demo seed uses `WebshopProductStructures`  
 ✅ Product images via `IProductMediaPort` → Azure Blob SAS or local fallback  
@@ -565,7 +549,7 @@ Publish output to App Service (Visual Studio Publish, ZIP deploy, or CI). Ensure
 
 ### 10.3 Output artifacts (in-repo)
 
-- `docs/mock-data/*.json`  
+- `readme/docs/mock-data/*.json`  
   ⏳
 - endpoint → DTO → screen mapping doc  
   ✅ [MOCK_PROTOTYPE_GUIDE.md](MOCK_PROTOTYPE_GUIDE.md)

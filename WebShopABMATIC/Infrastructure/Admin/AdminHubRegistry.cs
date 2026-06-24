@@ -71,6 +71,10 @@ public sealed class AdminHubRegistry : IAdminHubPort
             IconClass = "oi-box",
             Cards =
             [
+                Card("StockOverview", "Stock overview", "KPIs, low stock, movement counts", "/admin/stock/overview", "oi-dashboard"),
+                Card("StockMovement", "Movement journal", "Consult stock ledger entries", "/admin/stock/movements", "oi-list"),
+                Card("StockAdjustment", "Stock adjustment", "Manual inbound or outbound correction", "/admin/stock/adjustment", "oi-arrow-left-right"),
+                Card("StockTransfer", "Stock transfer", "Move quantity between locations", "/admin/stock/transfers/new", "oi-transfer"),
                 Card("ProductStockLocation", "Product stock", "Quantity per location", "/admin/product-stock", "oi-box"),
                 Card("StockLocation", "Stock location", "Warehouses and storage", "/admin/stock-locations", "oi-home")
             ]

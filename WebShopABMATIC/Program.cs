@@ -47,6 +47,7 @@ builder.Services.Configure<Microsoft.AspNetCore.SignalR.HubOptions>(options =>
 });
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddMemoryCache();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<AuthenticationStateProvider, LegacyAuthenticationStateProvider>();
 
@@ -99,6 +100,15 @@ builder.Services.AddAuthorizationBuilder()
 
 builder.Services.AddWebShopApplication();
 builder.Services.AddWebShopInfrastructure(builder.Configuration, builder.Environment);
+builder.Services.AddHttpsRedirection(options =>
+{
+    options.HttpsPort = 44357;
+});
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+});
 builder.Services.AddScoped<StoreCartService>();
 builder.Services.AddScoped<IGridExportService, GridExportService>();
 
@@ -119,6 +129,7 @@ app.MapRazorComponents<App>()
 
 app.MapLoginEndpoints();
 app.MapStockAdjustmentApi();
+app.MapStoreMediaEndpoints();
 
 app.MapPost("/account/logout", async (HttpContext context, string? returnUrl) =>
 {

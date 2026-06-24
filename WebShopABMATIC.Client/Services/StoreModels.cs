@@ -36,6 +36,8 @@ public sealed record StoreOrderSummary(
 
 public static class StorePriceFormatter
 {
+    public const string OnRequestLabel = "Price on request";
+
     public static string Format(decimal? price) =>
-        price.HasValue ? $"€{price.Value:F2}" : "Price on request";
+        price.HasValue ? $"€{price.Value:F2}" : OnRequestLabel;
 }
