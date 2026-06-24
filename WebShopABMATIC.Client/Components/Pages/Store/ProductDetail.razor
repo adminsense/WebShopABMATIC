@@ -32,7 +32,7 @@ else
             <div class="detail-info">
                 <p class="detail-meta">@_product.Tag · @StockStatusLabel(_product)</p>
                 <h1>@_product.Name</h1>
-                <p class="detail-price @(!_product.HasPrice ? "text-muted" : "")">@StorePriceFormatter.Format(_product.Price)</p>
+                <p class="detail-price @(!_product.HasPrice ? "price-on-request text-muted" : "")">@StorePriceFormatter.Format(_product.Price)</p>
                 <p class="detail-desc">@_product.Description</p>
                 <div class="qty-row">
                     <div class="qty-control">
@@ -41,7 +41,7 @@ else
                         <button type="button" aria-label="Increase" @onclick="IncreaseQty" disabled="@(!_product.HasPrice)">+</button>
                     </div>
                     <button type="button" class="btn btn-primary" disabled="@(!_product.HasPrice || _product.IsOutOfStock)" @onclick="AddToCartAsync">
-                        @(_product.HasPrice ? "Add to cart" : "Price on request")
+                        @(_product.HasPrice ? "Add to cart" : StorePriceFormatter.OnRequestLabel)
                     </button>
                 </div>
                 <p class="stock @(_product.IsOutOfStock ? "out" : _product.IsLowStock ? "low" : "")" style="font-size:0.85rem">@StockStatusLabel(_product)</p>

@@ -57,13 +57,13 @@
             @foreach (var p in _products)
             {
                 <article class="product-card" @onclick="() => GoToProduct(p.Id)">
-                    <div class="img-wrap"><img src="@p.ImageUrl" alt="@p.Name" /></div>
+                    <div class="img-wrap"><img src="@p.ImageUrl" alt="@p.Name" loading="lazy" decoding="async" /></div>
                     <div class="body">
                         <p class="category">@p.Tag</p>
                         <h3>@p.Name</h3>
                         <p class="brand">@p.Description</p>
                         <div class="price-row">
-                            <span class="price @(!p.HasPrice ? "text-muted" : "")">@StorePriceFormatter.Format(p.Price)</span>
+                            <span class="price @(!p.HasPrice ? "price-on-request text-muted" : "")">@StorePriceFormatter.Format(p.Price)</span>
                             <span class="stock @(p.IsOutOfStock ? "out" : p.IsLowStock ? "low" : "")">@(p.IsOutOfStock ? "Out of stock" : $"{p.Stock} in stock")</span>
                         </div>
                     </div>
