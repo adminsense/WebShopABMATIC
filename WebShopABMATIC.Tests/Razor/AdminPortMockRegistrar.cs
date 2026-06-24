@@ -63,6 +63,7 @@ internal static class AdminPortMockRegistrar
             case "OrderList": RegisterOrder(services); break;
             case "ProductStockList": RegisterProductStock(services); break;
             case "StockAdjustment": RegisterStockAdjustment(services); break;
+            case "StockTransfer": RegisterStockTransfer(services); break;
             default:
                 throw new ArgumentException($"No admin port mock registered for {componentType.Name}.", nameof(componentType));
         }
@@ -261,6 +262,33 @@ internal static class AdminPortMockRegistrar
             .ReturnsAsync(new StockAdjustmentLookupsDto
             {
                 StockLocations = [new StockLookupItemDto { Id = 1, Name = "Main" }]
+            });
+        services.AddSingleton(mock.Object);
+    }
+
+    private static void RegisterStockTransfer(IServiceCollection services)
+    {
+        var mock = new Mock<IStockTransferPort>();
+        mock.Setup(p => p.GetLookupsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new StockTransferLookupsDto
+            {
+                StockLocations =
+                [
+                    new StockLookupItemDto { Id = 1, Name = "Main" },
+                    new StockLookupItemDto { Id = 2, Name = "Secondary" }
+                ]
+            });
+        mock.Setup(p => p.GetPreviewAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new StockTransferPreviewDto
+            {
+                ProductId = 1,
+                ProductName = "Demo",
+                FromStockLocationId = 1,
+                FromStockLocationName = "Main",
+                FromCurrentQuantity = 10,
+                ToStockLocationId = 2,
+                ToStockLocationName = "Secondary",
+                ToCurrentQuantity = 2
             });
         services.AddSingleton(mock.Object);
     }

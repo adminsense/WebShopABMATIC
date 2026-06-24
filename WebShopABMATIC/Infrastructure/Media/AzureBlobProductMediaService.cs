@@ -39,11 +39,70 @@ public sealed class AzureBlobProductMediaService : IProductMediaPort
         bool webPublishedOnly = false,
         CancellationToken cancellationToken = default)
     {
-        var file = await FindPrimaryFileAsync(productId, webPublishedOnly, cancellationToken)
-            ?? (webPublishedOnly
-                ? await FindPrimaryFileAsync(productId, webPublishedOnly: false, cancellationToken)
-                : null);
+        var cacheKey = BuildProductImageCacheKey(productId, webPublishedOnly);
+        if (_cache.TryGetValue(cacheKey, out string? cached) && !string.IsNullOrEmpty(cached))
+        {
+            return cached;
+        }
 
+        var file = await FindPrimaryFileAsync(productId, webPublishedOnly, cancellationToken);
+        var url = await BuildReadUrlFromFileRefAsync(file, verifyBlobExists: false, cancellationToken);
+        if (!string.IsNullOrWhiteSpace(url))
+        {
+            _cache.Set(cacheKey, url, TimeSpan.FromHours(Math.Max(1, _options.SasValidityHours) - 1));
+        }
+
+        return url;
+    }
+
+    public async Task<IReadOnlyDictionary<int, string>> GetPrimaryImageUrlsAsync(
+        IReadOnlyList<int> productIds,
+        bool webPublishedOnly = false,
+        CancellationToken cancellationToken = default)
+    {
+        if (productIds.Count == 0)
+        {
+            return new Dictionary<int, string>();
+        }
+
+        var ids = productIds.Distinct().ToList();
+        var rows = await _db.AzureFiles.AsNoTracking()
+            .Where(f => f.ProductId != null
+                        && ids.Contains(f.ProductId.Value)
+                        && f.IsPrimaryImage == true
+                        && (f.Deleted == null || f.Deleted == false))
+            .Select(f => new PrimaryFileRow(
+                f.ProductId!.Value,
+                f.BlobRef,
+                f.Extension,
+                f.ThumbRef,
+                f.PublishToWeb == true,
+                f.Created))
+            .ToListAsync(cancellationToken);
+
+        var selected = PickPrimaryFilesPerProduct(rows, ids, webPublishedOnly);
+        if (selected.Count == 0)
+        {
+            return new Dictionary<int, string>();
+        }
+
+        var urlTasks = selected.Select(async entry =>
+        {
+            var url = await BuildReadUrlFromFileRefAsync(entry.Value, verifyBlobExists: false, cancellationToken);
+            return (entry.Key, url);
+        });
+
+        var resolved = await Task.WhenAll(urlTasks);
+        return resolved
+            .Where(x => !string.IsNullOrWhiteSpace(x.url))
+            .ToDictionary(x => x.Key, x => x.url!);
+    }
+
+    private async Task<string?> BuildReadUrlFromFileRefAsync(
+        FileRef? file,
+        bool verifyBlobExists,
+        CancellationToken cancellationToken)
+    {
         if (file is null || string.IsNullOrWhiteSpace(file.BlobRef))
         {
             return null;
@@ -59,7 +118,16 @@ public sealed class AzureBlobProductMediaService : IProductMediaPort
             return ResolveLocalMediaUrl(file.BlobRef);
         }
 
-        var blobName = await ResolveReadableBlobNameAsync(file.BlobRef, file.Extension, file.ThumbRef, cancellationToken);
+        string? blobName;
+        if (verifyBlobExists)
+        {
+            blobName = await ResolveReadableBlobNameAsync(file.BlobRef, file.Extension, file.ThumbRef, cancellationToken);
+        }
+        else
+        {
+            blobName = BlobReferenceResolver.ResolvePreferredBlobName(file.BlobRef, file.Extension);
+        }
+
         return blobName is null ? null : await BuildReadUrlAsync(blobName, cancellationToken);
     }
 
@@ -91,23 +159,87 @@ public sealed class AzureBlobProductMediaService : IProductMediaPort
         bool webPublishedOnly,
         CancellationToken cancellationToken)
     {
-        var query = _db.AzureFiles.AsNoTracking()
+        var rows = await _db.AzureFiles.AsNoTracking()
             .Where(f => f.ProductId == productId
                         && f.IsPrimaryImage == true
-                        && (f.Deleted == null || f.Deleted == false));
+                        && (f.Deleted == null || f.Deleted == false))
+            .OrderByDescending(f => f.Created)
+            .Select(f => new PrimaryFileRow(
+                productId,
+                f.BlobRef,
+                f.Extension,
+                f.ThumbRef,
+                f.PublishToWeb == true,
+                f.Created))
+            .ToListAsync(cancellationToken);
 
-        if (webPublishedOnly)
+        if (rows.Count == 0)
         {
-            query = query.Where(f => f.PublishToWeb == true);
+            return null;
         }
 
-        return await query
-            .OrderByDescending(f => f.Created)
-            .Select(f => new FileRef(f.BlobRef, f.Extension, f.ThumbRef))
-            .FirstOrDefaultAsync(cancellationToken);
+        PrimaryFileRow? picked = null;
+        if (webPublishedOnly)
+        {
+            picked = rows.FirstOrDefault(r => r.PublishToWeb) ?? rows[0];
+        }
+        else
+        {
+            picked = rows[0];
+        }
+
+        return new FileRef(picked.BlobRef, picked.Extension, picked.ThumbRef);
     }
 
     private sealed record FileRef(string? BlobRef, string? Extension, string? ThumbRef);
+
+    private sealed record PrimaryFileRow(
+        int ProductId,
+        string BlobRef,
+        string? Extension,
+        string? ThumbRef,
+        bool PublishToWeb,
+        DateTime Created);
+
+    private static Dictionary<int, FileRef> PickPrimaryFilesPerProduct(
+        IReadOnlyList<PrimaryFileRow> rows,
+        IReadOnlyList<int> productIds,
+        bool webPublishedOnly)
+    {
+        var byProduct = rows
+            .GroupBy(r => r.ProductId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var result = new Dictionary<int, FileRef>();
+        foreach (var productId in productIds)
+        {
+            if (!byProduct.TryGetValue(productId, out var candidates) || candidates.Count == 0)
+            {
+                continue;
+            }
+
+            PrimaryFileRow? picked = null;
+            if (webPublishedOnly)
+            {
+                picked = candidates
+                    .Where(r => r.PublishToWeb)
+                    .OrderByDescending(r => r.Created)
+                    .FirstOrDefault()
+                    ?? candidates.OrderByDescending(r => r.Created).FirstOrDefault();
+            }
+            else
+            {
+                picked = candidates.OrderByDescending(r => r.Created).FirstOrDefault();
+            }
+
+            if (picked is not null)
+            {
+                result[productId] = new FileRef(picked.BlobRef, picked.Extension, picked.ThumbRef);
+            }
+        }
+
+        return result;
+    }
 
     public async Task SavePrimaryImageAsync(
         int productId,
@@ -172,6 +304,8 @@ public sealed class AzureBlobProductMediaService : IProductMediaPort
 
         await _db.SaveChangesAsync(cancellationToken);
         _cache.Remove(BuildCacheKey(blobKey));
+        _cache.Remove(BuildProductImageCacheKey(productId, webPublishedOnly: true));
+        _cache.Remove(BuildProductImageCacheKey(productId, webPublishedOnly: false));
     }
 
     public async Task SetPrimaryImagePublishToWebAsync(
@@ -196,6 +330,8 @@ public sealed class AzureBlobProductMediaService : IProductMediaPort
         }
 
         await _db.SaveChangesAsync(cancellationToken);
+        _cache.Remove(BuildProductImageCacheKey(productId, webPublishedOnly: true));
+        _cache.Remove(BuildProductImageCacheKey(productId, webPublishedOnly: false));
     }
 
     private async Task<string> BuildReadUrlAsync(string blobName, CancellationToken cancellationToken)
@@ -232,6 +368,9 @@ public sealed class AzureBlobProductMediaService : IProductMediaPort
         _cache.Set(cacheKey, url, expiresOn.AddMinutes(-5));
         return url;
     }
+
+    private static string BuildProductImageCacheKey(int productId, bool webPublishedOnly) =>
+        $"product-image-url:{productId}:{webPublishedOnly}";
 
     private string? ResolveLocalMediaUrl(string blobRef)
     {

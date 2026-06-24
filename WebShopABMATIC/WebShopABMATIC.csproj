@@ -7,6 +7,7 @@
     <RootNamespace>WebShopABMATIC</RootNamespace>
     <AssemblyName>WebShopABMATIC</AssemblyName>
     <UserSecretsId>aspnet-WebShopABMATIC.Web-70a1a0ec-a529-4dd7-b516-e70c94617bde</UserSecretsId>
+    <RunWithBrowserLink>false</RunWithBrowserLink>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,7 +29,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Update="wwwroot\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Remove="wwwroot\**\*" />
+    <Content Include="..\WebShopABMATIC.Client\wwwroot\**\*"
+             Link="wwwroot\%(RecursiveDir)%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
@@ -48,9 +53,4 @@
   <ItemGroup>
     <InternalsVisibleTo Include="WebShopABMATIC.Tests" />
   </ItemGroup>
-
-  <Target Name="LinkClientWwwRoot" BeforeTargets="Build" Condition="!Exists('wwwroot') and $([MSBuild]::IsOSPlatform('Windows'))">
-    <Exec Command="cmd /c mklink /J &quot;$(MSBuildProjectDirectory)\wwwroot&quot; &quot;$(MSBuildProjectDirectory)\..\WebShopABMATIC.Client\wwwroot&quot;" />
-  </Target>
-
 </Project>

@@ -71,12 +71,12 @@ The storefront uses a **light blue** theme (`--primary: #0ea5e9`, soft backgroun
 
 | SKU | Image | Mock name | Category | Mock stock |
 |-----|-------|-----------|----------|------------|
-| 1 | ![Hard drive 1](../docs/images/product1.png) | Hard drive 1 | storage | 24 |
-| 2 | ![Hard drive 2](../docs/images/product2.png) | Hard drive 2 | storage | 18 |
-| 3 | ![Hard drive 3](../docs/images/product3.png) | Hard drive 3 | ssd | 32 |
-| 4 | ![Hard drive 4](../docs/images/product4.png) | Hard drive 4 | ssd | 15 |
-| 5 | ![Hard drive 5](../docs/images/product5.png) | Hard drive 5 | hdd | 9 (low) |
-| 6 | ![Hard drive 6](../docs/images/product6.png) | Hard drive 6 | hdd | 41 |
+| 1 | ![Hard drive 1](docs/images/product1.png) | Hard drive 1 | storage | 24 |
+| 2 | ![Hard drive 2](docs/images/product2.png) | Hard drive 2 | storage | 18 |
+| 3 | ![Hard drive 3](docs/images/product3.png) | Hard drive 3 | ssd | 32 |
+| 4 | ![Hard drive 4](docs/images/product4.png) | Hard drive 4 | ssd | 15 |
+| 5 | ![Hard drive 5](docs/images/product5.png) | Hard drive 5 | hdd | 9 (low) |
+| 6 | ![Hard drive 6](docs/images/product6.png) | Hard drive 6 | hdd | 41 |
 
 **Production mapping:** Each row becomes a `Product` with `ShowOnWebshop = true`, linked `ProductPrice` for `GrossSalesPrice`, and `ProductStockLocation.Quantity` for availability.
 
