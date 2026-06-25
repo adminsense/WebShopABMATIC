@@ -7,101 +7,112 @@
 
 <PageTitle>WebShop — Catalog</PageTitle>
 
-<section class="hero container">
-    <div class="hero-grid">
-        <div>
-            <h1>ABMATIC webshop</h1>
-            <p>Browse our product catalog, add to cart, and check out in a few clicks.</p>
-            <div class="hero-cta">
-                <a href="#products" class="btn btn-primary">Browse catalog</a>
-                <NavLink href="/cart" class="btn btn-outline">View cart</NavLink>
+<div class="store-content-inner">
+    @if (_showNewProducts)
+    {
+        <section class="store-section">
+            <h2 class="store-section-title">New products</h2>
+            @if (_newProducts.Count == 0 && !_loading)
+            {
+                <p class="text-muted">No new products at the moment.</p>
+            }
+            else
+            {
+                <div class="product-grid">
+                    @foreach (var p in _newProducts)
+                    {
+                        <ProductCard Product="p" OnSelect="GoToProduct" />
+                    }
+                </div>
+            }
+        </section>
+    }
+
+    <section class="store-section" id="products">
+        <h2 class="store-section-title">@_productsTitle</h2>
+        @if (_loading)
+        {
+            <p class="text-muted">Loading catalog…</p>
+        }
+        else if (_products.Count == 0)
+        {
+            <p class="text-muted">No products available@(string.IsNullOrWhiteSpace(_search) ? "" : " for this search").</p>
+        }
+        else
+        {
+            <div class="product-grid">
+                @foreach (var p in _products)
+                {
+                    <ProductCard Product="p" OnSelect="GoToProduct" />
+                }
             </div>
-        </div>
-        <div class="hero-visual">
-            <img src="/images/product1.png" alt="Featured product" />
-        </div>
-    </div>
-</section>
-
-<section class="container" id="products">
-    <h2 class="section-title">Categories</h2>
-    @if (_categories.Count == 0 && !_loading)
-    {
-        <p class="text-muted">No categories configured for the webshop yet.</p>
-    }
-    else
-    {
-        <div class="categories">
-            <button type="button" class="chip @(_selectedCategoryId is null ? "active" : "")"
-                    @onclick="() => SelectCategoryAsync(null)">All</button>
-            @foreach (var cat in _categories)
-            {
-                <button type="button" class="chip @(_selectedCategoryId == cat.Id ? "active" : "")"
-                        @onclick="() => SelectCategoryAsync(cat.Id)">@cat.Name (@cat.ProductCount)</button>
-            }
-        </div>
-    }
-
-    <h2 class="section-title">Products</h2>
-    @if (_loading)
-    {
-        <p class="text-muted">Loading catalog…</p>
-    }
-    else if (_products.Count == 0)
-    {
-        <p class="text-muted">No products available in this category.</p>
-    }
-    else
-    {
-        <div class="product-grid">
-            @foreach (var p in _products)
-            {
-                <article class="product-card" @onclick="() => GoToProduct(p.Id)">
-                    <div class="img-wrap"><img src="@p.ImageUrl" alt="@p.Name" loading="lazy" decoding="async" /></div>
-                    <div class="body">
-                        <p class="category">@p.Tag</p>
-                        <h3>@p.Name</h3>
-                        <p class="brand">@p.Description</p>
-                        <div class="price-row">
-                            <span class="price @(!p.HasPrice ? "price-on-request text-muted" : "")">@StorePriceFormatter.Format(p.Price)</span>
-                            <span class="stock @(p.IsOutOfStock ? "out" : p.IsLowStock ? "low" : "")">@(p.IsOutOfStock ? "Out of stock" : $"{p.Stock} in stock")</span>
-                        </div>
-                    </div>
-                </article>
-            }
-        </div>
-    }
-</section>
+        }
+    </section>
+</div>
 
 @code {
     private const int HomePageProductLimit = 12;
+    private const int NewProductsLimit = 12;
 
     private int? _selectedCategoryId;
+    private string? _search;
     private bool _loading = true;
-    private IReadOnlyList<StoreCatalogCategoryDto> _categories = [];
+    private bool _showNewProducts;
+    private string _productsTitle = "Products";
+    private IReadOnlyList<StoreProduct> _newProducts = [];
     private IReadOnlyList<StoreProduct> _products = [];
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    [SupplyParameterFromQuery(Name = "categoryId")]
+    public int? CategoryId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "q")]
+    public string? SearchQuery { get; set; }
+
+    protected override async Task OnParametersSetAsync() => await LoadAsync();
 
     private async Task LoadAsync()
     {
         _loading = true;
+        _selectedCategoryId = CategoryId;
+        _search = SearchQuery?.Trim();
+
+        _showNewProducts = _selectedCategoryId is null && string.IsNullOrWhiteSpace(_search);
+        _productsTitle = _selectedCategoryId is null && string.IsNullOrWhiteSpace(_search)
+            ? "Products"
+            : string.IsNullOrWhiteSpace(_search)
+                ? "Products in category"
+                : $"Search results for “{_search}”";
+
         try
         {
-            _categories = await CatalogPort.GetCategoriesAsync();
-            var items = await CatalogPort.GetCatalogAsync(HomePageProductLimit, _selectedCategoryId);
-            _products = items.Select(StoreProductMapper.ToModel).ToList();
+            if (_showNewProducts)
+            {
+                var newest = await CatalogPort.GetNewProductsAsync(NewProductsLimit);
+                _newProducts = newest.Select(StoreProductMapper.ToModel).ToList();
+            }
+            else
+            {
+                _newProducts = [];
+            }
+
+            var take = _showNewProducts ? (int?)HomePageProductLimit : null;
+            var items = await CatalogPort.GetCatalogAsync(take, _selectedCategoryId);
+            var mapped = items.Select(StoreProductMapper.ToModel).ToList();
+
+            if (!string.IsNullOrWhiteSpace(_search))
+            {
+                mapped = mapped
+                    .Where(p => p.Name.Contains(_search, StringComparison.OrdinalIgnoreCase)
+                                || p.Description.Contains(_search, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            _products = mapped;
         }
         finally
         {
             _loading = false;
         }
-    }
-
-    private async Task SelectCategoryAsync(int? categoryId)
-    {
-        _selectedCategoryId = categoryId;
-        await LoadAsync();
     }
 
     private void GoToProduct(int id) => Navigation.NavigateTo($"/product/{id}");
