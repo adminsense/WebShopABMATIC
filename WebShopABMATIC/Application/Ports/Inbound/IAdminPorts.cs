@@ -256,6 +256,17 @@ public interface IStockAdjustmentPort
     Task<StockApplyResult> ApplyAsync(StockAdjustmentRequest request, CancellationToken cancellationToken = default);
 }
 
+public interface IStockTransferPort
+{
+    Task<StockTransferLookupsDto> GetLookupsAsync(CancellationToken cancellationToken = default);
+    Task<StockTransferPreviewDto?> GetPreviewAsync(
+        int productId,
+        int fromStockLocationId,
+        int toStockLocationId,
+        CancellationToken cancellationToken = default);
+    Task<StockApplyResult> ApplyAsync(StockTransferRequest request, CancellationToken cancellationToken = default);
+}
+
 public interface IAuditLogAdminPort
 {
     Task<PagedResult<AuditLogListItemDto>> GetAuditLogsAsync(AuditLogListFilter filter, CancellationToken cancellationToken = default);

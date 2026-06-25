@@ -267,4 +267,157 @@ public sealed class StockMovementService : IStockMovementService
 
         return StockApplyResult.Applied(1, movement.Id, newQuantity);
     }
+
+    public async Task<StockApplyResult> ApplyLocationTransferAsync(
+        StockLocationTransferCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        if (command.Quantity <= 0)
+        {
+            return StockApplyResult.Failed(["Transfer quantity must be greater than zero."]);
+        }
+
+        if (command.FromStockLocationId == command.ToStockLocationId)
+        {
+            return StockApplyResult.Failed(["From and to stock locations must be different."]);
+        }
+
+        var reason = command.Reason.Trim();
+        if (reason.Length < 3)
+        {
+            return StockApplyResult.Failed(["Reason is required (minimum 3 characters)."]);
+        }
+
+        var productExists = await _db.Products.AsNoTracking()
+            .AnyAsync(p => p.ProductId == command.ProductId, cancellationToken);
+        if (!productExists)
+        {
+            return StockApplyResult.Failed([$"Product {command.ProductId} not found."]);
+        }
+
+        var locationIds = new[] { command.FromStockLocationId, command.ToStockLocationId };
+        var locationCount = await _db.StockLocations.AsNoTracking()
+            .CountAsync(l => locationIds.Contains(l.Id), cancellationToken);
+        if (locationCount != 2)
+        {
+            return StockApplyResult.Failed(["One or both stock locations were not found."]);
+        }
+
+        await using var tx = await _db.Database.BeginTransactionAsync(cancellationToken);
+
+        var fromRow = await _db.ProductStockLocations
+            .FirstOrDefaultAsync(
+                x => x.ProductId == command.ProductId
+                     && x.StockLocationId == command.FromStockLocationId
+                     && x.IsInactive != true,
+                cancellationToken);
+
+        var toRow = await _db.ProductStockLocations
+            .FirstOrDefaultAsync(
+                x => x.ProductId == command.ProductId
+                     && x.StockLocationId == command.ToStockLocationId
+                     && x.IsInactive != true,
+                cancellationToken);
+
+        if (fromRow is null || toRow is null)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            return StockApplyResult.Failed([
+                "Product-stock rows are required at both locations before transferring."
+            ]);
+        }
+
+        if (fromRow.Quantity < command.Quantity)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            return StockApplyResult.Failed([
+                $"Insufficient stock at source location (current {fromRow.Quantity}, transfer {command.Quantity})."
+            ]);
+        }
+
+        var fromLocationName = await _db.StockLocations.AsNoTracking()
+            .Where(l => l.Id == command.FromStockLocationId)
+            .Select(l => l.Name)
+            .FirstAsync(cancellationToken);
+        var toLocationName = await _db.StockLocations.AsNoTracking()
+            .Where(l => l.Id == command.ToStockLocationId)
+            .Select(l => l.Name)
+            .FirstAsync(cancellationToken);
+
+        var fromPrevious = fromRow.Quantity;
+        var toPrevious = toRow.Quantity;
+        fromRow.Quantity -= command.Quantity;
+        toRow.Quantity += command.Quantity;
+
+        var now = DateTime.UtcNow;
+        var outNote = TruncateNote($"Transfer to {toLocationName}: {reason}");
+        var inNote = TruncateNote($"Transfer from {fromLocationName}: {reason}");
+
+        var outMovement = new StockMovement
+        {
+            ProductId = command.ProductId,
+            Quantity = -command.Quantity,
+            Timestamp = now,
+            Notes = outNote,
+            IsReservation = false,
+            ProductStockLocatieId = fromRow.Id
+        };
+
+        var inMovement = new StockMovement
+        {
+            ProductId = command.ProductId,
+            Quantity = command.Quantity,
+            Timestamp = now,
+            Notes = inNote,
+            IsReservation = false,
+            ProductStockLocatieId = toRow.Id
+        };
+
+        using (_auditSuppression.SuppressEntityTypes(nameof(StockMovement), nameof(ProductStockLocation)))
+        {
+            _db.StockMovements.AddRange(outMovement, inMovement);
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+
+        await tx.CommitAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Stock transfer: product {ProductId}, {Quantity} from location {FromId} to {ToId}",
+            command.ProductId,
+            command.Quantity,
+            command.FromStockLocationId,
+            command.ToStockLocationId);
+
+        await _audit.LogAsync(new AuditLogWriteRequest
+        {
+            Action = AuditActions.StockAdjust,
+            EntityName = nameof(ProductStockLocation),
+            EntityId = $"{fromRow.Id}->{toRow.Id}",
+            NewValues = JsonSerializer.Serialize(new
+            {
+                operation = "LocationTransfer",
+                command.ProductId,
+                command.FromStockLocationId,
+                command.ToStockLocationId,
+                command.Quantity,
+                reason,
+                outMovementId = outMovement.Id,
+                inMovementId = inMovement.Id,
+                fromNewBalance = fromRow.Quantity,
+                toNewBalance = toRow.Quantity
+            })
+        }, cancellationToken);
+
+        await _lowStockAlerts.EvaluateAsync(fromRow.Id, fromPrevious, cancellationToken);
+        await _lowStockAlerts.EvaluateAsync(toRow.Id, toPrevious, cancellationToken);
+
+        return StockApplyResult.TransferApplied(
+            outMovement.Id,
+            inMovement.Id,
+            fromRow.Quantity,
+            toRow.Quantity);
+    }
+
+    private static string TruncateNote(string note) =>
+        note.Length > 150 ? note[..150] : note;
 }

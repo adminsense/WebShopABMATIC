@@ -2,7 +2,7 @@
 
 ![Status](https://img.shields.io/badge/Status-Partially%20implemented-22c55e?style=flat-square) ![Schema](https://img.shields.io/badge/Schema-Products%20%2B%20Orders-512BD4?style=flat-square) ![Architecture](https://img.shields.io/badge/Fit-Hexagonal-28a745?style=flat-square) ![Payments](https://img.shields.io/badge/Payments-Mollie.Api-0a0a0a?style=flat-square) ![Tracker](https://img.shields.io/badge/Live-IMPLEMENTATION__ROADMAP__open.md-informational?style=flat-square)
 
-> [!IMPORTANT]
+> [!IMPORTANT] 
 > **Executive summary:** Originally an analysis proposal — **core stock writes, checkout, Mollie (dev mock), manual adjustment, and low-stock alerts are now implemented** (see **§0** and [IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md)). **Dev priority:** Phase E stock ops. **Prod go-live (last):** 3b SMTP, B.9 Mollie E2E, M.5 Azure Blob.
 
 > **Live tracker:** [IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md)

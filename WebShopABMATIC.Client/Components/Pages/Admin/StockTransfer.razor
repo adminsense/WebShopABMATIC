@@ -1,0 +1,278 @@
+@page "/admin/stock/transfers/new"
+@layout AdminLayout
+@attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
+@using WebShopABMATIC.Application.Admin.Stock
+@using WebShopABMATIC.Application.Auth
+@using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Application.Stock
+@inject IStockTransferPort TransferPort
+@implements IAsyncDisposable
+
+<PageTitle>Stock transfer</PageTitle>
+
+<div class="entity-page">
+    <a class="btn btn-secondary btn-back mb-3" href="/admin/hub/stock" data-enhance-nav="false">
+        <span class="oi oi-arrow-left"></span> Back to Stock hub
+    </a>
+    <div class="entity-page-header page-header">
+        <h1 class="h3 mb-1"><i class="bi bi-arrow-repeat text-primary"></i> Stock transfer</h1>
+        <p class="mb-0">Move stock between warehouses without double-counting. Creates paired out/in movements.</p>
+    </div>
+
+    <div class="card shadow-sm border entity-form-card admin-form-card">
+        <div class="card-header bg-white">
+            <h2 class="h6 mb-0 fw-bold">New transfer</h2>
+        </div>
+        <div class="card-body">
+            @if (_loadingLookups)
+            {
+                <p class="text-muted mb-0">Loading…</p>
+            }
+            else
+            {
+                <EditForm Model="_model" OnValidSubmit="ApplyAsync">
+                    <DataAnnotationsValidator />
+                    <div class="entity-form-fields">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label" for="xfer-product">Product ID *</label>
+                                <InputNumber id="xfer-product" class="form-control form-control-sm" @bind-Value="_model.ProductId" @bind-Value:after="RefreshPreviewAsync" />
+                                <ValidationMessage For="@(() => _model.ProductId)" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" for="xfer-from">From location *</label>
+                                <InputSelect id="xfer-from" class="form-select form-select-sm" @bind-Value="_model.FromStockLocationId" @bind-Value:after="RefreshPreviewAsync">
+                                    @foreach (var loc in _lookups?.StockLocations ?? [])
+                                    {
+                                        <option value="@loc.Id">@loc.Name (@loc.Id)</option>
+                                    }
+                                </InputSelect>
+                                <ValidationMessage For="@(() => _model.FromStockLocationId)" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" for="xfer-to">To location *</label>
+                                <InputSelect id="xfer-to" class="form-select form-select-sm" @bind-Value="_model.ToStockLocationId" @bind-Value:after="RefreshPreviewAsync">
+                                    @foreach (var loc in _lookups?.StockLocations ?? [])
+                                    {
+                                        <option value="@loc.Id">@loc.Name (@loc.Id)</option>
+                                    }
+                                </InputSelect>
+                                <ValidationMessage For="@(() => _model.ToStockLocationId)" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" for="xfer-qty">Quantity *</label>
+                                <InputNumber id="xfer-qty" class="form-control form-control-sm" @bind-Value="_model.Quantity" />
+                                <ValidationMessage For="@(() => _model.Quantity)" />
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label" for="xfer-reason">Reason *</label>
+                                <InputText id="xfer-reason" class="form-control form-control-sm" @bind-Value="_model.Reason" maxlength="150" />
+                                <ValidationMessage For="@(() => _model.Reason)" />
+                            </div>
+
+                            @if (_previewLoading)
+                            {
+                                <div class="col-12"><span class="text-muted small">Loading balances…</span></div>
+                            }
+                            else if (_preview is not null)
+                            {
+                                <div class="col-12">
+                                    <div class="alert alert-secondary mb-0 py-2">
+                                        <strong>@_preview.ProductName</strong><br />
+                                        From <strong>@_preview.FromStockLocationName</strong>:
+                                        <strong>@_preview.FromCurrentQuantity.ToString("N2")</strong>
+                                        @if (_model.Quantity > 0)
+                                        {
+                                            <span> → <strong>@((_preview.FromCurrentQuantity - _model.Quantity).ToString("N2"))</strong></span>
+                                        }
+                                        <br />
+                                        To <strong>@_preview.ToStockLocationName</strong>:
+                                        <strong>@_preview.ToCurrentQuantity.ToString("N2")</strong>
+                                        @if (_model.Quantity > 0)
+                                        {
+                                            <span> → <strong>@((_preview.ToCurrentQuantity + _model.Quantity).ToString("N2"))</strong></span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            else if (_previewChecked)
+                            {
+                                <div class="col-12">
+                                    <div class="alert alert-warning mb-0 py-2">
+                                        Product-stock rows are required at both locations.
+                                        <a href="/admin/product-stock" data-enhance-nav="false">Create them first</a>.
+                                    </div>
+                                </div>
+                            }
+
+                            <div class="col-12 d-flex gap-2 pt-1">
+                                <button type="submit" class="btn btn-primary" disabled="@(_saving || _preview is null)">
+                                    @(_saving ? "Saving…" : "Apply transfer")
+                                </button>
+                                <button type="button" class="btn btn-secondary" @onclick="ResetForm" disabled="@_saving">Clear</button>
+                                <a class="btn btn-outline-secondary" href="/admin/stock/movements" data-enhance-nav="false">View journal</a>
+                            </div>
+                        </div>
+                    </div>
+                </EditForm>
+
+                @if (!string.IsNullOrEmpty(_formError))
+                {
+                    <div class="alert alert-danger mt-3 mb-0">@_formError</div>
+                }
+                @if (!string.IsNullOrEmpty(_successMessage))
+                {
+                    <div class="alert alert-success mt-3 mb-0">@_successMessage</div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private CancellationTokenSource? _cts;
+    private StockTransferRequest _model = new() { FromStockLocationId = 1, ToStockLocationId = 2, ProductId = 1, Quantity = 1 };
+    private StockTransferLookupsDto? _lookups;
+    private StockTransferPreviewDto? _preview;
+    private bool _loadingLookups = true;
+    private bool _previewLoading;
+    private bool _previewChecked;
+    private bool _saving;
+    private string? _formError;
+    private string? _successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _cts = new CancellationTokenSource();
+        await LoadLookupsAsync(_cts.Token);
+        await RefreshPreviewAsync();
+    }
+
+    private async Task LoadLookupsAsync(CancellationToken ct)
+    {
+        _loadingLookups = true;
+        try
+        {
+            _lookups = await TransferPort.GetLookupsAsync(ct);
+            var locations = _lookups.StockLocations;
+            if (locations.Count > 0)
+            {
+                if (!locations.Any(l => l.Id == _model.FromStockLocationId))
+                {
+                    _model.FromStockLocationId = locations[0].Id;
+                }
+
+                if (!locations.Any(l => l.Id == _model.ToStockLocationId))
+                {
+                    _model.ToStockLocationId = locations.Count > 1 ? locations[1].Id : locations[0].Id;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _formError = ex.Message;
+        }
+        finally
+        {
+            _loadingLookups = false;
+        }
+    }
+
+    private async Task RefreshPreviewAsync()
+    {
+        if (_model.ProductId <= 0
+            || _model.FromStockLocationId <= 0
+            || _model.ToStockLocationId <= 0
+            || _model.FromStockLocationId == _model.ToStockLocationId)
+        {
+            _preview = null;
+            _previewChecked = _model.FromStockLocationId == _model.ToStockLocationId && _model.FromStockLocationId > 0;
+            return;
+        }
+
+        _previewLoading = true;
+        _previewChecked = false;
+        _successMessage = null;
+        try
+        {
+            _preview = await TransferPort.GetPreviewAsync(
+                _model.ProductId,
+                _model.FromStockLocationId,
+                _model.ToStockLocationId,
+                _cts?.Token ?? CancellationToken.None);
+            _previewChecked = true;
+        }
+        catch (Exception ex)
+        {
+            _formError = ex.Message;
+        }
+        finally
+        {
+            _previewLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ApplyAsync()
+    {
+        _saving = true;
+        _formError = null;
+        _successMessage = null;
+        try
+        {
+            var result = await TransferPort.ApplyAsync(_model, _cts?.Token ?? CancellationToken.None);
+            if (result.Status == StockApplyStatus.Failed)
+            {
+                _formError = string.Join(" ", result.Errors);
+                return;
+            }
+
+            _successMessage = result.FromNewBalance is decimal fromBalance && result.ToNewBalance is decimal toBalance
+                ? $"Transfer saved. Out #{result.OutMovementId}, in #{result.InMovementId}. Balances: {fromBalance:N2} → {toBalance:N2}."
+                : "Transfer saved.";
+
+            _model = new StockTransferRequest
+            {
+                ProductId = _model.ProductId,
+                FromStockLocationId = _model.FromStockLocationId,
+                ToStockLocationId = _model.ToStockLocationId,
+                Quantity = 1,
+                Reason = string.Empty
+            };
+            await RefreshPreviewAsync();
+        }
+        catch (Exception ex)
+        {
+            _formError = ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task ResetForm()
+    {
+        _formError = null;
+        _successMessage = null;
+        var locations = _lookups?.StockLocations ?? [];
+        _model = new StockTransferRequest
+        {
+            ProductId = 1,
+            FromStockLocationId = locations.FirstOrDefault()?.Id ?? 1,
+            ToStockLocationId = locations.Skip(1).FirstOrDefault()?.Id ?? locations.FirstOrDefault()?.Id ?? 2,
+            Quantity = 1,
+            Reason = string.Empty
+        };
+        await RefreshPreviewAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_cts is not null)
+        {
+            await _cts.CancelAsync();
+            _cts.Dispose();
+        }
+    }
+}
