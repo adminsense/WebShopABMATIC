@@ -3,6 +3,7 @@ namespace WebShopABMATIC.Application.Store;
 public sealed class StoreProductDto
 {
     public int Id { get; init; }
+    public bool IsNew { get; init; }
     public string Name { get; init; } = string.Empty;
     public string Description { get; init; } = string.Empty;
     public string ImageUrl { get; init; } = "/images/product1.png";
