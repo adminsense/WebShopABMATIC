@@ -1,5 +1,5 @@
 @page "/sign-in"
-@layout StoreLayout
+@layout StoreAuthLayout
 
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Web.Components.Account.Shared
@@ -8,8 +8,8 @@
 
 <div class="auth-wrap">
     <div class="auth-card">
-        <h1>Welcome</h1>
-        <p>Sign in with your webshop login to place orders and view order history.</p>
+        <h1>Sign in</h1>
+        <p>Sign in with your webshop account to place orders and view order history.</p>
 
         <StatusMessage Message="@_errorMessage" />
 
@@ -30,10 +30,9 @@
             <button type="submit" class="btn btn-primary">Sign in</button>
         </form>
 
-        <p class="mt-3 mb-0" style="font-size:0.85rem;color:var(--muted)">
+        <p class="mt-3 mb-0 store-auth-footer">
             <NavLink href="/sign-up">Create account</NavLink>
             · <NavLink href="/">← Back to catalog</NavLink>
-            · <NavLink href="/admin/login">Staff login (admin)</NavLink>
         </p>
     </div>
 </div>

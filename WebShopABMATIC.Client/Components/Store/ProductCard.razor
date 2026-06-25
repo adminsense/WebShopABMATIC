@@ -1,0 +1,27 @@
+@using WebShopABMATIC.Web.Services
+
+<article class="product-card" @onclick="() => OnSelect.InvokeAsync(Product.Id)">
+  <div class="img-wrap">
+    @if (Product.IsNew)
+    {
+      <span class="product-badge-new">New</span>
+    }
+    <img src="@Product.ImageUrl" alt="@Product.Name" loading="lazy" decoding="async" />
+  </div>
+  <div class="body">
+    <p class="category">@Product.Tag</p>
+    <h3>@Product.Name</h3>
+    <p class="brand">@Product.Description</p>
+    <div class="price-row">
+      <span class="price @(!Product.HasPrice ? "price-on-request text-muted" : "")">@StorePriceFormatter.Format(Product.Price)</span>
+      <span class="stock @(Product.IsOutOfStock ? "out" : Product.IsLowStock ? "low" : "")">
+        @(Product.IsOutOfStock ? "Out of stock" : $"{Product.Stock} in stock")
+      </span>
+    </div>
+  </div>
+</article>
+
+@code {
+    [Parameter, EditorRequired] public StoreProduct Product { get; set; } = default!;
+    [Parameter] public EventCallback<int> OnSelect { get; set; }
+}
