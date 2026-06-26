@@ -4,17 +4,15 @@
       "commandName": "Project",
       "launchBrowser": true,
       "dotnetRunMessages": true,
+      "applicationUrl": "https://localhost:44357;http://localhost:44358",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
         "ASPNETCORE_HTTPS_PORTS": "44357"
-      },
-      "applicationUrl": "https://localhost:44357;http://localhost:44358"
+      }
     },
     "IIS Express": {
       "commandName": "IISExpress",
       "launchBrowser": true,
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
         "ASPNETCORE_HTTPS_PORTS": "44357"
       }
     }
