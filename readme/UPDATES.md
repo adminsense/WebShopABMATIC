@@ -5,7 +5,7 @@
 > [!IMPORTANT]
 > **Resumo:** Migrar o **layout da loja** para ficar igual à referência que o cliente aprovou: **[https://adminsenceweb.azurewebsites.net/](https://adminsenceweb.azurewebsites.net/)**. Mantém-se a arquitectura hexagonal (`Application` → ports → `Infrastructure`); mudam UI/CSS da webstore e contratos de catálogo.
 
-**Próximo passo sugerido:** Fase E + F; em paralelo evoluir análise §3.5 (formulários) e §2.2.2 (login unificado com admin).
+**Próximo passo sugerido:** **C.5 + D.5** (navegação por níveis — prioridade pelo screenshot); depois C.4 + D.4 (homepage); E + F; §3.5 e §2.2.2 em paralelo.
 
 ---
 
@@ -15,8 +15,8 @@
 |------|--------|
 | **URL a seguir** | https://adminsenceweb.azurewebsites.net/ |
 | **App** | `Adminsence.Shop` — Blazor Server |
-| **Loja actual (código)** | Sidebar 300px + header §2.1.1 + `Catalog` sem hero (New products + grelha) |
-| **Loja alvo** | Layout da referência + sidebar esquerda com árvore `[Products].[ProductStructuur]` + área de produtos em **inglês** |
+| **Loja actual (código)** | Sidebar + header OK; homepage com **New products** + grelha genérica (≠ referência) |
+| **Loja alvo** | Homepage = **grelha ícones categorias** + secção **Deals** + sidebar árvore `ProductStructuur` — **inglês** |
 
 Toda a análise visual e decisões de UI partem **só** desta URL.
 
@@ -114,13 +114,314 @@ A referência mostra uma **barra horizontal única** (fundo branco, ícone + tex
 | Login (guest) | Login |
 | Sign out (auth) | Sign out |
 
+### 2.1.2 Homepage — estrutura da tela inicial (screenshot cliente)
+
+> [!NOTE]
+> **Fonte:** screenshot homepage da referência (NL: *Categorien*, *Deals*). **Estado:** análise para implementação futura — o `Catalog.razor` actual **não** replica esta estrutura.
+
+A página inicial da referência não é uma grelha única de produtos. É um **painel de três zonas** com conteúdo principal em **duas secções empilhadas**.
+
+#### Arquitectura visual (3 zonas)
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ HEADER: Home · Search · Zoeken · Login                                        │
+├──────────────┬──────────────────────────────────────────────────────────────┤
+│   SIDEBAR    │  MAIN (scroll vertical, fundo branco)                       │
+│   ~300px     │                                                              │
+│              │  ┌─ Categories ─────────────────────────────────────────┐   │
+│  ▶ Cat A     │  │  [□ icon] [□ icon] [□ icon] ...  (grelha quadrada)   │   │
+│  ▶ Cat B     │  │  [□ icon] [□ icon] ...        (~16 cartões raiz)    │   │
+│    Cat B1    │  └──────────────────────────────────────────────────────┘   │
+│  ▶ Cat C     │                                                              │
+│  ...         │  ┌─ Deals ──────────────────────────────────────────────┐   │
+│  (lista      │  │ [foto][foto][foto][foto][foto][foto][foto][foto]    │   │
+│   densa,     │  │  TÍTULO  título  título ...   (fila horizontal ~8)  │   │
+│   chevron    │  │  🛒      🛒      🛒   ...  (quick-add laranja)        │   │
+│   expand)    │  │  descrição curta por produto                         │   │
+│              │  └──────────────────────────────────────────────────────┘   │
+└──────────────┴──────────────────────────────────────────────────────────────┘
+```
+
+#### Zona 1 — Header (já analisado §2.1.1)
+
+Na imagem: **Home**, campo de pesquisa, **Zoeken** (Search), **Login** — sem logo, sem hero.
+
+#### Zona 2 — Sidebar esquerda (navegação completa)
+
+| Aspecto | Referência (screenshot) | Nossa loja (`StoreCategorySidebar`) | Gap |
+|---------|-------------------------|-------------------------------------|-----|
+| Posição | Fixa à esquerda, altura total abaixo do header | ✅ `store-sidebar` 300px | — |
+| Conteúdo | Lista **longa** de categorias + subcategorias | Árvore `ProductStructuur` expandível | ✅ alinhado |
+| Expandir | Chevron `>` por item com filhos | ✅ `CategoryNode` toggle | — |
+| Densidade | Texto pequeno, muitas entradas visíveis | Fonte ~0.95rem, peso 600 | 🟡 Ajustar tamanho/espacamento |
+| Acção | Clique navega para categoria / filtro | `/?categoryId=` | ✅ |
+| “All products” | Não visível no screenshot (pode estar no topo) | Link explícito | 🟡 Confirmar se mantemos |
+
+A sidebar é a **navegação profunda**; a homepage mostra só um **resumo visual** das categorias principais.
+
+#### Zona 3a — Secção **Categories** (categorias principais na main)
+
+| Aspecto | Referência | Nossa loja | Gap |
+|---------|------------|------------|-----|
+| Título secção | **Categorien** | ❌ Não existe | **Categories** (EN) |
+| Layout | Grelha de **cartões quadrados** com borda cinza fina | ❌ | `category-tile-grid` |
+| Quantidade | ~**16** cartões (2 linhas: ~11 + ~5 centrados) | — | Raízes `ProductStructuur` com produtos webshop |
+| Conteúdo cartão | **Ícone P&B** + etiqueta por baixo | — | Ícone de `ProductStructure.Icon` (blob) ou fallback |
+| Acção | Clique → catálogo dessa categoria | Sidebar faz isto; main não | `/?categoryId={rootId}` |
+| vs sidebar | Atalho visual das **raízes** | Só sidebar lista categorias | **Falta grelha na homepage** |
+
+**Componente alvo:** `StoreCategoryTile.razor` — quadrado, ícone centrado, `NameEn`, hover borda/sombra laranja.
+
+#### Zona 3b — Secção **Deals** (produtos em promoção)
+
+| Aspecto | Referência | Nossa loja | Gap |
+|---------|------------|------------|-----|
+| Título secção | **Deals** | **New products** (≠ mesmo conceito) | Renomear / separar secções |
+| Layout | **Fila horizontal** ~8 cartões (não grelha 4 colunas) | Grelha `product-grid` | `deals-row` ou carousel |
+| Imagem | Foto real do produto (placas, caixas) | ✅ `ImageUrl` blob | — |
+| Título produto | **MAIÚSCULAS**, negrito (ex. BRAINY24, HEADY, THINKY) | Title case normal | Estilo `.deal-card-title` |
+| Quick-add | Ícone **carrinho laranja** no cartão | Só no detalhe / sem ícone no card | `Add to cart` rápido no card |
+| Descrição | 2–3 linhas texto técnico sob o título | Descrição no card genérico | Manter no deal card |
+| Preço | Não destacado na imagem (pode ser “on request”) | Preço na grelha actual | 🟡 Confirmar com cliente |
+
+**Nota:** *Deals* na referência **não é necessariamente** `IsNieuw` — pode ser promoções, destaques manuais ou outro critério ERP. Ver decisão **HP4**.
+
+#### Comparação homepage — referência vs `Catalog.razor` actual
+
+| Bloco | Referência | Implementado hoje |
+|-------|------------|-------------------|
+| Hero | ❌ | ❌ (removido ✅) |
+| Chips horizontais | ❌ | ❌ (removido ✅) |
+| Grelha ícones categorias | ✅ **Categories** | ❌ |
+| Secção promoção | ✅ **Deals** (~8 produtos, fila) | 🟡 **New products** (12, grelha) — **substituir/ajustar** |
+| Grelha produtos genérica na `/` | ❌ (só deals + tiles) | ✅ 12 produtos — **remover ou mover** para `?categoryId=` |
+| Sidebar árvore | ✅ | ✅ |
+
+#### Decisões de UI — homepage (Fase A+)
+
+| # | Questão | Decisão / estudo |
+|---|---------|------------------|
+| HP1 | Estrutura `/` | **Categories (tiles)** → **Deals (row)**; sem grelha genérica na raiz |
+| HP2 | Títulos EN | **Categories** + **Deals** (não “Categorien” / “New products”) |
+| HP3 | Ícones categorias | `ProductStructure.Icon` (byte[] ERP); fallback ícone genérico por categoria |
+| HP4 | Fonte dos Deals | ⏳ Confirmar cliente: flag promoção ERP, lista fixa, `IsNieuw`, ou tabela dedicada |
+| HP5 | Quantidade Deals | **~8** na homepage (screenshot); configurável |
+| HP6 | Quantidade tiles | **Raízes** com `Webshop`+produtos (28 max.; screenshot ~16) — só com ícone ou todas |
+| HP7 | Quick-add no deal | Carrinho laranja no card → `StoreCartService.Add` sem ir ao detalhe (se preço OK) |
+| HP8 | Após clicar tile | `/?categoryId=` + opcional cabeçalho categoria §3.5 |
+| HP9 | Deals responsivo | Desktop: fila horizontal scroll; mobile: carousel ou stack — alinhar `Navbar.js` ref. |
+| HP10 | New products | ⏳ Fundir com Deals, secção separada abaixo, ou remover — **confirmar cliente** |
+
+#### Implementação prevista (fases)
+
+| Camada | Itens |
+|--------|--------|
+| **C.4** | `GetRootCategoriesForHomeAsync()` com ícone URL; `GetDealsAsync(take)` com critério HP4 |
+| **D.4** | `StoreCategoryTileGrid.razor`, `StoreDealCard.razor`, refactor `Catalog.razor` (2 secções) |
+| **CSS** | `.category-tile-grid`, `.deal-card`, `.deals-row`, ícone quick-add laranja |
+
+**Textos alvo (inglês) — homepage:**
+
+| Control | Texto |
+|---------|--------|
+| Secção categorias | Categories |
+| Secção promoção | Deals |
+| Tile (aria) | `{CategoryName}` — browse products |
+
+#### Dúvidas e checklists — homepage (§2.1.2)
+
+**HP3 — Ícones das categorias**
+- ❓ **Dúvida:** `ProductStructure.Icon` (byte[] no ERP) tem formato consistente? Servimos como data-URL, endpoint dedicado, ou ignoramos nós sem ícone?
+- Checklist:
+  - [ ] Amostrar quantos nós raiz têm `Icon` não nulo em `abmatic_test`
+  - [ ] Definir fallback visual (ícone genérico por `Level` ou placeholder SVG)
+  - [ ] Endpoint ou helper media para ícones de estrutura (separado de `AzureFile` produto)
+
+**HP4 — Fonte dos Deals**
+- ❓ **Dúvida:** O que define um produto em **Deals** na referência — promoção ERP, lista manual, `IsNieuw`, ou outro campo?
+- Checklist:
+  - [ ] Confirmar com cliente (screenshot + pergunta directa)
+  - [ ] Mapear campo legacy se existir (ex. flag promoção em `Product`)
+  - [ ] Implementar `GetDealsAsync(take)` com critério acordado
+  - [ ] Teste: deals respeitam `Webshop` + `!ProdNonActive`
+
+**HP6 — Quantidade de tiles na homepage**
+- ❓ **Dúvida:** Mostramos as **28 raízes** todas ou só as ~16 com ícone / com produtos?
+- Checklist:
+  - [ ] Contar raízes com `ProductCount > 0` na BD
+  - [ ] Decidir filtro (com ícone apenas vs todas com stock webshop)
+  - [ ] Layout CSS para 2 linhas centradas (como screenshot)
+
+**HP10 — New products vs Deals**
+- ❓ **Dúvida:** Substituímos **New products** por **Deals**, mantemos ambos, ou `IsNieuw` alimenta Deals?
+- Checklist:
+  - [ ] Decisão cliente documentada em §10
+  - [ ] Remover secção New products do `Catalog.razor` após decisão
+  - [ ] Actualizar `GetNewProductsAsync` se ficar obsoleto
+
+**Grelha genérica na `/`**
+- ❓ **Dúvida:** Na homepage sem `categoryId`, mostramos **zero** produtos na grelha (só tiles + deals)?
+- Checklist:
+  - [ ] Remover `GetCatalogAsync(12)` da `/` sem query
+  - [ ] Produtos só em `?categoryId=` (modo filho ou folha — ver §2.1.3)
+  - [ ] Pesquisa `?q=` continua a listar produtos
+
+### 2.1.3 Navegação por níveis — categoria → subcategorias → produtos (screenshot cliente)
+
+> [!NOTE]
+> **Fonte:** screenshot ao clicar categoria *Bedieningen, signaallampen, accessoires, toegangscontrole* (NL). **Estado:** análise — **não implementado**. Hoje `/?categoryId=` salta directo para **grelha de produtos** (todos os descendentes); a referência mostra primeiro o **próximo nível de subcategorias** em cartões.
+
+#### Comportamento observado (referência)
+
+Ao clicar num item do **menu lateral** ou num **cartão de categoria** (homepage ou nível anterior):
+
+1. **Sidebar** — categoria activa com **fundo laranja** e texto branco; filhos **indentados** visíveis abaixo; restantes raízes listadas mais abaixo; chevrons nos nós com mais níveis.
+2. **Main** — **título H1** = nome da categoria seleccionada (EN: mesmo texto que sidebar activa).
+3. **Main** — **grelha de cartões** dos **filhos directos** (ex. ~19 cartões: *Handzenders*, *Batterijen*, *Accessoires*, …) — ícone/imagem + etiqueta, borda cinza.
+4. **Não** mostra ainda a grelha de produtos neste ecrã — mostra o **nível intermédio** da árvore.
+
+```text
+Clique: sidebar "Cat A" OU tile "Cat A" na homepage
+         │
+         ▼
+┌──────────────┬──────────────────────────────────────────────┐
+│ SIDEBAR      │ MAIN                                          │
+│ [Cat A] ◀──  │  H1: Cat A (full name)                        │
+│  orange bg   │  ┌────┐ ┌────┐ ┌────┐ ┌────┐ ...               │
+│   › Child 1  │  │icon│ │icon│ │icon│     (filhos directos)   │
+│   › Child 2  │  │ C1 │ │ C2 │ │ C3 │                         │
+│   › Child 3  │  └────┘ └────┘ └────┘                         │
+│ ...          │  (sem grelha de produtos ainda)               │
+│ Other roots  │                                               │
+└──────────────┴──────────────────────────────────────────────┘
+
+Clique: Child 2 (sem filhos OU folha na BD)
+         │
+         ▼
+┌──────────────┬──────────────────────────────────────────────┐
+│ SIDEBAR      │ MAIN                                          │
+│ [Cat A]      │  H1: Child 2                                  │
+│   [Child 2]  │  [product] [product] [product] ...            │
+│     orange   │  (grelha produtos do nó + regra folha §CD4)   │
+└──────────────┴──────────────────────────────────────────────┘
+```
+
+#### Comparação — referência vs implementação actual
+
+| Aspecto | Referência | Nós hoje (`Catalog.razor` + sidebar) | Gap |
+|---------|------------|----------------------------------------|-----|
+| Clique sidebar / tile | Próximo nível = **cartões filhos** | `/?categoryId=` → **produtos** (descendentes) | ❌ Lógica de navegação errada |
+| Item activo sidebar | Fundo **laranja** + texto branco | Classe `.active` (fundo laranja suave) | 🟡 Reforçar contraste igual screenshot |
+| Expandir filhos | Auto-expandir ramo activo | `ExpandAncestors` parcial | 🟡 Expandir + scroll para activo |
+| Título main | H1 = nome categoria | “Products in category” genérico | ❌ `StoreCategoryHeader` com `NameEn` |
+| Conteúdo main (nó com filhos) | Grelha **subcategorias** | Grelha produtos | ❌ `StoreCategoryTileGrid` com `children` |
+| Conteúdo main (folha) | Grelha **produtos** | ✅ `GetCatalogAsync` + filtro | ✅ (ajustar só regra folha) |
+| Deals na `/` | Só na homepage | New products na `/` | §2.1.2 |
+| URL | Provável `/category/{id}` ou query | `/?categoryId=` | 🟡 Manter query ou rota dedicada |
+
+**Dados BD (Fase A):** árvore `ProductStructuur` com **máx. 2 níveis** abaixo da raiz — navegação típica: **Raiz → filhos (tiles) → produtos** (ou raiz com filhos que também têm filhos → 3 cliques até produtos).
+
+#### Regra de navegação proposta (árvore `ProductStructuur`)
+
+| Situação do nó `categoryId` | O que mostrar na **main** | Sidebar |
+|----------------------------|---------------------------|---------|
+| Tem **filhos** com produtos webshop na subárvore | Grelha **cartões dos filhos directos** (`Children` do DTO) | Activar nó; expandir filhos |
+| **Sem filhos** (folha) | Grelha **produtos** desse nó (e só desse nó, ou nó + descendentes vazios) | Activar folha |
+| Raiz na **homepage** `/` | Secções **Categories** (tiles raiz) + **Deals** | Nenhum activo ou “All products” |
+| Pesquisa `?q=` | Grelha produtos (resultados) | Sem mudança de activo |
+
+> ❓ **Dúvida CD4:** Nó intermédio com filhos — produtos **directos** no mesmo nó aparecem como? (a) só tiles dos filhos; (b) tiles + secção produtos abaixo; (c) mistura. *Screenshot mostra (a).*
+
+#### Decisões — navegação por níveis (Fase A+)
+
+| # | Questão | Decisão / estudo |
+|---|---------|------------------|
+| CD1 | Modo da página | `BrowseMode`: `Home` \| `Subcategories` \| `Products` \| `Search` |
+| CD2 | Trigger subcategorias | Se `Children.Count > 0` no nó → modo **Subcategories** |
+| CD3 | Trigger produtos | Se folha (`Children` vazio) → modo **Products** |
+| CD4 | Produtos no nó intermédio | ⏳ Só tiles filhos (screenshot); confirmar se nó pode ter produtos + filhos |
+| CD5 | Sidebar activo | Classe `.store-nav-link--active-branch` (laranja sólido #fe7109, texto branco) |
+| CD6 | Tile = sidebar | Mesmo `categoryId` — tile homepage, tile main, e link sidebar usam mesma rota |
+| CD7 | Rota | Manter `/?categoryId=` **ou** `/category/{id}` — preferir query na v1 (menos mudanças) |
+| CD8 | Breadcrumb | Opcional fase 2: Raiz › … › actual |
+| CD9 | Texto intro categoria | H1 + parágrafo intro (`IntroPriceListTextId`) abaixo do título — §3.5 |
+| CD10 | Formulário por categoria | Se existir na referência, abaixo do H1 antes dos tiles — §3.5 |
+
+#### Dúvidas e checklists — navegação por níveis (§2.1.3)
+
+**CD2 / CD3 — Quando mostrar tiles vs produtos**
+- ❓ **Dúvida:** Filho sem subfilhos mas com 0 produtos — mostramos tile vazio ou escondemos?
+- Checklist:
+  - [ ] Filtrar `Children` onde `ProductCount > 0` (já parcialmente no `BuildTreeNodes`)
+  - [ ] Confirmar com cliente se categorias vazias aparecem na referência
+  - [ ] Teste: nó só com filhos vazios → mensagem “No products”
+
+**CD4 — Produtos no mesmo nó que tem filhos**
+- ❓ **Dúvida:** Exemplo BD: nó intermédio com 17 produtos directos *e* subcategorias — referência mostra só tiles ou também produtos?
+- Checklist:
+  - [ ] Query em `abmatic_test`: nós com `Children` e produtos `ProductStructuurId` = esse nó
+  - [ ] Decisão cliente registada em §10
+  - [ ] `GetCatalogAsync` ajustado conforme decisão
+
+**CD5 — Estilo activo sidebar (laranja)**
+- ❓ **Dúvida:** Activar só o nó clicado ou também o ancestral com fundo diferente?
+- Checklist:
+  - [ ] CSS `.store-nav-link.active` → `background: #fe7109; color: #fff`
+  - [ ] Filhos indentados com fundo branco / hover laranja claro
+  - [ ] Comparar lado a lado com screenshot cliente
+
+**CD6 — Sincronização tile ↔ sidebar**
+- ❓ **Dúvida:** Ao clicar tile na main, sidebar faz scroll até o item activo?
+- Checklist:
+  - [ ] `categoryId` na URL actualiza sidebar e main no mesmo render
+  - [ ] `EnsureExpandedPath` inclui ramo activo (já existe — validar)
+  - [ ] Opcional: `scrollIntoView` no item activo (JS interop)
+
+**CD7 — Rota e histórico Back**
+- ❓ **Dúvida:** Botão **Back** do header volta nível acima na árvore ou só `history.back()`?
+- Checklist:
+  - [ ] Definir: Back com `categoryId` = `ParentId` do nó actual
+  - [ ] Raiz activa → Back vai para `/`
+  - [ ] Implementar em `StoreHeader` ou componente dedicado
+
+**CD9 — Textos intro da categoria**
+- ❓ **Dúvida:** `IntroPriceListTextId` aponta para que tabela de textos no Azure legacy?
+- Checklist:
+  - [ ] Mapear entidade/texto no model builder
+  - [ ] `GetCategoryDetailAsync` devolve HTML ou plain text
+  - [ ] Render seguro na main (sem XSS)
+
+#### Implementação prevista (fases C.5 + D.5)
+
+| Camada | Item | Ficheiro / notas |
+|--------|------|------------------|
+| **Application** | `StoreCategoryBrowseDto` — `Mode`, `CategoryName`, `IntroText?`, `Children`, `Products?` | Novo DTO |
+| **Application** | `GetCategoryBrowseAsync(categoryId?)` | Estender `IStoreCatalogPort` |
+| **Infrastructure** | Resolver modo CD2/CD3; filhos com contagens; produtos só em folha | `StoreCatalogService` |
+| **Client** | `Catalog.razor` — ramo por `BrowseMode` (home / subcats / products / search) | Refactor |
+| **Client** | `StoreCategoryHeader.razor` — H1 + intro | Novo |
+| **Client** | Reutilizar `StoreCategoryTileGrid` para filhos | D.4 + D.5 |
+| **Client** | `StoreCategorySidebar` — estilo activo laranja CD5 | CSS + estado |
+| **CSS** | `.store-nav-link--active`, `.category-browse-grid` | `store.css` |
+
+**Checklist implementação global (C.5 + D.5):**
+
+- [ ] Port `GetCategoryBrowseAsync` + testes unitários
+- [ ] Homepage `/` não chama modo Products por defeito
+- [ ] `?categoryId=raiz` → tiles filhos (se tiver filhos)
+- [ ] `?categoryId=folha` → grelha produtos
+- [ ] Sidebar sincronizada com URL em todos os modos
+- [ ] Clique tile homepage = clique sidebar (mesma URL)
+- [ ] Regressão: pesquisa `?q=`, deals na home, imagens blob
+
 ### 2.2 Comparação com código actual
 
 | Ficheiro | Estado actual | Gap |
 |----------|---------------|-----|
 | `StoreLayout.razor` | Header + `@Body` sem sidebar | Precisa grid **sidebar + main** |
 | `StoreHeader.razor` | Logo, search, nav pills azuis | Reescrever §2.1.1: Back·Home·Cart·Contact·Search·Login |
-| `Catalog.razor` | Hero + chips + grelha 12 produtos | Remover hero/chips; **New products** + grelha |
+| `Catalog.razor` | New products + grelha em `?categoryId=` | §2.1.2 homepage + §2.1.3 drill-down (tiles → produtos) |
 | `store.css` | Tema azul claro, sem `.sidebar` | Novo tema laranja/branco + componentes sidebar + `.store-auth-*` |
 | `StoreCatalogService` | Lista plana de raízes; fallback `WebshopStructures` | Árvore completa só `ProductStructuur` |
 | `SignIn.razor` / `SignUp.razor` | Card azul, serif, `StoreLayout` | `StoreAuthLayout`, card branco/laranja, copy EN (§2.2.1) |
@@ -224,6 +525,29 @@ flowchart LR
 
 **Ficheiros prováveis (fase posterior):** `SignIn.razor`, `LoginEndpoints` / `MapLoginEndpoints`, `StoreHeader.razor`, `LegacySignInService`, `Program.cs` (redirect `/login`), `AdminLogin.razor` (redundante ou redirect).
 
+#### Dúvidas e checklists — login unificado (§2.2.2)
+
+**U3 — Mesmo email em staff e cliente**
+- ❓ **Dúvida:** Se `admin@…` existir em `StaffUsers` e `Klant`, qual login ganha?
+- Checklist:
+  - [ ] Listar colisões reais em `abmatic_test`
+  - [ ] Documentar prioridade (staff primeiro vs cliente primeiro)
+  - [ ] Teste de integração para ambos os cenários
+
+**U2 — Um endpoint ou dois**
+- ❓ **Dúvida:** Unificar POST num só endpoint simplifica Azure SSR ou preferimos página única com dois forms ocultos?
+- Checklist:
+  - [ ] Rever `MapLoginEndpoints` actual
+  - [ ] Prototipar `POST /account/login` com ramo staff/customer
+  - [ ] Regressão sign-in estático (`App.razor` static rendering)
+
+**U4 — Staff na navbar após login**
+- ❓ **Dúvida:** Mostrar link **Admin** na loja quando Admin/Manager, ou só redirect na primeira sessão?
+- Checklist:
+  - [ ] Decisão UX com cliente
+  - [ ] `StoreHeader` condicional por role
+  - [ ] Política: customer nunca vê link admin
+
 ### 2.3 Validação de dados (`abmatic_test`)
 
 Consulta em 2026-06-25 à BD de teste:
@@ -253,7 +577,7 @@ Nós intermédios têm produtos directos (ex.: id 80 *Schuifdeuren* — 17 produ
 
 ### 2.5 Checklist Fase A
 
-- ✅ Documentar layout da referência (sidebar, header, grelha, cores, tipografia)
+- ✅ Documentar **homepage** (§2.1.2 — Categories tiles + Deals + sidebar)
 - ✅ Documentar **header navigation** (§2.1.1 — Back, Home, Cart, Contact, Search, Login)
 - ✅ Documentar **login / sign-up** (shell, card, formulário, rotas, copy EN)
 - ✅ Comparar com `Client/Components/Pages/Store/` e `store.css`
@@ -273,7 +597,7 @@ Nós intermédios têm produtos directos (ex.: id 80 *Schuifdeuren* — 17 produ
 | Fonte da árvore | Tabela ERP de estrutura de produtos | `ProductStructuur` → `ProductStructure` |
 | Raiz | `ParentId` **null** ou **0** | `ProductStructure.ParentTaskId` |
 | Ligação ao produto | Cada produto aponta para um nó da árvore | `Product.ProductStructuurId` → `Product.ProductStructureId` |
-| Navegação | Menu **lateral esquerdo** com árvore expandível | `StoreCategorySidebar.razor` |
+| Navegação | Menu lateral + **drill-down**: filhos em tiles → produtos na folha | `StoreCategorySidebar` + `/?categoryId=` (só produtos hoje) — ver §2.1.3 |
 | Idioma (fase actual) | **Inglês** — `NaamEn` / `NameEn` | `CatalogCategoryTree.PickDisplayName` |
 
 ### 3.2 Visibilidade de produtos
@@ -360,7 +684,8 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 | Layout geral | ✅ Sidebar 300px + header branco + área scroll |
 | Categorias | ✅ Árvore `ProductStructuur` na sidebar (`StoreCategorySidebar`) |
 | Cor / fonte | ✅ Laranja `#fe7109`, Segoe UI |
-| Homepage | ✅ New products (12) + grelha filtrada — sem hero/chips |
+| Homepage | 🟡 New products + grelha — **falta** tiles + Deals | §2.1.2 |
+| **Navegação por níveis** | ❌ `?categoryId=` lista produtos; falta tiles de subcategorias + activo laranja | §2.1.3 |
 | Filtro | ✅ Por nó + descendentes (`CollectDescendantIds`) |
 | `WebshopStructures` | ✅ Fallback removido em `GetCategoriesAsync` |
 | **Login** | ✅ `StoreAuthLayout`, copy EN, sem link staff; botão laranja |
@@ -401,6 +726,21 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 - ✅ Labels em `NameEn` (`CatalogCategoryTree.PickDisplayName`)
 - ⬜ Testes dedicados: árvore, filtro intermédio, exclusões `ProdNonActive` / `Webshop=false`
 
+**Fase C.4 — Homepage referência (planeado ⬜)** — ver §2.1.2
+
+- ⬜ `GetRootCategoryTilesAsync()` — raízes `ProductStructuur` + `NameEn` + URL ícone (`Icon` blob ou SAS)
+- ⬜ `GetDealsAsync(take)` — produtos destaque/promo (critério HP4 a confirmar)
+- ⬜ DTOs: `StoreCategoryTileDto`, `StoreDealProductDto` (quick-add: id, nome, imagem, descrição curta, preço)
+- ⬜ Testes: contagens tiles, deals só `Webshop` + `!ProdNonActive`
+
+**Fase C.5 — Navegação por níveis (planeado ⬜)** — ver §2.1.3
+
+- ⬜ `StoreCategoryBrowseDto` + `CategoryBrowseMode` (Home / Subcategories / Products / Search)
+- ⬜ `GetCategoryBrowseAsync(categoryId?)` — filhos directos **ou** produtos (CD2/CD3)
+- ⬜ `GetCategoryDetailAsync` — nome EN, intro (`IntroPriceListTextId`) para H1
+- ⬜ Regra CD4 documentada e testada (nó intermédio com produtos directos)
+- ⬜ Testes: raiz → tiles; folha → produtos; contagem `ProductCount` por filho
+
 **Fase C.2 — Formulários produto/categoria (planeado ⬜)** — ver §3.5
 
 - ⬜ DTOs store: opções de produto (`StoreProductOptionDto`, valores, `IsRequired`)
@@ -426,11 +766,28 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 - ✅ `SignIn.razor` — copy EN, sem link staff; `@layout StoreAuthLayout`
 - ✅ `SignUp.razor` — `@layout StoreAuthLayout`
 - 🟡 `MyAccount.razor` — ainda `.auth-card` antigo dentro do layout com sidebar
-- ✅ `Catalog.razor` — sem hero/chips; New products; grelha + `?categoryId` / `?q`
-- ✅ `ProductCard.razor` — **novo** — card reutilizável + badge New
+- 🟡 `Catalog.razor` — v1: New products + grelha; **v2 pendente** §2.1.2 (tiles + Deals)
+- ✅ `ProductCard.razor` — card reutilizável + badge New
 - ✅ Textos principais da loja em inglês
 - ✅ Redirect `/login` → `/sign-in` (`Program.cs`)
 - ⬜ `ProductDetail.razor` — breadcrumb (opcional fase 2)
+
+**Fase D.4 — Homepage referência (planeado ⬜)** — ver §2.1.2
+
+- ⬜ `StoreCategoryTileGrid.razor` — grelha quadrada ícone + label (raízes com produtos)
+- ⬜ `StoreDealCard.razor` — foto, título uppercase, descrição, quick-add laranja
+- ⬜ `Catalog.razor` — secções **Categories** + **Deals**; remover grelha genérica na `/`
+- ⬜ `store.css` — `.category-tile-grid`, `.deals-row`, `.deal-card`
+- ⬜ Responsivo: deals em scroll horizontal ou carousel &lt; 1200px
+
+**Fase D.5 — Navegação por níveis na UI (planeado ⬜)** — ver §2.1.3
+
+- ⬜ `Catalog.razor` — ramificar por `BrowseMode` (não mostrar produtos quando há filhos)
+- ⬜ `StoreCategoryHeader.razor` — H1 + texto intro
+- ⬜ Reutilizar `StoreCategoryTileGrid` para filhos do nó activo
+- ⬜ Sidebar: activo laranja sólido (CD5); expandir ramo; opcional scrollIntoView
+- ⬜ Back no header: subir para `ParentId` (CD7)
+- ⬜ CSS `.store-nav-link--active-branch`, `.category-browse-grid`
 
 **Fase D.2 — Formulários na UI loja (planeado ⬜)** — ver §3.5
 
@@ -508,9 +865,11 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 - ✅ Header: Back · Home · Cart · Contact · Search · Login (inglês, ícone + texto)
 - ✅ Login/sign-up com header branco, card centrado, botão laranja, textos em inglês (sem sidebar)
 - ✅ Sidebar com árvore `ProductStructuur` (raízes `ParentId` null/0)
+- ⬜ Homepage: grelha **Categories** (ícones) + fila **Deals** (§2.1.2)
+- ⬜ Navegação: clicar categoria → **tiles subcategorias** → folha → produtos (§2.1.3)
 - ✅ Filtro por categoria inclui subcategorias
 - ✅ `ProdNonActive` / `Webshop=false` excluídos
-- ✅ `IsNieuw=true` na secção New products (12)
+- 🟡 Destaques promo: hoje **New products**; alvo secção **Deals** (~8)
 - ✅ Loja em inglês
 - ✅ Hexagonal preservada (páginas → ports)
 - ✅ Imagens e preços como hoje
@@ -532,6 +891,13 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 | 9 | Formulários produto/categoria na loja? | ⏳ Sim — §3.5; Fase C.2 + D.2 |
 | 10 | Login único loja + admin? | ⏳ Sim — §2.2.2; Fase C.3 + D.3; reutilizar admin pronto |
 | 11 | Formulário por categoria na referência | ⏳ Confirmar com cliente (screenshot / URL live) |
+| 12 | Secção Deals vs New products | ⏳ Deals ~8 promo; HP4 — critério BD a confirmar |
+| 13 | Grelha ícones Categories na `/` | ⏳ Sim — raízes com ícone `ProductStructure.Icon` |
+| 14 | Grelha produtos na homepage | ⏳ Remover da `/`; produtos só por categoria ou pesquisa |
+| 15 | Tiles vs produtos ao clicar categoria | ⏳ Filhos primeiro (CD2); produtos só na folha — §2.1.3 |
+| 16 | Nó intermédio com produtos directos | ⏳ CD4 — confirmar com cliente / query BD |
+| 17 | Sidebar activo laranja sólido | ⏳ CD5 — igual screenshot |
+| 18 | Back sobe nível na árvore | ⏳ CD7 — ParentId vs history.back |
 
 ---
 
@@ -539,10 +905,12 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 
 1. ~~**A** — análise~~ ✅  
 2. ~~**B + C** — backend (árvore + `IsNew` + filtros)~~ ✅  
-3. ~~**D** — UI espelhando a referência~~ ✅ (exc. `MyAccount` restyle, breadcrumb produto)  
+3. ~~**D** — UI base (header, sidebar, tema)~~ ✅ — homepage completa em **C.4 + D.4**  
 4. **E + F** — testes dedicados catálogo, `SPEC_WEB_STORE.md`, validação e deploy com cliente  
 5. **C.2 + D.2** — formulários produto/categoria (opções, intro categoria, carrinho)  
 6. **C.3 + D.3** — login unificado navbar → admin + loja  
+7. **C.4 + D.4** — homepage: **Categories** (tiles) + **Deals**  
+8. **C.5 + D.5** — navegação por níveis (tiles subcategorias → produtos na folha)  
 
 ---
 

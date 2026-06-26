@@ -11,6 +11,7 @@ public sealed record StoreProduct(
     decimal MinQuantity,
     bool IsLowStock,
     bool IsOutOfStock,
+    bool IsNew,
     int? CategoryId,
     int? CategoryRootId,
     string CategoryName,
