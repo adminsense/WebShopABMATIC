@@ -3,69 +3,113 @@
 @inject StoreCartService Cart
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IHttpContextAccessor HttpContextAccessor
+@inject IJSRuntime Js
 
 <header class="site-header">
-    <div class="header-inner">
-        <a href="/" class="logo">Web<span>Shop</span></a>
-        <div class="search-bar">
-            <span class="search-icon" aria-hidden="true">
-                <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
-                    <circle cx="6.75" cy="6.75" r="4.25" />
-                    <path d="M10.25 10.25 14 14" />
-                </svg>
-            </span>
-            <input type="search" placeholder="Search products..." aria-label="Search"
-                   @bind="_search" @bind:event="oninput" @onkeyup="OnSearchKey" />
-        </div>
-        <nav class="nav-actions">
-            <NavLink href="/" class="nav-btn" Match="NavLinkMatch.All">Catalog</NavLink>
-            <NavLink href="/orders" class="nav-btn">My orders</NavLink>
-            @if (_isCustomer)
-            {
-                <NavLink href="/my-account" class="nav-btn">My account</NavLink>
-            }
-            <NavLink href="/cart" class="nav-btn">
-                Cart <span class="cart-badge">@Cart.ItemCount</span>
+    <div class="header-inner store-header-nav">
+        <nav class="store-header-links" aria-label="Store navigation">
+            <button type="button" class="store-header-link" @onclick="GoBackAsync">
+                <i class="bi bi-arrow-left" aria-hidden="true"></i>
+                <span>Back</span>
+            </button>
+            <NavLink href="/" class="store-header-link" Match="NavLinkMatch.All">
+                <i class="bi bi-house" aria-hidden="true"></i>
+                <span>Home</span>
             </NavLink>
-            <div class="user-menu">
-                @if (_isAuthenticated)
+            <NavLink href="/cart" class="store-header-link">
+                <i class="bi bi-cart3" aria-hidden="true"></i>
+                <span>Cart</span>
+                @if (Cart.ItemCount > 0)
                 {
-                    <span class="user-display-name @(_isStaff ? "staff-user" : "")" title="@_displayName">@_displayName</span>
-                    <button type="button" class="nav-btn nav-btn-text" @onclick="SignOutAsync">Sign out</button>
+                    <span class="cart-badge">@Cart.ItemCount</span>
+                }
+            </NavLink>
+            <NavLink href="/contact" class="store-header-link">
+                <i class="bi bi-compass" aria-hidden="true"></i>
+                <span>Contact</span>
+            </NavLink>
+        </nav>
+
+        <div class="store-header-search">
+            <input type="search"
+                   class="store-search-input"
+                   placeholder="Search products…"
+                   aria-label="Search products"
+                   @bind="_search"
+                   @bind:event="oninput"
+                   @onkeydown="OnSearchKey" />
+            <button type="button" class="store-search-btn" @onclick="SubmitSearchAsync">
+                <i class="bi bi-search" aria-hidden="true"></i>
+                <span>Search</span>
+            </button>
+        </div>
+
+        <div class="store-header-auth">
+            @if (_isAuthenticated)
+            {
+                @if (_isCustomer)
+                {
+                    <NavLink href="/my-account" class="store-header-link" title="@_displayName">
+                        <i class="bi bi-person" aria-hidden="true"></i>
+                        <span>@ShortName(_displayName)</span>
+                    </NavLink>
                 }
                 else
                 {
-                    <NavLink href="/sign-in" class="nav-btn" data-enhance-nav="false">Sign in</NavLink>
+                    <span class="store-header-user" title="@_displayName">@ShortName(_displayName)</span>
                 }
-            </div>
-            <a href="@AdminHref" class="nav-btn" data-enhance-nav="false" title="Staff admin panel">Admin</a>
-        </nav>
+                <button type="button" class="store-header-link store-header-link--btn" @onclick="SignOutAsync">
+                    <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                    <span>Sign out</span>
+                </button>
+            }
+            else
+            {
+                <NavLink href="/sign-in" class="store-header-link" data-enhance-nav="false">
+                    <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i>
+                    <span>Login</span>
+                </NavLink>
+            }
+        </div>
     </div>
 </header>
 
 @code {
+    [Parameter] public bool ShowSidebar { get; set; } = true;
+
     private string _search = "";
     private bool _isAuthenticated;
-    private bool _isStaff;
     private bool _isCustomer;
     private string _displayName = "";
-
-    [Parameter] public EventCallback<string> OnSearch { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         Cart.Changed += () => InvokeAsync(StateHasChanged);
+        ReadSearchFromUri();
         await LoadUserAsync();
     }
 
-    protected override async Task OnParametersSetAsync() => await LoadUserAsync();
+    protected override async Task OnParametersSetAsync()
+    {
+        ReadSearchFromUri();
+        await LoadUserAsync();
+    }
+
+    private void ReadSearchFromUri()
+    {
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        if (Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query)
+            .TryGetValue("q", out var value))
+        {
+            _search = value.FirstOrDefault() ?? "";
+        }
+    }
 
     private async Task LoadUserAsync()
     {
         var auth = await AuthStateProvider.GetAuthenticationStateAsync();
         var user = auth.User;
         _isAuthenticated = user.Identity?.IsAuthenticated == true;
-        _isStaff = user.IsInRole(AppRoles.Admin) || user.IsInRole(AppRoles.Manager);
         _isCustomer = user.IsInRole(AppRoles.Customer);
 
         if (_isAuthenticated)
@@ -76,7 +120,15 @@
         }
     }
 
-    private string AdminHref => _isStaff ? "/admin" : "/admin/login";
+    private static string ShortName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return "Account";
+        }
+
+        return name.Length <= 18 ? name : name[..15] + "…";
+    }
 
     private async Task SignOutAsync()
     {
@@ -89,9 +141,29 @@
         Navigation.NavigateTo("/", forceLoad: true);
     }
 
+    private async Task GoBackAsync()
+    {
+        await Js.InvokeVoidAsync("eval", "if (window.history.length > 1) { history.back(); } else { window.location.href = '/'; }");
+    }
+
     private async Task OnSearchKey(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter" && OnSearch.HasDelegate)
-            await OnSearch.InvokeAsync(_search);
+        if (e.Key == "Enter")
+        {
+            await SubmitSearchAsync();
+        }
     }
+
+    private Task SubmitSearchAsync()
+    {
+        var term = _search.Trim();
+        var url = string.IsNullOrEmpty(term)
+            ? BuildCatalogUrl(null)
+            : $"{BuildCatalogUrl(null)}&q={Uri.EscapeDataString(term)}";
+        Navigation.NavigateTo(url);
+        return Task.CompletedTask;
+    }
+
+    private static string BuildCatalogUrl(int? categoryId) =>
+        categoryId is int id ? $"/?categoryId={id}" : "/";
 }
