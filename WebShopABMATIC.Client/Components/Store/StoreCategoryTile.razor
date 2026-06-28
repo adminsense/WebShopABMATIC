@@ -1,0 +1,20 @@
+@using WebShopABMATIC.Application.Store
+
+<button type="button" class="category-tile" @onclick="() => OnSelect.InvokeAsync(Category.Id)">
+    <span class="category-tile-icon" aria-hidden="true">
+        @if (Category.HasIcon)
+        {
+            <img src="@($"/api/store/category-icon/{Category.Id}")" alt="" loading="lazy" decoding="async" />
+        }
+        else
+        {
+            <i class="bi bi-box-seam"></i>
+        }
+    </span>
+    <span class="category-tile-label">@Category.Name</span>
+</button>
+
+@code {
+    [Parameter, EditorRequired] public StoreCategoryTreeNodeDto Category { get; set; } = default!;
+    [Parameter] public EventCallback<int> OnSelect { get; set; }
+}

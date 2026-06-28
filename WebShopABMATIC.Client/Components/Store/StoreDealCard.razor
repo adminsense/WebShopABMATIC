@@ -9,26 +9,23 @@
         <button type="button" class="deal-card-title-btn" @onclick="() => OnSelect.InvokeAsync(Product.Id)">
             @Product.Name.ToUpperInvariant()
         </button>
+        <div class="deal-card-footer">
+            <span class="deal-card-price @(!Product.HasPrice ? "text-muted" : "")">
+                @PriceLabel
+            </span>
+            <button type="button"
+                    class="deal-card-cart-btn"
+                    title="Add to cart"
+                    aria-label="Add @Product.Name to cart"
+                    @onclick="AddToCartAsync"
+                    @onclick:stopPropagation="true">
+                <i class="bi bi-cart3"></i>
+            </button>
+        </div>
         @if (!string.IsNullOrWhiteSpace(Product.Description))
         {
             <p class="deal-card-description">@Product.Description</p>
         }
-        <div class="deal-card-footer">
-            <span class="deal-card-price @(!Product.HasPrice ? "text-muted" : "")">
-                @StorePriceFormatter.Format(Product.Price)
-            </span>
-            @if (Product.HasPrice && !Product.IsOutOfStock)
-            {
-                <button type="button"
-                        class="deal-card-cart-btn"
-                        title="Add to cart"
-                        aria-label="Add @Product.Name to cart"
-                        @onclick="AddToCartAsync"
-                        @onclick:stopPropagation="true">
-                    <i class="bi bi-cart-plus"></i>
-                </button>
-            }
-        </div>
     </div>
 </article>
 
@@ -36,5 +33,15 @@
     [Parameter, EditorRequired] public StoreProduct Product { get; set; } = default!;
     [Parameter] public EventCallback<int> OnSelect { get; set; }
 
-    private async Task AddToCartAsync() => await Cart.AddProductAsync(Product.Id);
+    private string PriceLabel => Product.HasPrice
+        ? StorePriceFormatter.Format(Product.Price)
+        : "Sign in to see your price";
+
+    private async Task AddToCartAsync()
+    {
+        if (Product.HasPrice && !Product.IsOutOfStock)
+        {
+            await Cart.AddProductAsync(Product.Id);
+        }
+    }
 }

@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using WebShopABMATIC.Application.Ports;
 using WebShopABMATIC.Application.Ports.Outbound;
 using WebShopABMATIC.Data.Persistence;
@@ -20,8 +19,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddWebShopInfrastructure(
         this IServiceCollection services,
-        IConfiguration configuration,
-        IHostEnvironment environment)
+        IConfiguration configuration)
     {
         var domainConnection = configuration.GetConnectionString("connWebShopABMATIC")
             ?? configuration.GetConnectionString("DefaultConnection")
@@ -81,7 +79,7 @@ public static class DependencyInjection
         services.AddScoped<IStockMovementService, StockMovementService>();
         services.AddScoped<IMolliePaymentPort, NullMolliePaymentPort>();
 
-        services.AddWebShopNotifications(configuration, environment);
+        services.AddWebShopNotifications(configuration);
 
         return services;
     }

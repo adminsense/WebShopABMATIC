@@ -19,10 +19,27 @@ internal static class CatalogCategoryTree
         return current;
     }
 
+    public static int? NormalizeParentId(int? parentTaskId) =>
+        parentTaskId is null or 0 ? null : parentTaskId;
+
+    /// <summary>
+    /// Top-level node: no parent, or parent id missing from the loaded structure set (orphan / legacy link).
+    /// </summary>
+    public static bool IsStructuralRoot(ProductStructure structure, IReadOnlyDictionary<int, ProductStructure> structures)
+    {
+        var parent = NormalizeParentId(structure.ParentTaskId);
+        if (parent is null)
+        {
+            return true;
+        }
+
+        return !structures.ContainsKey(parent.Value);
+    }
+
     public static HashSet<int> CollectDescendantIds(int rootId, IReadOnlyDictionary<int, ProductStructure> structures)
     {
         var result = new HashSet<int> { rootId };
-        foreach (var child in structures.Values.Where(s => s.ParentTaskId == rootId))
+        foreach (var child in structures.Values.Where(s => NormalizeParentId(s.ParentTaskId) == rootId))
         {
             result.UnionWith(CollectDescendantIds(child.Id, structures));
         }
