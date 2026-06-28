@@ -832,7 +832,7 @@ public class WebShopABMATICModelBuilder
         config.Property(t => t.Id).ValueGeneratedOnAdd();
         config.Property(t => t.CustomerId).HasColumnName("KlantKlantId");
         config.Property(t => t.DiscountPercentage).HasColumnType("decimal(18,4)").HasColumnName("KortingPercentage");
-        config.Property(t => t.ProductId).HasColumnName("ProductProdId");
+        config.Property(t => t.ProductId).HasColumnName("ProdId");
         config.Property(t => t.Notes).HasMaxLength(500).HasColumnName("Opmerking");
         config.Property(t => t.FromAddress).HasColumnName("Van");
         config.Property(t => t.ValidTo).HasColumnName("Tot");
@@ -1756,7 +1756,7 @@ public class WebShopABMATICModelBuilder
         config.Property(t => t.ReportBebat).HasColumnName("BebatRapporteren");
         config.Property(t => t.HasTierPricing).HasColumnName("HeeftStaffelprijzen");
         config.Property(t => t.HideDetailPrice).HasColumnName("ToonGeenDetailprijs");
-        config.Property(t => t.ShowOnWebshop).HasColumnName("Webshop");
+        config.Property(t => t.ShowOnWebshop).HasColumnName("WebShop");
         config.Property(t => t.LastModifiedAt).HasColumnName("LaatsteAanpassing");
         config.Property(t => t.LastModifiedBy).HasMaxLength(50).HasColumnName("LaatsteAanpassingDoor");
         config.Property(t => t.IsNew).HasColumnName("IsNieuw");
@@ -1899,7 +1899,7 @@ public class WebShopABMATICModelBuilder
         config.Property(t => t.ValidTo).HasColumnName("Tot");
         config.Property(t => t.AssemblyPrice).HasColumnType("decimal(18,4)").HasColumnName("AssemblagePrijs");
         config.Property(t => t.InstallationPrice).HasColumnType("decimal(18,4)").HasColumnName("MontagePrijs");
-        config.Property(t => t.ProductId);
+        config.Property(t => t.ProductId).HasColumnName("ProductProdId");
         config.Property(t => t.GrossSalesPrice).HasColumnType("decimal(18,2)").HasColumnName("BrutoVerkoop");
         config.Property(t => t.GrossPurchasePrice).HasColumnType("decimal(18,2)").HasColumnName("BrutoAankoop");
         config.Property(t => t.NetPurchasePrice).HasColumnType("decimal(18,2)").HasColumnName("NettoAankoop");

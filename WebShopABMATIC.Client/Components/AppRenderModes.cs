@@ -4,5 +4,5 @@ namespace WebShopABMATIC.Web.Components;
 
 public static class AppRenderModes
 {
-    public static InteractiveServerRenderMode InteractiveServer { get; } = new(prerender: true);
+    public static InteractiveServerRenderMode InteractiveServer { get; } = new(prerender: false);
 }

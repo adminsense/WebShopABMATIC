@@ -8,18 +8,66 @@
 <PageTitle>WebShop — Catalog</PageTitle>
 
 <div class="store-content-inner">
-    @if (_showNewProducts)
+    @if (_isHomepage)
     {
         <section class="store-section">
-            <h2 class="store-section-title">New products</h2>
-            @if (_newProducts.Count == 0 && !_loading)
+            <h2 class="store-section-title">Categories</h2>
+            @if (_loading)
             {
-                <p class="text-muted">No new products at the moment.</p>
+                <p class="text-muted">Loading categories…</p>
+            }
+            else if (_categories.Count == 0)
+            {
+                <p class="text-muted">No categories available.</p>
+            }
+            else
+            {
+                <div class="categories-grid">
+                    @foreach (var c in _categories)
+                    {
+                        <StoreCategoryTile Category="c" OnSelect="GoToCategory" />
+                    }
+                </div>
+            }
+        </section>
+
+        <section class="store-section">
+            <h2 class="store-section-title">Deals</h2>
+            @if (_loading)
+            {
+                <p class="text-muted">Loading deals…</p>
+            }
+            else if (_deals.Count == 0)
+            {
+                <p class="text-muted">No deals at the moment.</p>
+            }
+            else
+            {
+                <div class="deals-row">
+                    @foreach (var p in _deals)
+                    {
+                        <StoreDealCard Product="p" OnSelect="GoToProduct" />
+                    }
+                </div>
+            }
+        </section>
+    }
+    else
+    {
+        <section class="store-section" id="products">
+            <h2 class="store-section-title">@_productsTitle</h2>
+            @if (_loading)
+            {
+                <p class="text-muted">Loading catalog…</p>
+            }
+            else if (_products.Count == 0)
+            {
+                <p class="text-muted">No products available@(string.IsNullOrWhiteSpace(_search) ? "" : " for this search").</p>
             }
             else
             {
                 <div class="product-grid">
-                    @foreach (var p in _newProducts)
+                    @foreach (var p in _products)
                     {
                         <ProductCard Product="p" OnSelect="GoToProduct" />
                     }
@@ -27,39 +75,18 @@
             }
         </section>
     }
-
-    <section class="store-section" id="products">
-        <h2 class="store-section-title">@_productsTitle</h2>
-        @if (_loading)
-        {
-            <p class="text-muted">Loading catalog…</p>
-        }
-        else if (_products.Count == 0)
-        {
-            <p class="text-muted">No products available@(string.IsNullOrWhiteSpace(_search) ? "" : " for this search").</p>
-        }
-        else
-        {
-            <div class="product-grid">
-                @foreach (var p in _products)
-                {
-                    <ProductCard Product="p" OnSelect="GoToProduct" />
-                }
-            </div>
-        }
-    </section>
 </div>
 
 @code {
-    private const int HomePageProductLimit = 12;
-    private const int NewProductsLimit = 12;
+    private const int DealsLimit = 8;
 
     private int? _selectedCategoryId;
     private string? _search;
     private bool _loading = true;
-    private bool _showNewProducts;
+    private bool _isHomepage;
     private string _productsTitle = "Products";
-    private IReadOnlyList<StoreProduct> _newProducts = [];
+    private IReadOnlyList<StoreCategoryTreeNodeDto> _categories = [];
+    private IReadOnlyList<StoreProduct> _deals = [];
     private IReadOnlyList<StoreProduct> _products = [];
 
     [SupplyParameterFromQuery(Name = "categoryId")]
@@ -75,8 +102,8 @@
         _loading = true;
         _selectedCategoryId = CategoryId;
         _search = SearchQuery?.Trim();
+        _isHomepage = _selectedCategoryId is null && string.IsNullOrWhiteSpace(_search);
 
-        _showNewProducts = _selectedCategoryId is null && string.IsNullOrWhiteSpace(_search);
         _productsTitle = _selectedCategoryId is null && string.IsNullOrWhiteSpace(_search)
             ? "Products"
             : string.IsNullOrWhiteSpace(_search)
@@ -85,29 +112,30 @@
 
         try
         {
-            if (_showNewProducts)
+            if (_isHomepage)
             {
-                var newest = await CatalogPort.GetNewProductsAsync(NewProductsLimit);
-                _newProducts = newest.Select(StoreProductMapper.ToModel).ToList();
+                _categories = await CatalogPort.GetCategoryTreeAsync();
+                var deals = await CatalogPort.GetDealsAsync(DealsLimit);
+                _deals = deals.Select(StoreProductMapper.ToModel).ToList();
+                _products = [];
             }
             else
             {
-                _newProducts = [];
+                _categories = [];
+                _deals = [];
+                var items = await CatalogPort.GetCatalogAsync(take: null, _selectedCategoryId);
+                var mapped = items.Select(StoreProductMapper.ToModel).ToList();
+
+                if (!string.IsNullOrWhiteSpace(_search))
+                {
+                    mapped = mapped
+                        .Where(p => p.Name.Contains(_search, StringComparison.OrdinalIgnoreCase)
+                                    || p.Description.Contains(_search, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                }
+
+                _products = mapped;
             }
-
-            var take = _showNewProducts ? (int?)HomePageProductLimit : null;
-            var items = await CatalogPort.GetCatalogAsync(take, _selectedCategoryId);
-            var mapped = items.Select(StoreProductMapper.ToModel).ToList();
-
-            if (!string.IsNullOrWhiteSpace(_search))
-            {
-                mapped = mapped
-                    .Where(p => p.Name.Contains(_search, StringComparison.OrdinalIgnoreCase)
-                                || p.Description.Contains(_search, StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-            }
-
-            _products = mapped;
         }
         finally
         {
@@ -116,4 +144,6 @@
     }
 
     private void GoToProduct(int id) => Navigation.NavigateTo($"/product/{id}");
+
+    private void GoToCategory(int id) => Navigation.NavigateTo($"/?categoryId={id}");
 }
