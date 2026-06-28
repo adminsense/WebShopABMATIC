@@ -8,6 +8,7 @@
     <AssemblyName>WebShopABMATIC</AssemblyName>
     <UserSecretsId>aspnet-WebShopABMATIC.Web-70a1a0ec-a529-4dd7-b516-e70c94617bde</UserSecretsId>
     <RunWithBrowserLink>false</RunWithBrowserLink>
+    <LaunchProfileName>WebShopABMATIC</LaunchProfileName>
   </PropertyGroup>
 
   <ItemGroup>

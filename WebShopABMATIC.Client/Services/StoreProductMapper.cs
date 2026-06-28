@@ -16,6 +16,7 @@ public static class StoreProductMapper
             dto.MinQuantity,
             dto.IsLowStock,
             dto.IsOutOfStock,
+            dto.IsNew,
             dto.CategoryId,
             dto.CategoryRootId,
             dto.CategoryName,

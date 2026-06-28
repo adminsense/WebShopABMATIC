@@ -134,9 +134,11 @@
       flex: 1;
       overflow: auto;
       padding: 1.1rem 2rem 2rem;
+      background: #fff;
     }
     .store-content-inner {
-      max-width: 1100px;
+      max-width: 1200px;
+      margin: 0 auto;
     }
     .store-auth-main {
       display: flex;
@@ -144,95 +146,184 @@
       justify-content: center;
       padding: 2rem 1.5rem;
     }
-    .store-section { margin-bottom: 2rem; }
+    .store-section { margin-bottom: 2.5rem; }
     .store-section-title {
-      font-size: 1rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
+      font-size: 1.35rem;
+      font-weight: 400;
+      text-align: center;
+      margin-bottom: 1.25rem;
       color: var(--text);
     }
-    .deals-row {
-      display: flex;
-      gap: 1rem;
-      overflow-x: auto;
+    .deals-row,
+    .deals-grid {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      gap: 1.25rem;
       padding-bottom: 0.5rem;
-      scroll-snap-type: x proximity;
+      overflow: visible;
     }
-    .deal-card {
-      flex: 0 0 220px;
-      scroll-snap-align: start;
-      background: #fff;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
+    .deals-row .deal-card,
+    .deals-grid .deal-card {
+      flex: none;
+      width: 100%;
+      max-width: none;
+    }
+    .categories-grid {
+      display: grid;
+      grid-template-columns: repeat(9, minmax(0, 1fr));
+      justify-content: center;
+      gap: 1.25rem 1rem;
+      padding-bottom: 1.5rem;
+      max-width: 100%;
+    }
+    @media (max-width: 1100px) {
+      .categories-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+      .deals-row,
+      .deals-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+    @media (max-width: 768px) {
+      .categories-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .deals-row,
+      .deals-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    .category-tile {
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.65rem;
+      background: #fff;
+      border: none;
+      border-radius: 0;
+      box-shadow: var(--shadow);
+      padding: 1rem 0.5rem 0.85rem;
+      min-height: 130px;
+      cursor: pointer;
+      text-align: center;
+      transition: box-shadow .2s, transform .15s;
     }
-    .deal-card-image-btn,
+    .category-tile:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .category-tile-icon {
+      width: 72px;
+      height: 72px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0;
+      background: transparent;
+      color: var(--text);
+      font-size: 2rem;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .category-tile-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      padding: 0;
+    }
+    .category-tile-label {
+      font-size: 0.75rem;
+      font-weight: 400;
+      line-height: 1.25;
+      color: var(--text);
+      max-width: 100%;
+      word-break: break-word;
+    }
+    .deal-card {
+      width: 100%;
+      scroll-snap-align: unset;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      display: flex;
+      flex-direction: column;
+      overflow: visible;
+      gap: 0.5rem;
+    }
+    .deal-card-image-btn {
+      border: none;
+      background: #fff;
+      padding: 0.75rem;
+      cursor: pointer;
+      text-align: center;
+      box-shadow: var(--shadow);
+      display: block;
+      width: 100%;
+    }
     .deal-card-title-btn {
       border: none;
       background: none;
       padding: 0;
       cursor: pointer;
       text-align: left;
+      width: 100%;
     }
     .deal-card-image-btn img {
       display: block;
       width: 100%;
-      height: 150px;
+      height: 120px;
       object-fit: contain;
-      background: #fafafa;
+      background: #fff;
     }
     .deal-card-body {
-      padding: 0.75rem 0.85rem 0.85rem;
+      padding: 0;
       display: flex;
       flex-direction: column;
-      gap: 0.45rem;
+      gap: 0.35rem;
       flex: 1;
     }
     .deal-card-title-btn {
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       font-weight: 700;
-      letter-spacing: 0.02em;
+      letter-spacing: 0.01em;
       color: var(--text);
-      line-height: 1.25;
-    }
-    .deal-card-description {
-      margin: 0;
-      font-size: 0.78rem;
-      color: var(--muted);
-      line-height: 1.35;
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+      line-height: 1.2;
     }
     .deal-card-footer {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 0.5rem;
-      margin-top: auto;
+      gap: 0.35rem;
+      margin-top: 0;
     }
     .deal-card-price {
-      font-size: 0.85rem;
-      font-weight: 600;
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--muted);
+      line-height: 1.2;
+      flex: 1;
+    }
+    .deal-card-description {
+      margin: 0;
+      font-size: 0.68rem;
+      color: var(--muted);
+      line-height: 1.35;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
     .deal-card-cart-btn {
-      width: 2rem;
-      height: 2rem;
+      width: 1.65rem;
+      height: 1.65rem;
       border: none;
-      border-radius: 999px;
-      background: var(--accent);
-      color: #fff;
+      border-radius: 0;
+      background: transparent;
+      color: var(--accent);
+      font-size: 1.15rem;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       flex-shrink: 0;
+      padding: 0;
     }
-    .deal-card-cart-btn:hover { filter: brightness(0.95); }
+    .deal-card-cart-btn:hover { color: var(--accent-hover); }
     .store-page-heading {
       font-size: 1.35rem;
       font-weight: 700;

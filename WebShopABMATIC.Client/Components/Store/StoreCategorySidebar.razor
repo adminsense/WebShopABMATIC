@@ -1,0 +1,135 @@
+@using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Application.Store
+@inject IStoreCatalogPort CatalogPort
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<nav class="store-sidebar-nav" aria-label="Product categories">
+    <ul class="store-nav-tree">
+        <li>
+            <a href="/" class="store-nav-link @(_selectedCategoryId is null ? "active" : "")">
+                All products
+            </a>
+        </li>
+        @if (_loading)
+        {
+            <li class="store-nav-muted">Loading…</li>
+        }
+        else if (_tree.Count == 0)
+        {
+            <li class="store-nav-muted">No categories available.</li>
+        }
+        else
+        {
+            @foreach (var node in _tree)
+            {
+                <li>
+                    <CategoryNode Node="node"
+                                  SelectedCategoryId="_selectedCategoryId"
+                                  ExpandedIds="_expandedIds"
+                                  OnToggle="ToggleExpand" />
+                </li>
+            }
+        }
+    </ul>
+</nav>
+
+@code {
+    private bool _loading = true;
+    private int? _selectedCategoryId;
+    private IReadOnlyList<StoreCategoryTreeNodeDto> _tree = [];
+    private readonly HashSet<int> _expandedIds = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        ReadCategoryFromUri();
+        Navigation.LocationChanged += OnLocationChanged;
+        await LoadTreeAsync();
+    }
+
+    protected override void OnParametersSet()
+    {
+        ReadCategoryFromUri();
+        EnsureExpandedPath();
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        ReadCategoryFromUri();
+        EnsureExpandedPath();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void ReadCategoryFromUri()
+    {
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        _selectedCategoryId = null;
+        if (Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query)
+            .TryGetValue("categoryId", out var value)
+            && int.TryParse(value.FirstOrDefault(), out var id))
+        {
+            _selectedCategoryId = id;
+        }
+    }
+
+    private async Task LoadTreeAsync()
+    {
+        _loading = true;
+        try
+        {
+            _tree = await CatalogPort.GetCategoryTreeAsync();
+            EnsureExpandedPath();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void EnsureExpandedPath()
+    {
+        if (_selectedCategoryId is not int selected)
+        {
+            return;
+        }
+
+        ExpandAncestors(_tree, selected, []);
+    }
+
+    private bool ExpandAncestors(
+        IReadOnlyList<StoreCategoryTreeNodeDto> nodes,
+        int targetId,
+        List<int> path)
+    {
+        foreach (var node in nodes)
+        {
+            var nextPath = new List<int>(path) { node.Id };
+            if (node.Id == targetId)
+            {
+                foreach (var id in path)
+                {
+                    _expandedIds.Add(id);
+                }
+
+                return true;
+            }
+
+            if (ExpandAncestors(node.Children, targetId, nextPath))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void ToggleExpand(int id)
+    {
+        if (!_expandedIds.Add(id))
+        {
+            _expandedIds.Remove(id);
+        }
+    }
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
+}
