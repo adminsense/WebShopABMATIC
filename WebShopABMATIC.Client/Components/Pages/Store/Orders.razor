@@ -64,7 +64,6 @@
             _orders = await CheckoutPort.GetCustomerOrdersAsync(new StoreUserLookup
             {
                 Email = auth.User.Identity?.Name,
-                IdentityUserId = auth.User.FindFirstValue(ClaimTypes.NameIdentifier),
                 CustomerId = int.TryParse(auth.User.FindFirstValue(LegacyAuthClaims.CustomerId), out var cid) ? cid : null
             });
         }

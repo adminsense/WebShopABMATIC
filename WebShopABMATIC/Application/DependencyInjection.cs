@@ -31,15 +31,12 @@ public static class DependencyInjection
         services.AddScoped<IStockLocationAdminPort, StockLocationAdminUseCase>();
         services.AddScoped<IPaymentMethodAdminPort, PaymentMethodAdminUseCase>();
         services.AddScoped<IStaffUserAdminPort, StaffUserAdminUseCase>();
-        services.AddScoped<ISystemUserAdminPort, SystemUserAdminUseCase>();
-        services.AddScoped<IApplicationUserAccountAdminPort, ApplicationUserAccountAdminUseCase>();
         services.AddScoped<IUserGroupAdminPort, UserGroupAdminUseCase>();
         services.AddScoped<IVatTypeAdminPort, VatTypeAdminUseCase>();
         services.AddScoped<IStockOverviewPort, StockOverviewUseCase>();
         services.AddScoped<IStockMovementAdminPort, StockMovementAdminUseCase>();
         services.AddScoped<IStockAdjustmentPort, StockAdjustmentUseCase>();
         services.AddScoped<IStockTransferPort, StockTransferUseCase>();
-        services.AddScoped<IAuditLogAdminPort, AuditLogAdminUseCase>();
 
         services.AddScoped<ICheckoutPort, CheckoutUseCase>();
         services.AddScoped<ICustomerRegistrationPort, CustomerRegistrationUseCase>();

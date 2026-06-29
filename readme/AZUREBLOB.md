@@ -184,7 +184,7 @@ BlobReferenceResolver
 
 ### IIS / local run
 
-- `Web/web.config` → `.\bin\Debug\net8.0\WebShopABMATIC.Web.dll`
+- `web.config` → `.\bin\Debug\net10.0\WebShopABMATIC.dll`
 - Port **5090** (`launchSettings.json`)
 - After code changes: rebuild; do not commit DLLs from `Web/` root (see `.gitignore`)
 
