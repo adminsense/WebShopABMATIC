@@ -1,10 +1,10 @@
-# 📊 Demo data summary — seeds + admin screens
+# 📊 Demo data summary — Azure + admin screens
 
-![Status](https://img.shields.io/badge/Status-Live%20on%20Azure%20SQL-28a745?style=flat-square) ![Script](https://img.shields.io/badge/Script-seeds.sql-0d47a1?style=flat-square) ![Tables](https://img.shields.io/badge/Seeded%20tables-40%2B-512BD4?style=flat-square) ![Database](https://img.shields.io/badge/Database-abmatic__test-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white)
+![Status](https://img.shields.io/badge/Status-Live%20on%20Azure%20SQL-28a745?style=flat-square) ![Tables](https://img.shields.io/badge/Demo%20tables-40%2B-512BD4?style=flat-square) ![Database](https://img.shields.io/badge/Database-abmatic__test-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white)
 
-> **Purpose:** Single merged view — every demo table, **live row count** on the Azure SQL server `abmatic.database.windows.net`, related admin/store screen, and seed status.  
-> **Refresh data:** `sqlcmd … -i Sql\seeds.sql` · **Schema:** `Sql\apply-pending-schema.sql`  
-> **Detail:** [SUNDAY.md](./SUNDAY.md) · [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) · [Sql/README.md](../Sql/README.md)
+> **Purpose:** Demo tables on `abmatic.database.windows.net` / `abmatic_test`, related admin screens, and approximate row counts.  
+> **Schema:** `dotnet ef database update` on `WebShopABMATICDbContext`  
+> **Detail:** [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md)
 
 ---
 
@@ -13,10 +13,8 @@
 | Item | Value |
 |------|--------|
 | **Target database** | `abmatic_test` on Azure SQL `abmatic.database.windows.net` |
-| **Seed script** | [`Sql/seeds.sql`](../Sql/seeds.sql) — idempotent INSERTs |
-| **Login** | `StaffUsers` + `Customers` in `seeds.sql` (legacy) |
+| **Login** | `StaffUsers` + `Klanten.Klant` on `abmatic_test` |
 | **Schemas with data** | `Crm`, `Customers`, `Accounting`, `Projects`, `Products`, `Files`, `Settings`, `Emails` |
-| **Auth** | Legacy `StaffUsers` + `Klanten.Klant` webshop columns — see `seeds.sql` |
 | **Admin coverage** | Orders, stock, CRM, catalog extras, accounting demo, email queue |
 
 ### 📈 Key metrics (live counts)
@@ -30,7 +28,7 @@
 | ⚠️ **Low-stock product rows** | 5 | `/admin` dashboard · `/admin/product-stock` | ✅ |
 | 💰 **Revenue YTD (accepted)** | ~29 384 | `/admin` dashboard | ✅ |
 
-### ✅ Seed coverage quality
+### ✅ Demo coverage quality
 
 | Aspect | Status | Details |
 |--------|--------|---------|
@@ -40,12 +38,11 @@
 | **Sales & payments** | ✅ Complete | Orders, lines, advance payments (Mollie mock) |
 | **Stock & PO demo** | 🟢 Seeded | Locations, movements, open PO + partial GRN row |
 | **Email queue** | 🔷 Demo only | Queued rows ✅ — SMTP worker = **prod** |
-| **Login (legacy)** | ✅ In SQL | `StaffUsers` + `Klanten.Klant` (`LoginWebshop` / `PasswordWebshop`) |
-| **Audit / in-app alerts** | ⬜ Retired | `NullAuditService` / `NullLowStockAlertService` — no `dbo` tables |
+| **Login** | ✅ In SQL | `StaffUsers` + `LoginWebshop` / `PasswordWebshop` on `Klanten.Klant` |
 
 ### 📋 Categories summary
 
-| Category | Tables | Rows (approx.) | Admin screens | Seed |
+| Category | Tables | Rows (approx.) | Admin screens | Demo |
 |----------|--------|----------------|---------------|------|
 | 🏷️ **Lookups** | 9 | 12 | VAT, delivery types, payment methods, … | ✅ |
 | ⚙️ **Settings** | 4 | 8 | User groups, staff users, base company | ✅ |
@@ -58,9 +55,9 @@
 
 ---
 
-## 1. Master table — schema, rows, screen, seed
+## 1. Master table — schema, rows, screen
 
-| Area | Table (schema) | Rows | Screen / usage | Seed | Notes |
+| Area | Table (schema) | Rows | Screen / usage | Demo | Notes |
 |------|------------------|-----:|----------------|------|-------|
 | **Lookups** | `Crm.Country` | 1 | Lookups / forms | ✅ | Belgium |
 | | `Crm.City` | 1 | Lookups / forms | ✅ | Brussels |
@@ -75,7 +72,7 @@
 | **Settings** | `Settings.UserGroups` | 3 | `/admin/user-groups` | ✅ | Sales, Warehouse, Installation |
 | | `Settings.BaseCompany` | 1 | Accounting / company | ✅ | Demo BV |
 | | `Settings.BaseCompanyVatNumber` | 1 | Accounting | ✅ | Linked to company |
-| | `Settings.StaffUsers` | 3 | `/admin/staff-users` + **admin login** | ✅ | `Login` / `Password` (legacy plaintext) |
+| | `Settings.StaffUsers` | 3 | `/admin/staff-users` + **admin login** | ✅ | `Login` / `Password` (plaintext) |
 | **Accounting** | `Accounting.DocumentTypes` | 2 | Spec only | ✅ | Invoice + credit note |
 | | `Accounting.AccountingDocuments` | 1 | Spec only (no admin list) | ✅ | Paid invoice → order `2026009` |
 | **CRM** | `Crm.Manufacturer` | 1 | `/admin/manufacturers` | ✅ | Demo Manufacturer |
@@ -123,20 +120,15 @@
 
 ---
 
-## 3. Login (legacy — in `seeds.sql`)
+## 3. Login (demo accounts on `abmatic_test`)
 
-| Portal | Login | Password (demo seed) | Table / columns |
-|--------|-------|----------------------|-----------------|
-| Admin | `admin@webshop.com` | `demo` | `Settings.StaffUsers` (`Login`, `Password`) |
+| Portal | Login | Password (demo) | Table / columns |
+|--------|-------|-----------------|-----------------|
+| Admin | `admin@webshop.com` | `demo` | `Settings.StaffUsers` |
 | Admin | `manager@webshop.com` | `demo` | `Settings.StaffUsers` |
 | Store | `customer@webshop.com` | `demo` | `Klanten.Klant` (`LoginWebshop`, `PasswordWebshop`) |
 
-On **Azure `abmatic_test` with real ERP data**, use credentials from those tables in SSMS — not `AspNetUsers`.
-
-```text
-dotnet ef database update --context WebShopABMATICDbContext ...
-sqlcmd -S abmatic.database.windows.net -d abmatic_test -U <user> -P <password> -i Sql\seeds.sql
-```
+On **Azure with production ERP data**, use credentials from those tables in SSMS.
 
 ---
 
@@ -152,15 +144,13 @@ sqlcmd -S abmatic.database.windows.net -d abmatic_test -U <user> -P <password> -
 
 ---
 
-## 5. Commands
+## 5. Schema update (EF only)
 
 ```powershell
 dotnet ef database update `
   --project WebShopABMATIC\Persistence\WebShopABMATIC.Data.Persistence.csproj `
   --startup-project WebShopABMATIC\WebShopABMATIC.csproj `
   --context WebShopABMATICDbContext
-
-sqlcmd -S abmatic.database.windows.net -d abmatic_test -U <user> -P <password> -i Sql\seeds.sql
 ```
 
 ---

@@ -142,13 +142,13 @@ The application uses the **139 legacy business tables** on `abmatic_test`. Engli
 
 **Migration:** `20260606141224_OrderAdvancePaymentMollieColumns`.
 
-### Webshop auth (legacy columns on `Klanten.Klant`)
+### Webshop auth (`Klanten.Klant`)
 
 | Dutch column | C# property | Purpose |
 |--------------|-------------|---------|
 | `LoginWebshop` | `WebshopLogin` | Store customer login |
 | `PasswordWebshop` | `WebshopPasswordHash` | Password hash |
-| `SaltWebshop` | `WebshopPasswordSalt` | Salt for legacy verifier |
+| `SaltWebshop` | `WebshopPasswordSalt` | Password salt |
 
 Staff admin login: **`Instellingen.User`** (`Settings.StaffUsers`) — `Login` + `Password`.
 
@@ -461,7 +461,7 @@ Staff bit flags (`Admin`, `Bestellingen`, `Productie`, …) map to cookie **role
 WebShopABMATIC/              ← repo root
   Domain/                  # pure domain entities (hexagonal core)
   Application/             # use cases, DTOs, inbound/outbound ports
-  Infrastructure/          # EF repositories, legacy auth, media, Mollie
+  Infrastructure/          # EF repositories, auth, media, Mollie
   WebShopABMATIC.Client/   # Blazor Server UI (admin + store)
   Model/
     WebShopABMATIC.Data.csproj
@@ -485,9 +485,9 @@ WebShopABMATIC/              ← repo root
 
 | Step | Action | Command / artifact |
 |------|--------|------------------|
-| 1 | Azure legacy database | `abmatic_test` on `abmatic.database.windows.net` |
+| 1 | Azure database | `abmatic_test` on `abmatic.database.windows.net` |
 | 2 | Apply EF migrations | `dotnet ef database update` on `WebShopABMATICDbContext` |
-| 3 | Demo data (optional) | `Sql/seeds.sql` |
+| 3 | Demo data | Maintained on `abmatic_test` (Azure) — see [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) |
 | 4 | Column mapping | `WebShopABMATICModelBuilder` → Dutch physical names |
 
 

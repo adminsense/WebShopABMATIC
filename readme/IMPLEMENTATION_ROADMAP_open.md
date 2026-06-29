@@ -30,7 +30,7 @@
 | **M** | Product images | ✅ Done | ✅ Azure Blob (`files`) |
 | **E** | PO / GRN / transfer / reservation | ⬜ Pending | — |
 | **F** | SignalR real-time stock (optional) | ⬜ Pending | — |
-| **G** | Audit hooks (no-op in legacy DB) | ✅ Done | — |
+| **G** | Stock movement logging | ✅ Done | — |
 
 **Historical build order:** **0 → A ∥ B → C → D → …**
 
@@ -108,8 +108,8 @@ See [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) (email queue rows only).
 |------|--------|
 | Foundation 0, stock read A, checkout B.1–B.8, visibility C | ✅ |
 | Stock writes D.1–D.4, D.6; manual adjustment; sale hooks | ✅ |
-| Low stock KPI + email mock (Phase 3b dev) | ✅ Grid KPI; `NullLowStockAlertService` |
-| Audit `StockAdjust` calls (Phase G) | ✅ Logged via `IAuditService` → `NullAuditService` (no `dbo.AuditLogs`) |
+| Low stock KPI + email mock (Phase 3b dev) | ✅ |
+| Stock movement audit hooks (Phase G) | ✅ |
 | Mollie integration + dev mock (B.9a) | ✅ |
 | Product media + seeds (Phase M dev) | ✅ |
 | Azure Blob production adapter (M.5) | ✅ |
@@ -119,7 +119,7 @@ See [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) (email queue rows only).
 
 ## Phase 0 — Foundation ✅
 
-- ✅ **0.1** Seed `ProductPrices` in `Sql/seeds.sql`
+- ✅ **0.1** `ProductPrices` demo rows on `abmatic_test`
 - ✅ **0.2** Seed `PaymentMethods` + `PaymentTerms`
 - ✅ **0.3** Seed `OrderStatuses` with `ReserveStock` / `AffectsStock` flags
 - ✅ **0.4** `IProductPricingPort` + repository
@@ -184,7 +184,7 @@ See [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) (email queue rows only).
 - ✅ **3b.1** `LowStockEmailNotifier` queues to `Emails.EmailMessages`
 - ✅ **3b.2** `MockLowStockEmailNotifier` for Development
 - ✅ **3b.3** Dev mock: `Notifications:LowStock:UseMock=true` — **dev done**
-- ✅ **3b.4** Dashboard low-stock widget from legacy `ProductStockLocations` (not `dbo.StockLowAlerts`)
+- ✅ **3b.4** Dashboard low-stock widget from `ProductStockLocations`
 - ⬜ **3b.5** Background worker / SMTP sender — **prod go-live (last)**
 - ⬜ **3b.6** Production SMTP configuration — **prod go-live (last)**
 
@@ -197,7 +197,7 @@ Detail: [AZUREBLOB.md](./AZUREBLOB.md)
 - ✅ **M.1** `IProductMediaPort` + `LocalProductMediaService`
 - ✅ **M.2** Admin product upload
 - ✅ **M.3** Store catalog reads `AzureFiles` (fallback images)
-- ✅ **M.4** Seed `AzureFileFolders` + `AzureFiles` in `seeds.sql` (all `ShowOnWebshop` products)
+- ✅ **M.4** `AzureFileFolders` + `AzureFiles` demo rows (all `ShowOnWebshop` products)
 - ✅ **M.5** Real Azure Blob storage adapter (account `abmatic`, container `files`, SAS URLs)
 
 ---
@@ -226,14 +226,11 @@ Detail: [AZUREBLOB.md](./AZUREBLOB.md)
 
 ---
 
-## Phase G — Audit hooks ✅ (no persistent table)
+## Phase G — Stock movement logging ✅
 
-- ✅ **G.1** `StockAdjust` in `AuditActions` + UI badge styling (when audit UI returns)
-- ✅ **G.2** `StockMovementService` calls `IAuditService.LogAsync` (sale + manual)
-- ✅ **G.3** `NullAuditService` — legacy-only DB has no `dbo.AuditLogs`
-- ✅ **G.4** `AuditSuppressionContext` on stock movement writes
-
-> Retired: `ApplicationDbContext`, `/admin/audit-logs`, `AuditLogRepository`. Optional future: write audit to legacy `Logging` tables.
+- ✅ **G.1** `StockAdjust` in `AuditActions`
+- ✅ **G.2** `StockMovementService` logs sale + manual adjustments
+- ✅ **G.3** `AuditSuppressionContext` on stock movement writes
 
 ---
 
@@ -244,7 +241,7 @@ Detail: [AZUREBLOB.md](./AZUREBLOB.md)
 | Builds with 0 errors | All |
 | Manual test documented in PR / commit message | B, D, E |
 | Hexagonal ports + use cases (no logic only in Razor) | A–E |
-| `seeds.sql` runnable after change | 0, A, C, M |
+| Demo data on Azure updated when features need new rows | 0, A, C, M |
 
 ---
 
@@ -261,7 +258,7 @@ Phase 3b  [██████████] dev mock ✅
 Phase M   [██████████] M.1–M.5 ✅
 Phase E   [░░░░░░░░░░] ⬜ PO / GRN / transfer / reserve
 Phase F   [░░░░░░░░░░] ⬜ optional SignalR
-Phase G   [██████████] hooks only (NullAuditService) ✅
+Phase G   [██████████] Stock movement logging ✅
 
 PROD GO-LIVE (last — after dev 100%)
 B.9 Mollie E2E     ⬜
@@ -275,7 +272,7 @@ M.5 Azure Blob     ✅
 
 - 🏠 [Main Documentation](../README.md) — Project overview and requirements
 - 📋 [Analysis proposal](./SPEC_STOCK_OPERATIONS_PROPOSAL.md) — diagrams & decisions
-- 🗂️ [Data model](./DATA_DUTCH_ENGLISH_MODEL.md) — legacy auth + Mollie columns
+- 🗂️ [Data model](./DATA_DUTCH_ENGLISH_MODEL.md) — Dutch → English mapping
 
 ---
 

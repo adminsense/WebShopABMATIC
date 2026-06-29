@@ -24,7 +24,7 @@ Legacy aliases (ignore for validation):
 | `readme/docs/mock-loja.html` | Old storefront mock — **out of scope** for this guide |
 | `readme/docs/mock-shopcart.html` | Redirect → `mock-loja.html` |
 
-**Blazor admin entry (real app):** `/admin/login` — legacy staff login (`Instellingen.User` / `Settings.StaffUsers`). Demo after seed: `admin@webshop.com` / `demo`.
+**Blazor admin entry:** `/admin/login` — staff login on `Settings.StaffUsers`. Demo after seed: `admin@webshop.com` / `demo`.
 
 ---
 
@@ -126,7 +126,7 @@ flowchart TD
 
 Logged-in user in the mock: **Anna Rodriguez** (`StaffUser`, `Admin = true`, `ProductBeheer = true`).
 
-**Blazor:** `AdminSidebar.razor` — same menu structure; auth via legacy cookie + `LegacyAuthenticationStateProvider`.
+**Blazor:** `AdminSidebar.razor` — same menu structure; cookie auth via `LegacyAuthenticationStateProvider`.
 
 ---
 
@@ -341,7 +341,7 @@ Open `readme/docs/mock-admin.html` directly (no storefront step):
 Optional Blazor cross-check (profile **WebShopABMATIC**, HTTPS **44357**):
 
 1. `/admin/login` → `admin@webshop.com` / `demo`
-2. `/admin` KPIs align with [DATA_SUMMARY.md](./DATA_SUMMARY.md) after `Sql/seeds.sql`
+2. `/admin` KPIs align with [DATA_SUMMARY.md](./DATA_SUMMARY.md) on `abmatic_test`
 
 ---
 
@@ -349,7 +349,7 @@ Optional Blazor cross-check (profile **WebShopABMATIC**, HTTPS **44357**):
 
 - 🏠 [Main Documentation](../README.md) — Project overview and requirements
 - 📊 [Demo data](./DATA_SUMMARY.md) — seeded tables and row counts
-- 🗂️ [Data model](./DATA_DUTCH_ENGLISH_MODEL.md) — Dutch → English mapping + legacy auth
+- 🗂️ [Data model](./DATA_DUTCH_ENGLISH_MODEL.md) — Dutch → English mapping
 
 ---
 
