@@ -1,11 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>WebShopABMATIC</RootNamespace>
     <AssemblyName>WebShopABMATIC</AssemblyName>
+    <RequiresAspNetWebAssets>true</RequiresAspNetWebAssets>
     <UserSecretsId>aspnet-WebShopABMATIC.Web-70a1a0ec-a529-4dd7-b516-e70c94617bde</UserSecretsId>
     <RunWithBrowserLink>false</RunWithBrowserLink>
     <LaunchProfileName>WebShopABMATIC</LaunchProfileName>
@@ -30,16 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Remove="wwwroot\**\*" />
-    <Content Include="..\WebShopABMATIC.Client\wwwroot\**\*"
-             Link="wwwroot\%(RecursiveDir)%(Filename)%(Extension)"
-             CopyToOutputDirectory="PreserveNewest"
-             CopyToPublishDirectory="PreserveNewest" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.27" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.27">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
