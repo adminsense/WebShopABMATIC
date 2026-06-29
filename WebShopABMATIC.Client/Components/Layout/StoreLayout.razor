@@ -3,7 +3,14 @@
 <div class="store-shell">
     <StoreStaffRedirect />
     <StoreHeader />
-    @Body
+    <div class="store-page">
+        <aside class="store-sidebar" aria-label="Categories">
+            <StoreCategorySidebar />
+        </aside>
+        <main class="store-main">
+            @Body
+        </main>
+    </div>
 </div>
 
 @implements IDisposable
