@@ -5,7 +5,7 @@
 > **Purpose:** Single delivery tracker for WebShopABMATIC — phased checkboxes, open backlog, and **dev-first** priority.  
 > **Mark ✅ when done · ⬜ when pending · 🔶 partial.**  
 > **Analysis:** [SPEC_STOCK_OPERATIONS_PROPOSAL.md](./SPEC_STOCK_OPERATIONS_PROPOSAL.md)  
-> **Related:** [PAYMENTS_open.md](./PAYMENTS_open.md) · [AUDITS_open.md](./AUDITS_open.md) · [AZUREBLOB.md](./AZUREBLOB.md) · [AUTH_IDENTITY_ROADMAP_open.md](./AUTH_IDENTITY_ROADMAP_open.md)
+> **Related:** [PAYMENTS_open.md](./PAYMENTS_open.md) · [AZUREBLOB.md](./AZUREBLOB.md)
 
 ### Delivery model (owner rule)
 
@@ -20,16 +20,17 @@
 
 | Phase | Focus | Dev status | Prod go-live |
 |-------|--------|------------|--------------|
+| **Auth** | Legacy cookie (`StaffUsers` + `Klanten.Klant`) | ✅ Done | — |
 | **0** | Seeds + pricing foundation | ✅ Done | — |
 | **A** | Stock admin (read-only) | ✅ Done | — |
 | **B** | Checkout + Mollie | ✅ Done (mock) | ⬜ **B.9** real E2E — last |
 | **C** | Store & admin order visibility | ✅ Done | — |
 | **D** | Stock writes + low-stock in-app | ✅ Done | — |
-| **3b** | Low stock email | ✅ Done (mock + in-app) | ⬜ SMTP worker — last |
+| **3b** | Low stock email | ✅ Done (mock + in-app KPI from stock grid) | ⬜ SMTP worker — last |
 | **M** | Product images | ✅ Done | ✅ Azure Blob (`files`) |
 | **E** | PO / GRN / transfer / reservation | ⬜ Pending | — |
 | **F** | SignalR real-time stock (optional) | ⬜ Pending | — |
-| **G** | Audit `StockAdjust` badge | ✅ Done | — |
+| **G** | Audit hooks (no-op in legacy DB) | ✅ Done | — |
 
 **Historical build order:** **0 → A ∥ B → C → D → …**
 
@@ -86,7 +87,7 @@ Optional for minimal webshop; needed for ERP-style inbound stock.
 | **SMTP / background worker** | n/a | ⬜ |
 | Production SMTP settings | n/a | ⬜ |
 
-See [AUDITS_open.md](./AUDITS_open.md).
+See [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) (email queue rows only).
 
 ### B.9 — Mollie E2E
 
@@ -107,8 +108,8 @@ See [AUDITS_open.md](./AUDITS_open.md).
 |------|--------|
 | Foundation 0, stock read A, checkout B.1–B.8, visibility C | ✅ |
 | Stock writes D.1–D.4, D.6; manual adjustment; sale hooks | ✅ |
-| Low stock in-app + email mock (Phase 3b dev) | ✅ |
-| Audit `StockAdjust` (Phase G) | ✅ |
+| Low stock KPI + email mock (Phase 3b dev) | ✅ Grid KPI; `NullLowStockAlertService` |
+| Audit `StockAdjust` calls (Phase G) | ✅ Logged via `IAuditService` → `NullAuditService` (no `dbo.AuditLogs`) |
 | Mollie integration + dev mock (B.9a) | ✅ |
 | Product media + seeds (Phase M dev) | ✅ |
 | Azure Blob production adapter (M.5) | ✅ |
@@ -172,7 +173,7 @@ See [AUDITS_open.md](./AUDITS_open.md).
 - ✅ **D.2** PrePay paid + PostPay checkout → `ApplySaleFromOrderAsync`
 - ✅ **D.3** Movement journal: `OrderLineId` on sales
 - ✅ **D.4** Negative stock blocked
-- ✅ **D.5** Low stock in-app alerts + dashboard + storefront hints
+- ✅ **D.5** Low stock KPI on dashboard + product-stock grid (`ILowStockReadRepository`); storefront hints where implemented
 - ✅ **D.6** `ReservedQuantity` / available on product-stock grid + seeds
 - ⬜ **D.7** Reservation on checkout (`ReservedQuantity` increment) — see Phase E
 
@@ -183,8 +184,9 @@ See [AUDITS_open.md](./AUDITS_open.md).
 - ✅ **3b.1** `LowStockEmailNotifier` queues to `Emails.EmailMessages`
 - ✅ **3b.2** `MockLowStockEmailNotifier` for Development
 - ✅ **3b.3** Dev mock: `Notifications:LowStock:UseMock=true` — **dev done**
-- ⬜ **3b.4** Background worker / SMTP sender — **prod go-live (last)**
-- ⬜ **3b.5** Production SMTP configuration — **prod go-live (last)**
+- ✅ **3b.4** Dashboard low-stock widget from legacy `ProductStockLocations` (not `dbo.StockLowAlerts`)
+- ⬜ **3b.5** Background worker / SMTP sender — **prod go-live (last)**
+- ⬜ **3b.6** Production SMTP configuration — **prod go-live (last)**
 
 ---
 
@@ -224,13 +226,14 @@ Detail: [AZUREBLOB.md](./AZUREBLOB.md)
 
 ---
 
-## Phase G — Audit `StockAdjust` ✅
+## Phase G — Audit hooks ✅ (no persistent table)
 
-- ✅ **G.1** `StockAdjust` in `AuditActions` + orange badge
-- ✅ **G.2** Logging from `StockMovementService` (sale + manual)
-- ✅ **G.3** Interceptor suppressed on stock movement writes
+- ✅ **G.1** `StockAdjust` in `AuditActions` + UI badge styling (when audit UI returns)
+- ✅ **G.2** `StockMovementService` calls `IAuditService.LogAsync` (sale + manual)
+- ✅ **G.3** `NullAuditService` — legacy-only DB has no `dbo.AuditLogs`
+- ✅ **G.4** `AuditSuppressionContext` on stock movement writes
 
-Detail: [AUDITS_open.md](./AUDITS_open.md)
+> Retired: `ApplicationDbContext`, `/admin/audit-logs`, `AuditLogRepository`. Optional future: write audit to legacy `Logging` tables.
 
 ---
 
@@ -258,7 +261,7 @@ Phase 3b  [██████████] dev mock ✅
 Phase M   [██████████] M.1–M.5 ✅
 Phase E   [░░░░░░░░░░] ⬜ PO / GRN / transfer / reserve
 Phase F   [░░░░░░░░░░] ⬜ optional SignalR
-Phase G   [██████████] StockAdjust audit ✅
+Phase G   [██████████] hooks only (NullAuditService) ✅
 
 PROD GO-LIVE (last — after dev 100%)
 B.9 Mollie E2E     ⬜
@@ -272,7 +275,7 @@ M.5 Azure Blob     ✅
 
 - 🏠 [Main Documentation](../README.md) — Project overview and requirements
 - 📋 [Analysis proposal](./SPEC_STOCK_OPERATIONS_PROPOSAL.md) — diagrams & decisions
-- 🔐 [Auth & identity roadmap](./AUTH_IDENTITY_ROADMAP_open.md) — Identity ↔ domain integration
+- 🗂️ [Data model](./DATA_DUTCH_ENGLISH_MODEL.md) — legacy auth + Mollie columns
 
 ---
 

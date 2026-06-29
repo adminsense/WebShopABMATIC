@@ -1,8 +1,10 @@
-# WebShopABMATIC — Mock Prototype Guide
+# WebShopABMATIC — Admin mock prototype guide
 
-![Status](https://img.shields.io/badge/Status-Validation%20ready-28a745?style=flat-square) ![Layout](https://img.shields.io/badge/Layout-AB-MATIC%20style-512BD4?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Validation%20ready-28a745?style=flat-square) ![Layout](https://img.shields.io/badge/Layout-AB-MATIC%20style-512BD4?style=flat-square) ![Scope](https://img.shields.io/badge/Scope-Admin%20only-0d47a1?style=flat-square)
 
-This document explains the **HTML prototypes** in `docs/`, how they map to the **reference layout** (AB-MATIC admin shell), and what each **sidebar menu / entity / screen** will do in the real application.
+This document explains the **admin HTML prototype** in `readme/docs/`, how it maps to the **AB-MATIC reference layout**, and what each **sidebar menu / entity / screen** represents in the real Blazor admin app.
+
+> **Scope:** Admin panel only. The storefront (`/store`, cart, checkout) is implemented separately in Blazor — not covered by this mock walkthrough.
 
 Visual reference (AB-MATIC admin shell): [adminsenceweb.azurewebsites.net](https://adminsenceweb.azurewebsites.net/)
 
@@ -12,12 +14,17 @@ Visual reference (AB-MATIC admin shell): [adminsenceweb.azurewebsites.net](https
 
 | File | Role | Open from |
 |------|------|-----------|
-| [`docs/mock-loja.html`](docs/mock-loja.html) | Customer **storefront** (catalog, cart, checkout) — **entry point** | Browser direct |
-| [`docs/mock-payments.html`](docs/mock-payments.html) | **Mollie hosted checkout** (card / iDEAL) + **order confirmation** after pay | Browser direct |
-| [`docs/mock-admin.html`](docs/mock-admin.html) | Staff **admin panel** (AB-MATIC layout) | Store **Admin Panel** button or direct |
-| [`docs/mock-shopcart.html`](docs/mock-shopcart.html) | Redirect → `mock-loja.html` | Legacy alias |
+| [`readme/docs/mock-admin.html`](docs/mock-admin.html) | Staff **admin panel** (AB-MATIC layout) — **primary entry** | Browser direct |
+| [`readme/docs/mock-payments.html`](docs/mock-payments.html) | **Mollie hosted checkout** mock (reference for payment UX) | Browser direct |
 
-**Admin entry:** In the store, sign in with a **StaffUsers** account that has admin rights (demo: `admin@webshop.com` / `demo`). The **Admin Panel** button appears in the header.
+Legacy aliases (ignore for validation):
+
+| File | Note |
+|------|------|
+| `readme/docs/mock-loja.html` | Old storefront mock — **out of scope** for this guide |
+| `readme/docs/mock-shopcart.html` | Redirect → `mock-loja.html` |
+
+**Blazor admin entry (real app):** `/admin/login` — legacy staff login (`Instellingen.User` / `Settings.StaffUsers`). Demo after seed: `admin@webshop.com` / `demo`.
 
 ---
 
@@ -31,16 +38,18 @@ The admin mock follows the same three-level pattern as the AB-MATIC reference ap
 
 **What it shows (reference):** Dark sidebar, top bar with user greeting and red **Logout**, and a **2×2 grid of portfolio cards** with KPIs, progress bars, and status pills. Sidebar footer shows **date** and **version**.
 
-**WebShop mock equivalent:** `docs/mock-admin.html` → view `#view-dashboard` (sidebar item **Start**).
+**WebShop mock equivalent:** `readme/docs/mock-admin.html` → view `#view-dashboard` (sidebar item **Start**).
 
 | Reference element | Mock implementation |
 |-------------------|---------------------|
 | Sidebar + brand box | `.sidebar` + `.brand-box` (“WS WEBSHOP ABMATIC”) |
-| Top bar + Logout | `.top-bar` → “Hello, ANNA RODRIGUEZ” + link to store |
+| Top bar + Logout | `.top-bar` → “Hello, ANNA RODRIGUEZ” + logout link |
 | Portfolio cards | Four cards: Webshop catalog, Sales & orders, Stock operations, Financial YTD |
 | Sidebar footer | Current date + `v1.0 · WebShopABMATIC` |
 
-**Purpose:** Landing page for staff after login. Summarises webshop catalog health, order pipeline, stock alerts, and financial YTD — with shortcuts (e.g. **Manage** on Webshop catalog → **Webshop** hub).
+**Purpose:** Landing page for staff after login. Summarises catalog health, order pipeline, stock KPIs, and financial YTD — with shortcuts (e.g. **Manage** on Webshop catalog → **Webshop** hub).
+
+**Blazor equivalent:** `/admin` (`AdminDashboard`).
 
 ---
 
@@ -50,7 +59,7 @@ The admin mock follows the same three-level pattern as the AB-MATIC reference ap
 
 **What it shows (reference):** **Back to start**, page title + subtitle, and a **grid of entity cards**. Each card has a coloured icon, title, short description, and a full-width **“X form”** button.
 
-**WebShop mock equivalent:** `docs/mock-admin.html` → view `#view-hub` (sidebar items **Webshop**, **Catalog**, **Customers**, **Sales**, **Stock**, **Settings**, **My profile**).
+**WebShop mock equivalent:** `readme/docs/mock-admin.html` → view `#view-hub` (sidebar items **Webshop**, **Catalog**, **Customers**, **Sales**, **Stock**, **Settings**, **My profile**).
 
 | Reference element | Mock implementation |
 |-------------------|---------------------|
@@ -61,6 +70,8 @@ The admin mock follows the same three-level pattern as the AB-MATIC reference ap
 
 **Purpose:** Second navigation level. Each sidebar section groups related entities; staff pick which table to manage before opening the list or form.
 
+**Blazor equivalent:** `/admin/hub/webshop`, `/admin/hub/catalog`, etc.
+
 ---
 
 ### 3. Internal list & filters — `forms_screen.png`
@@ -69,7 +80,7 @@ The admin mock follows the same three-level pattern as the AB-MATIC reference ap
 
 **What it shows (reference):** Page title, green **Refresh**, **filter panel** (dropdowns + search + checkbox), **Apply Filters** (blue) / **Clear** (red), and a **dark-header striped table** with icon-only edit actions.
 
-**WebShop mock equivalent:** `docs/mock-admin.html` → views `#view-list` and `#view-form`.
+**WebShop mock equivalent:** `readme/docs/mock-admin.html` → views `#view-list` and `#view-form`.
 
 | Reference element | Mock implementation |
 |-------------------|---------------------|
@@ -81,13 +92,15 @@ The admin mock follows the same three-level pattern as the AB-MATIC reference ap
 
 **Purpose:** Standard CRUD list pattern for every entity. Filters narrow rows; edit opens the create/edit form. Full button and icon rules: [`PATTERNS_UI_QUICK_START.md`](PATTERNS_UI_QUICK_START.md).
 
+**Blazor equivalent:** e.g. `/admin/products`, `/admin/customers`, `/admin/orders`.
+
 ---
 
-## Navigation flow
+## Navigation flow (admin only)
 
 ```mermaid
 flowchart TD
-  Store[mock-loja.html] -->|StaffUser.Admin login| Admin[mock-admin.html]
+  Login["/admin/login (Blazor) or open mock-admin.html"] --> Admin[mock-admin.html]
   Admin --> Dash[Start dashboard]
   Dash --> HubView[Menu hub cards]
   HubView --> List[List + filters]
@@ -95,23 +108,8 @@ flowchart TD
   Form --> List
   List --> HubView
   HubView --> Dash
-  Admin -->|Logout| Store
+  Admin -->|Logout| Login
 ```
-
----
-
-## Storefront mock — `mock-loja.html`
-
-Customer-facing prototype (not AB-MATIC-styled; focused on domain entities).
-
-| Screen area | Entities used | Purpose |
-|-------------|---------------|---------|
-| Header | `Customer.WebshopLogin`, `StaffUser` | Sign in; **Admin Panel** visible only for staff admin |
-| Navigation | `WebshopStructure` | Category tree for catalog browsing |
-| Product grid | `Product`, `ProductPrice`, `ShowOnWebshop` | Products visible on the webshop |
-| Product detail | `ProductOption`, `ProductStockLocation` | Options and stock hint |
-| Cart / checkout | `Order`, `OrderLine`, `DeliveryType`, `PaymentMethod` | Place order flow |
-| My orders | `Order`, `OrderStatus` | Customer order history |
 
 ---
 
@@ -123,10 +121,12 @@ Customer-facing prototype (not AB-MATIC-styled; focused on domain entities).
 | **Start** | Dashboard portfolios |
 | **Webshop … Settings** | Hub pages with entity cards |
 | **My profile** | Staff profile shortcut |
-| **Top bar** | Logged-in staff name + **Logout** (returns to store mock) |
+| **Top bar** | Logged-in staff name + **Logout** |
 | **Footer** | Today’s date + version string |
 
 Logged-in user in the mock: **Anna Rodriguez** (`StaffUser`, `Admin = true`, `ProductBeheer = true`).
+
+**Blazor:** `AdminSidebar.razor` — same menu structure; auth via legacy cookie + `LegacyAuthenticationStateProvider`.
 
 ---
 
@@ -147,17 +147,16 @@ Logged-in user in the mock: **Anna Rodriguez** (`StaffUser`, `Admin = true`, `Pr
 
 ## Entity screens — menu, table, list, form
 
-Below: one section per entity exposed in the admin mock. **Table** = SQL/EF entity purpose (short). **List** = columns in the mock grid. **Form** = fields shown in the prototype (full forms will grow in Blazor).
+Below: one section per entity exposed in the admin mock. **Table** = SQL/EF entity purpose (short). **List** = columns in the mock grid. **Form** = fields shown in the prototype (full forms grow in Blazor).
 
 ---
 
 ### Start (dashboard)
 
-**Mock view:** `#view-dashboard` in `mock-admin.html`
+**Mock view:** `#view-dashboard` in `mock-admin.html`  
+**Blazor:** `/admin`
 
 **Purpose:** Read-only overview — no direct table editing. Cards link into hubs (e.g. Webshop **Manage**).
-
-**Widgets:**
 
 | Card | Data source (conceptual) | Staff action |
 |------|--------------------------|--------------|
@@ -172,23 +171,25 @@ Below: one section per entity exposed in the admin mock. **Table** = SQL/EF enti
 
 #### WebshopStructure
 
-**Table:** `[Products].[WebshopStructures]` — hierarchical **store navigation tree** (menu nodes shown on the public site). Columns: `Id`, `NameNl`, `ParentTaskId`, `SortOrder`.
+**Table:** `[Products].[WebshopStructures]` — hierarchical **store navigation tree** (menu nodes). Columns: `Id`, `NameNl`, `ParentTaskId`, `SortOrder`.
 
 **List screen:** Id, NameNl, ParentTaskId, SortOrder, Actions.
 
-**Form screen:** (generic in mock) NameNl, parent, sort order — defines left/top catalog menu on the storefront.
+**Form screen:** NameNl, parent, sort order — defines catalog menu structure used by the storefront when enabled.
 
-**Store link:** Drives category chips in `mock-loja.html` (“WebshopStructure navigation”).
+**Blazor:** `/admin/webshop-structures`
 
 ---
 
 #### WebshopProductStructure
 
-**Table:** `[Products].[WebshopProductStructures]` — **product category labels** for the webshop in NL/FR/EN. Columns: `Id`, `NameEn`, `NameFr`, `NameNl`, `ParentTaskId`.
+**Table:** `[Products].[WebshopProductStructures]` — **product category labels** for the webshop in NL/FR/EN.
 
 **List screen:** Id, NameEn, NameFr, NameNl, Actions.
 
-**Form screen:** Multilingual names + optional parent — groups products on the shop without changing ERP product structure.
+**Form screen:** Multilingual names + optional parent.
+
+**Blazor:** `/admin/webshop-product-structures`
 
 ---
 
@@ -196,83 +197,55 @@ Below: one section per entity exposed in the admin mock. **Table** = SQL/EF enti
 
 #### Product
 
-**Table:** `[Products].[Product]` — master **product** record: names/descriptions (NL/FR/EN), part numbers, supplier/manufacturer, webshop flags (`ShowOnWebshop`, `WebshopDescriptionNl`), EAN, pricing flags, document visibility, weight, etc.
+**Table:** `[Products].[Product]` — master **product** record: names/descriptions (NL/FR/EN), part numbers, supplier/manufacturer, webshop flags (`ShowOnWebshop`), EAN, pricing flags, etc.
 
 **List screen:** ProductId, NameEn, ShowOnWebshop, SupplierId, ManufacturerId, Actions.
 
-**Form screen (detailed in mock):** NameEn, OrderPartNumber, SupplierId, ManufacturerId, WebshopDescriptionNl, ShowOnWebshop, EanCode.
+**Form screen:** NameEn, OrderPartNumber, SupplierId, ManufacturerId, WebshopDescriptionNl, ShowOnWebshop, EanCode.
 
-**Store link:** Only products with `ShowOnWebshop = true` appear in `mock-loja.html`.
+**Blazor:** `/admin/products`
 
 ---
 
 #### ProductPrice
 
-**Table:** `[Products].[ProductPrices]` — **price rows** per product with validity dates, gross/net purchase and sales prices, assembly/installation prices, discount formulas.
+**Table:** `[Products].[ProductPrices]` — **price rows** per product with validity dates and sales/purchase amounts.
 
-**List screen:** Id, ProductId, GrossSalesPrice, NetPurchasePrice, Actions.
+**List / form:** Product picker, gross/net prices, valid-from / valid-to.
 
-**Form screen:** Product picker, price amounts, valid-from / valid-to (planned).
-
-**Purpose:** Maintain list and webshop prices; storefront reads current valid row via `ProductPrice`.
+**Blazor:** `/admin/product-prices`
 
 ---
 
 #### ProductQuantityTier
 
-**Table:** `[Products].[ProductQuantityTiers]` — **volume discounts**: `MinimumQuantity`, `Discount` per `ProductId`.
+**Table:** `[Products].[ProductQuantityTiers]` — **volume discounts** per `ProductId`.
 
-**List screen:** Id, ProductId, MinimumQuantity, Discount, Actions.
-
-**Form screen:** Product, minimum qty, discount %.
-
-**Purpose:** Tier pricing on quotes, orders, and optionally webshop quantity breaks.
+**Blazor:** `/admin/product-tiers`
 
 ---
 
 #### ProductOption
 
-**Table:** `[Products].[ProductOptions]` — **configurable options** on a product (name, value type, required flag, sort order, price formulas).
+**Table:** `[Products].[ProductOptions]` — **configurable options** on a product.
 
-**List screen:** Id, ProductId, NameEn, IsRequired, Actions.
-
-**Form screen:** Name, value type, required, sort order.
-
-**Store link:** Options block on product detail in `mock-loja.html`.
+**Blazor:** `/admin/product-options`
 
 ---
 
 #### PriceListCategory
 
-**Table:** `[Products].[PriceListCategories]` — **price list sections** (name, sort order, `HasOptions`, colour) for PDF/Excel price lists.
+**Table:** `[Products].[PriceListCategories]` — **price list sections** for PDF/Excel exports.
 
-**List screen:** Id, Name, SortOrder, HasOptions, Actions.
-
-**Form screen:** Name, sort order, has-options flag.
+**Blazor:** `/admin/price-list-categories`
 
 ---
 
-#### Manufacturer
+#### Manufacturer / Supplier
 
-**Table:** `[Crm].[Manufacturer]` — **manufacturer** master: name, contact, address, VAT number.
+**Tables:** `[Crm].[Manufacturer]`, `[Crm].[Supplier]` — master data linked from `Product`.
 
-**List screen:** ManufacturerId, Name, Email, VatNumber, Actions.
-
-**Form screen:** Name, contact fields, VAT.
-
-**Purpose:** Linked from `Product.ManufacturerId`; shown as brand on catalog cards.
-
----
-
-#### Supplier
-
-**Table:** `[Crm].[Supplier]` — **supplier** master: name, contacts, price list name, inactive flag.
-
-**List screen:** SupplierId, Name, IsInactive, PriceListName, Actions.
-
-**Form screen:** Name, price list, active flag.
-
-**Purpose:** Linked from `Product.SupplierId`; used in purchasing and price imports.
+**Blazor:** `/admin/manufacturers`, `/admin/suppliers`
 
 ---
 
@@ -280,49 +253,19 @@ Below: one section per entity exposed in the admin mock. **Table** = SQL/EF enti
 
 #### Customer
 
-**Table:** `[Customers].[Customers]` — **B2B customer** account: name, address, VAT, type, delivery type, contacts, and **webshop credentials** (`WebshopLogin`, password hash/salt).
+**Table:** `[Klanten].[Klant]` / `[Customers].[Customers]` — B2B account + **webshop credentials** (`LoginWebshop`, `PasswordWebshop`, `SaltWebshop`).
 
 **List screen:** CustomerId, CustomerName, WebshopLogin, CustomerTypeId, Actions.
 
-**Form screen (detailed in mock):** CustomerName, CustomerEmail, WebshopLogin, CustomerTypeId, DeliveryTypeId, CustomerStreet.
+**Form screen:** CustomerName, CustomerEmail, WebshopLogin, CustomerTypeId, DeliveryTypeId, CustomerStreet.
 
-**Store link:** `WebshopLogin` used for customer sign-in on `mock-loja.html`.
-
----
-
-#### CustomerDeliveryAddress
-
-**Table:** `[Crm].[CustomerDeliveryAddresses]` — **shipping addresses** per customer: name, street, number, city, notes.
-
-**List screen:** Id, CustomerId, Name, Straat, CityId, Actions.
-
-**Form screen:** Customer, label, address lines, city.
-
-**Purpose:** Selected at checkout as `Order.LeveradresId` / delivery destination.
+**Blazor:** `/admin/customers` — store sign-in uses the same legacy columns via `/sign-in` (not part of this mock).
 
 ---
 
-#### CustomerProductDiscount
+#### CustomerDeliveryAddress / CustomerProductDiscount / CustomerType
 
-**Table:** `[Crm].[CustomerProductDiscounts]` — **customer-specific discount** on a product (percentage, validity, notes).
-
-**List screen:** Id, CustomerId, ProductId, DiscountPercentage, Actions.
-
-**Form screen:** Customer, product, discount %, valid dates.
-
-**Purpose:** Overrides list price for named customers on quotes and webshop (when implemented).
-
----
-
-#### CustomerType
-
-**Table:** `[Customers].[CustomerTypes]` — **customer segment** (dealer, contractor, consumer): base discount, default delivery type, VAT rules.
-
-**List screen:** KlantTypeId, CustomerTypeName, BaseDiscount, DeliveryTypeId, Actions.
-
-**Form screen:** Name, base discount, default delivery type.
-
-**Purpose:** Drives pricing tier and defaults on new `Customer` records.
+**Blazor:** `/admin/delivery-addresses`, `/admin/customer-discounts`, `/admin/customer-types`
 
 ---
 
@@ -330,37 +273,15 @@ Below: one section per entity exposed in the admin mock. **Table** = SQL/EF enti
 
 #### Order (+ OrderLine)
 
-**Table:** `[Projects].[Orders]` — **sales order** header: project link, acceptance flag, delivery type, discounts, VAT, dates, notes. Lines in `[Projects].[OrderLines]`: product, qty, unit price, assembly/installation, totals.
+**Table:** `[Projects].[Orders]` + `[Projects].[OrderLines]` — sales orders created from checkout or admin.
 
-**List screen:** Id, CreatedAt, ProjectId, DeliveryTypeId, IsAccepted, Actions.
-
-**Form screen:** (planned) Header fields + line grid for products/qty/prices.
-
-**Store link:** Created from checkout in `mock-loja.html`; staff accept and progress here.
+**Blazor:** `/admin/orders` — payment status + Mollie ids on advance payments.
 
 ---
 
-#### OrderStatus
+#### OrderStatus / DeliveryType
 
-**Table:** `[Projects].[OrderStatuses]` — **workflow status** names with stock behaviour (`ReserveStock`, `AffectsStock`), sort order, reporting flags.
-
-**List screen:** Id, Name, ReserveStock, AffectsStock, Actions.
-
-**Form screen:** Name, stock flags, sort order.
-
-**Purpose:** Defines order pipeline shown to customers and staff.
-
----
-
-#### DeliveryType
-
-**Table:** `[Projects].[DeliveryTypes]` — **fulfilment methods** (pickup, delivery, installation): names, default flag, installation cost inclusion.
-
-**List screen:** Id, Name, IncludeInstallationCost, IsDefault, Actions.
-
-**Form screen:** Name, flags.
-
-**Store link:** Checkout delivery selector in `mock-loja.html`; default on `CustomerType` / `Customer`.
+**Blazor:** `/admin/order-statuses`, `/admin/delivery-types`
 
 ---
 
@@ -368,100 +289,67 @@ Below: one section per entity exposed in the admin mock. **Table** = SQL/EF enti
 
 #### ProductStockLocation
 
-**Table:** `[Products].[ProductStockLocations]` — **stock level** of a product at a location: quantity, reserved, min/max, last count.
+**Table:** `[Products].[ProductStockLocations]` — quantity, reserved, min/max per location.
 
-**List screen:** Id, Product, StockLocationId, Quantity, MinQuantity, Actions. **Low stock filter:** `?lowStock=true` (implemented).
+**List screen:** Product, StockLocationId, Quantity, MinQuantity, Actions. **Low stock filter:** `?lowStock=true`.
 
-**Form screen:** Product, location, quantities, thresholds.
-
-**Purpose:** Low-stock alerts on dashboard; availability hint on storefront.
+**Blazor:** `/admin/product-stock` — dashboard low-stock KPI reads the same legacy rows.
 
 ---
 
 #### StockLocation
 
-**Table:** `[Products].[StockLocations]` — **warehouse or storage site** (`Name`, `IsWarehouse`).
-
-**List screen:** Id, Name, IsWarehouse, Actions.
-
-**Form screen:** Name, warehouse flag.
-
-**Purpose:** Master list for `ProductStockLocation.StockLocationId`.
+**Blazor:** `/admin/stock-locations`, `/admin/stock/overview`, `/admin/stock/movements`, `/admin/stock/adjustment`
 
 ---
 
 ### Settings menu
 
-#### PaymentMethod
+#### PaymentMethod / StaffUser / UserGroup / VatType
 
-**Table:** `[Settings].[PaymentMethods]` — **payment options** (NL/FR/EN names, pre-pay vs post-pay).
+**Blazor:** `/admin/payment-methods`, `/admin/staff-users`, `/admin/user-groups`, `/admin/vat-types`
 
-**List screen:** Id, NameEn, IsPrePay, IsPostPay, Actions.
-
-**Form screen:** Names, pre/post pay flags.
-
-**Store link:** Checkout payment choice in `mock-loja.html`.
-
----
-
-#### StaffUser
-
-**Table:** `[Settings].[StaffUsers]` — **internal user** with module flags (`Admin`, `ProductBeheer`, `Bestellingen`, …), login, name, group.
-
-**List screen:** Id, Login, FirstName, Admin, ProductBeheer, Actions.
-
-**Form screen:** Login, name, permission checkboxes.
-
-**Purpose:** Admin access control; mock user Anna Rodriguez opens admin from the store.
-
----
-
-#### UserGroup
-
-**Table:** `[Settings].[UserGroups]` — **staff teams** (installation, service, transport) linked to planning and order status groups.
-
-**List screen:** Id, Name, IsInstallationTeam, Actions.
-
-**Form screen:** Name, team type flags.
-
----
-
-#### VatType
-
-**Table:** `[Accounting].[VatTypes]` — **VAT rates** and invoice text (NL/FR/EN), default flag, Peppol codes.
-
-**List screen:** Id, Name, Percentage, IsDefault, Actions.
-
-**Form screen:** Name, percentage, default, invoice text.
-
-**Purpose:** Applied on `Order` / `OrderLine` and checkout totals.
+**Staff login:** `Settings.StaffUsers` — plaintext `Password` in legacy DB; Blazor form at `/admin/login` posts to `/account/admin-login`.
 
 ---
 
 ### My profile menu
 
-#### StaffUser (profile)
+Same `StaffUser` table — **form only** (`formOnly: true` in mock) for the logged-in user.
 
-Same table as **Settings → StaffUser**, opened **directly in form view** (`formOnly: true` in mock) so the logged-in user can edit their own profile without passing through the full staff list.
+**Blazor:** `/admin/profile`
 
 ---
 
-## Validation checklist
+## Mollie payment mock (reference only)
 
-Open `docs/mock-loja.html` and walk through:
+[`readme/docs/mock-payments.html`](docs/mock-payments.html) illustrates the **hosted checkout** and **confirmation** screens. The real flow is implemented in Blazor (`CheckoutUseCase`, `ProcessMollieWebhookUseCase`) with `Mollie:UseMock=true` for local dev.
 
-1. **Store** → demo login `admin@webshop.com` / `demo` → **Admin Panel** visible.
-2. **Admin Start** — matches `main_screen.png` layout (sidebar, top bar, 4 cards, footer).
-3. **Catalog** hub — matches `menu_screen.png` (back link, cards, form buttons).
-4. **Product** → list — matches `forms_screen.png` (filters, Apply/Clear, dark table, edit icon).
-5. **Edit** → form with Save/Cancel per UI patterns.
-6. **Logout** → returns to store.
+---
+
+## Validation checklist (admin mock)
+
+Open `readme/docs/mock-admin.html` directly (no storefront step):
+
+1. **Start** — matches `main_screen.png` layout (sidebar, top bar, 4 cards, footer).
+2. **Catalog** hub — matches `menu_screen.png` (back link, cards, form buttons).
+3. **Product** → list — matches `forms_screen.png` (filters, Apply/Clear, dark table, edit icon).
+4. **Edit** → form with Save/Cancel per UI patterns.
+5. **Stock** hub → ProductStockLocation with low-stock narrative on dashboard card.
+6. **Logout** — returns to mock entry (Blazor: `/account/logout`).
+
+Optional Blazor cross-check (profile **WebShopABMATIC**, HTTPS **44357**):
+
+1. `/admin/login` → `admin@webshop.com` / `demo`
+2. `/admin` KPIs align with [DATA_SUMMARY.md](./DATA_SUMMARY.md) after `Sql/seeds.sql`
 
 ---
 
 ## Documentation
 
 - 🏠 [Main Documentation](../README.md) — Project overview and requirements
+- 📊 [Demo data](./DATA_SUMMARY.md) — seeded tables and row counts
+- 🗂️ [Data model](./DATA_DUTCH_ENGLISH_MODEL.md) — Dutch → English mapping + legacy auth
 
 ---
 

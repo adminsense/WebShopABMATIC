@@ -15,21 +15,19 @@
 | **Target database** | `abmatic_test` on Azure SQL `abmatic.database.windows.net` |
 | **Seed script** | [`Sql/seeds.sql`](../Sql/seeds.sql) — idempotent INSERTs |
 | **Login** | `StaffUsers` + `Customers` in `seeds.sql` (legacy) |
-| **Schemas with data** | `Crm`, `Customers`, `Accounting`, `Projects`, `Products`, `Files`, `Settings`, `Emails`, `dbo` (alerts + audit) |
-| **Storefront coverage** | 10 products, 10 images, 12 navigation nodes, 11 category labels |
+| **Schemas with data** | `Crm`, `Customers`, `Accounting`, `Projects`, `Products`, `Files`, `Settings`, `Emails` |
+| **Auth** | Legacy `StaffUsers` + `Klanten.Klant` webshop columns — see `seeds.sql` |
 | **Admin coverage** | Orders, stock, CRM, catalog extras, accounting demo, email queue |
 
 ### 📈 Key metrics (live counts)
 
 | KPI | Rows | Screen | Status |
 |-----|-----:|--------|--------|
-| 🛒 **Products on webshop** | 10 | `/store` catalog | ✅ |
 | 📦 **Admin products (all SKUs)** | 12 | `/admin/products` | ✅ |
 | 👥 **Customers** | 4 | `/admin/customers` | ✅ |
 | 🧾 **Orders** | 34 | `/admin/orders` | ✅ |
 | 📋 **Order lines** | 35 | `/admin/orders` | ✅ |
-| ⚠️ **Low-stock alerts (unread)** | 3 | `/admin` dashboard | ✅ |
-| 📜 **Audit log demo rows** | 12 | `/admin/audit-logs` | ✅ |
+| ⚠️ **Low-stock product rows** | 5 | `/admin` dashboard · `/admin/product-stock` | ✅ |
 | 💰 **Revenue YTD (accepted)** | ~29 384 | `/admin` dashboard | ✅ |
 
 ### ✅ Seed coverage quality
@@ -42,7 +40,8 @@
 | **Sales & payments** | ✅ Complete | Orders, lines, advance payments (Mollie mock) |
 | **Stock & PO demo** | 🟢 Seeded | Locations, movements, open PO + partial GRN row |
 | **Email queue** | 🔷 Demo only | Queued rows ✅ — SMTP worker = **prod** |
-| **Login (legacy)** | ✅ In SQL | `StaffUsers` + `Customers.PasswordWebshop` in `seeds.sql` |
+| **Login (legacy)** | ✅ In SQL | `StaffUsers` + `Klanten.Klant` (`LoginWebshop` / `PasswordWebshop`) |
+| **Audit / in-app alerts** | ⬜ Retired | `NullAuditService` / `NullLowStockAlertService` — no `dbo` tables |
 
 ### 📋 Categories summary
 
@@ -55,7 +54,6 @@
 | 🖼️ **Media** | 2 | 11 | Product images (Azure Blob `files` or local fallback) | ✅ |
 | 📊 **Stock** | 6 | 27 | Locations, movements, PO, GRN demo | ✅ |
 | 🛍️ **Sales** | 4 | 76 | Orders, lines, advance payments | ✅ |
-| 🔔 **Alerts & audit** | 2 | 15 | Dashboard KPIs, audit logs | ✅ |
 | ✉️ **Email** | 2 | 4 | Infra only (no admin list) | ✅ |
 
 ---
@@ -83,12 +81,12 @@
 | **CRM** | `Crm.Manufacturer` | 1 | `/admin/manufacturers` | ✅ | Demo Manufacturer |
 | | `Crm.Supplier` | 1 | `/admin/suppliers` | ✅ | Demo Supplier |
 | | `Crm.CustomerProductDiscounts` | 3 | `/admin/customer-discounts` | ✅ | Customers 1, 2, 4 |
-| **Customers** | `Customers.Customers` | 4 | `/admin/customers`, `/sign-in` | ✅ | incl. `customer@webshop.com` + `PasswordWebshop` |
+| **Customers** | `Customers.Customers` | 4 | `/admin/customers` | ✅ | incl. `customer@webshop.com` + `LoginWebshop` / `PasswordWebshop` |
 | | `Crm.CustomerDeliveryAddresses` | 5 | `/admin/delivery-addresses` + checkout | ✅ | 2 addresses for customer 4 |
 | | `Customers.Contact` | 3 | CRM (no dedicated list) | ✅ | Buyers + supplier contact |
 | | `Customers.CustomerContacts` | 3 | CRM (no dedicated list) | ✅ | Linked to customers |
 | **Catalog** | `Products.Product` | 12 | `/admin/products` | ✅ | 10 webshop + 2 internal |
-| | `Products.Product` *(webshop)* | 10 | `/store` catalog | ✅ | `ShowOnWebshop = 1` |
+| | `Products.Product` *(webshop)* | 10 | Store catalog (separate app area) | ✅ | `ShowOnWebshop = 1` |
 | | `Products.ProductPrices` | 12 | `/admin/product-prices` | ✅ | 1 row per product |
 | | `Products.WebshopStructures` | 12 | `/admin/webshop-structures` | ✅ | Navigation tree |
 | | `Products.WebshopProductStructures` | 11 | `/admin/webshop-product-structures` | ✅ | NL/FR/EN + `ProductStructureId` |
@@ -97,7 +95,7 @@
 | | `Products.ProductOptionValue` | 7 | `/admin/product-options` | ✅ | Capacity / interface / length |
 | | `Products.ProductQuantityTiers` | 4 | `/admin/product-tiers` | ✅ | Products 1–3 |
 | **Media** | `Files.AzureFileFolders` | 1 | Product media | ✅ | Folder “Products” |
-| | `Files.AzureFiles` *(primary web)* | 10 | Store + `/admin/products` | ✅ | `BlobRef` → `/images/productN.png` |
+| | `Files.AzureFiles` *(primary web)* | 10 | `/admin/products` (+ store when enabled) | ✅ | `BlobRef` → `/images/productN.png` |
 | **Stock** | `Products.StockLocations` | 1 | `/admin/stock-locations` | ✅ | Main warehouse |
 | | `Products.ProductStockLocations` | 12 | `/admin/product-stock` | ✅ | Low-stock + reserved demo |
 | | `Products.StockMovements` | 8 | `/admin/stock/movements` | ✅ | In/out/reservation mix |
@@ -108,41 +106,41 @@
 | | `Projects.Orders` | 34 | `/admin/orders` | ✅ | 24 this month, 8 pending |
 | | `Projects.OrderLines` | 35 | `/admin/orders` | ✅ | incl. YTD top-up line |
 | | `Projects.OrderAdvancePayments` | 3 | `/admin/orders` + Mollie | ✅ | paid / open / post-pay |
-| **Alerts** | `dbo.StockLowAlerts` *(unread)* | 3 | `/admin` dashboard | ✅ | In-app (email = mock/prod) |
-| **Audit** | `dbo.AuditLogs` | 12 | `/admin/audit-logs` | ✅ | Login, CRUD, Mollie, export |
 | **Email** | `Emails.EmailQueues` | 2 | Infra | ✅ | Outbound + LowStockAlerts |
 | | `Emails.EmailMessages` | 2 | Queue demo *(no admin list)* | ✅ | Worker SMTP = **prod** |
 
 ---
 
-## 2. Storefront vs admin (products)
+## 2. Catalog & webshop flags (admin)
 
-| Concept | Rows | Where |
-|---------|-----:|-------|
-| SKUs visible in store | 10 | `/store`, `/store/product/{id}` |
-| Primary published images | 10 | `AzureFiles` → catalog cards |
-| Webshop navigation nodes | 12 | `WebshopStructures` |
-| Product category labels | 11 | `WebshopProductStructures` → `Product.ProductStructureId` |
-| Configurable options | 3 options / 7 values | Admin; storefront TBD |
+| Concept | Rows | Admin screen |
+|---------|-----:|--------------|
+| SKUs with `ShowOnWebshop = 1` | 10 | `/admin/products` filter |
+| Primary published images | 10 | `AzureFiles` on product edit |
+| Webshop navigation nodes | 12 | `/admin/webshop-structures` |
+| Product category labels | 11 | `/admin/webshop-product-structures` |
+| Configurable options | 3 options / 7 values | `/admin/product-options` |
 
 ---
 
 ## 3. Login (legacy — in `seeds.sql`)
 
-| Portal | Login | Password (demo seed) | Table |
-|--------|-------|----------------------|-------|
-| Admin | `admin@webshop.com` | `demo` | `Settings.StaffUsers` |
+| Portal | Login | Password (demo seed) | Table / columns |
+|--------|-------|----------------------|-----------------|
+| Admin | `admin@webshop.com` | `demo` | `Settings.StaffUsers` (`Login`, `Password`) |
 | Admin | `manager@webshop.com` | `demo` | `Settings.StaffUsers` |
-| Store | `customer@webshop.com` | `demo` | `Customers.Customers` |
+| Store | `customer@webshop.com` | `demo` | `Klanten.Klant` (`LoginWebshop`, `PasswordWebshop`) |
 
-On **Azure `abmatic_test` with real ERP data**, use credentials from those tables in SSMS — not AspNetUsers.
-
-Login is in `Sql/seeds.sql` — not AspNetUsers.
+On **Azure `abmatic_test` with real ERP data**, use credentials from those tables in SSMS — not `AspNetUsers`.
 
 ```text
+dotnet ef database update --context WebShopABMATICDbContext ...
 sqlcmd -S abmatic.database.windows.net -d abmatic_test -U <user> -P <password> -i Sql\seeds.sql
-sqlcmd -S abmatic.database.windows.net -d abmatic_test -U <user> -P <password> -i Sql\apply-pending-schema.sql
 ```
+
+---
+
+## 4. Not in scope (demo / UI)
 
 | Item | Reason |
 |------|--------|
@@ -156,8 +154,12 @@ sqlcmd -S abmatic.database.windows.net -d abmatic_test -U <user> -P <password> -
 
 ## 5. Commands
 
-```text
-sqlcmd -S abmatic.database.windows.net -d abmatic_test -U <user> -P <password> -i Sql\apply-pending-schema.sql
+```powershell
+dotnet ef database update `
+  --project WebShopABMATIC\Persistence\WebShopABMATIC.Data.Persistence.csproj `
+  --startup-project WebShopABMATIC\WebShopABMATIC.csproj `
+  --context WebShopABMATICDbContext
+
 sqlcmd -S abmatic.database.windows.net -d abmatic_test -U <user> -P <password> -i Sql\seeds.sql
 ```
 

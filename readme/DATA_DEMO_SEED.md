@@ -15,22 +15,22 @@
 | **Target database** | `abmatic_test` |
 | **SQL Server instance** | `abmatic.database.windows.net` (Azure SQL, SQL authentication) |
 | **Seed script** | `Sql/seeds.sql` |
-| **Prerequisite** | EF schema applied (`InitialIdentity` + `InitialDomain` + `OrderAdvancePaymentMollieColumns` + `CustomerIdentityUserId` + `ApplicationUserCustomerId`) |
+| **Prerequisite** | Domain EF schema: `InitialDomain` + `OrderAdvancePaymentMollieColumns` on `WebShopABMATICDbContext` |
 | **Schemas with data** | `Crm`, `Customers`, `Accounting`, `Projects`, `Products`, **`Files`**, **`Settings`**, **`Emails`** (queues + demo messages) |
-| **Schemas not seeded** | `Tasks`, `Emails`, `Logging`, and most optional `Projects` / `Products` tables |
-| **Identity users** | Not used for login — credentials in `StaffUsers` + `Customers` via `seeds.sql` |
+| **Schemas not seeded** | `Tasks`, `Logging`, and most optional `Projects` / `Products` tables |
+| **Auth** | `Settings.StaffUsers` + `Klanten.Klant` webshop columns in `seeds.sql` |
 | **Full legacy DB** | `ABMATIC.bacpac` exists (~3 GB) — **not** for local import; see [section 10](#10-full-legacy-database-abmaticbacpac) |
 
 ---
 
 ## 1. Connection strings
 
-The application reads **`DefaultConnection`** (Identity) and **`connWebShopABMATIC`** (domain) from:
+The application reads **`connWebShopABMATIC`** (and optionally **`DefaultConnection`**) from:
 
 | File | Database |
 |------|----------|
-| `Web/appsettings.json` | `abmatic_test` on `abmatic.database.windows.net` (Azure SQL) |
-| `Web/appsettings.Development.json` | Same as above |
+| `WebShopABMATIC/appsettings.json` | `abmatic_test` on `abmatic.database.windows.net` |
+| `WebShopABMATIC/appsettings.Development.json` | Same as above (or User Secrets) |
 
 Example (credentials not shown — see `appsettings.json` / User Secrets):
 
@@ -38,7 +38,7 @@ Example (credentials not shown — see `appsettings.json` / User Secrets):
 Server=tcp:abmatic.database.windows.net,1433;Database=abmatic_test;User Id=<user>;Password=<password>;MultipleActiveResultSets=true;Encrypt=True;TrustServerCertificate=False;
 ```
 
-Both contexts use the **same database** so admin lists and Identity login share one server catalog.
+Single `WebShopABMATICDbContext` against the legacy database.
 
 ---
 
@@ -48,31 +48,20 @@ Both contexts use the **same database** so admin lists and Identity login share 
 
 Apply migrations once against `abmatic_test` on `abmatic.database.windows.net`:
 
-```text
-sqlcmd -S abmatic.database.windows.net -d abmatic_test -U <user> -P <password> -i Sql\apply-pending-schema.sql
-sqlcmd -S abmatic.database.windows.net -d abmatic_test -U <user> -P <password> -i Sql\seeds.sql
-```
-
-Alternative (EF CLI — keeps `__EFMigrationsHistory` in sync if you prefer):
+```powershell
 $c = "Server=tcp:abmatic.database.windows.net,1433;Database=abmatic_test;User Id=<user>;Password=<password>;MultipleActiveResultSets=true;Encrypt=True;TrustServerCertificate=False;"
 
 dotnet ef database update `
-  --project Infrastructure\WebShopABMATIC.Infrastructure.csproj `
-  --startup-project Web\WebShopABMATIC.Web.csproj `
-  --context ApplicationDbContext `
-  --connection $c
-
-dotnet ef database update `
-  --project Persistence\WebShopABMATIC.Data.Persistence.csproj `
-  --startup-project Web\WebShopABMATIC.Web.csproj `
+  --project WebShopABMATIC\Persistence\WebShopABMATIC.Data.Persistence.csproj `
+  --startup-project WebShopABMATIC\WebShopABMATIC.csproj `
   --context WebShopABMATICDbContext `
   --connection $c
 ```
 
-Create the database in SSMS or:
+Then seed:
 
-```sql
-CREATE DATABASE [WebShopABMATIC] COLLATE Latin1_General_CI_AS;
+```text
+sqlcmd -S abmatic.database.windows.net -d abmatic_test -U <user> -P <password> -i Sql\seeds.sql
 ```
 
 ---
@@ -82,7 +71,7 @@ CREATE DATABASE [WebShopABMATIC] COLLATE Latin1_General_CI_AS;
 From the repository root:
 
 ```powershell
-sqlcmd -S abmatic.database.windows.net -d abmatic_test -U <user> -P <password> -i "scripts\seeds.sql"
+sqlcmd -S abmatic.database.windows.net -d abmatic_test -U <user> -P <password> -i "Sql\seeds.sql"
 ```
 
 The script is **idempotent**: it deletes prior demo rows in dependency order, reseeds identities, then inserts fresh data. Safe to re-run before a demo.
@@ -106,7 +95,6 @@ The full EF model defines **11 schemas** and **139+ tables**. The demo seed touc
 | **Products** | `StockLocations`, `Product`, **`ProductPrices`**, `ProductStockLocations`, `WebshopStructures`, **`WebshopProductStructures`**, **`ProductOptions`**, **`ProductOptionValue`**, **`ProductQuantityTiers`**, **`PriceListCategories`**, `StockOrder` (+ lines + GRN) | Full catalog admin |
 | **Files** | **`AzureFileFolders`**, **`AzureFiles`** | Storefront images |
 | **Settings** | **`PaymentMethods`**, **`UserGroups`**, **`StaffUsers`**, **`BaseCompany`**, **`BaseCompanyVatNumber`** | Checkout + staff |
-| **App (dbo)** | **`StockLowAlerts`**, **`AuditLogs`** | Dashboard alerts + audit |
 | **Emails** | **`EmailQueues`**, **`EmailMessages`** (2 demo) | Queued low-stock demo |
 
 Inventory detail: [DATA_SUMMARY.md](./DATA_SUMMARY.md) · [SUNDAY.md](./SUNDAY.md).
@@ -187,8 +175,6 @@ After a successful run, expect approximately:
 | Orders this month | 24 | `Projects.Orders` (`CreatedAt` ≥ first day of current UTC month) |
 | Pending orders | 8 | `Projects.Orders` where `IsAccepted = 0` |
 | Low stock (product rows) | 5 | `Products.ProductStockLocations` where `Quantity <= MinQuantity` |
-| In-app stock alerts (unread) | 3 | `dbo.StockLowAlerts` where `IsRead = 0` |
-| Audit log rows | 12 | `dbo.AuditLogs` (incl. `CheckoutStarted`, `PaymentPaid`) |
 | Order advance payments | 3 | `Projects.OrderAdvancePayments` (Mollie paid/open + post-pay) |
 | Webshop product structures | 11 | `Products.WebshopProductStructures` |
 | Product options / values | 3 / 7 | `ProductOptions` / `ProductOptionValue` |
@@ -208,23 +194,19 @@ Admin dashboard reads these via `IAdminDashboardPort` / `AdminDashboardUseCase`.
 
 ---
 
-## 7. Login accounts (legacy — in `seeds.sql`)
+## 7. Login accounts (`seeds.sql`)
 
-Runtime auth uses **legacy ABMATIC cookie auth** (`LegacySignInService`) — **not** `AspNetUsers`.
-
-| Portal | Table | Demo login (after `seeds.sql`) | Password |
-|--------|-------|----------------------------------|----------|
+| Portal | Table | Demo login | Password |
+|--------|-------|------------|----------|
 | Admin | `Settings.StaffUsers` | `admin@webshop.com` | `demo` |
 | Admin | `Settings.StaffUsers` | `manager@webshop.com` | `demo` |
 | Store | `Customers.Customers` | `customer@webshop.com` | `demo` |
 
-Staff passwords are **plaintext** in `StaffUsers.Password`. Store passwords use `PasswordWebshop` / `SaltWebshop` (demo customer uses plaintext hash with NULL salt).
+Staff: plaintext `Password` on `StaffUsers`. Store: `LoginWebshop` / `PasswordWebshop` / `SaltWebshop`.
 
-**Azure with real ERP data:** use credentials that already exist in those tables — do not assume demo passwords.
+**Blazor:** `/sign-in`, `/sign-up`, `/admin/login` — POST to `/account/store-login` or `/account/admin-login`.
 
-Login credentials are in `Sql/seeds.sql` (`StaffUsers` + `Customers`) — AspNet Identity seed is not used at runtime.
-
-**Audit demo rows** are in `seeds.sql` (`AuditLogs`); no separate identity step required.
+**Production data:** use credentials already present in those tables.
 
 ---
 
@@ -243,7 +225,7 @@ Login credentials are in `Sql/seeds.sql` (`StaffUsers` + `Customers`) — AspNet
 
 | Symptom | Likely cause | Action |
 |---------|--------------|--------|
-| Invalid object name | Schema not migrated | Run EF `database update` (section 2) |
+| Invalid object name | Schema not migrated | Run EF `database update` on `WebShopABMATICDbContext` (section 2) |
 | Cannot open database | DB missing on `abmatic.database.windows.net` | Create `abmatic_test` on the Azure SQL server |
 | App shows zeros | Wrong connection string | Confirm `appsettings.Development.json` → `abmatic.database.windows.net` / `abmatic_test` |
 | FK / duplicate key on re-run | Partial failed run | Re-run full `seeds.sql` (deletes demo tables first) |
