@@ -62,8 +62,6 @@ public class Customer
     public decimal RequestedCommission { get; set; }
     public int BetaaltermijnId { get; set; }
     public string? WebshopLogin { get; set; }
-    /// <summary>ASP.NET Identity user id (<c>AspNetUsers.Id</c>).</summary>
-    public string? IdentityUserId { get; set; }
     public string? WebshopPasswordHash { get; set; }
     public string? WebshopPasswordSalt { get; set; }
     public string? CustomerBuildingName { get; set; }

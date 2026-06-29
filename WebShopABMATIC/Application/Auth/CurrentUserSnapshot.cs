@@ -1,15 +1,14 @@
 namespace WebShopABMATIC.Application.Auth;
 
-/// <summary>Resolved identity + legacy bridge for the current HTTP request.</summary>
+/// <summary>Resolved legacy auth context for the current HTTP request.</summary>
 public sealed class CurrentUserSnapshot
 {
     public static CurrentUserSnapshot Anonymous { get; } = new();
 
     public bool IsAuthenticated { get; init; }
-    public string? IdentityUserId { get; init; }
     public int? CustomerId { get; init; }
 
-    /// <summary>Legacy <c>Settings.StaffUsers.Id</c> when Identity email matches <c>StaffUsers.Login</c>.</summary>
+    /// <summary>Legacy <c>Instellingen.User</c> id for staff sessions.</summary>
     public int? StaffUserId { get; init; }
 
     public string DisplayName { get; init; } = "System";

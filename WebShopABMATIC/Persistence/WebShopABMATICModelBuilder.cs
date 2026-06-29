@@ -1899,7 +1899,7 @@ public class WebShopABMATICModelBuilder
         config.Property(t => t.ValidTo).HasColumnName("Tot");
         config.Property(t => t.AssemblyPrice).HasColumnType("decimal(18,4)").HasColumnName("AssemblagePrijs");
         config.Property(t => t.InstallationPrice).HasColumnType("decimal(18,4)").HasColumnName("MontagePrijs");
-        config.Property(t => t.ProductId).HasColumnName("ProductProdId");
+        config.Property(t => t.ProductId).HasColumnName("ProductId");
         config.Property(t => t.GrossSalesPrice).HasColumnType("decimal(18,2)").HasColumnName("BrutoVerkoop");
         config.Property(t => t.GrossPurchasePrice).HasColumnType("decimal(18,2)").HasColumnName("BrutoAankoop");
         config.Property(t => t.NetPurchasePrice).HasColumnType("decimal(18,2)").HasColumnName("NettoAankoop");
