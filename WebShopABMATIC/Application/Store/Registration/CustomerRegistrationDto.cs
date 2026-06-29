@@ -17,7 +17,6 @@ public sealed class CustomerRegistrationRequest
 public sealed class CustomerRegistrationResult
 {
     public required bool Succeeded { get; init; }
-    public string? IdentityUserId { get; init; }
     public int? CustomerId { get; init; }
     public IReadOnlyList<string> Errors { get; init; } = [];
 }

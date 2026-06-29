@@ -405,7 +405,7 @@ dotnet run
 2. **Admin:** `/admin/login` — `StaffUsers.Login` / `StaffUsers.Password` (e.g. `admin@webshop.com` / `demo` after demo seed)
 3. **Store:** `/sign-in` — `WebshopLogin` / password (e.g. `customer@webshop.com` / `demo` after demo seed)
 
-**IIS / Visual Studio:** `Web/web.config` points to `.\bin\Debug\net8.0\WebShopABMATIC.Web.dll`. Rebuild after code changes; do not commit stray DLLs from `Web/` root (see `.gitignore`).
+**IIS / Visual Studio:** output under `.\bin\Debug\net10.0\WebShopABMATIC.dll`. Rebuild after code changes.
 
 > **Data:** Lists read from `abmatic_test`. Run `Sql\seeds.sql` for demo rows — [DATA_DEMO_SEED.md](DATA_DEMO_SEED.md).
 
@@ -479,7 +479,7 @@ dotnet run
 |---------|--------|
 | **App name** | `abmaticwebshop` |
 | **Default URL** | `https://abmaticwebshop.azurewebsites.net` |
-| **Stack** | .NET 8, Windows, Blazor Server (in-process) |
+| **Stack** | .NET 10, Windows, Blazor Server (in-process) |
 | **Detection** | `WEBSITE_SITE_NAME` → enables Azure-specific `Program.cs` paths |
 
 **Required portal settings** (Blazor Server on Azure):

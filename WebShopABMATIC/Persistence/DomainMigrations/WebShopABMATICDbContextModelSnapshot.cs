@@ -1596,10 +1596,6 @@ namespace WebShopABMATIC.Data.Persistence.DomainMigrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
-                    b.Property<string>("IdentityUserId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<bool>("InvoicesByMail")
                         .HasColumnType("bit");
 
@@ -1690,10 +1686,6 @@ namespace WebShopABMATIC.Data.Persistence.DomainMigrations
                         .HasColumnType("nvarchar(512)");
 
                     b.HasKey("CustomerId");
-
-                    b.HasIndex("IdentityUserId")
-                        .IsUnique()
-                        .HasFilter("[IdentityUserId] IS NOT NULL");
 
                     b.ToTable("Customers", "Customers");
                 });
