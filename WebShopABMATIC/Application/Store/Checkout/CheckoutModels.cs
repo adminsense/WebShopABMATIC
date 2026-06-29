@@ -33,7 +33,6 @@ public sealed class CheckoutQuoteRequest
 {
     public required IReadOnlyList<CheckoutLineRequest> Lines { get; init; }
     public string UserEmail { get; init; } = "";
-    public string? IdentityUserId { get; init; }
 }
 
 public sealed class CheckoutQuoteDto

@@ -1,0 +1,57 @@
+@using WebShopABMATIC.Application.Store
+
+@if (Node.Children.Count > 0)
+{
+    <div class="store-nav-group">
+        <div class="store-nav-row">
+            <button type="button"
+                    class="store-nav-toggle"
+                    aria-expanded="@ExpandedIds.Contains(Node.Id)"
+                    @onclick="() => OnToggle.InvokeAsync(Node.Id)">
+                <i class="bi @(ExpandedIds.Contains(Node.Id) ? "bi-chevron-down" : "bi-chevron-right")"></i>
+            </button>
+            <a href="@CategoryHref(Node.Id)"
+               class="store-nav-link @(SelectedCategoryId == Node.Id ? "active" : "")">
+                @Node.Name
+                @if (Node.ProductCount is > 0)
+                {
+                    <span class="store-nav-count">@Node.ProductCount</span>
+                }
+            </a>
+        </div>
+        @if (ExpandedIds.Contains(Node.Id))
+        {
+            <ul class="store-nav-children">
+                @foreach (var child in Node.Children)
+                {
+                    <li>
+                        <CategoryNode Node="child"
+                                      SelectedCategoryId="SelectedCategoryId"
+                                      ExpandedIds="ExpandedIds"
+                                      OnToggle="OnToggle" />
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+}
+else
+{
+    <a href="@CategoryHref(Node.Id)"
+       class="store-nav-link store-nav-link--leaf @(SelectedCategoryId == Node.Id ? "active" : "")">
+        @Node.Name
+        @if (Node.ProductCount is > 0)
+        {
+            <span class="store-nav-count">@Node.ProductCount</span>
+        }
+    </a>
+}
+
+@code {
+    [Parameter, EditorRequired] public StoreCategoryTreeNodeDto Node { get; set; } = default!;
+    [Parameter] public int? SelectedCategoryId { get; set; }
+    [Parameter] public IReadOnlySet<int> ExpandedIds { get; set; } = new HashSet<int>();
+    [Parameter] public EventCallback<int> OnToggle { get; set; }
+
+    private static string CategoryHref(int id) => $"/?categoryId={id}";
+}

@@ -59,8 +59,6 @@ public static class DependencyInjection
         services.AddScoped<IStockLocationRepository, StockLocationRepository>();
         services.AddScoped<IPaymentMethodRepository, PaymentMethodRepository>();
         services.AddScoped<IStaffUserRepository, StaffUserRepository>();
-        services.AddScoped<ISystemUserRepository, LegacyUnsupportedSystemUserRepository>();
-        services.AddScoped<IApplicationUserAccountRepository, LegacyUnsupportedApplicationUserAccountRepository>();
         services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
         services.AddScoped<ICustomerRegistrationRepository, CustomerRegistrationRepository>();
         services.AddScoped<IUserGroupRepository, UserGroupRepository>();

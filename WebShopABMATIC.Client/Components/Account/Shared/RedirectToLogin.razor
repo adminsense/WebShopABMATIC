@@ -1,19 +1,21 @@
-@inject NavigationManager NavigationManager
+@inject NavigationManager Navigation
 
 @code {
     protected override void OnInitialized()
     {
-        var relative = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).TrimEnd('/');
-        if (relative.StartsWith("admin/login", StringComparison.OrdinalIgnoreCase)
-            || relative.StartsWith("sign-in", StringComparison.OrdinalIgnoreCase)
-            || relative.StartsWith("sign-up", StringComparison.OrdinalIgnoreCase))
+        var relative = Navigation.ToBaseRelativePath(Navigation.Uri).TrimStart('/');
+        var returnUrl = string.IsNullOrEmpty(relative) ? "/" : "/" + relative;
+
+        if (relative.StartsWith("admin", StringComparison.OrdinalIgnoreCase))
         {
+            Navigation.NavigateTo(
+                $"/admin/login?returnUrl={Uri.EscapeDataString(returnUrl)}",
+                forceLoad: true);
             return;
         }
 
-        var isAdmin = relative.StartsWith("admin", StringComparison.OrdinalIgnoreCase);
-        var loginPath = isAdmin ? "admin/login" : "sign-in";
-        var returnUrl = Uri.EscapeDataString(NavigationManager.ToBaseRelativePath(NavigationManager.Uri));
-        NavigationManager.NavigateTo($"{loginPath}?returnUrl={returnUrl}", forceLoad: true);
+        Navigation.NavigateTo(
+            $"/sign-in?returnUrl={Uri.EscapeDataString(returnUrl)}",
+            forceLoad: true);
     }
 }
