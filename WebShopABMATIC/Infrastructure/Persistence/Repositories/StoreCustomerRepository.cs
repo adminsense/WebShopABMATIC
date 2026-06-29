@@ -45,18 +45,6 @@ public sealed class StoreCustomerRepository : IStoreCustomerRepository
         return await ResolveCustomerProfileAsync(lookup, cancellationToken);
     }
 
-    public async Task LinkIdentityUserToCustomerAsync(string identityUserId, int customerId, CancellationToken cancellationToken = default)
-    {
-        var customer = await _db.Customers.FirstOrDefaultAsync(c => c.CustomerId == customerId, cancellationToken);
-        if (customer is null)
-        {
-            return;
-        }
-
-        customer.IdentityUserId = identityUserId;
-        await _db.SaveChangesAsync(cancellationToken);
-    }
-
     private async Task<CustomerRow?> ResolveCustomerAsync(StoreUserLookup lookup, CancellationToken cancellationToken)
     {
         if (lookup.CustomerId is int customerId and > 0)
@@ -69,19 +57,6 @@ public sealed class StoreCustomerRepository : IStoreCustomerRepository
             if (byId is not null)
             {
                 return byId;
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(lookup.IdentityUserId))
-        {
-            var byIdentity = await _db.Customers.AsNoTracking()
-                .Where(c => c.IdentityUserId == lookup.IdentityUserId)
-                .Select(c => new CustomerRow(c.CustomerId, c.CustomerTypeId, c.DeliveryTypeId, c.BetaaltermijnId, c.AccountManagerUserId))
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (byIdentity is not null)
-            {
-                return byIdentity;
             }
         }
 
@@ -118,25 +93,6 @@ public sealed class StoreCustomerRepository : IStoreCustomerRepository
             if (byId is not null)
             {
                 return byId;
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(lookup.IdentityUserId))
-        {
-            var byIdentity = await _db.Customers.AsNoTracking()
-                .Where(c => c.IdentityUserId == lookup.IdentityUserId)
-                .Select(c => new StoreCustomerProfile
-                {
-                    CustomerId = c.CustomerId,
-                    CustomerName = c.CustomerName,
-                    CustomerEmail = c.CustomerEmail,
-                    CustomerPhone = c.CustomerPhone
-                })
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (byIdentity is not null)
-            {
-                return byIdentity;
             }
         }
 

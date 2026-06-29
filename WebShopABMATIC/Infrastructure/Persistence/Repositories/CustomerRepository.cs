@@ -54,7 +54,7 @@ public sealed class CustomerRepository : ICustomerRepository
                 CustomerPhone = c.CustomerPhone,
                 CustomerCityId = c.CustomerCityId,
                 Locked = c.Locked,
-                HasWebshopAccount = c.IdentityUserId != null && c.IdentityUserId != ""
+                HasWebshopAccount = c.WebshopPasswordHash != null && c.WebshopPasswordHash != ""
             })
             .ToListAsync(cancellationToken);
 
@@ -80,7 +80,7 @@ public sealed class CustomerRepository : ICustomerRepository
                 DeliveryTypeId = c.DeliveryTypeId,
                 BetaaltermijnId = c.BetaaltermijnId,
                 Locked = c.Locked,
-                HasWebshopAccount = c.IdentityUserId != null && c.IdentityUserId != ""
+                HasWebshopAccount = c.WebshopPasswordHash != null && c.WebshopPasswordHash != ""
             })
             .FirstOrDefaultAsync(cancellationToken);
 

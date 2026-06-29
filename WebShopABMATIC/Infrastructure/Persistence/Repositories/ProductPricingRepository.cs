@@ -28,21 +28,25 @@ public sealed class ProductPricingRepository : IProductPricingPort
                 .Where(p => ids.Contains(p.ProductId)
                             && p.FromAddress.Date <= today
                             && (p.ValidTo == null || p.ValidTo.Value.Date >= today))
-                .Select(p => new { p.ProductId, p.FromAddress, p.GrossSalesPrice })
+                .Select(p => new { p.ProductId, p.FromAddress, p.GrossSalesPrice, p.CorrectedGrossPrice })
                 .ToListAsync(cancellationToken);
 
             return rows
                 .GroupBy(p => p.ProductId)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.OrderByDescending(x => x.FromAddress).First().GrossSalesPrice);
+                .Select(g =>
+                {
+                    var latest = g.OrderByDescending(x => x.FromAddress).First();
+                    return new { g.Key, Price = ResolveListPrice(latest.GrossSalesPrice, latest.CorrectedGrossPrice) };
+                })
+                .Where(x => x.Price > 0)
+                .ToDictionary(x => x.Key, x => x.Price);
         }
 
         var result = new Dictionary<int, decimal>();
         foreach (var productId in ids)
         {
             var price = await ResolveUnitPriceAsync(productId, customerId, cancellationToken);
-            if (price.HasValue)
+            if (price is > 0)
             {
                 result[productId] = price.Value;
             }
@@ -59,7 +63,7 @@ public sealed class ProductPricingRepository : IProductPricingPort
                 && p.FromAddress.Date <= today
                 && (p.ValidTo == null || p.ValidTo.Value.Date >= today))
             .OrderByDescending(p => p.FromAddress)
-            .Select(p => new { p.GrossSalesPrice })
+            .Select(p => new { p.GrossSalesPrice, p.CorrectedGrossPrice })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (priceRow is null)
@@ -67,7 +71,11 @@ public sealed class ProductPricingRepository : IProductPricingPort
             return null;
         }
 
-        var listPrice = priceRow.GrossSalesPrice;
+        var listPrice = ResolveListPrice(priceRow.GrossSalesPrice, priceRow.CorrectedGrossPrice);
+        if (listPrice <= 0)
+        {
+            return null;
+        }
 
         if (customerId is null)
         {
@@ -107,4 +115,7 @@ public sealed class ProductPricingRepository : IProductPricingPort
 
         return Math.Round(listPrice * (1m - discount / 100m), 2, MidpointRounding.AwayFromZero);
     }
+
+    private static decimal ResolveListPrice(decimal grossSalesPrice, decimal correctedGrossPrice) =>
+        grossSalesPrice > 0 ? grossSalesPrice : correctedGrossPrice;
 }

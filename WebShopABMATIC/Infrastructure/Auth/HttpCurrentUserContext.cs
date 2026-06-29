@@ -24,7 +24,6 @@ public sealed class HttpCurrentUserContext(IHttpContextAccessor httpContextAcces
         }
 
         var principal = httpContext.User;
-        var nameId = principal.FindFirstValue(ClaimTypes.NameIdentifier);
         int? staffUserId = ParseClaimInt(principal, LegacyAuthClaims.StaffUserId);
         int? customerId = ParseClaimInt(principal, LegacyAuthClaims.CustomerId);
         var displayName = principal.FindFirstValue(LegacyAuthClaims.DisplayName)
@@ -38,7 +37,6 @@ public sealed class HttpCurrentUserContext(IHttpContextAccessor httpContextAcces
         _cached = new CurrentUserSnapshot
         {
             IsAuthenticated = true,
-            IdentityUserId = nameId,
             CustomerId = customerId,
             StaffUserId = staffUserId,
             DisplayName = displayName,
