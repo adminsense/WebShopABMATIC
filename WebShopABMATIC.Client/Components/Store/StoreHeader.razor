@@ -1,9 +1,12 @@
 @using WebShopABMATIC.Application.Auth
+@using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Web.Services
 @inject NavigationManager Navigation
 @inject StoreCartService Cart
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IJSRuntime Js
+@inject IStoreCatalogPort CatalogPort
 
 <header class="site-header">
     <div class="header-inner store-header-nav">
@@ -74,10 +77,21 @@
     </div>
 </header>
 
+<StoreSearchModal Visible="@_searchModalOpen"
+                  SearchTerm="@_searchModalTerm"
+                  Loading="@_searchLoading"
+                  Results="@_searchResults"
+                  OnClose="CloseSearchModal"
+                  OnSelect="GoToProductFromSearchAsync" />
+
 @code {
     [Parameter] public bool ShowSidebar { get; set; } = true;
 
     private string _search = "";
+    private bool _searchModalOpen;
+    private bool _searchLoading;
+    private string _searchModalTerm = "";
+    private IReadOnlyList<StoreProduct> _searchResults = [];
     private bool _isAuthenticated;
     private bool _isCustomer;
     private string _displayName = "";
@@ -154,16 +168,50 @@
         }
     }
 
-    private Task SubmitSearchAsync()
+    private async Task SubmitSearchAsync()
     {
         var term = _search.Trim();
-        var url = string.IsNullOrEmpty(term)
-            ? BuildCatalogUrl(null)
-            : $"{BuildCatalogUrl(null)}&q={Uri.EscapeDataString(term)}";
-        Navigation.NavigateTo(url);
-        return Task.CompletedTask;
+        if (string.IsNullOrEmpty(term))
+        {
+            CloseSearchModal();
+            return;
+        }
+
+        _searchModalTerm = term;
+        _searchModalOpen = true;
+        _searchLoading = true;
+        _searchResults = [];
+        StateHasChanged();
+
+        try
+        {
+            var items = await CatalogPort.GetCatalogAsync(take: null, categoryId: null);
+            _searchResults = items
+                .Select(StoreProductMapper.ToModel)
+                .Where(p => p.Name.StartsWith(term, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+                .Take(24)
+                .ToList();
+        }
+        finally
+        {
+            _searchLoading = false;
+            StateHasChanged();
+        }
     }
 
-    private static string BuildCatalogUrl(int? categoryId) =>
-        categoryId is int id ? $"/?categoryId={id}" : "/";
+    private void CloseSearchModal()
+    {
+        _searchModalOpen = false;
+        _searchLoading = false;
+        _searchModalTerm = "";
+        _searchResults = [];
+    }
+
+    private Task GoToProductFromSearchAsync(int productId)
+    {
+        CloseSearchModal();
+        Navigation.NavigateTo($"/product/{productId}");
+        return Task.CompletedTask;
+    }
 }
