@@ -21,6 +21,37 @@
         <p style="color:var(--muted);margin-bottom:1.5rem">Your cart is empty.</p>
         <NavLink href="/" class="btn btn-primary">Continue shopping</NavLink>
     }
+    else if (string.IsNullOrEmpty(_userEmail))
+    {
+        <div class="cart-layout">
+            <div class="cart-table">
+                @foreach (var line in CartService.Lines)
+                {
+                    <div class="cart-row" @key="line.ProductId">
+                        <img src="@line.ImageUrl" alt="@line.Name" />
+                        <div>
+                            <h4>@line.Name</h4>
+                            <p class="unit">@FormatPrice(line.UnitPrice) each</p>
+                        </div>
+                        <div class="qty-control">
+                            <button type="button" @onclick="() => CartService.SetQuantity(line.ProductId, line.Quantity - 1)">−</button>
+                            <span>@line.Quantity</span>
+                            <button type="button" @onclick="() => CartService.SetQuantity(line.ProductId, line.Quantity + 1)">+</button>
+                        </div>
+                        <span class="line-total">@FormatPrice(line.LineTotal)</span>
+                        <button type="button" class="remove-btn" title="Remove" @onclick="() => CartService.Remove(line.ProductId)">×</button>
+                    </div>
+                }
+            </div>
+            <aside class="summary-card">
+                <h3>Order summary</h3>
+                <div class="summary-line"><span>Subtotal (@CartService.ItemCount items)</span><span>@FormatPrice(CartService.Subtotal)</span></div>
+                <div class="summary-line total"><span>Total (est.)</span><span>@FormatPrice(CartService.Total)</span></div>
+                <p class="text-muted small mt-3 mb-2">Sign in to choose delivery address and pay with Mollie (iDEAL/card) or invoice.</p>
+                <NavLink href="/sign-in?returnUrl=/cart" class="btn btn-primary" data-enhance-nav="false">Sign in to checkout</NavLink>
+            </aside>
+        </div>
+    }
     else
     {
         <div class="cart-layout">
@@ -96,8 +127,8 @@
                     </div>
                 }
 
-                <button type="button" class="btn btn-primary" disabled="@_placing" @onclick="PlaceOrderAsync">
-                    @(_placing ? "Processing…" : "Place order")
+                <button type="button" class="btn btn-primary" disabled="@(_placing || _quote?.Errors.Count > 0)" @onclick="PlaceOrderAsync">
+                    @(_placing ? "Processing…" : "Place order & pay")
                 </button>
             </aside>
         </div>
@@ -112,7 +143,6 @@
     private string? _checkoutError;
     private bool _placing;
     private string? _userEmail;
-    private string? _identityUserId;
     private int? _customerId;
 
     protected override void OnInitialized() => CartService.Changed += OnCartChanged;
@@ -121,7 +151,6 @@
     {
         var auth = await AuthStateProvider.GetAuthenticationStateAsync();
         _userEmail = auth.User.Identity?.Name;
-        _identityUserId = auth.User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (int.TryParse(auth.User.FindFirstValue(LegacyAuthClaims.CustomerId), out var customerId))
         {
             _customerId = customerId;
@@ -135,7 +164,8 @@
             }
             if (_options?.PaymentMethods.Count > 0)
             {
-                _paymentMethodId = _options.PaymentMethods[0].Id;
+                _paymentMethodId = _options.PaymentMethods.FirstOrDefault(p => p.IsPrePay)?.Id
+                    ?? _options.PaymentMethods[0].Id;
             }
         }
 
@@ -159,7 +189,6 @@
         _quote = await CheckoutPort.BuildQuoteAsync(new CheckoutQuoteRequest
         {
             UserEmail = _userEmail,
-            IdentityUserId = _identityUserId,
             Lines = CartService.Lines.Select(l => new CheckoutLineRequest
             {
                 ProductId = l.ProductId,
@@ -231,7 +260,6 @@
     private StoreUserLookup UserLookup() => new()
     {
         Email = _userEmail,
-        IdentityUserId = _identityUserId,
         CustomerId = _customerId
     };
 

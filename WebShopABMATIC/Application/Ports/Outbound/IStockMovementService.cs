@@ -11,6 +11,11 @@ public interface IStockMovementService
     Task<StockApplyResult> ApplySaleFromOrderAsync(int orderId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Increments <c>ReservedQuantity</c> for PrePay checkout lines (D.7). Idempotent per order.
+    /// </summary>
+    Task<StockApplyResult> ApplyReservationFromOrderAsync(int orderId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Manual stock adjustment (+ inbound / − outbound) for a product at a specific location.
     /// </summary>
     Task<StockApplyResult> ApplyManualAdjustmentAsync(

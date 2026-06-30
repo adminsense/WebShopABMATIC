@@ -138,7 +138,7 @@ On **Azure with production ERP data**, use credentials from those tables in SSMS
 |------|--------|
 | `AccountingDocumentLines` | Header demo only; no UI |
 | PO / GRN / transfer **CRUD** | Phase E — demo data ✅, UI ⬜ |
-| Stock reservation at checkout | Phase E — `ReservedQuantity` display only |
+| Stock reservation at checkout | ✅ PrePay — `ApplyReservationFromOrderAsync` (D.7) |
 | Real email send (SMTP) | Prod — queue demo ✅, worker ⬜ |
 | `Tasks.*` | No admin screens |
 
