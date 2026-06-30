@@ -102,10 +102,6 @@
 
         new("/admin/hub/settings", "Settings", "oi-wrench", Exact: false),
 
-        new("/admin/audit-logs", "Audit log", "oi-clipboard", Exact: false, AdminOnly: true),
-
-        new("/admin/users", "Users", "oi-people", Exact: false, AdminOnly: true),
-
         new("/admin/profile", "My profile", "oi-person", Exact: false)
 
     ];
@@ -127,16 +123,6 @@
         {
 
             return string.Equals(path, href, StringComparison.OrdinalIgnoreCase);
-
-        }
-
-
-
-        if (string.Equals(href, "admin/audit-logs", StringComparison.OrdinalIgnoreCase))
-
-        {
-
-            return path.StartsWith("admin/audit-logs", StringComparison.OrdinalIgnoreCase);
 
         }
 
@@ -217,10 +203,6 @@
             return path.StartsWith(href, StringComparison.OrdinalIgnoreCase)
 
                    || path.StartsWith("admin/payment-methods", StringComparison.OrdinalIgnoreCase)
-
-                   || path.StartsWith("admin/users", StringComparison.OrdinalIgnoreCase)
-                   || path.StartsWith("admin/system-users", StringComparison.OrdinalIgnoreCase)
-                   || path.StartsWith("admin/audit-logs", StringComparison.OrdinalIgnoreCase)
 
                    || path.StartsWith("admin/staff-users", StringComparison.OrdinalIgnoreCase)
 

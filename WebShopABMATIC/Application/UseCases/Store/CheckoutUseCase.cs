@@ -57,7 +57,6 @@ public sealed class CheckoutUseCase : ICheckoutPort
         var current = await _currentUser.GetCurrentUserAsync(cancellationToken);
         var lookup = new StoreUserLookup
         {
-            IdentityUserId = request.IdentityUserId,
             Email = request.UserEmail,
             CustomerId = current.CustomerId
         };
@@ -119,8 +118,7 @@ public sealed class CheckoutUseCase : ICheckoutPort
         var quote = await BuildQuoteAsync(new CheckoutQuoteRequest
         {
             Lines = request.Lines,
-            UserEmail = user.Email ?? "",
-            IdentityUserId = user.IdentityUserId
+            UserEmail = user.Email ?? ""
         }, cancellationToken);
 
         if (quote.Errors.Count > 0)
