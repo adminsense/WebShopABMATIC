@@ -163,16 +163,7 @@ public sealed class CheckoutUseCase : ICheckoutPort
         var currentUser = await _currentUser.GetCurrentUserAsync(cancellationToken);
         var createdByUserId = currentUser.ResolveLegacyUserId(ctx.AccountManagerUserId);
 
-        if (paymentMethod.IsPrePay)
-        {
-            return new CheckoutResult
-            {
-                Success = false,
-                Errors = ["Online payment is not available. Please choose an invoice or post-payment method."]
-            };
-        }
-
-        var postPayCreated = await _orders.CreateWebshopOrderAsync(new StoreOrderCreateCommand
+        var orderCommand = new StoreOrderCreateCommand
         {
             CustomerId = ctx.CustomerId,
             ProjectId = ctx.ProjectId,
@@ -182,11 +173,82 @@ public sealed class CheckoutUseCase : ICheckoutPort
             DeliveryAddressId = request.DeliveryAddressId,
             PaymentMethodId = request.PaymentMethodId,
             CreatedByUserId = createdByUserId,
-            IsPrePay = false,
+            IsPrePay = paymentMethod.IsPrePay,
             DeliveryFee = quote.DeliveryFee,
             VatPercentage = VatPercentage,
             Lines = lineCreates
-        }, cancellationToken);
+        };
+
+        if (paymentMethod.IsPrePay)
+        {
+            var prePayCreated = await _orders.CreateWebshopOrderAsync(orderCommand, cancellationToken);
+
+            var reserveResult = await _stock.ApplyReservationFromOrderAsync(prePayCreated.OrderId, cancellationToken);
+            if (!reserveResult.IsSuccess)
+            {
+                return new CheckoutResult
+                {
+                    Success = false,
+                    Errors = reserveResult.Errors.Count > 0
+                        ? reserveResult.Errors
+                        : ["Could not reserve stock for this order."]
+                };
+            }
+
+            await LogCheckoutStartedAsync(
+                prePayCreated.OrderId,
+                prePayCreated.OrderNumber,
+                prePayCreated.TotalInclVat,
+                isPrePay: true,
+                ctx.CustomerId,
+                cancellationToken);
+
+            var paymentReturnUrl =
+                $"{request.RedirectBaseUrl.TrimEnd('/')}/orders/{prePayCreated.OrderId}/payment-return";
+            var webhookUrl =
+                $"{request.WebhookBaseUrl.TrimEnd('/')}/api/webhooks/mollie/payments";
+
+            try
+            {
+                var payment = await _mollie.CreatePaymentAsync(new CreateMolliePaymentCommand
+                {
+                    Amount = prePayCreated.TotalInclVat,
+                    Currency = "EUR",
+                    Description = $"WebShop order #{prePayCreated.OrderNumber ?? prePayCreated.OrderId}",
+                    RedirectUrl = paymentReturnUrl,
+                    WebhookUrl = webhookUrl,
+                    MetadataJson = System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        orderId = prePayCreated.OrderId,
+                        advancePaymentId = prePayCreated.AdvancePaymentId
+                    })
+                }, cancellationToken);
+
+                await _orders.UpdateAdvancePaymentMollieAsync(
+                    prePayCreated.OrderId,
+                    payment.PaymentId,
+                    payment.Status,
+                    payment.CheckoutUrl,
+                    cancellationToken);
+
+                return new CheckoutResult
+                {
+                    Success = true,
+                    OrderId = prePayCreated.OrderId,
+                    RedirectUrl = payment.CheckoutUrl
+                };
+            }
+            catch (Exception ex)
+            {
+                return new CheckoutResult
+                {
+                    Success = false,
+                    Errors = [$"Online payment could not be started: {ex.Message}"]
+                };
+            }
+        }
+
+        var postPayCreated = await _orders.CreateWebshopOrderAsync(orderCommand, cancellationToken);
 
         await LogCheckoutStartedAsync(postPayCreated.OrderId, postPayCreated.OrderNumber, postPayCreated.TotalInclVat, isPrePay: false, ctx.CustomerId, cancellationToken);
 
