@@ -5,7 +5,7 @@
 > **Purpose:** Single delivery tracker for WebShopABMATIC — phased checkboxes, open backlog, and **dev-first** priority.  
 > **Mark ✅ when done · ⬜ when pending · 🔶 partial.**  
 > **Analysis:** [SPEC_STOCK_OPERATIONS_PROPOSAL.md](./SPEC_STOCK_OPERATIONS_PROPOSAL.md)  
-> **Related:** [PAYMENTS_open.md](./PAYMENTS_open.md) · [AZUREBLOB.md](./AZUREBLOB.md)
+> **Related:** [open_MOLLIE_PAYMENTS_open.md](./open_MOLLIE_PAYMENTS_open.md) · [AZUREBLOB.md](./AZUREBLOB.md)
 
 ### Delivery model (owner rule)
 
@@ -45,7 +45,7 @@
 Do **not** start until dev track above is complete:
 
 1. **3b** — SMTP / background worker for low-stock queue  
-2. **B.9** — Mollie real E2E — [PAYMENTS_open.md](./PAYMENTS_open.md)
+2. **B.9** — Mollie real E2E — [open_MOLLIE_PAYMENTS_open.md](./open_MOLLIE_PAYMENTS_open.md)
 
 ---
 
@@ -94,7 +94,7 @@ See [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) (email queue rows only).
 | Item | Dev | Prod |
 |------|-----|------|
 | Code + `MollieMockPaymentAdapter` | ✅ | n/a |
-| `Mollie:ApiKey`, webhook, E2E checklist | n/a | ⬜ — [PAYMENTS_open.md](./PAYMENTS_open.md) |
+| `Mollie:ApiKey`, webhook, E2E checklist | n/a | ⬜ — [open_MOLLIE_PAYMENTS_open.md](./open_MOLLIE_PAYMENTS_open.md) |
 
 ### M.5 — Azure Blob (production) ✅
 
@@ -154,7 +154,7 @@ See [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) (email queue rows only).
 - ✅ **B.7** `/orders/{id}/payment-return` + confirmation
 - ✅ **B.8** Post-pay path (no Mollie)
 - ✅ **B.9a** `MollieMockPaymentAdapter` when `Mollie:UseMock=true` — **dev done**
-- ⬜ **B.9** Real Mollie test key + public webhook + E2E — [PAYMENTS_open.md](./PAYMENTS_open.md) — **prod go-live (last)**
+- ⬜ **B.9** Real Mollie test key + public webhook + E2E — [open_MOLLIE_PAYMENTS_open.md](./open_MOLLIE_PAYMENTS_open.md) — **prod go-live (last)**
 
 ---
 
@@ -216,7 +216,7 @@ Detail: [AZUREBLOB.md](./AZUREBLOB.md)
 - ⬜ **E.6** Retry payment / expired session UX
 
 ### Docs
-- ✅ **E.7** [PAYMENTS_open.md](./PAYMENTS_open.md) written
+- ✅ **E.7** [open_MOLLIE_PAYMENTS_open.md](./open_MOLLIE_PAYMENTS_open.md) written
 - ⬜ **E.8** Update [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) to match current Blazor store
 
 ---

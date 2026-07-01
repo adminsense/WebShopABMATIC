@@ -2,7 +2,7 @@
 
 ![Status](https://img.shields.io/badge/Phase%205-⬜%20Pending-64748b?style=flat-square) ![Scope](https://img.shields.io/badge/Scope-Mollie%20PrePay-512BD4?style=flat-square)
 
-> **Purpose:** Ops runbook for Mollie **prod go-live** (API key, webhook, E2E). Dev checkout is ✅ via `MollieMockPaymentAdapter`. **Open items** until **B.9** prod is ✅ in [IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md) — **last**, after dev 100%.  
+> **Purpose:** Ops runbook for Mollie **prod go-live** (API key, webhook, E2E). Dev checkout is ✅ via `MollieMockPaymentAdapter`. **Open items** until **B.9** prod is ✅ in [open_IMPLEMENTATION_ROADMAP.md](./open_IMPLEMENTATION_ROADMAP.md) — **last**, after dev 100%.  
 > **Scope:** PrePay checkout (iDEAL / card via Mollie test mode). PostPay (invoice) does not use Mollie.  
 > **Mark ✅ when done · ⬜ when pending.**
 
@@ -108,6 +108,6 @@ If the webhook is delayed, `/orders/{id}/payment-return` and `/orders/{id}` poll
 
 ## Related docs
 
-- [IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md) — Phase B.9
-- [IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md) — Phase B.9 (last priority)
+- [open_IMPLEMENTATION_ROADMAP.md](./open_IMPLEMENTATION_ROADMAP.md) — Phase B.9
+- [open_IMPLEMENTATION_ROADMAP.md](./open_IMPLEMENTATION_ROADMAP.md) — Phase B.9 (last priority)
 - [SPEC_STOCK_OPERATIONS_PROPOSAL.md](./SPEC_STOCK_OPERATIONS_PROPOSAL.md) — checkout sequence diagrams

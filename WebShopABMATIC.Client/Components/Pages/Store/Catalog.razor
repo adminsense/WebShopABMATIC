@@ -62,7 +62,7 @@
             }
             else if (_products.Count == 0)
             {
-                <p class="text-muted">No products available@(string.IsNullOrWhiteSpace(_search) ? "" : " for this search").</p>
+                <p class="text-muted">No products found starting with “@_search”.</p>
             }
             else
             {
@@ -129,8 +129,8 @@
                 if (!string.IsNullOrWhiteSpace(_search))
                 {
                     mapped = mapped
-                        .Where(p => p.Name.Contains(_search, StringComparison.OrdinalIgnoreCase)
-                                    || p.Description.Contains(_search, StringComparison.OrdinalIgnoreCase))
+                        .Where(p => p.Name.StartsWith(_search, StringComparison.OrdinalIgnoreCase))
+                        .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
                         .ToList();
                 }
 
