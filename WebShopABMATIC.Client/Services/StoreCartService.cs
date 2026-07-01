@@ -1,13 +1,24 @@
+using System.Text.Json;
+using Microsoft.AspNetCore.Http;
 using WebShopABMATIC.Application.Ports;
 
 namespace WebShopABMATIC.Web.Services;
 
 public sealed class StoreCartService
 {
+    private const string SessionKey = "store-cart-v1";
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
     private readonly IStoreCatalogPort _catalog;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly List<CartLine> _lines = [];
 
-    public StoreCartService(IStoreCatalogPort catalog) => _catalog = catalog;
+    public StoreCartService(IStoreCatalogPort catalog, IHttpContextAccessor httpContextAccessor)
+    {
+        _catalog = catalog;
+        _httpContextAccessor = httpContextAccessor;
+        LoadFromSession();
+    }
 
     public event Action? Changed;
 
@@ -51,9 +62,10 @@ public sealed class StoreCartService
         }
         else
         {
-            line.Quantity = Math.Min(line.Quantity + quantity, product.Stock);
+            line.Quantity = Math.Min(line.Quantity + quantity, Math.Max(product.Stock, 1));
         }
 
+        Persist();
         Changed?.Invoke();
     }
 
@@ -74,18 +86,61 @@ public sealed class StoreCartService
             line.Quantity = quantity;
         }
 
+        Persist();
         Changed?.Invoke();
     }
 
     public void Remove(int productId)
     {
         _lines.RemoveAll(l => l.ProductId == productId);
+        Persist();
         Changed?.Invoke();
     }
 
     public void Clear()
     {
         _lines.Clear();
+        Persist();
         Changed?.Invoke();
+    }
+
+    private void LoadFromSession()
+    {
+        var session = _httpContextAccessor.HttpContext?.Session;
+        if (session is null || !session.TryGetValue(SessionKey, out var bytes) || bytes.Length == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            var lines = JsonSerializer.Deserialize<List<CartLine>>(bytes, JsonOptions);
+            if (lines is { Count: > 0 })
+            {
+                _lines.Clear();
+                _lines.AddRange(lines);
+            }
+        }
+        catch (JsonException)
+        {
+            session.Remove(SessionKey);
+        }
+    }
+
+    private void Persist()
+    {
+        var session = _httpContextAccessor.HttpContext?.Session;
+        if (session is null)
+        {
+            return;
+        }
+
+        if (_lines.Count == 0)
+        {
+            session.Remove(SessionKey);
+            return;
+        }
+
+        session.Set(SessionKey, JsonSerializer.SerializeToUtf8Bytes(_lines, JsonOptions));
     }
 }
