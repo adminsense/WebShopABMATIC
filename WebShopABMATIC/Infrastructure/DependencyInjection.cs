@@ -8,6 +8,7 @@ using WebShopABMATIC.Infrastructure.Admin;
 using WebShopABMATIC.Infrastructure.Auth;
 using WebShopABMATIC.Infrastructure.Media;
 using WebShopABMATIC.Infrastructure.Notifications;
+using WebShopABMATIC.Infrastructure.Payments;
 using WebShopABMATIC.Infrastructure.Persistence.Repositories;
 using WebShopABMATIC.Infrastructure.Stock;
 using WebShopABMATIC.Infrastructure.Store;
@@ -75,7 +76,7 @@ public static class DependencyInjection
         services.AddScoped<IStoreProfileRepository, StoreProfileRepository>();
         services.AddScoped<IStoreOrderRepository, StoreOrderRepository>();
         services.AddScoped<IStockMovementService, StockMovementService>();
-        services.AddScoped<IMolliePaymentPort, NullMolliePaymentPort>();
+        services.AddWebShopMollie(configuration);
 
         services.AddWebShopNotifications(configuration);
 

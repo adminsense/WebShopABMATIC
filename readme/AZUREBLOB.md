@@ -288,7 +288,7 @@ No migration of `AzureFile` rows required for go-live.
 ## Documentation
 
 - 🏠 [Main Documentation](../README.md)
-- 🗺️ [Implementation roadmap](IMPLEMENTATION_ROADMAP_open.md)
+- 🗺️ [Implementation roadmap](open_IMPLEMENTATION_ROADMAP.md)
 
 ---
 
