@@ -863,7 +863,7 @@ private GridExportRequest? BuildExportRequest() =>
 
 ## 📁 Readme file naming convention (`/readme/`)
 
-**Owner rule (Marco):** prefixes and suffixes classify each document so open work is easy to find. When creating new docs, **follow this table first**. The main delivery tracker is [IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md).
+**Owner rule (Marco):** prefixes and suffixes classify each document so open work is easy to find. When creating new docs, **follow this table first**. The main delivery tracker is [open_IMPLEMENTATION_ROADMAP.md](./open_IMPLEMENTATION_ROADMAP.md).
 
 ### Where files live
 
@@ -897,9 +897,9 @@ Use `_open` on roadmaps, ops runbooks with pending steps, and feature backlogs �
 | File | Scope |
 |------|--------|
 | `SUNDAY.md` | **Seed inventory** — what `seeds.sql` populates |
-| `IMPLEMENTATION_ROADMAP_open.md` | **Main delivery tracker** — dev-first priorities + prod go-live (last) |
-| `IMPLEMENTATION_ROADMAP_open.md` | Phased checklist (0 → E) |
-| `PAYMENTS_open.md` | Mollie go-live (API key, webhook, E2E) |
+| `open_IMPLEMENTATION_ROADMAP.md` | **Main delivery tracker** — dev-first priorities + prod go-live (last) |
+| `open_IMPLEMENTATION_ROADMAP.md` | Phased checklist (0 → E) |
+| `open_MOLLIE_PAYMENTS_open.md` | Mollie go-live (API key, webhook, E2E) |
 | `AUTH_IDENTITY_ROADMAP_open.md` | Identity ↔ domain |
 | `AUDITS_open.md` | Audit system (+ SMTP worker pending) |
 | `AZUREBLOB.md` | Product images / `AzureFiles` / Azure Blob |
@@ -908,7 +908,7 @@ Use `_open` on roadmaps, ops runbooks with pending steps, and feature backlogs �
 
 Some files use a **descriptive name + `_open`** instead of a prefix when the name is clearer for the team:
 
-- `IMPLEMENTATION_ROADMAP_open.md`, `PAYMENTS_open.md`, `AUDITS_open.md`, `AZUREBLOB.md`
+- `open_IMPLEMENTATION_ROADMAP.md`, `open_MOLLIE_PAYMENTS_open.md`, `AUDITS_open.md`, `AZUREBLOB.md`
 
 New docs should **prefer the prefix table** unless Marco assigns a proper name.
 
@@ -923,7 +923,7 @@ New docs should **prefer the prefix table** unless Marco assigns a proper name.
 | **Patterns / conventions** | `readme/PATTERNS_<Area>.md` |
 | **Tracker with pending tasks** | `<NAME>_open.md` with ⬜ items and “Mark ✅ when done” in the header |
 
-**Do not** duplicate trackers: link to [IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md).
+**Do not** duplicate trackers: link to [open_IMPLEMENTATION_ROADMAP.md](./open_IMPLEMENTATION_ROADMAP.md).
 
 ### Delivery priority (owner rule)
 

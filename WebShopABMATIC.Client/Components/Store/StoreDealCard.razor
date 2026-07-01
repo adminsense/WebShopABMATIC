@@ -10,8 +10,8 @@
             @Product.Name.ToUpperInvariant()
         </button>
         <div class="deal-card-footer">
-            <span class="deal-card-price @(!Product.HasPrice ? "text-muted" : "")">
-                @PriceLabel
+            <span class="deal-card-price @(!Product.HasPrice ? "price-on-request text-muted" : "")">
+                @StorePriceFormatter.Format(Product.Price)
             </span>
             <button type="button"
                     class="deal-card-cart-btn"
@@ -32,10 +32,6 @@
 @code {
     [Parameter, EditorRequired] public StoreProduct Product { get; set; } = default!;
     [Parameter] public EventCallback<int> OnSelect { get; set; }
-
-    private string PriceLabel => Product.HasPrice
-        ? StorePriceFormatter.Format(Product.Price)
-        : "Sign in to see your price";
 
     private async Task AddToCartAsync()
     {

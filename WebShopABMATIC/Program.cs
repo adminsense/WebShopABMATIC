@@ -13,6 +13,8 @@ using WebShopABMATIC.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.WebHost.UseStaticWebAssets();
+
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
@@ -94,6 +96,15 @@ builder.Services.AddAntiforgery(options =>
     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     options.Cookie.SameSite = SameSiteMode.Lax;
 });
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromHours(8);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+});
 builder.Services.AddScoped<StoreCartService>();
 builder.Services.AddScoped<IGridExportService, GridExportService>();
 
@@ -103,7 +114,9 @@ app.UseForwardedHeaders();
 app.UseDeveloperExceptionPage();
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+app.UseRouting();
+app.MapStaticAssets();
+app.UseSession();
 app.UseAntiforgery();
 
 app.UseAuthentication();
@@ -115,6 +128,7 @@ app.MapRazorComponents<App>()
 app.MapLoginEndpoints();
 app.MapStockAdjustmentApi();
 app.MapStoreMediaEndpoints();
+app.MapMollieWebhook();
 
 app.MapGet("/login", () => Results.Redirect("/sign-in"));
 
