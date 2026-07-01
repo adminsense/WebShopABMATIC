@@ -15,7 +15,6 @@ using WebShopABMATIC.Application.Admin.Products;
 using WebShopABMATIC.Application.Admin.StaffUsers;
 using WebShopABMATIC.Application.Admin.StockLocations;
 using WebShopABMATIC.Application.Admin.Suppliers;
-using WebShopABMATIC.Application.Admin.UserAccounts;
 using WebShopABMATIC.Application.Admin.UserGroups;
 using WebShopABMATIC.Application.Admin.VatTypes;
 using WebShopABMATIC.Application.Admin.ProductStockLocations;
@@ -36,7 +35,6 @@ public static class AdminEditFormValidator
             ManufacturerEditDto dto => ValidateManufacturer(dto),
             SupplierEditDto dto => ValidateSupplier(dto),
             StaffUserEditDto dto => ValidateStaffUser(dto),
-            ApplicationUserAccountEditDto dto => ValidateUserAccount(dto),
             CustomerEditDto dto => ValidateCustomer(dto),
             CustomerTypeEditDto dto => ValidateCustomerType(dto),
             CustomerDeliveryAddressEditDto dto => ValidateDeliveryAddress(dto),
@@ -84,14 +82,6 @@ public static class AdminEditFormValidator
     private static List<ValidationResult> ValidateStaffUser(StaffUserEditDto dto)
     {
         var errors = RequiredString(dto.Login, nameof(dto.Login));
-        errors.AddRange(RequiredString(dto.FirstName, nameof(dto.FirstName)));
-        errors.AddRange(RequiredString(dto.LastName, nameof(dto.LastName)));
-        return errors;
-    }
-
-    private static List<ValidationResult> ValidateUserAccount(ApplicationUserAccountEditDto dto)
-    {
-        var errors = RequiredString(dto.Email, nameof(dto.Email));
         errors.AddRange(RequiredString(dto.FirstName, nameof(dto.FirstName)));
         errors.AddRange(RequiredString(dto.LastName, nameof(dto.LastName)));
         return errors;
