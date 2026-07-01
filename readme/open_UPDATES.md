@@ -961,7 +961,7 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 
 ### ⬜ Pending — real Mollie (B.9 prod go-live)
 
-Only when you have credentials and a public URL. See [MOLLIE_PAYMENTS_open.md](MOLLIE_PAYMENTS_open.md).
+Only when you have credentials and a public URL. See [open_MOLLIE_PAYMENTS_open.md](open_MOLLIE_PAYMENTS_open.md).
 
 - [ ] `Mollie:ApiKey` test (`test_…`) in user secrets or App Settings
 - [ ] `Mollie:UseMock` = `false`
