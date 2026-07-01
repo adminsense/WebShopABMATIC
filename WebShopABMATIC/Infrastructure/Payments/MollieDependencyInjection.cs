@@ -11,8 +11,10 @@ public static class MollieDependencyInjection
 {
     public static IServiceCollection AddWebShopMollie(this IServiceCollection services, IConfiguration configuration)
     {
+        var useMock = configuration.GetValue("Mollie:UseMock", true);
         var apiKey = configuration["Mollie:ApiKey"];
-        if (!string.IsNullOrWhiteSpace(apiKey))
+
+        if (!useMock && !string.IsNullOrWhiteSpace(apiKey))
         {
             services.AddMollieApi(options =>
             {
@@ -23,18 +25,9 @@ public static class MollieDependencyInjection
         }
         else
         {
-            services.AddScoped<IMolliePaymentPort, MolliePaymentNotConfiguredAdapter>();
+            services.AddScoped<IMolliePaymentPort, MollieMockPaymentAdapter>();
         }
 
         return services;
-    }
-
-    private sealed class MolliePaymentNotConfiguredAdapter : IMolliePaymentPort
-    {
-        public Task<MolliePaymentCreated> CreatePaymentAsync(CreateMolliePaymentCommand command, CancellationToken cancellationToken = default) =>
-            throw new InvalidOperationException("Mollie is not configured. Set Mollie:ApiKey in user secrets or appsettings.");
-
-        public Task<MolliePaymentStatusResult> GetPaymentAsync(string molliePaymentId, CancellationToken cancellationToken = default) =>
-            throw new InvalidOperationException("Mollie is not configured. Set Mollie:ApiKey in user secrets or appsettings.");
     }
 }

@@ -1,5 +1,7 @@
 using WebShopABMATIC.Application.Ports.Outbound;
 
+namespace WebShopABMATIC.Infrastructure.Audit;
+
 public sealed class AuditSuppressionContext : IAuditSuppressionContext
 {
     private readonly AsyncLocal<HashSet<string>?> _suppressed = new();
