@@ -263,6 +263,16 @@
       padding: 2rem 1.5rem;
     }
     .store-section { margin-bottom: 2.5rem; }
+    .store-category-header {
+      margin-bottom: 0.75rem;
+      text-align: center;
+    }
+    .store-category-title {
+      margin: 0;
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: var(--text);
+    }
     .store-section-title {
       font-size: 1.35rem;
       font-weight: 400;
@@ -322,6 +332,20 @@
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
+    .category-tile:disabled {
+      cursor: default;
+      opacity: 0.78;
+      transform: none;
+      box-shadow: var(--shadow);
+    }
+    .category-tile--empty {
+      background: #f8f9fa;
+      border: 1px dashed #cfd4da;
+    }
+    .category-tile--empty:hover {
+      transform: none;
+      box-shadow: var(--shadow);
+    }
     .category-tile-icon {
       width: 72px;
       height: 72px;
@@ -348,6 +372,13 @@
       color: var(--text);
       max-width: 100%;
       word-break: break-word;
+    }
+    .category-tile-empty {
+      margin-top: 0.15rem;
+      font-size: 0.72rem;
+      color: #6c757d;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
     .deal-card {
       width: 100%;
@@ -484,10 +515,16 @@
       font-size: 0.95rem;
     }
     .store-nav-link--leaf { padding-left: 1rem; }
-    .store-nav-link:hover,
-    .store-nav-link.active {
+    .store-nav-link:hover {
       color: var(--accent);
       background: var(--accent-soft);
+    }
+    .store-nav-link.active {
+      color: #fff;
+      background: var(--accent);
+    }
+    .store-nav-link.active .store-nav-count {
+      color: rgba(255,255,255,0.92);
     }
     .store-nav-count {
       margin-left: auto;
