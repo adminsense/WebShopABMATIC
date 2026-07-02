@@ -1,0 +1,195 @@
+@page "/checkout/mollie-mock"
+@layout MollieMockLayout
+@attribute [Authorize(Policy = AppPolicies.CustomerOnly)]
+@using WebShopABMATIC.Application.Auth
+@inject NavigationManager Navigation
+
+<PageTitle>Pay with Mollie</PageTitle>
+
+<div class="mollie-mock-demo-banner">
+    Demo checkout — card details are pre-filled for presentation. No real charge.
+</div>
+
+@if (_invalid)
+{
+    <div class="alert alert-danger mollie-mock-error">@_errorMessage</div>
+}
+else
+{
+    <div class="mollie-mock-page">
+        <div class="mollie-mock-shell">
+            <button type="button" class="mollie-mock-back" @onclick="GoBackToCart" disabled="@_processing">
+                ← Back to WebShop
+            </button>
+
+            <div class="mollie-mock-card">
+                <div class="mollie-mock-header">
+                    <p class="mollie-mock-merchant">WebShop ABMATIC</p>
+                    <p class="mollie-mock-amount">@FormattedAmount</p>
+                    @if (!string.IsNullOrWhiteSpace(Description))
+                    {
+                        <p class="mollie-mock-order-ref">@Description</p>
+                    }
+                </div>
+                <div class="mollie-mock-body">
+                    <div class="mollie-mock-methods">
+                        <button type="button"
+                                class="mollie-mock-method @(_method == PayMethod.Ideal ? "active" : null)"
+                                @onclick="() => SelectMethod(PayMethod.Ideal)">
+                            iDEAL
+                        </button>
+                        <button type="button"
+                                class="mollie-mock-method @(_method == PayMethod.Card ? "active" : null)"
+                                @onclick="() => SelectMethod(PayMethod.Card)">
+                            Card
+                        </button>
+                    </div>
+
+                    @if (_method == PayMethod.Card)
+                    {
+                        <div class="mollie-mock-cards-icons">
+                            <span>VISA</span>
+                            <span>MC</span>
+                            <span>AMEX</span>
+                        </div>
+
+                        <div class="mollie-mock-field">
+                            <label for="card-number">Card number</label>
+                            <input id="card-number" type="text" readonly value="@_cardNumber" autocomplete="cc-number" />
+                        </div>
+                        <div class="mollie-mock-field">
+                            <label for="card-name">Cardholder name</label>
+                            <input id="card-name" type="text" readonly value="@_cardholderName" autocomplete="cc-name" />
+                        </div>
+                        <div class="mollie-mock-row">
+                            <div class="mollie-mock-field">
+                                <label for="card-exp">Expiry</label>
+                                <input id="card-exp" type="text" readonly value="@_cardExpiry" autocomplete="cc-exp" />
+                            </div>
+                            <div class="mollie-mock-field">
+                                <label for="card-cvc">CVC</label>
+                                <input id="card-cvc" type="text" readonly value="@_cardCvc" autocomplete="cc-csc" />
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="mollie-mock-ideal-hint">
+                            You will authorise this payment in your banking app. For this demo, the bank is pre-selected.
+                        </p>
+                        <div class="mollie-mock-field">
+                            <label for="ideal-bank">Bank</label>
+                            <select id="ideal-bank" disabled>
+                                <option selected>ABN AMRO (demo)</option>
+                            </select>
+                        </div>
+                    }
+
+                    <button type="button" class="mollie-mock-pay" disabled="@_processing" @onclick="CompletePaymentAsync">
+                        @(_processing ? "Processing…" : $"Pay {FormattedAmount}")
+                    </button>
+
+                    <p class="mollie-mock-secure">🔒 Secured by Mollie</p>
+                </div>
+            </div>
+
+            <p class="mollie-mock-footer">Payments processed by <strong>mollie</strong></p>
+        </div>
+    </div>
+}
+
+@code {
+    private enum PayMethod { Ideal, Card }
+
+    [SupplyParameterFromQuery(Name = "paymentId")]
+    public string? PaymentId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "amount")]
+    public string? Amount { get; set; }
+
+    [SupplyParameterFromQuery(Name = "currency")]
+    public string? Currency { get; set; }
+
+    [SupplyParameterFromQuery(Name = "description")]
+    public string? Description { get; set; }
+
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    public string? ReturnUrl { get; set; }
+
+    private const string _cardNumber = "4111 1111 1111 1111";
+    private const string _cardholderName = "Demo Customer";
+    private const string _cardExpiry = "12 / 28";
+    private const string _cardCvc = "123";
+
+    private PayMethod _method = PayMethod.Card;
+    private bool _processing;
+    private bool _invalid;
+    private string _errorMessage = "Invalid payment session.";
+
+    private string FormattedAmount
+    {
+        get
+        {
+            if (decimal.TryParse(Amount, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var value))
+            {
+                var symbol = string.Equals(Currency, "EUR", StringComparison.OrdinalIgnoreCase) ? "€" : $"{Currency} ";
+                return $"{symbol}{value:N2}";
+            }
+
+            return Amount ?? "—";
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        _invalid = !IsValidSession();
+    }
+
+    private bool IsValidSession()
+    {
+        if (string.IsNullOrWhiteSpace(PaymentId)
+            || string.IsNullOrWhiteSpace(Amount)
+            || string.IsNullOrWhiteSpace(ReturnUrl))
+        {
+            _errorMessage = "Missing payment parameters. Start checkout from the cart again.";
+            return false;
+        }
+
+        if (!Uri.TryCreate(ReturnUrl, UriKind.Absolute, out var returnUri))
+        {
+            _errorMessage = "Invalid return URL.";
+            return false;
+        }
+
+        var siteUri = new Uri(Navigation.BaseUri);
+        if (!string.Equals(returnUri.Authority, siteUri.Authority, StringComparison.OrdinalIgnoreCase))
+        {
+            _errorMessage = "Return URL must stay on this site.";
+            return false;
+        }
+
+        if (!returnUri.AbsolutePath.Contains("/payment-return", StringComparison.OrdinalIgnoreCase))
+        {
+            _errorMessage = "Invalid payment return path.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private void SelectMethod(PayMethod method) => _method = method;
+
+    private void GoBackToCart() => Navigation.NavigateTo("/cart");
+
+    private async Task CompletePaymentAsync()
+    {
+        if (_invalid || string.IsNullOrWhiteSpace(ReturnUrl))
+        {
+            return;
+        }
+
+        _processing = true;
+        await Task.Delay(900);
+        Navigation.NavigateTo(ReturnUrl, forceLoad: true);
+    }
+}

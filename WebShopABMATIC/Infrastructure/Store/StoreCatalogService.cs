@@ -171,14 +171,22 @@ public sealed class StoreCatalogService : IStoreCatalogPort
             List<CatalogProductRow> products;
             if (categoryId is > 0)
             {
-                var allowed = CatalogCategoryTree.CollectDescendantIds(categoryId.Value, structures);
-                var rows = await LoadProductRowsAsync(QueryVisibleProducts(), take: null, cancellationToken);
-                products = rows
-                    .Where(p => p.ProductStructureId is int structureId && allowed.Contains(structureId))
-                    .ToList();
-                if (take is > 0)
+                var category = categoryId.Value;
+                if (CatalogCategoryTree.HasStructuralChildren(category, structures))
                 {
-                    products = products.Take(take.Value).ToList();
+                    // CD4: products only on leaf nodes; browse UI shows child tiles instead.
+                    products = [];
+                }
+                else
+                {
+                    var rows = await LoadProductRowsAsync(QueryVisibleProducts(), take: null, cancellationToken);
+                    products = rows
+                        .Where(p => p.ProductStructureId == category)
+                        .ToList();
+                    if (take is > 0)
+                    {
+                        products = products.Take(take.Value).ToList();
+                    }
                 }
             }
             else
