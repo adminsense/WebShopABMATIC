@@ -235,8 +235,8 @@ A sidebar é a **navegação profunda**; a homepage mostra só um **resumo visua
 - ❓ **Dúvida:** `ProductStructure.Icon` (byte[] no ERP) tem formato consistente? Servimos como data-URL, endpoint dedicado, ou ignoramos nós sem ícone?
 - Checklist:
   - [ ] Amostrar quantos nós raiz têm `Icon` não nulo em `abmatic_test`
-  - [ ] Definir fallback visual (ícone genérico por `Level` ou placeholder SVG)
-  - [ ] Endpoint ou helper media para ícones de estrutura (separado de `AzureFile` produto)
+  - ✅ Definir fallback visual (ícone genérico por `Level` ou placeholder SVG)
+  - ✅ Endpoint ou helper media para ícones de estrutura (separado de `AzureFile` produto)
 
 **HP4 — Fonte dos Deals**
 - ❓ **Dúvida:** O que define um produto em **Deals** na referência — promoção ERP, lista manual, `IsNieuw`, ou outro campo?
@@ -251,21 +251,21 @@ A sidebar é a **navegação profunda**; a homepage mostra só um **resumo visua
 - Checklist:
   - [ ] Contar raízes com `ProductCount > 0` na BD
   - [ ] Decidir filtro (com ícone apenas vs todas com stock webshop)
-  - [ ] Layout CSS para 2 linhas centradas (como screenshot)
+  - ✅ Layout CSS para 2 linhas centradas (como screenshot)
 
 **HP10 — New products vs Deals**
 - ❓ **Dúvida:** Substituímos **New products** por **Deals**, mantemos ambos, ou `IsNieuw` alimenta Deals?
 - Checklist:
   - [ ] Decisão cliente documentada em §10
-  - [ ] Remover secção New products do `Catalog.razor` após decisão
+  - ✅ Remover secção New products do `Catalog.razor` após decisão
   - [ ] Actualizar `GetNewProductsAsync` se ficar obsoleto
 
 **Grelha genérica na `/`**
 - ❓ **Dúvida:** Na homepage sem `categoryId`, mostramos **zero** produtos na grelha (só tiles + deals)?
 - Checklist:
-  - [ ] Remover `GetCatalogAsync(12)` da `/` sem query
+  - ✅ Remover `GetCatalogAsync(12)` da `/` sem query
   - [ ] Produtos só em `?categoryId=` (modo filho ou folha — ver §2.1.3)
-  - [ ] Pesquisa `?q=` continua a listar produtos
+  - ✅ Pesquisa `?q=` continua a listar produtos
 
 ### 2.1.3 Navegação por níveis — categoria → subcategorias → produtos (screenshot cliente)
 
@@ -322,16 +322,16 @@ Clique: Child 2 (sem filhos OU folha na BD)
 
 **Dados BD (Fase A):** árvore `ProductStructuur` com **máx. 2 níveis** abaixo da raiz — navegação típica: **Raiz → filhos (tiles) → produtos** (ou raiz com filhos que também têm filhos → 3 cliques até produtos).
 
-#### Regra de navegação proposta (árvore `ProductStructuur`)
+#### Regra de navegação fechada (árvore `ProductStructuur`)
 
 | Situação do nó `categoryId` | O que mostrar na **main** | Sidebar |
 |----------------------------|---------------------------|---------|
-| Tem **filhos** com produtos webshop na subárvore | Grelha **cartões dos filhos directos** (`Children` do DTO) | Activar nó; expandir filhos |
+| Tem **filhos** com produtos webshop na subárvore | Grelha **cartões dos filhos directos** (`Children` do DTO), sem mostrar produtos ainda | Activar nó; expandir filhos |
 | **Sem filhos** (folha) | Grelha **produtos** desse nó (e só desse nó, ou nó + descendentes vazios) | Activar folha |
 | Raiz na **homepage** `/` | Secções **Categories** (tiles raiz) + **Deals** | Nenhum activo ou “All products” |
 | Pesquisa `?q=` | Grelha produtos (resultados) | Sem mudança de activo |
 
-> ❓ **Dúvida CD4:** Nó intermédio com filhos — produtos **directos** no mesmo nó aparecem como? (a) só tiles dos filhos; (b) tiles + secção produtos abaixo; (c) mistura. *Screenshot mostra (a).*
+> ✅ **Regra CD4 fechada:** mostrar **cards/submenus de categorias** até à folha; a grelha de produtos aparece **apenas** quando não houver filhos.
 
 #### Decisões — navegação por níveis (Fase A+)
 
@@ -340,7 +340,7 @@ Clique: Child 2 (sem filhos OU folha na BD)
 | CD1 | Modo da página | `BrowseMode`: `Home` \| `Subcategories` \| `Products` \| `Search` |
 | CD2 | Trigger subcategorias | Se `Children.Count > 0` no nó → modo **Subcategories** |
 | CD3 | Trigger produtos | Se folha (`Children` vazio) → modo **Products** |
-| CD4 | Produtos no nó intermédio | ⏳ Só tiles filhos (screenshot); confirmar se nó pode ter produtos + filhos |
+| CD4 | Produtos no nó intermédio | ✅ Só tiles/submenus até folha; produtos apenas na folha |
 | CD5 | Sidebar activo | Classe `.store-nav-link--active-branch` (laranja sólido #fe7109, texto branco) |
 | CD6 | Tile = sidebar | Mesmo `categoryId` — tile homepage, tile main, e link sidebar usam mesma rota |
 | CD7 | Rota | Manter `/?categoryId=` **ou** `/category/{id}` — preferir query na v1 (menos mudanças) |
@@ -358,11 +358,11 @@ Clique: Child 2 (sem filhos OU folha na BD)
   - [ ] Teste: nó só com filhos vazios → mensagem “No products”
 
 **CD4 — Produtos no mesmo nó que tem filhos**
-- ❓ **Dúvida:** Exemplo BD: nó intermédio com 17 produtos directos *e* subcategorias — referência mostra só tiles ou também produtos?
+- ✅ **Regra fechada:** mostrar só tiles/submenus quando houver filhos; produtos apenas na folha.
 - Checklist:
-  - [ ] Query em `abmatic_test`: nós com `Children` e produtos `ProductStructuurId` = esse nó
-  - [ ] Decisão cliente registada em §10
-  - [ ] `GetCatalogAsync` ajustado conforme decisão
+  - [ ] Query em `abmatic_test`: nós com `Children` e produtos `ProductStructuurId` = esse nó (impacto)
+  - ✅ Decisão registada nesta secção (§2.1.3)
+  - [ ] `GetCatalogAsync` ajustado conforme regra fechada
 
 **CD5 — Estilo activo sidebar (laranja)**
 - ❓ **Dúvida:** Activar só o nó clicado ou também o ancestral com fundo diferente?
@@ -408,9 +408,9 @@ Clique: Child 2 (sem filhos OU folha na BD)
 **Checklist implementação global (C.5 + D.5):**
 
 - [ ] Port `GetCategoryBrowseAsync` + testes unitários
-- [ ] Homepage `/` não chama modo Products por defeito
-- [ ] `?categoryId=raiz` → tiles filhos (se tiver filhos)
-- [ ] `?categoryId=folha` → grelha produtos
+- ✅ Homepage `/` não chama modo Products por defeito
+- ✅ `?categoryId=raiz` → tiles filhos (se tiver filhos)
+- ✅ `?categoryId=folha` → grelha produtos
 - [ ] Sidebar sincronizada com URL em todos os modos
 - [ ] Clique tile homepage = clique sidebar (mesma URL)
 - [ ] Regressão: pesquisa `?q=`, deals na home, imagens blob
@@ -421,7 +421,7 @@ Clique: Child 2 (sem filhos OU folha na BD)
 |----------|---------------|-----|
 | `StoreLayout.razor` | Header + `@Body` sem sidebar | Precisa grid **sidebar + main** |
 | `StoreHeader.razor` | Logo, search, nav pills azuis | Reescrever §2.1.1: Back·Home·Cart·Contact·Search·Login |
-| `Catalog.razor` | New products + grelha em `?categoryId=` | §2.1.2 homepage + §2.1.3 drill-down (tiles → produtos) |
+| `Catalog.razor` | Homepage com Categories + Deals; `?categoryId=` com drill-down (tiles até folha) | Falta acabamento visual CD5/CD7 + testes |
 | `store.css` | Tema azul claro, sem `.sidebar` | Novo tema laranja/branco + componentes sidebar + `.store-auth-*` |
 | `StoreCatalogService` | Lista plana de raízes; fallback `WebshopStructures` | Árvore completa só `ProductStructuur` |
 | `SignIn.razor` / `SignUp.razor` | Card azul, serif, `StoreLayout` | `StoreAuthLayout`, card branco/laranja, copy EN (§2.2.1) |
@@ -685,7 +685,7 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 | Categorias | ✅ Árvore `ProductStructuur` na sidebar (`StoreCategorySidebar`) |
 | Cor / fonte | ✅ Laranja `#fe7109`, Segoe UI |
 | Homepage | 🟡 New products + grelha — **falta** tiles + Deals | §2.1.2 |
-| **Navegação por níveis** | ❌ `?categoryId=` lista produtos; falta tiles de subcategorias + activo laranja | §2.1.3 |
+| **Navegação por níveis** | 🟡 `?categoryId=` já mostra tiles de subcategorias até folha; falta estado activo laranja da sidebar | §2.1.3 |
 | Filtro | ✅ Por nó + descendentes (`CollectDescendantIds`) |
 | `WebshopStructures` | ✅ Fallback removido em `GetCategoriesAsync` |
 | **Login** | ✅ `StoreAuthLayout`, copy EN, sem link staff; botão laranja |
@@ -782,7 +782,7 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 
 **Fase D.5 — Navegação por níveis na UI (planeado ⬜)** — ver §2.1.3
 
-- ⬜ `Catalog.razor` — ramificar por `BrowseMode` (não mostrar produtos quando há filhos)
+- ✅ `Catalog.razor` — ramificação implementada (não mostrar produtos quando há filhos)
 - ⬜ `StoreCategoryHeader.razor` — H1 + texto intro
 - ⬜ Reutilizar `StoreCategoryTileGrid` para filhos do nó activo
 - ⬜ Sidebar: activo laranja sólido (CD5); expandir ramo; opcional scrollIntoView
