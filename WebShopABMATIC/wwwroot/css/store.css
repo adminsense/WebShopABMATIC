@@ -322,6 +322,20 @@
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
+    .category-tile:disabled {
+      cursor: default;
+      opacity: 0.78;
+      transform: none;
+      box-shadow: var(--shadow);
+    }
+    .category-tile--empty {
+      background: #f8f9fa;
+      border: 1px dashed #cfd4da;
+    }
+    .category-tile--empty:hover {
+      transform: none;
+      box-shadow: var(--shadow);
+    }
     .category-tile-icon {
       width: 72px;
       height: 72px;
@@ -348,6 +362,13 @@
       color: var(--text);
       max-width: 100%;
       word-break: break-word;
+    }
+    .category-tile-empty {
+      margin-top: 0.15rem;
+      font-size: 0.72rem;
+      color: #6c757d;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
     .deal-card {
       width: 100%;
