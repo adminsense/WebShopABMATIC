@@ -70,6 +70,8 @@ public static class DependencyInjection
         services.AddScoped<ILowStockAlertService, NullLowStockAlertService>();
         services.AddScoped<IStockAdjustmentRepository, StockAdjustmentRepository>();
         services.AddScoped<IStockTransferRepository, StockTransferRepository>();
+        services.AddScoped<IStockOrderRepository, StockOrderRepository>();
+        services.AddScoped<IStockPoReceiveRepository, StockPoReceiveRepository>();
         services.AddScoped<IAuditLogRepository, NullAuditLogRepository>();
         services.AddScoped<IAuditService, NullAuditService>();
         services.AddScoped<IStoreCustomerRepository, StoreCustomerRepository>();
