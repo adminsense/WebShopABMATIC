@@ -28,7 +28,7 @@
 | **D** | Stock writes + low-stock in-app | ✅ Done | — |
 | **3b** | Low stock email | ✅ Done (mock + in-app KPI from stock grid) | ⬜ SMTP worker — last |
 | **M** | Product images | ✅ Done | ✅ Azure Blob (`files`) |
-| **E** | PO / GRN / transfer / reservation | ⬜ Pending | — |
+| **E** | PO / GRN / transfer / reservation | ✅ Done (core) | — |
 | **F** | SignalR real-time stock (optional) | ⬜ Pending | — |
 | **G** | Stock movement logging | ✅ Done | — |
 
@@ -36,7 +36,7 @@
 
 ### Dev priority — finish dev 100% first
 
-1. **E** — PO → GRN → transfer → reserve on checkout *(if in scope)*  
+1. ~~**E** — PO → GRN → transfer~~ ✅  
 2. **F** — SignalR *(optional)*  
 3. **E.8** — Refresh [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md)
 
@@ -57,9 +57,9 @@ Optional for minimal webshop; needed for ERP-style inbound stock.
 
 | Item | Status | Today |
 |------|--------|-------|
-| **E.2 PO CRUD** | ⬜ | Seed + read-only KPI — no admin CRUD |
-| **E.3 GRN** | ⬜ | Model only — no receive UI |
-| **E.1 Transfer** | ⬜ | No UI/API / paired movements |
+| **E.2 PO CRUD** | ✅ | `/admin/stock/purchase-orders` — header + lines |
+| **E.3 GRN** | ✅ | `/admin/stock/purchase-orders/{id}/receive` + `ApplyPurchaseOrderReceiveAsync` |
+| **E.1 Transfer** | ✅ | `/admin/stock/transfers/new` + paired movements API |
 | **D.7 / E reservation** | ✅ | `ApplyReservationFromOrderAsync` on PrePay checkout |
 
 ### F — SignalR (optional)
@@ -203,12 +203,12 @@ Detail: [AZUREBLOB.md](./AZUREBLOB.md)
 
 ---
 
-## Phase E — Stock ops & extras ⬜
+## Phase E — Stock ops & extras ✅ (core)
 
 ### Stock operations
-- ⬜ **E.1** Transfer between locations (UI + API + paired movements)
-- ⬜ **E.2** Purchase order CRUD (`StockOrder` + lines)
-- ⬜ **E.3** Receive delivery (GRN) linked to PO
+- ✅ **E.1** Transfer between locations (UI + API + paired movements)
+- ✅ **E.2** Purchase order CRUD (`StockOrder` + lines)
+- ✅ **E.3** Receive delivery (GRN) linked to PO
 
 ### Payments & accounting (later)
 - ⬜ **E.4** `AccountingDocument` on payment
@@ -257,7 +257,7 @@ Phase C   [██████████] 5/5
 Phase D   [██████████] D.7 reservation ✅
 Phase 3b  [██████████] dev mock ✅
 Phase M   [██████████] M.1–M.5 ✅
-Phase E   [░░░░░░░░░░] ⬜ PO / GRN / transfer / reserve
+Phase E   [██████████] E.1–E.3 transfer + PO + GRN ✅
 Phase F   [░░░░░░░░░░] ⬜ optional SignalR
 Phase G   [██████████] Stock movement logging ✅
 
