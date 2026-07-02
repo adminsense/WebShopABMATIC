@@ -28,4 +28,11 @@ public interface IStockMovementService
     Task<StockApplyResult> ApplyLocationTransferAsync(
         StockLocationTransferCommand command,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Books a purchase-order delivery (GRN) and increases stock at the target location.
+    /// </summary>
+    Task<StockApplyResult> ApplyPurchaseOrderReceiveAsync(
+        StockPoReceiveCommand command,
+        CancellationToken cancellationToken = default);
 }

@@ -1,0 +1,311 @@
+@page "/admin/stock/purchase-orders/{StockOrderId:int}/receive"
+@layout AdminLayout
+@attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
+@using WebShopABMATIC.Application.Admin.Stock
+@using WebShopABMATIC.Application.Auth
+@using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Application.Stock
+@inject IStockPoReceivePort ReceivePort
+@implements IAsyncDisposable
+
+<PageTitle>Receive delivery</PageTitle>
+
+<div class="entity-page">
+    <a class="btn btn-secondary btn-back mb-3" href="/admin/stock/purchase-orders" data-enhance-nav="false">
+        <span class="oi oi-arrow-left"></span> Back to purchase orders
+    </a>
+    <div class="entity-page-header page-header">
+        <h1 class="h3 mb-1"><i class="bi bi-box-arrow-in-down text-primary"></i> Receive delivery</h1>
+        <p class="mb-0">Book goods receipt (GRN) and increase stock for PO #@StockOrderId.</p>
+    </div>
+
+    @if (_loadingContext)
+    {
+        <p class="text-muted">Loading purchase order…</p>
+    }
+    else if (_context is null)
+    {
+        <div class="alert alert-danger">Purchase order not found.</div>
+    }
+    else
+    {
+        <div class="card shadow-sm border mb-3">
+            <div class="card-body py-3">
+                <strong>Supplier:</strong> @_context.SupplierName
+                @if (_context.IsCompleted)
+                {
+                    <span class="badge text-bg-success ms-2">Completed</span>
+                }
+            </div>
+        </div>
+
+        <div class="card shadow-sm border entity-form-card admin-form-card">
+            <div class="card-header bg-white">
+                <h2 class="h6 mb-0 fw-bold">Book delivery</h2>
+            </div>
+            <div class="card-body">
+                <EditForm Model="_model" OnValidSubmit="ApplyAsync">
+                    <DataAnnotationsValidator />
+                    <div class="entity-form-fields">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label" for="recv-line">PO line *</label>
+                                <InputSelect id="recv-line" class="form-select form-select-sm" @bind-Value="_model.StockOrderLineId" @bind-Value:after="RefreshPreviewAsync">
+                                    @foreach (var line in _context.Lines.Where(l => !l.IsFullyDelivered))
+                                    {
+                                        <option value="@line.LineId">
+                                            #@line.LineId — @line.ProductName (remaining @line.QuantityRemaining.ToString("N2"))
+                                        </option>
+                                    }
+                                </InputSelect>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="recv-location">Stock location *</label>
+                                <InputSelect id="recv-location" class="form-select form-select-sm" @bind-Value="_model.StockLocationId" @bind-Value:after="RefreshPreviewAsync">
+                                    @foreach (var loc in _context.StockLocations)
+                                    {
+                                        <option value="@loc.Id">@loc.Name (@loc.Id)</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" for="recv-doc">Delivery document # *</label>
+                                <InputText id="recv-doc" class="form-control form-control-sm" @bind-Value="_model.DeliveryDocumentNumber" maxlength="100" />
+                                <ValidationMessage For="@(() => _model.DeliveryDocumentNumber)" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" for="recv-date">Delivery date *</label>
+                                <InputDate id="recv-date" class="form-control form-control-sm" @bind-Value="_model.DeliveryDate" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" for="recv-qty">Quantity *</label>
+                                <InputNumber id="recv-qty" class="form-control form-control-sm" @bind-Value="_model.Quantity" />
+                                <ValidationMessage For="@(() => _model.Quantity)" />
+                            </div>
+
+                            @if (_previewLoading)
+                            {
+                                <div class="col-12"><span class="text-muted small">Loading stock preview…</span></div>
+                            }
+                            else if (_preview is not null)
+                            {
+                                <div class="col-12">
+                                    <div class="alert alert-secondary mb-0 py-2">
+                                        <strong>@_preview.ProductName</strong> at <strong>@_preview.StockLocationName</strong> —
+                                        current: <strong>@_preview.CurrentQuantity.ToString("N2")</strong>,
+                                        remaining on line: <strong>@_preview.QuantityRemaining.ToString("N2")</strong>
+                                        @if (_model.Quantity > 0)
+                                        {
+                                            <span> → after receive: <strong>@((_preview.CurrentQuantity + _model.Quantity).ToString("N2"))</strong></span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            else if (_previewChecked)
+                            {
+                                <div class="col-12">
+                                    <div class="alert alert-warning mb-0 py-2">
+                                        No product-stock row for this product and location (or line has no product id).
+                                        <a href="/admin/product-stock" data-enhance-nav="false">Create one first</a>.
+                                    </div>
+                                </div>
+                            }
+
+                            <div class="col-12 d-flex gap-2 pt-1">
+                                <button type="submit" class="btn btn-primary" disabled="@(_saving || _preview is null || _context.IsCompleted)">
+                                    @(_saving ? "Saving…" : "Book delivery")
+                                </button>
+                                <a class="btn btn-outline-secondary" href="/admin/stock/movements" data-enhance-nav="false">View journal</a>
+                            </div>
+                        </div>
+                    </div>
+                </EditForm>
+
+                @if (!string.IsNullOrEmpty(_formError))
+                {
+                    <div class="alert alert-danger mt-3 mb-0">@_formError</div>
+                }
+                @if (!string.IsNullOrEmpty(_successMessage))
+                {
+                    <div class="alert alert-success mt-3 mb-0">@_successMessage</div>
+                }
+            </div>
+        </div>
+
+        <div class="card shadow-sm border entity-grid-card">
+            <div class="card-header bg-white">
+                <h2 class="h6 mb-0 fw-bold">PO lines</h2>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Line</th>
+                            <th>Product</th>
+                            <th>Ordered</th>
+                            <th>Delivered</th>
+                            <th>Remaining</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var line in _context.Lines)
+                        {
+                            <tr class="@(line.LineId == _model.StockOrderLineId ? "table-active" : null)">
+                                <td>@line.LineId</td>
+                                <td>@line.ProductName @(line.ProductId is int pid ? $"({pid})" : "")</td>
+                                <td>@line.QuantityOrdered.ToString("N2")</td>
+                                <td>@line.QuantityDelivered.ToString("N2")</td>
+                                <td>@line.QuantityRemaining.ToString("N2")</td>
+                                <td>
+                                    @if (line.IsFullyDelivered)
+                                    {
+                                        <span class="badge text-bg-success">Delivered</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge text-bg-warning">Open</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int StockOrderId { get; set; }
+
+    private CancellationTokenSource? _cts;
+    private StockPoReceiveContextDto? _context;
+    private StockPoReceiveRequest _model = new();
+    private StockPoReceivePreviewDto? _preview;
+    private bool _loadingContext = true;
+    private bool _previewLoading;
+    private bool _previewChecked;
+    private bool _saving;
+    private string? _formError;
+    private string? _successMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _cts?.Cancel();
+        _cts = new CancellationTokenSource();
+        await LoadContextAsync(_cts.Token);
+    }
+
+    private async Task LoadContextAsync(CancellationToken ct)
+    {
+        _loadingContext = true;
+        _formError = null;
+        _successMessage = null;
+        try
+        {
+            _context = await ReceivePort.GetReceiveContextAsync(StockOrderId, ct);
+            if (_context is null)
+            {
+                return;
+            }
+
+            var firstOpenLine = _context.Lines.FirstOrDefault(l => !l.IsFullyDelivered);
+            _model = new StockPoReceiveRequest
+            {
+                StockOrderId = StockOrderId,
+                StockOrderLineId = firstOpenLine?.LineId ?? _context.Lines.FirstOrDefault()?.LineId ?? 0,
+                StockLocationId = _context.StockLocations.FirstOrDefault()?.Id ?? 1,
+                DeliveryDate = DateTime.UtcNow.Date,
+                Quantity = firstOpenLine?.QuantityRemaining > 0 ? firstOpenLine.QuantityRemaining : 1
+            };
+
+            await RefreshPreviewAsync();
+        }
+        catch (Exception ex)
+        {
+            _formError = ex.Message;
+        }
+        finally
+        {
+            _loadingContext = false;
+        }
+    }
+
+    private async Task RefreshPreviewAsync()
+    {
+        if (_model.StockOrderLineId <= 0 || _model.StockLocationId <= 0)
+        {
+            _preview = null;
+            _previewChecked = false;
+            return;
+        }
+
+        _previewLoading = true;
+        _previewChecked = false;
+        _successMessage = null;
+        try
+        {
+            _preview = await ReceivePort.GetPreviewAsync(
+                _model.StockOrderLineId,
+                _model.StockLocationId,
+                _cts?.Token ?? CancellationToken.None);
+            _previewChecked = true;
+
+            if (_preview is not null && _model.Quantity > _preview.QuantityRemaining)
+            {
+                _model.Quantity = _preview.QuantityRemaining;
+            }
+        }
+        catch (Exception ex)
+        {
+            _formError = ex.Message;
+        }
+        finally
+        {
+            _previewLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ApplyAsync()
+    {
+        _saving = true;
+        _formError = null;
+        _successMessage = null;
+        try
+        {
+            _model.StockOrderId = StockOrderId;
+            var result = await ReceivePort.ApplyAsync(_model, _cts?.Token ?? CancellationToken.None);
+            if (result.Status == StockApplyStatus.Failed)
+            {
+                _formError = string.Join(" ", result.Errors);
+                return;
+            }
+
+            _successMessage = result.NewBalance is decimal balance
+                ? $"Delivery booked. Movement #{result.MovementId}. New balance: {balance:N2}."
+                : "Delivery booked.";
+
+            await LoadContextAsync(_cts?.Token ?? CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            _formError = ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_cts is not null)
+        {
+            await _cts.CancelAsync();
+            _cts.Dispose();
+        }
+    }
+}

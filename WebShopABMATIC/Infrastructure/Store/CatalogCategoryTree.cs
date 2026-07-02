@@ -47,6 +47,10 @@ internal static class CatalogCategoryTree
         return result;
     }
 
+    /// <summary>True when the node has at least one child in the loaded structure set (CD4 — not a leaf).</summary>
+    public static bool HasStructuralChildren(int structureId, IReadOnlyDictionary<int, ProductStructure> structures) =>
+        structures.Values.Any(s => NormalizeParentId(s.ParentTaskId) == structureId);
+
     public static string PickDisplayName(ProductStructure structure) =>
         !string.IsNullOrWhiteSpace(structure.NameEn) ? structure.NameEn
         : !string.IsNullOrWhiteSpace(structure.NameNl) ? structure.NameNl
