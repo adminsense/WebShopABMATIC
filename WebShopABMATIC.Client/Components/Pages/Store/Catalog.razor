@@ -52,9 +52,40 @@
             }
         </section>
     }
+    else if (_isCategoryBrowse)
+    {
+        <section class="store-section" id="categories">
+            @if (!string.IsNullOrWhiteSpace(_selectedCategoryName))
+            {
+                <StoreCategoryHeader CategoryName="@_selectedCategoryName" />
+            }
+            <h2 class="store-section-title">@_productsTitle</h2>
+            @if (_loading)
+            {
+                <p class="text-muted">Loading categories…</p>
+            }
+            else if (_browseCategories.Count == 0)
+            {
+                <p class="text-muted">No subcategories available.</p>
+            }
+            else
+            {
+                <div class="categories-grid">
+                    @foreach (var c in _browseCategories)
+                    {
+                        <StoreCategoryTile Category="c" OnSelect="GoToCategory" />
+                    }
+                </div>
+            }
+        </section>
+    }
     else
     {
         <section class="store-section" id="products">
+            @if (!string.IsNullOrWhiteSpace(_selectedCategoryName))
+            {
+                <StoreCategoryHeader CategoryName="@_selectedCategoryName" />
+            }
             <h2 class="store-section-title">@_productsTitle</h2>
             @if (_loading)
             {
@@ -62,7 +93,7 @@
             }
             else if (_products.Count == 0)
             {
-                <p class="text-muted">No products found starting with “@_search”.</p>
+                <p class="text-muted">@_noProductsMessage</p>
             }
             else
             {
@@ -84,8 +115,12 @@
     private string? _search;
     private bool _loading = true;
     private bool _isHomepage;
+    private bool _isCategoryBrowse;
+    private string? _selectedCategoryName;
     private string _productsTitle = "Products";
+    private string _noProductsMessage = "No products found.";
     private IReadOnlyList<StoreCategoryTreeNodeDto> _categories = [];
+    private IReadOnlyList<StoreCategoryTreeNodeDto> _browseCategories = [];
     private IReadOnlyList<StoreProduct> _deals = [];
     private IReadOnlyList<StoreProduct> _products = [];
 
@@ -103,6 +138,12 @@
         _selectedCategoryId = CategoryId;
         _search = SearchQuery?.Trim();
         _isHomepage = _selectedCategoryId is null && string.IsNullOrWhiteSpace(_search);
+        _isCategoryBrowse = false;
+        _selectedCategoryName = null;
+        _browseCategories = [];
+        _noProductsMessage = string.IsNullOrWhiteSpace(_search)
+            ? "No products available in this category."
+            : $"No products found starting with “{_search}”.";
 
         _productsTitle = _selectedCategoryId is null && string.IsNullOrWhiteSpace(_search)
             ? "Products"
@@ -117,30 +158,90 @@
                 _categories = await CatalogPort.GetCategoryTreeAsync();
                 var deals = await CatalogPort.GetDealsAsync(DealsLimit);
                 _deals = deals.Select(StoreProductMapper.ToModel).ToList();
+                _browseCategories = [];
                 _products = [];
             }
             else
             {
-                _categories = [];
+                _categories = await CatalogPort.GetCategoryTreeAsync();
                 _deals = [];
-                var items = await CatalogPort.GetCatalogAsync(take: null, _selectedCategoryId);
-                var mapped = items.Select(StoreProductMapper.ToModel).ToList();
-
-                if (!string.IsNullOrWhiteSpace(_search))
+                var selectedNode = FindNodeById(_categories, _selectedCategoryId);
+                _selectedCategoryName = string.IsNullOrWhiteSpace(_search)
+                    ? selectedNode?.Name
+                    : null;
+                if (string.IsNullOrWhiteSpace(_search)
+                    && _selectedCategoryId is > 0
+                    && selectedNode is not null)
                 {
-                    mapped = mapped
-                        .Where(p => p.Name.StartsWith(_search, StringComparison.OrdinalIgnoreCase))
-                        .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
-                        .ToList();
-                }
+                    if (selectedNode.Children.Count > 0)
+                    {
+                        _isCategoryBrowse = true;
+                        _productsTitle = selectedNode.Name;
+                        _browseCategories = selectedNode.Children.ToList();
+                        _products = [];
+                    }
+                    else
+                    {
+                        _isCategoryBrowse = false;
+                        _browseCategories = [];
 
-                _products = mapped;
+                        var items = await CatalogPort.GetCatalogAsync(take: null, _selectedCategoryId);
+                        _products = items.Select(StoreProductMapper.ToModel).ToList();
+                        _productsTitle = selectedNode.Name;
+                    }
+                }
+                else
+                {
+                    var items = await CatalogPort.GetCatalogAsync(take: null, _selectedCategoryId);
+                    var mapped = items.Select(StoreProductMapper.ToModel).ToList();
+
+                    if (!string.IsNullOrWhiteSpace(_search))
+                    {
+                        mapped = mapped
+                            .Where(p => p.Name.StartsWith(_search, StringComparison.OrdinalIgnoreCase))
+                            .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+                            .ToList();
+                    }
+
+                    if (string.IsNullOrWhiteSpace(_search) && selectedNode is not null)
+                    {
+                        _productsTitle = selectedNode.Name;
+                    }
+
+                    _products = mapped;
+                }
             }
         }
         finally
         {
             _loading = false;
         }
+    }
+
+    private static StoreCategoryTreeNodeDto? FindNodeById(
+        IReadOnlyList<StoreCategoryTreeNodeDto> nodes,
+        int? id)
+    {
+        if (id is not int target)
+        {
+            return null;
+        }
+
+        foreach (var node in nodes)
+        {
+            if (node.Id == target)
+            {
+                return node;
+            }
+
+            var found = FindNodeById(node.Children, target);
+            if (found is not null)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 
     private void GoToProduct(int id) => Navigation.NavigateTo($"/product/{id}");
