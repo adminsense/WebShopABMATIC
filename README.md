@@ -146,7 +146,6 @@ Login uses **legacy ABMATIC tables**, not ASP.NET Identity (`AspNetUsers` is not
 ## Documentation
 
 - 🏗️ [`readme/SPEC_INFRASTRUCTURE.md`](readme/SPEC_INFRASTRUCTURE.md) — Hexagonal architecture, connection strings, migrations, DI
-- 📊 [`readme/DATA_DUTCH_ENGLISH_MODEL.md`](readme/DATA_DUTCH_ENGLISH_MODEL.md) — Schemas, table inventory, Dutch → English mapping
 - 🌱 [`readme/DATA_DEMO_SEED.md`](readme/DATA_DEMO_SEED.md) — SQL demo seed: schemas, tables, run `seeds.sql` on Azure SQL (`abmatic.database.windows.net`)
 - 🖥️ [`readme/SPEC_ADMIN.md`](readme/SPEC_ADMIN.md) — Admin panel: logins, registrations, stock, dashboards
 - 🛒 [`readme/SPEC_WEB_STORE.md`](readme/SPEC_WEB_STORE.md) — Web store: catalog, customer auth, checkout, stock display
