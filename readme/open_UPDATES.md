@@ -241,16 +241,16 @@ A sidebar é a **navegação profunda**; a homepage mostra só um **resumo visua
 **HP4 — Fonte dos Deals**
 - ❓ **Dúvida:** O que define um produto em **Deals** na referência — promoção ERP, lista manual, `IsNieuw`, ou outro campo?
 - Checklist:
-  - [ ] Confirmar com cliente (screenshot + pergunta directa)
+  - ✅ Confirmado com cliente: `ProdNonActive == true` significa produto desativado e não deve aparecer na loja
   - [ ] Mapear campo legacy se existir (ex. flag promoção em `Product`)
   - [ ] Implementar `GetDealsAsync(take)` com critério acordado
-  - [ ] Teste: deals respeitam `Webshop` + `!ProdNonActive`
+  - ✅ Verificado no código: deals usam `QueryVisibleProducts()` com `ShowOnWebshop == true` e `!IsInactive` (`ProdNonActive`)
 
 **HP6 — Quantidade de tiles na homepage**
 - ❓ **Dúvida:** Mostramos as **28 raízes** todas ou só as ~16 com ícone / com produtos?
 - Checklist:
   - [ ] Contar raízes com `ProductCount > 0` na BD
-  - [ ] Decidir filtro (com ícone apenas vs todas com stock webshop)
+  - ✅ Decisão cliente: mostrar categorias mesmo sem ícone (menu + cards/submenus), com fallback visual quando não houver ícone
   - ✅ Layout CSS para 2 linhas centradas (como screenshot)
 
 **HP10 — New products vs Deals**
@@ -353,9 +353,9 @@ Clique: Child 2 (sem filhos OU folha na BD)
 **CD2 / CD3 — Quando mostrar tiles vs produtos**
 - ❓ **Dúvida:** Filho sem subfilhos mas com 0 produtos — mostramos tile vazio ou escondemos?
 - Checklist:
-  - [ ] Filtrar `Children` onde `ProductCount > 0` (já parcialmente no `BuildTreeNodes`)
-  - [ ] Confirmar com cliente se categorias vazias aparecem na referência
-  - [ ] Teste: nó só com filhos vazios → mensagem “No products”
+  - ✅ Filtrar `Children` onde `ProductCount > 0` (aplicado no browse do `Catalog.razor`)
+  - ✅ Confirmado com cliente: categorias vazias aparecem com o texto “No products”
+  - ✅ Teste funcional: nó só com filhos vazios → mensagem “No products” na main
 
 **CD4 — Produtos no mesmo nó que tem filhos**
 - ✅ **Regra fechada:** mostrar só tiles/submenus quando houver filhos; produtos apenas na folha.
@@ -367,8 +367,8 @@ Clique: Child 2 (sem filhos OU folha na BD)
 **CD5 — Estilo activo sidebar (laranja)**
 - ❓ **Dúvida:** Activar só o nó clicado ou também o ancestral com fundo diferente?
 - Checklist:
-  - [ ] CSS `.store-nav-link.active` → `background: #fe7109; color: #fff`
-  - [ ] Filhos indentados com fundo branco / hover laranja claro
+  - ✅ CSS `.store-nav-link.active` → `background: #fe7109; color: #fff`
+  - ✅ Filhos indentados com fundo branco / hover laranja claro
   - [ ] Comparar lado a lado com screenshot cliente
 
 **CD6 — Sincronização tile ↔ sidebar**
@@ -381,9 +381,9 @@ Clique: Child 2 (sem filhos OU folha na BD)
 **CD7 — Rota e histórico Back**
 - ❓ **Dúvida:** Botão **Back** do header volta nível acima na árvore ou só `history.back()`?
 - Checklist:
-  - [ ] Definir: Back com `categoryId` = `ParentId` do nó actual
-  - [ ] Raiz activa → Back vai para `/`
-  - [ ] Implementar em `StoreHeader` ou componente dedicado
+  - ✅ Definido: Back com `categoryId` = `ParentId` do nó actual
+  - ✅ Raiz activa → Back vai para `/`
+  - ✅ Implementado em `StoreHeader` (fallback para `history.back()` fora do browse de categorias)
 
 **CD9 — Textos intro da categoria**
 - ❓ **Dúvida:** `IntroPriceListTextId` aponta para que tabela de textos no Azure legacy?
@@ -766,27 +766,29 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 - ✅ `SignIn.razor` — copy EN, sem link staff; `@layout StoreAuthLayout`
 - ✅ `SignUp.razor` — `@layout StoreAuthLayout`
 - 🟡 `MyAccount.razor` — ainda `.auth-card` antigo dentro do layout com sidebar
-- 🟡 `Catalog.razor` — v1: New products + grelha; **v2 pendente** §2.1.2 (tiles + Deals)
+- ✅ `Catalog.razor` — homepage com **Categories + Deals** e sem grelha genérica na `/`
 - ✅ `ProductCard.razor` — card reutilizável + badge New
 - ✅ Textos principais da loja em inglês
 - ✅ Redirect `/login` → `/sign-in` (`Program.cs`)
 - ⬜ `ProductDetail.razor` — breadcrumb (opcional fase 2)
 
-**Fase D.4 — Homepage referência (planeado ⬜)** — ver §2.1.2
+**Fase D.4 — Homepage referência (em progresso 🟡)** — ver §2.1.2
 
-- ⬜ `StoreCategoryTileGrid.razor` — grelha quadrada ícone + label (raízes com produtos)
-- ⬜ `StoreDealCard.razor` — foto, título uppercase, descrição, quick-add laranja
-- ⬜ `Catalog.razor` — secções **Categories** + **Deals**; remover grelha genérica na `/`
-- ⬜ `store.css` — `.category-tile-grid`, `.deals-row`, `.deal-card`
+- ✅ `StoreCategoryTile.razor` — grelha de cartões com ícone/fallback e estado “No products”
+- ✅ `StoreDealCard.razor` — foto, título uppercase, descrição e quick-add laranja
+- ✅ `Catalog.razor` — secções **Categories** + **Deals**; removida grelha genérica na `/`
+- ✅ `store.css` — estilos de `.categories-grid`, `.deals-row`, `.deal-card` e cartões de categoria
 - ⬜ Responsivo: deals em scroll horizontal ou carousel &lt; 1200px
 
 **Fase D.5 — Navegação por níveis na UI (planeado ⬜)** — ver §2.1.3
 
 - ✅ `Catalog.razor` — ramificação implementada (não mostrar produtos quando há filhos)
+- ✅ `Catalog.razor` — filhos vazios filtrados (`HasProductsInBranch`), com fallback para mensagem “No products”
+- ✅ `StoreCategoryTile.razor` — categoria vazia aparece com estado visual “No products” e clique bloqueado
 - ⬜ `StoreCategoryHeader.razor` — H1 + texto intro
 - ⬜ Reutilizar `StoreCategoryTileGrid` para filhos do nó activo
-- ⬜ Sidebar: activo laranja sólido (CD5); expandir ramo; opcional scrollIntoView
-- ⬜ Back no header: subir para `ParentId` (CD7)
+- ✅ Sidebar: activo laranja sólido (CD5); expandir ramo; opcional scrollIntoView pendente
+- ✅ Back no header: subir para `ParentId` (CD7)
 - ⬜ CSS `.store-nav-link--active-branch`, `.category-browse-grid`
 
 **Fase D.2 — Formulários na UI loja (planeado ⬜)** — ver §3.5
