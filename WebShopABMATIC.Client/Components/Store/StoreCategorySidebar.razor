@@ -2,6 +2,7 @@
 @using WebShopABMATIC.Application.Store
 @inject IStoreCatalogPort CatalogPort
 @inject NavigationManager Navigation
+@inject IJSRuntime Js
 @implements IDisposable
 
 <nav class="store-sidebar-nav" aria-label="Product categories">
@@ -39,24 +40,39 @@
     private int? _selectedCategoryId;
     private IReadOnlyList<StoreCategoryTreeNodeDto> _tree = [];
     private readonly HashSet<int> _expandedIds = [];
+    private bool _pendingScrollToActive;
 
     protected override async Task OnInitializedAsync()
     {
         ReadCategoryFromUri();
         Navigation.LocationChanged += OnLocationChanged;
         await LoadTreeAsync();
+        QueueScrollToActive();
     }
 
     protected override void OnParametersSet()
     {
         ReadCategoryFromUri();
         EnsureExpandedPath();
+        QueueScrollToActive();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_loading || !_pendingScrollToActive)
+        {
+            return;
+        }
+
+        _pendingScrollToActive = false;
+        await ScrollActiveIntoViewAsync();
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         ReadCategoryFromUri();
         EnsureExpandedPath();
+        QueueScrollToActive();
         InvokeAsync(StateHasChanged);
     }
 
@@ -79,11 +95,24 @@
         {
             _tree = await CatalogPort.GetCategoryTreeAsync();
             EnsureExpandedPath();
+            QueueScrollToActive();
         }
         finally
         {
             _loading = false;
         }
+    }
+
+    private void QueueScrollToActive()
+    {
+        _pendingScrollToActive = _selectedCategoryId is > 0;
+    }
+
+    private async Task ScrollActiveIntoViewAsync()
+    {
+        await Js.InvokeVoidAsync(
+            "eval",
+            "(() => { const nav = document.querySelector('.store-sidebar-nav'); if (!nav) return; const active = nav.querySelector('.store-nav-link.active'); if (!active) return; active.scrollIntoView({ block: 'nearest', inline: 'nearest' }); })();");
     }
 
     private void EnsureExpandedPath()

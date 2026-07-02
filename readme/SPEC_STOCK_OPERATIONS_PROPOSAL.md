@@ -3,15 +3,15 @@
 ![Status](https://img.shields.io/badge/Status-Partially%20implemented-22c55e?style=flat-square) ![Schema](https://img.shields.io/badge/Schema-Products%20%2B%20Orders-512BD4?style=flat-square) ![Architecture](https://img.shields.io/badge/Fit-Hexagonal-28a745?style=flat-square) ![Payments](https://img.shields.io/badge/Payments-Mollie.Api-0a0a0a?style=flat-square) ![Tracker](https://img.shields.io/badge/Live-IMPLEMENTATION__ROADMAP__open.md-informational?style=flat-square)
 
 > [!IMPORTANT] 
-> **Executive summary:** Originally an analysis proposal — **core stock writes, checkout, Mollie (dev mock), manual adjustment, and low-stock alerts are now implemented** (see **§0** and [IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md)). **Dev priority:** Phase E stock ops. **Prod go-live (last):** 3b SMTP, B.9 Mollie E2E, M.5 Azure Blob.
+> **Executive summary:** Originally an analysis proposal — **core stock writes, checkout, Mollie (dev mock), manual adjustment, and low-stock alerts are now implemented** (see **§0** and [open_IMPLEMENTATION_ROADMAP.md](./open_IMPLEMENTATION_ROADMAP.md)). **Dev priority:** Phase E stock ops. **Prod go-live (last):** 3b SMTP, B.9 Mollie E2E, M.5 Azure Blob.
 
-> **Live tracker:** [IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md)
+> **Live tracker:** [open_IMPLEMENTATION_ROADMAP.md](./open_IMPLEMENTATION_ROADMAP.md)
 
 ---
 
 ## 0. Implementation log (delivered)
 
-_Last updated: May 2026 — see [IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md) for current phase status._
+_Last updated: May 2026 — see [open_IMPLEMENTATION_ROADMAP.md](./open_IMPLEMENTATION_ROADMAP.md) for current phase status._
 
 ### 0.1 Stock movement service (sale + manual)
 
@@ -59,18 +59,29 @@ _Last updated: May 2026 — see [IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATIO
 |------|--------|
 | `MolliePaymentAdapter`, webhook, `OrderAdvancePayment` columns | ✅ |
 | `CheckoutUseCase`, stock validation, audit `CheckoutStarted` / `PaymentPaid` | ✅ |
-| `Mollie:ApiKey` + public webhook URL + E2E test | ⬜ See roadmap **B.9** (last) |
+| `Mollie:ApiKey` + public webhook URL + E2E test | ⬜ See roadmap **B.9** — configure after Mollie dev account |
 
 ### 0.5 Still pending (from original proposal)
 
 | Feature | Phase | Reference |
 |---------|-------|-----------|
-| Transfer between locations | 2 | §3.4 |
-| Purchase orders + GRN | 3 | §3.5–3.6 |
 | `ReservedQuantity` / `OrderStatus.ReserveStock` workflow | 4 | §3.7 — **we decrement on pay, not reserve** |
 | SignalR `StockUpdated` | optional | Roadmap Phase F |
 | Audit `StockAdjust` badge | 6 | [AUDITS_open.md](./AUDITS_open.md) |
 | Demo seed: movements + PO (full) | 1 | §5 — partial in seeds |
+
+### 0.6 Stock hub extension — transfer, PO, GRN (Jun/2026)
+
+| Item | Route / API | Status |
+|------|-------------|--------|
+| Transfer between locations | `/admin/stock/transfers/new` | ✅ |
+| Transfer API | `POST /api/admin/stock/transfers` | ✅ |
+| Purchase orders | `/admin/stock/purchase-orders` | ✅ |
+| PO receive (GRN) | `/admin/stock/purchase-orders/{id}/receive` | ✅ |
+| GRN API | `POST /api/admin/stock/purchase-orders/{id}/receive` | ✅ |
+| `ApplyPurchaseOrderReceiveAsync` | `StockMovementService` | ✅ |
+
+**Mollie (storefront):** code + dev mock ✅ — real `test_…` API key + public webhook when you create a Mollie dev account ([open_MOLLIE_PAYMENTS_open.md](./open_MOLLIE_PAYMENTS_open.md) **B.9**).
 
 ---
 
@@ -119,7 +130,7 @@ _Last updated: May 2026 — see [IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATIO
 | **Stock movements on sale** | ✅ | `ApplySaleFromOrderAsync` | — |
 | **Manual adjustment** | ✅ | `/admin/stock/adjustment` + API | Audit `StockAdjust` badge |
 | **Low stock alerts** | ✅ | In-app `StockLowAlerts` | Email push optional |
-| **Transfer / PO / GRN** | ✅ | Read-only overview KPIs | Full CRUD + receive flows |
+| **Transfer / PO / GRN** | ✅ | `/admin/stock/transfers/new`, `/admin/stock/purchase-orders`, receive form |
 | **Reservation model** | ✅ columns | Not used | §3.7 deferred — direct decrement instead |
 
 ### 1.4 Entity ↔ form model (how tables get their data)
@@ -279,9 +290,9 @@ Extend sidebar **Stock** (`/admin/hub/stock`) with operational screens (not only
 | 1 | Stock overview | `/admin/stock/overview` | Dashboard | ✅ |
 | 2 | Movement journal | `/admin/stock/movements` | Consultation + filter | ✅ |
 | 3 | **Stock adjustment** | `/admin/stock/adjustment` | Form (creates movement) | ✅ |
-| 4 | Transfer between locations | `/admin/stock/transfers/new` | Form (2 movements) | ⬜ |
-| 5 | Purchase orders | `/admin/stock/purchase-orders` | List + form | ⬜ |
-| 6 | PO delivery booking | `/admin/stock/purchase-orders/{id}/receive` | Form | ⬜ |
+| 4 | Transfer between locations | `/admin/stock/transfers/new` | Form (2 movements) | ✅ |
+| 5 | Purchase orders | `/admin/stock/purchase-orders` | List + form | ✅ |
+| 6 | PO delivery booking | `/admin/stock/purchase-orders/{id}/receive` | Form | ✅ |
 | 7 | Stock locations | `/admin/stock-locations` | CRUD | ✅ |
 | 8 | Product stock | `/admin/product-stock` | CRUD + **low-stock filter** | ✅ |
 
@@ -329,52 +340,42 @@ Webshop sales link **`OrderLineId`** on movement rows created by `ApplySaleFromO
 
 ---
 
-### 3.4 Transfer between locations — **Recommend: Phase 2**
+### 3.4 Transfer between locations — ✅ **Implemented**
 
-**Purpose:** Move stock from warehouse A to B without double-counting.
+**Route:** `/admin/stock/transfers/new` · **API:** `POST /api/admin/stock/transfers`
 
-**Flow:**
+**Delivered:**
 
-1. User selects product, **from** location, **to** location, quantity.
-2. Service writes **two** `StockMovement` rows (out −Q, in +Q) or one transfer pair with shared reference id (if you add `TransferGroupId` later).
-3. Updates two `ProductStockLocation` rows atomically.
-
-**Effort:** Medium · **Value:** Medium · **Risk:** Medium
-
-**Alternative:** Defer and use two manual adjustments (simpler, worse audit).
+- `IStockTransferPort` / `StockTransferUseCase` → `IStockMovementService.ApplyLocationTransferAsync`
+- Paired out/in `StockMovement` rows + atomic `ProductStockLocation` update
+- Hub card **Stock transfer**
 
 ---
 
-### 3.5 Purchase orders (supplier) — **Recommend: Phase 3**
+### 3.5 Purchase orders (supplier) — ✅ **Implemented**
 
-**Purpose:** Plan replenishment — header + lines before goods arrive.
+**Route:** `/admin/stock/purchase-orders` · `IStockOrderAdminPort` / `StockOrderAdminUseCase`
 
-**List screen:** `StockOrder` — supplier, dates, `IsCompleted`, total, line count.
+**Delivered:**
 
-**Form:**
-
-- Header: `SupplierId`, `ExpectedDeliveryDate`, `Notes`, `InternalNotes`
-- Lines grid: `ProductId`, `QuantityOrdered`, `PurchaseUnitPrice`, `ProductName`, flags `Besteld`, `Geleverd`
-
-**Consultation-only variant (lighter Phase 2):** List + detail read-only if you import legacy data from `ABMATIC.bacpac` on Azure first.
-
-**Effort:** High · **Value:** High for purchasing team · **Risk:** Medium (many fields, supplier FK)
+- List with open-only filter, search, pagination
+- Header: supplier, dates, notes, completed flag
+- Lines grid: product id/name, qty ordered, unit price, line total
+- `StockOrderRepository` — save header + sync lines; delete blocked when deliveries exist
+- Hub card **Purchase orders**
 
 ---
 
-### 3.6 Receive delivery (GRN) — **Recommend: Phase 3**
+### 3.6 Receive delivery (GRN) — ✅ **Implemented**
 
-**Purpose:** When supplier delivers, book **`StockOrderDelivery`** and increase stock.
+**Route:** `/admin/stock/purchase-orders/{id}/receive` · **API:** `POST /api/admin/stock/purchase-orders/{id}/receive`
 
-**Flow:**
+**Delivered:**
 
-1. Open PO → select line → enter delivery note `DeliveryDocumentNumber`, `Date`, `Quantity`.
-2. Insert `StockOrderDelivery`.
-3. Update line: `QuantityDelivered`, `Geleverd`, `DeliveredAt`, `QuantityProcessedToStock`.
-4. Create **inbound** `StockMovement` (+quantity) and bump `ProductStockLocation.Quantity`.
-5. Mark `StockOrder.IsCompleted` when all lines fully delivered/processed.
-
-**Effort:** High · **Value:** High · **Risk:** High (must match legacy partial-delivery semantics)
+- `IStockPoReceivePort` / `StockPoReceiveUseCase` → `ApplyPurchaseOrderReceiveAsync`
+- Inserts `StockOrderDelivery`, updates line delivered/processed qty, inbound `StockMovement`, bumps `ProductStockLocation`
+- Marks `StockOrder.IsCompleted` when all lines fulfilled
+- Link from PO list and overview KPI
 
 ---
 
@@ -878,9 +879,9 @@ Stock Phase 1 read-only, checkout + Mollie (code), stock writes, manual adjustme
 
 ### Recommended next
 
-1. **Mollie prod go-live** — `Mollie:ApiKey`, webhook URL, E2E test ([IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md) **B.9 — prod, last**).
+1. **Mollie prod go-live** — `Mollie:ApiKey`, webhook URL, E2E test ([open_IMPLEMENTATION_ROADMAP.md](./open_IMPLEMENTATION_ROADMAP.md) **B.9 — prod, last**).
 2. **Audit `StockAdjust`** badge on movement operations ([AUDITS_open.md](./AUDITS_open.md)).
-3. **Phase C** — customer/admin order visibility ([IMPLEMENTATION_ROADMAP_open.md](./IMPLEMENTATION_ROADMAP_open.md)).
+3. **Phase C** — customer/admin order visibility ([open_IMPLEMENTATION_ROADMAP.md](./open_IMPLEMENTATION_ROADMAP.md)).
 4. **Transfer / PO / GRN** — §3.4–3.6 when purchasing team needs admin flows.
 5. **Optional:** SignalR (roadmap Phase F). **Prod last:** SMTP worker (Phase 3b), Mollie E2E (B.9).
 

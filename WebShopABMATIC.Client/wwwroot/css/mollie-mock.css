@@ -1,0 +1,220 @@
+/* Simulated Mollie hosted checkout (demo / Mollie:UseMock) */
+.mollie-mock-root {
+    min-height: 100vh;
+    background: #f5f5f7;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #111;
+}
+
+.mollie-mock-demo-banner {
+    background: #fffbeb;
+    border-bottom: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 0.75rem;
+    padding: 0.45rem 1rem;
+    text-align: center;
+}
+
+.mollie-mock-page {
+    padding: 2rem 1rem 3rem;
+}
+
+.mollie-mock-shell {
+    max-width: 440px;
+    margin: 0 auto;
+}
+
+.mollie-mock-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: #666;
+    font-size: 0.85rem;
+    text-decoration: none;
+    margin-bottom: 1.25rem;
+    border: none;
+    background: none;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 0;
+}
+
+.mollie-mock-back:hover {
+    color: #111;
+}
+
+.mollie-mock-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.mollie-mock-header {
+    padding: 1.5rem 1.5rem 1rem;
+    border-bottom: 1px solid #eee;
+    text-align: center;
+}
+
+.mollie-mock-merchant {
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 0.25rem;
+}
+
+.mollie-mock-amount {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.mollie-mock-order-ref {
+    font-size: 0.75rem;
+    color: #999;
+    margin-top: 0.35rem;
+    word-break: break-word;
+}
+
+.mollie-mock-body {
+    padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.mollie-mock-methods {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.mollie-mock-method {
+    flex: 1;
+    padding: 0.65rem 0.5rem;
+    border: 2px solid #e5e5e5;
+    border-radius: 8px;
+    background: #fff;
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    color: #555;
+}
+
+.mollie-mock-method.active {
+    border-color: #0077ff;
+    color: #0077ff;
+    background: #f0f7ff;
+}
+
+.mollie-mock-cards-icons {
+    display: flex;
+    gap: 0.35rem;
+    margin-bottom: 1rem;
+}
+
+.mollie-mock-cards-icons span {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.2rem 0.45rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    color: #666;
+    background: #fafafa;
+}
+
+.mollie-mock-field {
+    margin-bottom: 1rem;
+}
+
+.mollie-mock-field label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 0.35rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.mollie-mock-field input,
+.mollie-mock-field select {
+    width: 100%;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 1rem;
+    color: #111;
+    background: #fff;
+}
+
+.mollie-mock-field input:focus,
+.mollie-mock-field select:focus {
+    outline: none;
+    border-color: #0077ff;
+    box-shadow: 0 0 0 3px rgba(0, 119, 255, 0.15);
+}
+
+.mollie-mock-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.mollie-mock-pay {
+    width: 100%;
+    padding: 0.95rem;
+    border: none;
+    border-radius: 8px;
+    background: #0077ff;
+    color: #fff;
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 0.5rem;
+}
+
+.mollie-mock-pay:hover:not(:disabled) {
+    background: #0066dd;
+}
+
+.mollie-mock-pay:disabled {
+    opacity: 0.7;
+    cursor: wait;
+}
+
+.mollie-mock-secure {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    color: #888;
+    margin-top: 1rem;
+}
+
+.mollie-mock-footer {
+    text-align: center;
+    margin-top: 1.25rem;
+    font-size: 0.72rem;
+    color: #999;
+}
+
+.mollie-mock-footer strong {
+    color: #0a0a0a;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.mollie-mock-ideal-hint {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 1rem;
+    line-height: 1.45;
+}
+
+.mollie-mock-error {
+    max-width: 440px;
+    margin: 2rem auto;
+    padding: 1rem;
+}
