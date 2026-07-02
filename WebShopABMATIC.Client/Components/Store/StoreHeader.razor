@@ -1,5 +1,6 @@
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Application.Store
 @using WebShopABMATIC.Web.Services
 @inject NavigationManager Navigation
 @inject StoreCartService Cart
@@ -157,7 +158,57 @@
 
     private async Task GoBackAsync()
     {
+        var currentCategoryId = ReadCategoryIdFromUri();
+        if (currentCategoryId is int categoryId)
+        {
+            var tree = await CatalogPort.GetCategoryTreeAsync();
+            var currentNode = FindNodeById(tree, categoryId);
+            if (currentNode?.ParentId is int parentId)
+            {
+                Navigation.NavigateTo($"/?categoryId={parentId}");
+                return;
+            }
+
+            Navigation.NavigateTo("/");
+            return;
+        }
+
         await Js.InvokeVoidAsync("eval", "if (window.history.length > 1) { history.back(); } else { window.location.href = '/'; }");
+    }
+
+    private int? ReadCategoryIdFromUri()
+    {
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        if (Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query)
+            .TryGetValue("categoryId", out var value)
+            && int.TryParse(value.FirstOrDefault(), out var id)
+            && id > 0)
+        {
+            return id;
+        }
+
+        return null;
+    }
+
+    private static StoreCategoryTreeNodeDto? FindNodeById(
+        IReadOnlyList<StoreCategoryTreeNodeDto> nodes,
+        int targetId)
+    {
+        foreach (var node in nodes)
+        {
+            if (node.Id == targetId)
+            {
+                return node;
+            }
+
+            var found = FindNodeById(node.Children, targetId);
+            if (found is not null)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 
     private async Task OnSearchKey(KeyboardEventArgs e)
