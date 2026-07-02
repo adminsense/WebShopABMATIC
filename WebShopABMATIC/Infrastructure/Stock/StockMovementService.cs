@@ -94,7 +94,12 @@ public sealed class StockMovementService : IStockMovementService
             }
 
             var previousQuantity = stockLocation.Quantity;
+            var reservedRelease = Math.Min(stockLocation.ReservedQuantity, quantity);
             stockLocation.Quantity -= quantity;
+            if (reservedRelease > 0)
+            {
+                stockLocation.ReservedQuantity -= reservedRelease;
+            }
 
             movements.Add(new StockMovement
             {
@@ -157,6 +162,107 @@ public sealed class StockMovementService : IStockMovementService
         {
             await _lowStockAlerts.EvaluateAsync(productStockLocationId, previousQuantity, cancellationToken);
         }
+
+        return StockApplyResult.Applied(movements.Count);
+    }
+
+    public async Task<StockApplyResult> ApplyReservationFromOrderAsync(int orderId, CancellationToken cancellationToken = default)
+    {
+        var orderExists = await _db.Orders.AsNoTracking().AnyAsync(o => o.Id == orderId, cancellationToken);
+        if (!orderExists)
+        {
+            return StockApplyResult.Failed([$"Order {orderId} not found."]);
+        }
+
+        var lines = await _db.OrderLines
+            .Where(l => l.OrderId == orderId && l.ProductId != null)
+            .ToListAsync(cancellationToken);
+
+        if (lines.Count == 0)
+        {
+            return StockApplyResult.Skipped("Order has no product lines.");
+        }
+
+        var lineIds = lines.Select(l => l.Id).ToList();
+        var alreadyReserved = await _db.StockMovements.AsNoTracking()
+            .AnyAsync(m => m.IsReservation == true && m.OrderLineId != null && lineIds.Contains(m.OrderLineId.Value), cancellationToken);
+
+        if (alreadyReserved)
+        {
+            return StockApplyResult.AlreadyApplied();
+        }
+
+        await using var tx = await _db.Database.BeginTransactionAsync(cancellationToken);
+
+        var errors = new List<string>();
+        var movements = new List<StockMovement>();
+        var now = DateTime.UtcNow;
+
+        foreach (var line in lines)
+        {
+            var productId = line.ProductId!.Value;
+            var quantity = line.Quantity;
+            if (quantity <= 0)
+            {
+                continue;
+            }
+
+            var stockLocation = await _db.ProductStockLocations
+                .FirstOrDefaultAsync(
+                    x => x.ProductId == productId && x.IsDefault && x.IsInactive != true,
+                    cancellationToken);
+
+            if (stockLocation is null)
+            {
+                errors.Add($"No default stock location for product {productId}.");
+                continue;
+            }
+
+            var available = stockLocation.Quantity - stockLocation.ReservedQuantity;
+            if (available < quantity)
+            {
+                errors.Add(
+                    $"Insufficient available stock for product {productId}: need {quantity}, have {available}.");
+                continue;
+            }
+
+            stockLocation.ReservedQuantity += quantity;
+            movements.Add(new StockMovement
+            {
+                ProductId = productId,
+                OrderLineId = line.Id,
+                Quantity = quantity,
+                Timestamp = now,
+                Notes = $"Webshop reservation order #{orderId}",
+                IsReservation = true,
+                ProductStockLocatieId = stockLocation.Id
+            });
+        }
+
+        if (errors.Count > 0)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            return StockApplyResult.Failed(errors);
+        }
+
+        if (movements.Count == 0)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            return StockApplyResult.Skipped("No reservations required.");
+        }
+
+        using (_auditSuppression.SuppressEntityTypes(nameof(StockMovement), nameof(ProductStockLocation)))
+        {
+            _db.StockMovements.AddRange(movements);
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+
+        await tx.CommitAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Reserved stock for {Count} line(s) on order {OrderId}.",
+            movements.Count,
+            orderId);
 
         return StockApplyResult.Applied(movements.Count);
     }
