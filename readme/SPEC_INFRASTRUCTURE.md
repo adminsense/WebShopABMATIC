@@ -337,7 +337,7 @@ Portal path: **App Service `abmaticwebshop`** → **Settings** → **Environment
 - Azure Storage account key / connection string  
   ✅ Same — rotate if exposed in chat or email
 - Mollie API key (test / live)  
-  ⏳ Prod go-live — [MOLLIE_PAYMENTS_open.md](MOLLIE_PAYMENTS_open.md)
+  ⏳ Prod go-live — [open_MOLLIE_PAYMENTS_open.md](open_MOLLIE_PAYMENTS_open.md)
 
 **Connection string keys**
 
@@ -608,10 +608,10 @@ Publish output to App Service (Visual Studio Publish, ZIP deploy, or CI). Ensure
 ## Documentation
 
 - 🏠 [Main Documentation](../README.md) — Project overview
-- 🗺️ [Implementation roadmap](IMPLEMENTATION_ROADMAP_open.md)
+- 🗺️ [Implementation roadmap](open_IMPLEMENTATION_ROADMAP.md)
 - 🖼️ [Azure Blob media](AZUREBLOB.md)
 - 🌱 [Demo seed](SUNDAY.md) · [DATA_DEMO_SEED.md](DATA_DEMO_SEED.md)
-- 💳 [Mollie go-live](MOLLIE_PAYMENTS_open.md)
+- 💳 [Mollie go-live](open_MOLLIE_PAYMENTS_open.md)
 - 🔐 [Auth roadmap](AUTH_IDENTITY_ROADMAP_open.md)
 
 ---
