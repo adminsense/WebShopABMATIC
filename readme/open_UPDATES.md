@@ -311,14 +311,14 @@ Clique: Child 2 (sem filhos OU folha na BD)
 
 | Aspecto | Referência | Nós hoje (`Catalog.razor` + sidebar) | Gap |
 |---------|------------|----------------------------------------|-----|
-| Clique sidebar / tile | Próximo nível = **cartões filhos** | `/?categoryId=` → **produtos** (descendentes) | ❌ Lógica de navegação errada |
-| Item activo sidebar | Fundo **laranja** + texto branco | Classe `.active` (fundo laranja suave) | 🟡 Reforçar contraste igual screenshot |
-| Expandir filhos | Auto-expandir ramo activo | `ExpandAncestors` parcial | 🟡 Expandir + scroll para activo |
-| Título main | H1 = nome categoria | “Products in category” genérico | ❌ `StoreCategoryHeader` com `NameEn` |
-| Conteúdo main (nó com filhos) | Grelha **subcategorias** | Grelha produtos | ❌ `StoreCategoryTileGrid` com `children` |
+| Clique sidebar / tile | Próximo nível = **cartões filhos** | ✅ `/?categoryId=` mostra **subcategorias** quando o nó tem filhos; produtos só na folha | ✅ Alinhado com regra CD4 |
+| Item activo sidebar | Fundo **laranja** + texto branco | ✅ Classe `.active` com `background: #fe7109` e texto branco | ✅ Contraste ajustado |
+| Expandir filhos | Auto-expandir ramo activo | ✅ `ExpandAncestors` expande o ramo activo | ✅ `scrollIntoView` do item activo implementado |
+| Título main | H1 = nome categoria | ✅ Título usa `selectedNode.Name` no browse por categoria | 🟡 `StoreCategoryHeader` (intro/form) ainda pendente |
+| Conteúdo main (nó com filhos) | Grelha **subcategorias** | ✅ Grelha de `Children` (`categories-grid`) | ✅ Alinhado |
 | Conteúdo main (folha) | Grelha **produtos** | ✅ `GetCatalogAsync` + filtro | ✅ (ajustar só regra folha) |
-| Deals na `/` | Só na homepage | New products na `/` | §2.1.2 |
-| URL | Provável `/category/{id}` ou query | `/?categoryId=` | 🟡 Manter query ou rota dedicada |
+| Deals na `/` | Só na homepage | ✅ Homepage com secções **Categories** + **Deals** | ✅ Alinhado |
+| URL | Provável `/category/{id}` ou query | ✅ Mantido `/?categoryId=` (decisão v1) | ✅ Rota dedicada fica para fase futura |
 
 **Dados BD (Fase A):** árvore `ProductStructuur` com **máx. 2 níveis** abaixo da raiz — navegação típica: **Raiz → filhos (tiles) → produtos** (ou raiz com filhos que também têm filhos → 3 cliques até produtos).
 
@@ -374,9 +374,9 @@ Clique: Child 2 (sem filhos OU folha na BD)
 **CD6 — Sincronização tile ↔ sidebar**
 - ❓ **Dúvida:** Ao clicar tile na main, sidebar faz scroll até o item activo?
 - Checklist:
-  - [ ] `categoryId` na URL actualiza sidebar e main no mesmo render
-  - [ ] `EnsureExpandedPath` inclui ramo activo (já existe — validar)
-  - [ ] Opcional: `scrollIntoView` no item activo (JS interop)
+  - ✅ `categoryId` na URL actualiza sidebar e main no mesmo render
+  - ✅ `EnsureExpandedPath` inclui ramo activo
+  - ✅ `scrollIntoView` no item activo (JS interop)
 
 **CD7 — Rota e histórico Back**
 - ❓ **Dúvida:** Botão **Back** do header volta nível acima na árvore ou só `history.back()`?
@@ -787,7 +787,7 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 - ✅ `StoreCategoryTile.razor` — categoria vazia aparece com estado visual “No products” e clique bloqueado
 - ⬜ `StoreCategoryHeader.razor` — H1 + texto intro
 - ⬜ Reutilizar `StoreCategoryTileGrid` para filhos do nó activo
-- ✅ Sidebar: activo laranja sólido (CD5); expandir ramo; opcional scrollIntoView pendente
+- ✅ Sidebar: activo laranja sólido (CD5), ramo activo expandido e `scrollIntoView` do item activo
 - ✅ Back no header: subir para `ParentId` (CD7)
 - ⬜ CSS `.store-nav-link--active-branch`, `.category-browse-grid`
 
