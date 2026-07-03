@@ -1004,3 +1004,43 @@ Only when you have credentials and a public URL. See [open_MOLLIE_PAYMENTS_open.
 
 Examples: id **17** *Signaallampen* (7), **17183** *Lakkerij…* (6), **36** *Parkeersystemen* (2), **27** *IR fotocellen* (1). These remain reachable via child categories in the tree.
 
+---
+
+## 14. Reservation & sales integration — E.7–E.11 (Jul/2026)
+
+Full reservation lifecycle implemented — no SignalR needed; SQL transactions handle concurrency.
+
+### New components
+
+| Component | Purpose |
+|-----------|---------|
+| `IStockMovementService.ReleaseReservationAsync` | Reverses `ReservedQuantity` for cancelled/expired orders. Idempotent |
+| `ReservationExpirationService` | `BackgroundService` — every 5 min checks PrePay orders > 30 min old with no payment; queries Mollie; releases if expired/canceled/failed |
+| `OrderStockWorkflowService` | Evaluates legacy `OrderStatus.ReserveStock` / `AffectsStock` flags on status transitions |
+| `OrderAdminUseCase.CancelOrderAsync` | Cancels order + releases reservation + audit log |
+| `POST /api/admin/stock/orders/{id}/cancel` | Admin endpoint for order cancellation |
+
+### Enhanced components
+
+| Component | Enhancement |
+|-----------|-------------|
+| `ProcessMollieWebhookUseCase` | Now detects `expired`, `canceled`, `failed` Mollie statuses → calls `ReleaseReservationAsync` + `UpdateAdvancePaymentStatusAsync` |
+| `CheckoutUseCase.GetOrderSummaryAsync` | Releases reservation when customer returns from Mollie with terminal unpaid status |
+| `IStoreOrderRepository` | Added `UpdateAdvancePaymentStatusAsync` + `GetExpiredPrePayOrdersAsync` |
+| `AuditActions` | Added `PaymentExpired`, `OrderCancelled` |
+| Admin `/admin/orders` | "Cancel order & release stock" button with success/error feedback |
+
+### Flow summary
+
+```
+PrePay checkout → reserve stock → Mollie redirect
+                      │
+          ┌───────────┼───────────────────┐
+          ▼           ▼                   ▼
+     Mollie paid   Mollie expired    Customer never returns
+          │           │                   │
+          ▼           ▼                   ▼
+    sale + release  webhook release  bg service release
+    reservation     reservation      reservation (30 min)
+```
+

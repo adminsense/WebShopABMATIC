@@ -178,6 +178,37 @@ public sealed class StoreOrderRepository : IStoreOrderRepository
         await _db.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task UpdateAdvancePaymentStatusAsync(int advancePaymentId, string mollieStatus, CancellationToken cancellationToken = default)
+    {
+        var entity = await _db.OrderAdvancePayments.FirstAsync(a => a.Id == advancePaymentId, cancellationToken);
+        entity.MolliePaymentStatus = mollieStatus;
+        await _db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ExpiredReservationInfo>> GetExpiredPrePayOrdersAsync(TimeSpan olderThan, CancellationToken cancellationToken = default)
+    {
+        var cutoff = DateTime.UtcNow - olderThan;
+
+        var terminalStatuses = new[] { "paid", "expired", "canceled", "failed" };
+
+        return await (
+            from a in _db.OrderAdvancePayments.AsNoTracking()
+            join o in _db.Orders.AsNoTracking() on a.OrderId equals o.Id
+            where a.MolliePaidAt == null
+                  && (a.MolliePaymentStatus == null || !terminalStatuses.Contains(a.MolliePaymentStatus))
+                  && a.MolliePaymentId != null
+                  && o.CreatedAt < cutoff
+            select new ExpiredReservationInfo
+            {
+                OrderId = a.OrderId,
+                AdvancePaymentId = a.Id,
+                MolliePaymentId = a.MolliePaymentId,
+                MolliePaymentStatus = a.MolliePaymentStatus,
+                OrderCreatedAt = o.CreatedAt
+            }
+        ).ToListAsync(cancellationToken);
+    }
+
     public async Task<CheckoutOrderSummaryDto?> GetOrderSummaryForCustomerAsync(int orderId, int customerId, CancellationToken cancellationToken = default)
     {
         var order = await (
