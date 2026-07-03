@@ -24,7 +24,7 @@
             <Title>@(_isEditing ? "Edit order" : "Create order")</Title>
         </AdminEntityFormHeader>
         <div class="card-body">
-            @if (_formLoading) { <p class="text-muted mb-0">LoadingÖ</p> }
+            @if (_formLoading) { <p class="text-muted mb-0">Loadingù</p> }
             else {
                 <EditForm Model="_model" OnValidSubmit="SaveAsync">
                     <DataAnnotationsValidator />
@@ -45,7 +45,7 @@
                             <div class="col-md-3">
                                 <label class="form-label" for="f-projectid">Customer project (internal)</label>
                                 <InputNumber id="f-projectid" class="form-control form-control-sm" @bind-Value="_model.ProjectId" required />
-                                <div class="form-text">Legacy link to customer ó use project 1ñ4 from demo seeds.</div>
+                                <div class="form-text">Legacy link to customer ù use project 1ù4 from demo seeds.</div>
                             </div>
                         }
                         <div class="col-md-3">
@@ -65,10 +65,18 @@
                         <div class="col-12 d-flex gap-2 pt-1">
                             <button type="submit" class="btn btn-primary" disabled="@_saving">@(_isEditing ? "Update" : "Create")</button>
                             <button type="button" class="btn btn-secondary" @onclick="CancelFormAsync" disabled="@_saving"><i class="bi bi-x me-1"></i>Cancel</button>
+                            @if (_isEditing)
+                            {
+                                <button type="button" class="btn btn-danger" @onclick="CancelOrderAsync" disabled="@(_saving || _cancelling)">
+                                    @if (_cancelling) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                    <i class="bi bi-x-circle me-1"></i>Cancel order &amp; release stock
+                                </button>
+                            }
                         </div>
                     </div></div>
                 </EditForm>
                 @if (!string.IsNullOrEmpty(_formError)) { <div class="alert alert-danger mt-3 mb-0">@_formError</div> }
+                @if (!string.IsNullOrEmpty(_formSuccess)) { <div class="alert alert-success mt-3 mb-0">@_formSuccess</div> }
                 @if (_isEditing && _model.AdvancePayments.Count > 0)
                 {
                     <div class="mt-4">
@@ -89,10 +97,10 @@
                                         <tr>
                                             <td>@ap.Name</td>
                                             <td>@ap.Percent.ToString("0.##")</td>
-                                            <td>@(ap.Amount?.ToString("F2") ?? "ó")</td>
-                                            <td>@(ap.MolliePaymentStatus ?? "ó")</td>
-                                            <td class="small">@(ap.MolliePaymentId ?? "ó")</td>
-                                            <td>@(ap.MolliePaidAt?.ToLocalTime().ToString("g") ?? "ó")</td>
+                                            <td>@(ap.Amount?.ToString("F2") ?? "ù")</td>
+                                            <td>@(ap.MolliePaymentStatus ?? "ù")</td>
+                                            <td class="small">@(ap.MolliePaymentId ?? "ù")</td>
+                                            <td>@(ap.MolliePaidAt?.ToLocalTime().ToString("g") ?? "ù")</td>
                                         </tr>
                                     }
                                 </tbody>
@@ -120,17 +128,17 @@
                         <th>Accepted</th>
                     <th class="text-center">Actions</th></tr></thead>
                 <tbody>
-                    @if (_loading) { <tr><td colspan="8" class="text-center text-muted py-4">LoadingÖ</td></tr> }
+                    @if (_loading) { <tr><td colspan="8" class="text-center text-muted py-4">Loadingù</td></tr> }
                     else if (!string.IsNullOrEmpty(_gridError)) { <tr><td colspan="8" class="text-center text-danger py-4">@_gridError</td></tr> }
                     else if (_result is null || _result.Items.Count == 0) { <tr><td colspan="8" class="text-center text-muted py-4">No records found.</td></tr> }
                     else { @foreach (var item in _result.Items) {
                         <tr @key="item.Id" class="@(_model.Id == item.Id ? "table-active" : null)">
                             <td>@item.Id</td>
-                            <td>@(item.OrderNumber?.ToString() ?? "ó")</td>
+                            <td>@(item.OrderNumber?.ToString() ?? "ù")</td>
                             <td>@item.CustomerName</td>
                             <td>@item.CreatedAt.ToString("yyyy-MM-dd")</td>
                             <td>@item.PaymentStatus</td>
-                            <td class="small text-muted">@(item.MolliePaymentId ?? "ó")</td>
+                            <td class="small text-muted">@(item.MolliePaymentId ?? "ù")</td>
                             <td>@(item.IsAccepted ? "Yes" : "No")</td>
                             <td class="text-center"><div class="btn-group btn-group-sm">
                                 <a class="btn btn-sm btn-primary" href="@($"/admin/orders?edit={item.Id}")" data-enhance-nav="false"><i class="bi bi-pencil"></i></a>
@@ -150,8 +158,8 @@
     private OrderListFilter _filter = new();
     private OrderEditDto _model = new OrderEditDto { ProjectId = 1, DeliveryTypeId = 1, CreatedAt = DateTime.UtcNow.Date };
     private string _searchDraft = string.Empty;
-    private bool _loading = true, _formLoading, _saving, _disposed, _initialized;
-    private string? _formError, _gridError;
+    private bool _loading = true, _formLoading, _saving, _disposed, _initialized, _cancelling;
+    private string? _formError, _gridError, _formSuccess;
     private PagedResult<OrderSummaryDto>? _result;
     private bool _isEditing => _model.Id > 0;
 
@@ -190,7 +198,26 @@ private async Task EditAsync(int id) {
         } catch (Exception ex) { _formError = ex.Message; }
         finally { _saving = false; }
     }
-    private Task CancelFormAsync() { _formError = null; _model = new OrderEditDto { ProjectId = 1, DeliveryTypeId = 1, CreatedAt = DateTime.UtcNow.Date }; return Task.CompletedTask; }
+    private Task CancelFormAsync() { _formError = null; _formSuccess = null; _model = new OrderEditDto { ProjectId = 1, DeliveryTypeId = 1, CreatedAt = DateTime.UtcNow.Date }; return Task.CompletedTask; }
+
+    private async Task CancelOrderAsync()
+    {
+        if (_model.Id == 0) return;
+        _cancelling = true; _formError = null; _formSuccess = null;
+        try
+        {
+            var result = await AdminPort.CancelOrderAsync(_model.Id, "Cancelled by admin", _cts?.Token ?? CancellationToken.None);
+            if (result.Success)
+            {
+                _formSuccess = $"Order cancelled. {result.ReservationsReleased} reservation(s) released.";
+                await LoadGridAsync(_cts?.Token ?? CancellationToken.None);
+                await EditAsync(_model.Id);
+            }
+            else { _formError = result.Message; }
+        }
+        catch (Exception ex) { _formError = ex.Message; }
+        finally { _cancelling = false; }
+    }
 
     private bool ExportDisabled => _loading || _result is null || _result.Items.Count == 0;
 
@@ -212,10 +239,10 @@ private async Task EditAsync(int id) {
             _result?.Items.Select(item => (IReadOnlyList<string>)new[]
             {
                 GridExportBuilder.Cell(item.Id),
-                GridExportBuilder.Cell(item.OrderNumber?.ToString() ?? "ó"),
+                GridExportBuilder.Cell(item.OrderNumber?.ToString() ?? "ù"),
                 GridExportBuilder.Cell(item.CustomerName),
                 GridExportBuilder.Cell(item.PaymentStatus),
-                GridExportBuilder.Cell(item.MolliePaymentId ?? "ó"),
+                GridExportBuilder.Cell(item.MolliePaymentId ?? "ù"),
                 GridExportBuilder.Cell(item.IsAccepted ? "Yes" : "No"),
                 GridExportBuilder.Cell(item.CreatedAt.ToString("yyyy-MM-dd"))
             }));
