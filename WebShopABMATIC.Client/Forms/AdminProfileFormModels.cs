@@ -15,7 +15,7 @@ public sealed class AdminProfileFormModel
     [Phone]
     public string? PhoneNumber { get; set; }
 }
-
+//sealed protect
 public sealed class AdminPasswordFormModel
 {
     [Required]
