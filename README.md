@@ -154,7 +154,6 @@ Login uses **legacy ABMATIC tables**, not ASP.NET Identity (`AspNetUsers` is not
 - ✅ [`readme/DATA_SUMMARY.md`](readme/DATA_SUMMARY.md) — **Demo data summary** (all tables, live row counts, admin screens)
 - ✅ [`readme/open_IMPLEMENTATION_ROADMAP.md`](readme/open_IMPLEMENTATION_ROADMAP.md) — **Main delivery tracker** (dev 100% first · prod go-live last)
 - ✅ [`readme/AZUREBLOB.md`](readme/AZUREBLOB.md) — Product images: `AzureFiles` ↔ `Product`, Azure Blob `files` + SAS
-- 🖥️ [`readme/MOCK_PROTOTYPE_GUIDE.md`](readme/MOCK_PROTOTYPE_GUIDE.md) — Mock layouts, menus, entities, and validation walkthrough
 - 🎨 [`readme/PATTERNS_UI_QUICK_START.md`](readme/PATTERNS_UI_QUICK_START.md) — Buttons, grids, forms (copy-paste)
 - 🏗️ [`readme/PATTERNS_CODE_AND_INFRASTRUCTURE.md`](readme/PATTERNS_CODE_AND_INFRASTRUCTURE.md) — Blazor patterns,
 - 📋 [`readme/docs/mock-payments.html`](readme/docs/mock-payments.html) — Mollie card checkout + payment success
