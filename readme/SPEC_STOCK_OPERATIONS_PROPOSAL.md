@@ -379,21 +379,53 @@ Webshop sales link **`OrderLineId`** on movement rows created by `ApplySaleFromO
 
 ---
 
-### 3.7 Reservations & sales integration — **Recommend: Phase 4 (or defer)**
+### 3.7 Reservations & sales integration — ✅ **Implemented**
 
 **Purpose:** Link webshop/admin sales to stock (`IsReservation`, `ReservedQuantity`, `OrderLineId` on movement).
 
 **Triggers:**
 
-- Order accepted → reserve quantity
-- Order shipped → movement out, release reservation
-- Order cancelled → release reservation
+- Order accepted → reserve quantity ✅
+- Order shipped → movement out, release reservation (via `OrderStockWorkflowService` when `AffectsStock` flag triggers)
+- Order cancelled → release reservation ✅
 
 **Depends on:** Stable order fulfilment workflow (today orders are edit-only in admin).
 
-**Effort:** Very high · **Value:** Critical for production store · **Risk:** High
+#### Solução — Implementada
 
-**Recommendation:** **Deferred** — checkout now **decrements on pay** via `IStockMovementService` (see §0.1). Full reserve/ship/cancel workflow remains future work.
+| Cenário | Estado | Componente |
+|---------|:---:|------------|
+| PrePay (Mollie) → reservar stock | ✅ | `ApplyReservationFromOrderAsync` no `CheckoutUseCase` |
+| Pagamento confirmado → sale + libertar reserva | ✅ | `ApplySaleFromOrderAsync` no `ProcessMollieWebhookUseCase` |
+| PostPay (fatura) → decrementar imediatamente | ✅ | `ApplySaleFromOrderAsync` no `CheckoutUseCase` |
+| Pagamento **expirado/cancelado/falhado** → libertar reserva | ✅ | `ProcessMollieWebhookUseCase` detecta status terminal e chama `ReleaseReservationAsync` |
+| **Background expiration** → libertar reservas abandonadas | ✅ | `ReservationExpirationService` (hosted service, 5 min interval, 30 min max age) |
+| Admin **cancela encomenda** → libertar reserva | ✅ | `OrderAdminUseCase.CancelOrderAsync` + botão na página `/admin/orders` |
+| **Customer return page** → libertar se expirado | ✅ | `CheckoutUseCase.GetOrderSummaryAsync` liberta reserva se status terminal |
+| Catálogo mostra "disponível" (Qty - Reserved) | ✅ | `StoreCatalogService` e `StoreOrderRepository` |
+| Admin grid mostra Reserved | ✅ | `ProductStockLocationDto.AvailableQuantity` |
+| **Legacy status workflow** (OrderStructure.StatusId) | ✅ Ready | `OrderStockWorkflowService` avalia `OrderStatus.ReserveStock` / `AffectsStock` (para uso futuro com admin CRUD de OrderStructure) |
+| Concorrência (2 clientes reservam o último item) | ✅ | Transação SQL garante atomicidade; segundo cliente recebe erro "Insufficient available stock" |
+
+**Decisão sobre SignalR:**
+
+SignalR **não é necessário** e **não foi implementado**. A transação SQL garante que dois clientes não reservam mais do que o disponível. SignalR seria apenas para feedback em tempo real na UI (ex.: "Últimas 2 unidades!" a actualizar live) — fica como nice-to-have para uma fase futura, independente deste workflow.
+
+**Serviços implementados:**
+
+| Serviço | Ficheiro | Responsabilidade |
+|---------|----------|-----------------|
+| `IStockMovementService.ReleaseReservationAsync` | `StockMovementService.cs` | Liberta `ReservedQuantity`, cria movimentos de reversão. Idempotente |
+| `ReservationExpirationService` | `ReservationExpirationService.cs` | Background service que a cada 5 min verifica encomendas PrePay > 30 min sem pagamento e liberta reservas |
+| `IOrderStockWorkflowService` | `OrderStockWorkflowService.cs` | Avalia flags `ReserveStock` / `AffectsStock` do `OrderStatus` legacy em transições de estado |
+| `ProcessMollieWebhookUseCase` | (enhanced) | Agora trata statuses `expired`, `canceled`, `failed` → release + audit |
+
+**API endpoint:**
+
+```
+POST /api/admin/stock/orders/{orderId}/cancel
+Body: { "reason": "..." }
+```
 
 ---
 
