@@ -51,3 +51,16 @@ public sealed class OrderListFilter
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = AdminGridDefaults.PageSize;
 }
+
+public sealed class OrderCancelResult
+{
+    public bool Success { get; init; }
+    public string Message { get; init; } = "";
+    public int ReservationsReleased { get; init; }
+
+    public static OrderCancelResult Ok(int reservationsReleased) =>
+        new() { Success = true, Message = "Order cancelled.", ReservationsReleased = reservationsReleased };
+
+    public static OrderCancelResult Failed(string message) =>
+        new() { Success = false, Message = message };
+}

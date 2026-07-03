@@ -16,6 +16,12 @@ public interface IStockMovementService
     Task<StockApplyResult> ApplyReservationFromOrderAsync(int orderId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Releases previously reserved stock for an order (expired/cancelled payment).
+    /// Decrements <c>ReservedQuantity</c> and creates reversal movements. Idempotent.
+    /// </summary>
+    Task<StockApplyResult> ReleaseReservationAsync(int orderId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Manual stock adjustment (+ inbound / − outbound) for a product at a specific location.
     /// </summary>
     Task<StockApplyResult> ApplyManualAdjustmentAsync(

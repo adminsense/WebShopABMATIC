@@ -15,6 +15,11 @@ public interface IStoreOrderRepository
 
     Task MarkAdvancePaymentPaidAsync(int advancePaymentId, string mollieStatus, DateTime paidAt, CancellationToken cancellationToken = default);
 
+    Task UpdateAdvancePaymentStatusAsync(int advancePaymentId, string mollieStatus, CancellationToken cancellationToken = default);
+
+    /// <summary>Returns PrePay orders with open reservations older than <paramref name="olderThan"/>.</summary>
+    Task<IReadOnlyList<ExpiredReservationInfo>> GetExpiredPrePayOrdersAsync(TimeSpan olderThan, CancellationToken cancellationToken = default);
+
     Task<CheckoutOrderSummaryDto?> GetOrderSummaryForCustomerAsync(int orderId, int customerId, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyDictionary<int, string>> GetProductNamesAsync(IEnumerable<int> productIds, CancellationToken cancellationToken = default);
@@ -68,4 +73,13 @@ public sealed class StoreAdvancePaymentInfo
     public int OrderId { get; init; }
     public string? MolliePaymentStatus { get; init; }
     public DateTime? MolliePaidAt { get; init; }
+}
+
+public sealed class ExpiredReservationInfo
+{
+    public int OrderId { get; init; }
+    public int AdvancePaymentId { get; init; }
+    public string? MolliePaymentId { get; init; }
+    public string? MolliePaymentStatus { get; init; }
+    public DateTime OrderCreatedAt { get; init; }
 }
