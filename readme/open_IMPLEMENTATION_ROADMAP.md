@@ -61,6 +61,11 @@ Optional for minimal webshop; needed for ERP-style inbound stock.
 | **E.3 GRN** | ✅ | `/admin/stock/purchase-orders/{id}/receive` + `ApplyPurchaseOrderReceiveAsync` |
 | **E.1 Transfer** | ✅ | `/admin/stock/transfers/new` + paired movements API |
 | **D.7 / E reservation** | ✅ | `ApplyReservationFromOrderAsync` on PrePay checkout |
+| **E.7 Release reservation** | ✅ | `ReleaseReservationAsync` — reverses reservation on cancel/expire |
+| **E.8 Webhook expired/canceled** | ✅ | `ProcessMollieWebhookUseCase` detects terminal Mollie statuses → release |
+| **E.9 Reservation expiration service** | ✅ | `ReservationExpirationService` — background job every 5 min, releases after 30 min |
+| **E.10 Admin cancel order** | ✅ | `POST /api/admin/stock/orders/{id}/cancel` + button on `/admin/orders` |
+| **E.11 Status workflow service** | ✅ | `OrderStockWorkflowService` — evaluates `OrderStatus.ReserveStock/AffectsStock` flags |
 
 ### F — SignalR (optional)
 
@@ -71,7 +76,8 @@ Optional for minimal webshop; needed for ERP-style inbound stock.
 - ⬜ **E.4** `AccountingDocument` on payment  
 - ⬜ **E.5** Mollie refunds in admin  
 - ⬜ **E.6** Retry payment / expired session UX  
-- ⬜ **E.8** Refresh [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) (outdated status text)
+- ⬜ **E.12** Refresh [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) (outdated status text)
+- ⬜ **E.13** OrderStructure admin CRUD (to wire `OrderStockWorkflowService` on status change)
 
 ---
 
@@ -115,6 +121,10 @@ See [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) (email queue rows only).
 | Azure Blob production adapter (M.5) | ✅ |
 | `ReservedQuantity` display + available calc | ✅ display only |
 | `ReservedQuantity` increment on PrePay checkout | ✅ D.7 |
+| `ReleaseReservationAsync` + webhook expired/cancel/failed | ✅ E.7–E.8 |
+| Reservation expiration background service | ✅ E.9 |
+| Admin cancel order + release stock | ✅ E.10 |
+| Legacy `OrderStatus` flag workflow service | ✅ E.11 |
 
 ---
 
@@ -257,7 +267,7 @@ Phase C   [██████████] 5/5
 Phase D   [██████████] D.7 reservation ✅
 Phase 3b  [██████████] dev mock ✅
 Phase M   [██████████] M.1–M.5 ✅
-Phase E   [██████████] E.1–E.3 transfer + PO + GRN ✅
+Phase E   [██████████] E.1–E.11 transfer + PO + GRN + reservations ✅
 Phase F   [░░░░░░░░░░] ⬜ optional SignalR
 Phase G   [██████████] Stock movement logging ✅
 
