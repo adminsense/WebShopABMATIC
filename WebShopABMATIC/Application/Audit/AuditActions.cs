@@ -11,13 +11,15 @@ public static class AuditActions
     public const string ReportExport = "ReportExport";
     public const string CheckoutStarted = "CheckoutStarted";
     public const string PaymentPaid = "PaymentPaid";
+    public const string PaymentExpired = "PaymentExpired";
+    public const string OrderCancelled = "OrderCancelled";
     public const string PasswordReset = "PasswordReset";
     public const string StockAdjust = "StockAdjust";
 
     public static readonly IReadOnlyList<string> All =
     [
         Create, Update, Delete, Login, LoginFailed, Logout, ReportExport,
-        CheckoutStarted, PaymentPaid, PasswordReset, StockAdjust
+        CheckoutStarted, PaymentPaid, PaymentExpired, OrderCancelled, PasswordReset, StockAdjust
     ];
 }
 
