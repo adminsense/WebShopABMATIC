@@ -3,9 +3,6 @@
 ![Status](https://img.shields.io/badge/Status-Live%20on%20Azure%20SQL-28a745?style=flat-square) ![Tables](https://img.shields.io/badge/Demo%20tables-40%2B-512BD4?style=flat-square) ![Database](https://img.shields.io/badge/Database-abmatic__test-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white)
 
 > **Purpose:** Demo tables on `abmatic.database.windows.net` / `abmatic_test`, related admin screens, and approximate row counts.  
-> **Schema:** `dotnet ef database update` on `WebShopABMATICDbContext`  
-> **Detail:** [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md)
-
 ---
 
 ## Executive summary
