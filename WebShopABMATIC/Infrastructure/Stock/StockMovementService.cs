@@ -267,6 +267,114 @@ public sealed class StockMovementService : IStockMovementService
         return StockApplyResult.Applied(movements.Count);
     }
 
+    public async Task<StockApplyResult> ReleaseReservationAsync(int orderId, CancellationToken cancellationToken = default)
+    {
+        var lines = await _db.OrderLines
+            .Where(l => l.OrderId == orderId && l.ProductId != null)
+            .ToListAsync(cancellationToken);
+
+        if (lines.Count == 0)
+        {
+            return StockApplyResult.Skipped("Order has no product lines.");
+        }
+
+        var lineIds = lines.Select(l => l.Id).ToList();
+
+        var reservationMovements = await _db.StockMovements
+            .Where(m => m.IsReservation == true
+                        && m.OrderLineId != null
+                        && lineIds.Contains(m.OrderLineId.Value)
+                        && m.Quantity > 0)
+            .ToListAsync(cancellationToken);
+
+        if (reservationMovements.Count == 0)
+        {
+            return StockApplyResult.AlreadyApplied();
+        }
+
+        var alreadyReleased = await _db.StockMovements.AsNoTracking()
+            .AnyAsync(m => m.IsReservation == true
+                           && m.OrderLineId != null
+                           && lineIds.Contains(m.OrderLineId.Value)
+                           && m.Quantity < 0,
+                cancellationToken);
+
+        if (alreadyReleased)
+        {
+            return StockApplyResult.AlreadyApplied();
+        }
+
+        await using var tx = await _db.Database.BeginTransactionAsync(cancellationToken);
+
+        var reversals = new List<StockMovement>();
+        var now = DateTime.UtcNow;
+
+        foreach (var reservation in reservationMovements)
+        {
+            var stockLocation = await _db.ProductStockLocations
+                .FirstOrDefaultAsync(
+                    x => x.Id == reservation.ProductStockLocatieId,
+                    cancellationToken);
+
+            if (stockLocation is null)
+            {
+                continue;
+            }
+
+            var releaseQty = Math.Min(stockLocation.ReservedQuantity, reservation.Quantity);
+            if (releaseQty > 0)
+            {
+                stockLocation.ReservedQuantity -= releaseQty;
+            }
+
+            reversals.Add(new StockMovement
+            {
+                ProductId = reservation.ProductId,
+                OrderLineId = reservation.OrderLineId,
+                Quantity = -reservation.Quantity,
+                Timestamp = now,
+                Notes = $"Reservation released order #{orderId}",
+                IsReservation = true,
+                ProductStockLocatieId = reservation.ProductStockLocatieId
+            });
+        }
+
+        if (reversals.Count == 0)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            return StockApplyResult.Skipped("No reservations to release.");
+        }
+
+        using (_auditSuppression.SuppressEntityTypes(nameof(StockMovement), nameof(ProductStockLocation)))
+        {
+            _db.StockMovements.AddRange(reversals);
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+
+        await tx.CommitAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Released {Count} reservation(s) for order {OrderId}.",
+            reversals.Count,
+            orderId);
+
+        await _audit.LogAsync(new AuditLogWriteRequest
+        {
+            Action = AuditActions.StockAdjust,
+            EntityName = "Order",
+            EntityId = orderId.ToString(),
+            NewValues = JsonSerializer.Serialize(new
+            {
+                operation = "ReservationRelease",
+                orderId,
+                movementCount = reversals.Count,
+                lines = reversals.Select(m => new { m.ProductId, m.Quantity, m.OrderLineId })
+            })
+        }, cancellationToken);
+
+        return StockApplyResult.Applied(reversals.Count);
+    }
+
     public async Task<StockApplyResult> ApplyManualAdjustmentAsync(
         StockManualAdjustmentCommand command,
         CancellationToken cancellationToken = default)
@@ -522,6 +630,169 @@ public sealed class StockMovementService : IStockMovementService
             inMovement.Id,
             fromRow.Quantity,
             toRow.Quantity);
+    }
+
+    public async Task<StockApplyResult> ApplyPurchaseOrderReceiveAsync(
+        StockPoReceiveCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        if (command.Quantity <= 0)
+        {
+            return StockApplyResult.Failed(["Delivery quantity must be greater than zero."]);
+        }
+
+        var docNumber = command.DeliveryDocumentNumber.Trim();
+        if (docNumber.Length < 1)
+        {
+            return StockApplyResult.Failed(["Delivery document number is required."]);
+        }
+
+        var line = await _db.StockOrderLines
+            .FirstOrDefaultAsync(l => l.Id == command.StockOrderLineId, cancellationToken);
+        if (line is null)
+        {
+            return StockApplyResult.Failed([$"Purchase order line {command.StockOrderLineId} not found."]);
+        }
+
+        if (line.ProductId is not int productId)
+        {
+            return StockApplyResult.Failed(["Purchase order line has no product id — cannot book stock."]);
+        }
+
+        var remaining = line.QuantityOrdered - line.QuantityDelivered;
+        if (remaining <= 0)
+        {
+            return StockApplyResult.Failed(["This line is already fully delivered."]);
+        }
+
+        if (command.Quantity > remaining)
+        {
+            return StockApplyResult.Failed([
+                $"Delivery quantity exceeds remaining ({remaining:N2})."
+            ]);
+        }
+
+        var locationExists = await _db.StockLocations.AsNoTracking()
+            .AnyAsync(l => l.Id == command.StockLocationId, cancellationToken);
+        if (!locationExists)
+        {
+            return StockApplyResult.Failed([$"Stock location {command.StockLocationId} not found."]);
+        }
+
+        await using var tx = await _db.Database.BeginTransactionAsync(cancellationToken);
+
+        var stockRow = await _db.ProductStockLocations
+            .FirstOrDefaultAsync(
+                x => x.ProductId == productId
+                     && x.StockLocationId == command.StockLocationId
+                     && x.IsInactive != true,
+                cancellationToken);
+
+        if (stockRow is null)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            return StockApplyResult.Failed([
+                $"No product-stock row for product {productId} at location {command.StockLocationId}. " +
+                "Create a product-stock record first."
+            ]);
+        }
+
+        var delivery = new StockOrderDelivery
+        {
+            StockOrderDetail = line.Id,
+            DeliveryDocumentNumber = docNumber.Length > 100 ? docNumber[..100] : docNumber,
+            Date = command.DeliveryDate,
+            Quantity = command.Quantity,
+            QuantityInvoiced = command.Quantity
+        };
+
+        var previousQuantity = stockRow.Quantity;
+        stockRow.Quantity += command.Quantity;
+
+        line.QuantityDelivered += command.Quantity;
+        line.QuantityProcessedToStock = (line.QuantityProcessedToStock ?? 0) + command.Quantity;
+        line.Besteld = true;
+        if (line.OrderedAt is null)
+        {
+            line.OrderedAt = DateTime.UtcNow;
+        }
+
+        if (line.QuantityDelivered >= line.QuantityOrdered)
+        {
+            line.Geleverd = true;
+            line.DeliveredAt ??= command.DeliveryDate;
+        }
+
+        var note = TruncateNote($"PO receive {docNumber}");
+
+        var movement = new StockMovement
+        {
+            ProductId = productId,
+            OrderLineId = null,
+            Quantity = command.Quantity,
+            Timestamp = DateTime.UtcNow,
+            Notes = note,
+            IsReservation = false,
+            ProductStockLocatieId = stockRow.Id
+        };
+
+        using (_auditSuppression.SuppressEntityTypes(
+            nameof(StockMovement),
+            nameof(ProductStockLocation),
+            nameof(StockOrderLine),
+            nameof(StockOrderDelivery),
+            nameof(StockOrder)))
+        {
+            _db.StockOrderDeliveries.Add(delivery);
+            _db.StockMovements.Add(movement);
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+
+        var header = await _db.StockOrders.FirstAsync(o => o.Id == line.StockOrderId, cancellationToken);
+        var allLines = await _db.StockOrderLines
+            .Where(l => l.StockOrderId == header.Id)
+            .ToListAsync(cancellationToken);
+
+        header.TotalAmount = allLines.Sum(l => l.PurchaseTotalPrice);
+        header.IsCompleted = allLines.All(l => l.Geleverd == true || l.QuantityDelivered >= l.QuantityOrdered);
+        if (header.IsCompleted && header.DeliveryDate is null)
+        {
+            header.DeliveryDate = command.DeliveryDate;
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+        await tx.CommitAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "PO receive: line {LineId}, product {ProductId}, qty {Quantity}, location {LocationId}",
+            line.Id,
+            productId,
+            command.Quantity,
+            command.StockLocationId);
+
+        await _audit.LogAsync(new AuditLogWriteRequest
+        {
+            Action = AuditActions.StockAdjust,
+            EntityName = nameof(StockOrderDelivery),
+            EntityId = delivery.Id.ToString(),
+            NewValues = JsonSerializer.Serialize(new
+            {
+                operation = "PurchaseOrderReceive",
+                line.StockOrderId,
+                command.StockOrderLineId,
+                productId,
+                command.StockLocationId,
+                command.Quantity,
+                docNumber,
+                deliveryId = delivery.Id,
+                movementId = movement.Id,
+                newBalance = stockRow.Quantity
+            })
+        }, cancellationToken);
+
+        await _lowStockAlerts.EvaluateAsync(stockRow.Id, previousQuantity, cancellationToken);
+
+        return StockApplyResult.Applied(1, movement.Id, stockRow.Quantity);
     }
 
     private static string TruncateNote(string note) =>
