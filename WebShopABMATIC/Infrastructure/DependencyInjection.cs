@@ -78,6 +78,8 @@ public static class DependencyInjection
         services.AddScoped<IStoreProfileRepository, StoreProfileRepository>();
         services.AddScoped<IStoreOrderRepository, StoreOrderRepository>();
         services.AddScoped<IStockMovementService, StockMovementService>();
+        services.AddScoped<IOrderStockWorkflowService, Stock.OrderStockWorkflowService>();
+        services.AddHostedService<Stock.ReservationExpirationService>();
         services.AddWebShopMollie(configuration);
 
         services.AddWebShopNotifications(configuration);
