@@ -169,6 +169,7 @@ public interface IOrderAdminPort
     Task<PagedResult<OrderSummaryDto>> GetOrdersAsync(OrderListFilter filter, CancellationToken cancellationToken = default);
     Task<OrderEditDto?> GetForEditAsync(int id, CancellationToken cancellationToken = default);
     Task<int> SaveAsync(OrderEditDto dto, CancellationToken cancellationToken = default);
+    Task<OrderCancelResult> CancelOrderAsync(int orderId, string reason, CancellationToken cancellationToken = default);
 }
 
 public interface IProductStockLocationAdminPort
@@ -245,4 +246,20 @@ public interface IStockTransferPort
         int toStockLocationId,
         CancellationToken cancellationToken = default);
     Task<StockApplyResult> ApplyAsync(StockTransferRequest request, CancellationToken cancellationToken = default);
+}
+
+public interface IStockOrderAdminPort
+{
+    Task<PagedResult<StockOrderSummaryDto>> GetOrdersAsync(StockOrderListFilter filter, CancellationToken cancellationToken = default);
+    Task<StockOrderEditDto?> GetForEditAsync(int id, CancellationToken cancellationToken = default);
+    Task<StockOrderLookupsDto> GetLookupsAsync(CancellationToken cancellationToken = default);
+    Task<int> SaveAsync(StockOrderEditDto dto, CancellationToken cancellationToken = default);
+    Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
+}
+
+public interface IStockPoReceivePort
+{
+    Task<StockPoReceiveContextDto?> GetReceiveContextAsync(int stockOrderId, CancellationToken cancellationToken = default);
+    Task<StockPoReceivePreviewDto?> GetPreviewAsync(int stockOrderLineId, int stockLocationId, CancellationToken cancellationToken = default);
+    Task<StockApplyResult> ApplyAsync(StockPoReceiveRequest request, CancellationToken cancellationToken = default);
 }
