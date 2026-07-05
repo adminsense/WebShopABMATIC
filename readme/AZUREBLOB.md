@@ -174,14 +174,6 @@ BlobReferenceResolver
 }
 ```
 
-**Local dev** — User Secrets or environment variables (same keys). `Web/appsettings.json` may hold values locally but is listed in `.gitignore`.
-
-| Key | Value |
-|-----|--------|
-| `AzureStorage:ConnectionString` | Storage account connection string |
-| `AzureStorage:ContainerName` | `files` |
-| `AzureStorage:UseSasUrls` | `true` for private container |
-
 ### IIS / local run
 
 - `web.config` → `.\bin\Debug\net10.0\WebShopABMATIC.dll`
@@ -221,30 +213,7 @@ ORDER BY PublishToWeb DESC, Created DESC
 
 ---
 
-## 5. Phase 1 vs Phase 2 (both done)
-
-<table>
-<colgroup>
-<col style="width:22%">
-<col style="width:39%">
-<col style="width:39%">
-</colgroup>
-<thead>
-<tr><th>Concern</th><th>Phase 1 (fallback)</th><th>Phase 2 (production) ✅</th></tr>
-</thead>
-<tbody>
-<tr><td>Bytes</td><td><code>wwwroot/media/products/</code></td><td>Container <code>files</code></td></tr>
-<tr><td><code>BlobRef</code></td><td><code>/media/...</code> path</td><td>Azure blob key</td></tr>
-<tr><td>Browser URL</td><td>Static files</td><td>SAS URL</td></tr>
-<tr><td>Adapter</td><td><code>LocalProductMediaService</code></td><td><code>AzureBlobProductMediaService</code></td></tr>
-</tbody>
-</table>
-
-No migration of `AzureFile` rows required for go-live.
-
----
-
-## 6. Implementation checklist (complete)
+## 5. Implementation checklist (complete)
 
 | # | Task | Status |
 |---|------|--------|
@@ -260,7 +229,7 @@ No migration of `AzureFile` rows required for go-live.
 
 ---
 
-## 7. Out of scope (future)
+## 6. Out of scope (future)
 
 | Item | Notes |
 |------|--------|
@@ -272,7 +241,7 @@ No migration of `AzureFile` rows required for go-live.
 
 ---
 
-## 8. Key source files
+## 7. Key source files
 
 | File | Role |
 |------|------|
@@ -288,7 +257,6 @@ No migration of `AzureFile` rows required for go-live.
 ## Documentation
 
 - 🏠 [Main Documentation](../README.md)
-- 🗺️ [Implementation roadmap](open_IMPLEMENTATION_ROADMAP.md)
 
 ---
 
