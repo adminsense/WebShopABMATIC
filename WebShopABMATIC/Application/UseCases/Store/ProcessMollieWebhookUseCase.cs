@@ -46,6 +46,28 @@ public sealed class ProcessMollieWebhookUseCase : IMollieWebhookPort
         }
 
         var status = await _mollie.GetPaymentAsync(molliePaymentId, cancellationToken);
+
+        if (IsTerminalUnpaid(status.Status))
+        {
+            await _orders.UpdateAdvancePaymentStatusAsync(existing.Id, status.Status, cancellationToken);
+            await _stock.ReleaseReservationAsync(existing.OrderId, cancellationToken);
+
+            await _audit.LogAsync(new AuditLogWriteRequest
+            {
+                Action = AuditActions.PaymentExpired,
+                EntityName = "Order",
+                EntityId = existing.OrderId.ToString(),
+                NewValues = JsonSerializer.Serialize(new
+                {
+                    orderId = existing.OrderId,
+                    molliePaymentId,
+                    status = status.Status
+                })
+            }, cancellationToken);
+
+            return true;
+        }
+
         if (!status.IsPaid)
         {
             return true;
@@ -70,4 +92,9 @@ public sealed class ProcessMollieWebhookUseCase : IMollieWebhookPort
 
         return true;
     }
+
+    private static bool IsTerminalUnpaid(string status) =>
+        status.Equals("expired", StringComparison.OrdinalIgnoreCase) ||
+        status.Equals("canceled", StringComparison.OrdinalIgnoreCase) ||
+        status.Equals("failed", StringComparison.OrdinalIgnoreCase);
 }
