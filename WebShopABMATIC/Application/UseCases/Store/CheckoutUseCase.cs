@@ -282,6 +282,12 @@ public sealed class CheckoutUseCase : ICheckoutPort
             await _stock.ApplySaleFromOrderAsync(orderId, cancellationToken);
         }
 
+        if (summary is { IsPrePay: true, IsPaid: false } &&
+            IsTerminalUnpaidStatus(summary.PaymentStatus))
+        {
+            await _stock.ReleaseReservationAsync(orderId, cancellationToken);
+        }
+
         return summary;
     }
 
@@ -297,6 +303,12 @@ public sealed class CheckoutUseCase : ICheckoutPort
 
         return await _orders.GetOrdersForCustomerAsync(ctx.CustomerId, cancellationToken);
     }
+
+    private static bool IsTerminalUnpaidStatus(string? status) =>
+        status is not null &&
+        (status.Equals("expired", StringComparison.OrdinalIgnoreCase) ||
+         status.Equals("canceled", StringComparison.OrdinalIgnoreCase) ||
+         status.Equals("failed", StringComparison.OrdinalIgnoreCase));
 
     private static CheckoutQuoteDto EmptyQuote(IReadOnlyList<string> errors) =>
         new() { Errors = errors };

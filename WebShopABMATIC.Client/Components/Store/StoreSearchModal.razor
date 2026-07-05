@@ -1,0 +1,72 @@
+@using WebShopABMATIC.Web.Services
+
+@if (Visible)
+{
+    <div class="store-search-modal-backdrop" @onclick="OnClose"></div>
+    <div class="store-search-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="store-search-modal-title"
+         @onclick:stopPropagation="true">
+        <header class="store-search-modal-header">
+            <h2 id="store-search-modal-title" class="store-search-modal-title">
+                @if (string.IsNullOrWhiteSpace(SearchTerm))
+                {
+                    <text>Search</text>
+                }
+                else
+                {
+                    <text>Search results for “@SearchTerm”</text>
+                }
+            </h2>
+            <button type="button" class="store-search-modal-close" aria-label="Close search" @onclick="OnClose">
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
+            </button>
+        </header>
+
+        <div class="store-search-modal-body">
+            @if (Loading)
+            {
+                <p class="text-muted mb-0">Searching products…</p>
+            }
+            else if (Results.Count == 0)
+            {
+                <p class="store-search-modal-empty mb-0">
+                    No products found starting with “@SearchTerm”.
+                </p>
+            }
+            else
+            {
+                <ul class="store-search-modal-list">
+                    @foreach (var product in Results)
+                    {
+                        <li>
+                            <button type="button" class="store-search-modal-item" @onclick="() => OnSelect.InvokeAsync(product.Id)">
+                                <img src="@product.ImageUrl" alt="" class="store-search-modal-thumb" loading="lazy" decoding="async" />
+                                <span class="store-search-modal-item-text">
+                                    <span class="store-search-modal-item-name">@product.Name</span>
+                                    @if (!string.IsNullOrWhiteSpace(product.Tag))
+                                    {
+                                        <span class="store-search-modal-item-tag">@product.Tag</span>
+                                    }
+                                </span>
+                                <span class="store-search-modal-item-price @(!product.HasPrice ? "text-muted" : "")">
+                                    @StorePriceFormatter.Format(product.Price)
+                                </span>
+                            </button>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public string SearchTerm { get; set; } = "";
+    [Parameter] public bool Loading { get; set; }
+    [Parameter] public IReadOnlyList<StoreProduct> Results { get; set; } = [];
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<int> OnSelect { get; set; }
+}
