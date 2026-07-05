@@ -18,5 +18,4 @@
   <ItemGroup>
     <InternalsVisibleTo Include="WebShopABMATIC.Tests" />
   </ItemGroup>
-
 </Project>
