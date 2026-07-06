@@ -13,6 +13,9 @@
 @if (_invalid)
 {
     <div class="alert alert-danger mollie-mock-error">@_errorMessage</div>
+    <p class="text-center mt-3">
+        <button type="button" class="btn btn-outline-secondary" @onclick="GoBackToCart">Back to cart</button>
+    </p>
 }
 else
 {

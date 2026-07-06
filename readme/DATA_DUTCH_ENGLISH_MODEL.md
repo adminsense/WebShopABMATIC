@@ -279,8 +279,10 @@ Grouped by English schema. SQL table names are plural; C# entity names are singu
 
 | Dutch table | English table | Entity |
 |-------------|---------------|--------|
-| `Error` | `AppErrors` | `AppError` |
-| `ProjectActiviteit` | `ProjectActivities` | `ProjectActivity` |
+| `Error` | `AppErrors` | `AppError` — auth, CRUD, exports, exceptions |
+| `ProjectActiviteit` | `ProjectActivities` | `ProjectActivity` — project `Actie` codes on order events |
+
+**WebShop writes:** `LegacyAuditService` → tables above (see [SPEC_INFRASTRUCTURE.md](./SPEC_INFRASTRUCTURE.md) §3.5). Stock journal: `[Products].[StockBeweging]` / `StockMovement` (separate).
 
 </details>
 
@@ -346,7 +348,7 @@ Grouped by English schema. SQL table names are plural; C# entity names are singu
 | `DossierFeedback` | `OrderFeedbacks` | `OrderFeedback` |
 | `DossierInstallatieDetail` | `OrderInstallationLines` | `OrderInstallationLine` |
 | `DossierLeveringsTypeProduct` | `OrderDeliveryTypeProducts` | `OrderDeliveryTypeProduct` |
-| `DossierLog` | `OrderLogs` | `OrderLog` |
+| `DossierLog` | `OrderLogs` | `OrderLog` — webshop checkout / payment / cancel lines |
 | `DossierOpmerking` | `OrderRemarks` | `OrderRemark` |
 | `DossierProjectDetail` | `OrderProjectLines` | `OrderProjectLine` |
 | `DossierStatusGroep` | `OrderStatusGroups` | `OrderStatusGroup` |
