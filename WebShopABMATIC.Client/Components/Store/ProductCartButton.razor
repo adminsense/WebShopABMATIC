@@ -1,0 +1,37 @@
+@using WebShopABMATIC.Web.Services
+@inject StoreCartService Cart
+@inject NavigationManager Navigation
+
+<button type="button"
+        class="@CssClass"
+        title="@Title"
+        aria-label="@AriaLabel"
+        disabled="@IsDisabled"
+        @onclick="AddAndGoToCartAsync"
+        @onclick:stopPropagation="true">
+    <i class="bi bi-cart3" aria-hidden="true"></i>
+</button>
+
+@code {
+    [Parameter, EditorRequired] public StoreProduct Product { get; set; } = default!;
+    [Parameter] public string CssClass { get; set; } = "product-cart-btn";
+
+    private bool IsDisabled => !Product.HasPrice || Product.IsOutOfStock;
+
+    private string Title => IsDisabled ? "Unavailable" : "Add to cart";
+
+    private string AriaLabel => IsDisabled
+        ? $"Cannot add {Product.Name} to cart"
+        : $"Add {Product.Name} to cart";
+
+    private async Task AddAndGoToCartAsync()
+    {
+        if (IsDisabled)
+        {
+            return;
+        }
+
+        await Cart.AddProductAsync(Product.Id);
+        Navigation.NavigateTo("/cart");
+    }
+}

@@ -214,7 +214,7 @@ public sealed class CheckoutUseCase : ICheckoutPort
                 {
                     Amount = prePayCreated.TotalInclVat,
                     Currency = "EUR",
-                    Description = $"WebShop order #{prePayCreated.OrderNumber ?? prePayCreated.OrderId}",
+                    Description = $"WebShop order {prePayCreated.OrderNumber ?? prePayCreated.OrderId}",
                     RedirectUrl = paymentReturnUrl,
                     WebhookUrl = webhookUrl,
                     MetadataJson = System.Text.Json.JsonSerializer.Serialize(new
