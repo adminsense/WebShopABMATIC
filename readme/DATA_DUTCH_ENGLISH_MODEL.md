@@ -2,11 +2,6 @@
 
 ![Status](https://img.shields.io/badge/Status-Complete-28a745?style=flat-square) ![Tables](https://img.shields.io/badge/Tables-139-0d47a1?style=flat-square) ![Schemas](https://img.shields.io/badge/Schemas-11-512BD4?style=flat-square) ![Coverage](https://img.shields.io/badge/Coverage-100%25-ff6f00?style=flat-square)
 
-> [!IMPORTANT]
-> **Executive Summary:** De-para reference for the ABMATIC legacy database (Dutch physical names) and the WebShopABMATIC application model (English C# names via EF mapping). The app connects to the **existing legacy schema** on Azure SQL — 139 business tables, 11 schemas.
-
----
-
 ## 📋 Overview
 
 > [!NOTE]

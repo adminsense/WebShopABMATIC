@@ -83,7 +83,6 @@ Post-payment confirmation experience:
 ### Integrations
 - 💳 **Mollie Payments** -> payment processing
 - ☁️ **Azure Blob Storage** -> product image storage
-- 📧 **Email queue** -> asynchronous notifications
 - 🗄️ **SQL Server** -> persistent data layer
 
 ---
