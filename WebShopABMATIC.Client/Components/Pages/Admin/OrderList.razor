@@ -24,7 +24,7 @@
             <Title>@(_isEditing ? "Edit order" : "Create order")</Title>
         </AdminEntityFormHeader>
         <div class="card-body">
-            @if (_formLoading) { <p class="text-muted mb-0">Loadingù</p> }
+            @if (_formLoading) { <p class="text-muted mb-0">LoadingÔøΩ</p> }
             else {
                 <EditForm Model="_model" OnValidSubmit="SaveAsync">
                     <DataAnnotationsValidator />
@@ -45,7 +45,7 @@
                             <div class="col-md-3">
                                 <label class="form-label" for="f-projectid">Customer project (internal)</label>
                                 <InputNumber id="f-projectid" class="form-control form-control-sm" @bind-Value="_model.ProjectId" required />
-                                <div class="form-text">Legacy link to customer ù use project 1ù4 from demo seeds.</div>
+                                <div class="form-text">Legacy link to customer ÔøΩ use project 1ÔøΩ4 from demo seeds.</div>
                             </div>
                         }
                         <div class="col-md-3">
@@ -97,10 +97,10 @@
                                         <tr>
                                             <td>@ap.Name</td>
                                             <td>@ap.Percent.ToString("0.##")</td>
-                                            <td>@(ap.Amount?.ToString("F2") ?? "ù")</td>
-                                            <td>@(ap.MolliePaymentStatus ?? "ù")</td>
-                                            <td class="small">@(ap.MolliePaymentId ?? "ù")</td>
-                                            <td>@(ap.MolliePaidAt?.ToLocalTime().ToString("g") ?? "ù")</td>
+                                            <td>@(ap.Amount?.ToString("F2") ?? "ÔøΩ")</td>
+                                            <td>@(ap.MolliePaymentStatus ?? "ÔøΩ")</td>
+                                            <td class="small">@(ap.MolliePaymentId ?? "ÔøΩ")</td>
+                                            <td>@(ap.MolliePaidAt?.ToLocalTime().ToString("g") ?? "ÔøΩ")</td>
                                         </tr>
                                     }
                                 </tbody>
@@ -128,17 +128,17 @@
                         <th>Accepted</th>
                     <th class="text-center">Actions</th></tr></thead>
                 <tbody>
-                    @if (_loading) { <tr><td colspan="8" class="text-center text-muted py-4">Loadingù</td></tr> }
+                    @if (_loading) { <tr><td colspan="8" class="text-center text-muted py-4">LoadingÔøΩ</td></tr> }
                     else if (!string.IsNullOrEmpty(_gridError)) { <tr><td colspan="8" class="text-center text-danger py-4">@_gridError</td></tr> }
                     else if (_result is null || _result.Items.Count == 0) { <tr><td colspan="8" class="text-center text-muted py-4">No records found.</td></tr> }
                     else { @foreach (var item in _result.Items) {
                         <tr @key="item.Id" class="@(_model.Id == item.Id ? "table-active" : null)">
                             <td>@item.Id</td>
-                            <td>@(item.OrderNumber?.ToString() ?? "ù")</td>
+                            <td>@(item.OrderNumber?.ToString() ?? "ÔøΩ")</td>
                             <td>@item.CustomerName</td>
                             <td>@item.CreatedAt.ToString("yyyy-MM-dd")</td>
                             <td>@item.PaymentStatus</td>
-                            <td class="small text-muted">@(item.MolliePaymentId ?? "ù")</td>
+                            <td class="small text-muted">@(item.MolliePaymentId ?? "ÔøΩ")</td>
                             <td>@(item.IsAccepted ? "Yes" : "No")</td>
                             <td class="text-center"><div class="btn-group btn-group-sm">
                                 <a class="btn btn-sm btn-primary" href="@($"/admin/orders?edit={item.Id}")" data-enhance-nav="false"><i class="bi bi-pencil"></i></a>
@@ -239,10 +239,10 @@ private async Task EditAsync(int id) {
             _result?.Items.Select(item => (IReadOnlyList<string>)new[]
             {
                 GridExportBuilder.Cell(item.Id),
-                GridExportBuilder.Cell(item.OrderNumber?.ToString() ?? "ù"),
+                GridExportBuilder.Cell(item.OrderNumber?.ToString() ?? "ÔøΩ"),
                 GridExportBuilder.Cell(item.CustomerName),
                 GridExportBuilder.Cell(item.PaymentStatus),
-                GridExportBuilder.Cell(item.MolliePaymentId ?? "ù"),
+                GridExportBuilder.Cell(item.MolliePaymentId ?? "ÔøΩ"),
                 GridExportBuilder.Cell(item.IsAccepted ? "Yes" : "No"),
                 GridExportBuilder.Cell(item.CreatedAt.ToString("yyyy-MM-dd"))
             }));

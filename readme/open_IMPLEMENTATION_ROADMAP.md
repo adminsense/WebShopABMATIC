@@ -5,7 +5,7 @@
 > **Purpose:** Single delivery tracker for WebShopABMATIC — phased checkboxes, open backlog, and **dev-first** priority.  
 > **Mark ✅ when done · ⬜ when pending · 🔶 partial.**  
 > **Analysis:** [SPEC_STOCK_OPERATIONS_PROPOSAL.md](./SPEC_STOCK_OPERATIONS_PROPOSAL.md)  
-> **Related:** [open_MOLLIE_PAYMENTS_open.md](./open_MOLLIE_PAYMENTS_open.md) · [AZUREBLOB.md](./AZUREBLOB.md)
+> **Related:** [open_MOLLIE_PAYMENTS.md](./open_MOLLIE_PAYMENTS.md) · [open_UPDATES.md](./open_UPDATES.md) §0 (layout loja) · [AZUREBLOB.md](./AZUREBLOB.md)
 
 ### Delivery model (owner rule)
 
@@ -20,7 +20,8 @@
 
 | Phase | Focus | Dev status | Prod go-live |
 |-------|--------|------------|--------------|
-| **Auth** | Legacy cookie (`StaffUsers` + `Klanten.Klant`) | ✅ Done | — |
+| **Auth** | Legacy cookie — `[Instellingen].[User]` + `Customers` | ✅ Done — login unificado §2.2.2 | — |
+| **Store layout** | Referência adminsenceweb (sidebar, CD4, deals) | ✅ Done — [open_UPDATES.md](./open_UPDATES.md) §0 | — |
 | **0** | Seeds + pricing foundation | ✅ Done | — |
 | **A** | Stock admin (read-only) | ✅ Done | — |
 | **B** | Checkout + Mollie | ✅ Done (mock) | ⬜ **B.9** real E2E — last |
@@ -34,22 +35,45 @@
 
 **Historical build order:** **0 → A ∥ B → C → D → …**
 
-### Dev priority — finish dev 100% first
+### Dev priority — próximo trabalho (Jul/2026)
 
-1. ~~**E** — PO → GRN → transfer~~ ✅  
-2. **F** — SignalR *(optional)*  
-3. **E.8** — Refresh [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md)
+Sincronizado com [open_UPDATES.md](./open_UPDATES.md) §0.
+
+1. **§3.5 storefront** — opções produto + textos categoria na loja (admin CRUD ✅)
+2. **F** — SignalR *(optional)*
+3. **E.12** — Refresh [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md)
+4. **Qualidade** — testes catálogo, regressão (ex-E/F em open_UPDATES) — **depois** dos itens acima
 
 ### Prod go-live — last (after dev 100%)
 
 Do **not** start until dev track above is complete:
 
 1. **3b** — SMTP / background worker for low-stock queue  
-2. **B.9** — Mollie real E2E — [open_MOLLIE_PAYMENTS_open.md](./open_MOLLIE_PAYMENTS_open.md)
+2. **B.9** — Mollie real E2E — [open_MOLLIE_PAYMENTS.md](./open_MOLLIE_PAYMENTS.md)
 
 ---
 
 ## ⬜ Open backlog — dev (finish 100% first)
+
+### Storefront — ERP forms (not layout)
+
+Layout loja ✅ — ver [open_UPDATES.md](./open_UPDATES.md) §0. Pendente **funcional**:
+
+| Item | Status | Notes |
+|------|--------|-------|
+| **S.1** `GetProductOptionsForStoreAsync` | ⬜ | Admin `/admin/product-options` ✅ |
+| **S.2** `StoreProductOptionsForm` + `ProductDetail` | ⬜ | §3.5 |
+| **S.3** `GetCategoryDetailAsync` + intro text | ⬜ | H1 nome ✅; intro EN ⬜ |
+| **S.4** Cart/checkout line options | ⬜ | Validação Application |
+
+### Auth — legacy database ✅
+
+| Item | Status | Notes |
+|------|--------|-------|
+| **A.1** Unified login | ✅ | `POST /account/login` → `SignInAsync` — [open_UPDATES.md](./open_UPDATES.md) §2.2.2 |
+| **A.2** Staff → admin | ✅ | `[Instellingen].[User]`; flags `Admin` / `Bestellingen` / `Productie` → roles |
+| **A.3** Customer → store | ✅ | `Customers.WebshopLogin` + hash/salt |
+| **A.4** No AspNet Identity | ✅ | Cookie legacy; policies `AdminOrManager` / `CustomerOnly` |
 
 ### E — Stock ops
 
@@ -100,7 +124,7 @@ See [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) (email queue rows only).
 | Item | Dev | Prod |
 |------|-----|------|
 | Code + `MollieMockPaymentAdapter` | ✅ | n/a |
-| `Mollie:ApiKey`, webhook, E2E checklist | n/a | ⬜ — [open_MOLLIE_PAYMENTS_open.md](./open_MOLLIE_PAYMENTS_open.md) |
+| `Mollie:ApiKey`, webhook, E2E checklist | n/a | ⬜ — [open_MOLLIE_PAYMENTS.md](./open_MOLLIE_PAYMENTS.md) |
 
 ### M.5 — Azure Blob (production) ✅
 
@@ -164,7 +188,7 @@ See [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) (email queue rows only).
 - ✅ **B.7** `/orders/{id}/payment-return` + confirmation
 - ✅ **B.8** Post-pay path (no Mollie)
 - ✅ **B.9a** `MollieMockPaymentAdapter` when `Mollie:UseMock=true` — **dev done**
-- ⬜ **B.9** Real Mollie test key + public webhook + E2E — [open_MOLLIE_PAYMENTS_open.md](./open_MOLLIE_PAYMENTS_open.md) — **prod go-live (last)**
+- ⬜ **B.9** Real Mollie test key + public webhook + E2E — [open_MOLLIE_PAYMENTS.md](./open_MOLLIE_PAYMENTS.md) — **prod go-live (last)**
 
 ---
 
@@ -226,8 +250,8 @@ Detail: [AZUREBLOB.md](./AZUREBLOB.md)
 - ⬜ **E.6** Retry payment / expired session UX
 
 ### Docs
-- ✅ **E.7** [open_MOLLIE_PAYMENTS_open.md](./open_MOLLIE_PAYMENTS_open.md) written
-- ⬜ **E.8** Update [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) to match current Blazor store
+- ✅ **E.14** [open_MOLLIE_PAYMENTS.md](./open_MOLLIE_PAYMENTS.md) written
+- ⬜ **E.12** Update [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) to match current Blazor store
 
 ---
 
