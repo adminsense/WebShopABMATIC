@@ -1,0 +1,140 @@
+@page "/admin/audit-logs"
+@layout AdminLayout
+@attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
+@using WebShopABMATIC.Application.Admin.AuditLogs
+@using WebShopABMATIC.Application.Common
+@using WebShopABMATIC.Application.Auth
+@using WebShopABMATIC.Application.Ports
+@inject IAuditLogAdminPort AuditPort
+
+<PageTitle>Audit trail</PageTitle>
+
+<div class="entity-page">
+    <a class="btn btn-secondary btn-back mb-3" href="/admin/hub/settings" data-enhance-nav="false"><span class="oi oi-arrow-left"></span> Back to Settings hub</a>
+    <div class="entity-page-header page-header">
+        <h1 class="h3 mb-1"><i class="bi bi-journal-text text-primary"></i> Audit trail</h1>
+        <p class="mb-0">Auth, CRUD, and application events from legacy <code>[Logging].[Error]</code>.</p>
+    </div>
+
+    <div class="card shadow-sm border entity-grid-card">
+        <div class="card-header bg-white entity-grid-toolbar">
+            <h2 class="h6 mb-0 fw-bold">Events</h2>
+            <div class="d-flex gap-2 align-items-center">
+                <input class="form-control form-control-sm" style="max-width:12rem" placeholder="Module / action" @bind="_filter.EntityName" />
+                <input class="form-control form-control-sm" style="max-width:12rem" placeholder="User" @bind="_filter.UserSearch" />
+                <button type="button" class="btn btn-sm btn-primary" @onclick="LoadAsync">Search</button>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>When</th>
+                        <th>Action</th>
+                        <th>Module</th>
+                        <th>User</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_loading)
+                    {
+                        <tr><td colspan="5" class="text-center text-muted py-4">Loading…</td></tr>
+                    }
+                    else if (!string.IsNullOrEmpty(_error))
+                    {
+                        <tr><td colspan="5" class="text-center text-danger py-4">@_error</td></tr>
+                    }
+                    else if (_result is null || _result.Items.Count == 0)
+                    {
+                        <tr><td colspan="5" class="text-center text-muted py-4">No records found.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in _result.Items)
+                        {
+                            <tr>
+                                <td>@item.Timestamp.ToLocalTime().ToString("g")</td>
+                                <td><AuditActionBadge Action="@item.Action" /></td>
+                                <td>@item.EntityName</td>
+                                <td>@item.UserDisplayName</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => ShowDetailAsync(item.Id)">Detail</button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+        <AdminGridPagination TotalCount="@(_result?.TotalCount ?? 0)" Page="@(_filter.Page)" PageSize="@(_filter.PageSize)" Loading="@_loading" OnPageChanged="ChangePageAsync" />
+    </div>
+</div>
+
+@if (_detail is not null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,.4)">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Event #@_detail.Id</h5>
+                    <button type="button" class="btn-close" @onclick="CloseDetail"></button>
+                </div>
+                <div class="modal-body">
+                    <dl class="row mb-0 small">
+                        <dt class="col-sm-3">When</dt><dd class="col-sm-9">@_detail.Timestamp.ToLocalTime().ToString("F")</dd>
+                        <dt class="col-sm-3">Action</dt><dd class="col-sm-9">@_detail.Action</dd>
+                        <dt class="col-sm-3">Module</dt><dd class="col-sm-9">@_detail.EntityName</dd>
+                        <dt class="col-sm-3">User</dt><dd class="col-sm-9">@_detail.UserDisplayName</dd>
+                        <dt class="col-sm-3">Message</dt><dd class="col-sm-9"><pre class="mb-0 small">@_detail.AdditionalInfo</pre></dd>
+                        @if (!string.IsNullOrWhiteSpace(_detail.ErrorMessage))
+                        {
+                            <dt class="col-sm-3">Inner</dt><dd class="col-sm-9"><pre class="mb-0 small">@_detail.ErrorMessage</pre></dd>
+                        }
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private AuditLogListFilter _filter = new();
+    private PagedResult<AuditLogListItemDto>? _result;
+    private AuditLogDetailDto? _detail;
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            _result = await AuditPort.GetAuditTrailAsync(_filter);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task ChangePageAsync(int page)
+    {
+        _filter.Page = page;
+        await LoadAsync();
+    }
+
+    private async Task ShowDetailAsync(long id)
+    {
+        _detail = await AuditPort.GetDetailAsync(id);
+    }
+
+    private void CloseDetail() => _detail = null;
+}

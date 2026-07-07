@@ -4,6 +4,7 @@ using WebShopABMATIC.Application.Audit;
 using WebShopABMATIC.Application.Ports;
 using WebShopABMATIC.Application.Common;
 using WebShopABMATIC.Application.Ports.Outbound;
+using WebShopABMATIC.Application.Admin.AuditLogs;
 using WebShopABMATIC.Application.Admin.Orders;
 using WebShopABMATIC.Application.Stock;
 
@@ -14,15 +15,18 @@ public sealed class OrderAdminUseCase : IOrderAdminPort
     private readonly IOrderRepository _repository;
     private readonly IStockMovementService _stock;
     private readonly IAuditService _audit;
+    private readonly IAuditLogRepository _auditLogRepository;
 
     public OrderAdminUseCase(
         IOrderRepository repository,
         IStockMovementService stock,
-        IAuditService audit)
+        IAuditService audit,
+        IAuditLogRepository auditLogRepository)
     {
         _repository = repository;
         _stock = stock;
         _audit = audit;
+        _auditLogRepository = auditLogRepository;
     }
 
     public Task<PagedResult<OrderSummaryDto>> GetOrdersAsync(OrderListFilter filter, CancellationToken cancellationToken = default) => _repository.GetOrdersAsync(filter, cancellationToken);
@@ -58,4 +62,7 @@ public sealed class OrderAdminUseCase : IOrderAdminPort
 
         return OrderCancelResult.Ok(released);
     }
+
+    public Task<IReadOnlyList<OrderLogListItemDto>> GetOrderLogsAsync(int orderId, CancellationToken cancellationToken = default) =>
+        _auditLogRepository.GetOrderLogsAsync(orderId, cancellationToken);
 }

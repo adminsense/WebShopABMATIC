@@ -1,3 +1,4 @@
+using WebShopABMATIC.Application.Admin.AuditLogs;
 using WebShopABMATIC.Application.Admin.CustomerDeliveryAddresses;
 using WebShopABMATIC.Application.Admin.CustomerProductDiscounts;
 using WebShopABMATIC.Application.Admin.Customers;
@@ -170,6 +171,13 @@ public interface IOrderAdminPort
     Task<OrderEditDto?> GetForEditAsync(int id, CancellationToken cancellationToken = default);
     Task<int> SaveAsync(OrderEditDto dto, CancellationToken cancellationToken = default);
     Task<OrderCancelResult> CancelOrderAsync(int orderId, string reason, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<OrderLogListItemDto>> GetOrderLogsAsync(int orderId, CancellationToken cancellationToken = default);
+}
+
+public interface IAuditLogAdminPort
+{
+    Task<PagedResult<AuditLogListItemDto>> GetAuditTrailAsync(AuditLogListFilter filter, CancellationToken cancellationToken = default);
+    Task<AuditLogDetailDto?> GetDetailAsync(long id, CancellationToken cancellationToken = default);
 }
 
 public interface IProductStockLocationAdminPort

@@ -201,31 +201,33 @@ WebShopABMATIC/                 ← repo root (solution parent)
 - **Dev / demo staff:** use `Settings.StaffUsers` rows from `seeds.sql` (legacy login + password fields).  
   **Dev store customer:** `Customers` row with matching `WebshopLogin` + password from seed.
 
-### 3.5 Audit logging (Auth-7)
+### 3.5 Audit logging (Auth-7) — legacy database ✅
 
-- **`AuditLogs`** table on `ApplicationDbContext` — migration `AuditLogs`  
-  ✅ `Infrastructure/Identity/AuditLog.cs`
+**No `AuditLogs` table and no ASP.NET Identity audit.** All events persist to **existing legacy tables** only:
 
-- **`IAuditService`** — single write path for compliance events  
-  ✅ `Infrastructure/Audit/AuditService.cs`
+| Legacy table | EF entity | Written by |
+|--------------|-----------|------------|
+| `[Projecten].[DossierLog]` | `OrderLog` | Checkout, Mollie paid/expired, cancel, stock-on-order |
+| `[Logging].[ProjectActiviteit]` | `ProjectActivity` | Project activity codes (`LegacyProjectActivityCodes`) when order has `ProjectId` |
+| `[Logging].[Error]` | `AppError` | Auth (login/logout/fail), admin CRUD (interceptor), exports, unhandled exceptions |
 
-- **Domain CRUD** — `AuditSaveChangesInterceptor` on `WebShopABMATICDbContext` (Create / Update / Delete JSON snapshots)  
-  ✅ Includes `AzureFile` product images via `LocalProductMediaService`
+**Code:**
 
-- **Auth events** — Login, LoginFailed, Logout (manual + circuit close via `AuditCircuitHandler`)  
-  ✅ Admin login, store sign-in, `Account/Logout`, store header sign-out
+- **`IAuditService`** → `LegacyAuditService` (`Infrastructure/Audit/LegacyAuditService.cs`)
+- **`LegacyAuditWriter`** — inserts into legacy tables (no schema changes)
+- **`LegacyAuditSaveChangesInterceptor`** — EF `SaveChanges` → `[Logging].[Error]` for Create/Update/Delete
+- **`LegacyExceptionLoggingMiddleware`** — HTTP 500 → `[Logging].[Error]`
+- **Auth** — `POST /account/login`, `/account/logout`, store header sign-out → `[Logging].[Error]` (`ModuleName = Auth`)
+- **Checkout / Mollie** — `CheckoutUseCase`, `ProcessMollieWebhookUseCase` → `DossierLog` + `ProjectActiviteit`
+- **Exports** — `GridExportService` → `ReportExport` in `[Logging].[Error]`
+- **Stock** — `StockMovementService` → `DossierLog` on order-linked stock ops; journal remains `[Products].[StockBeweging]`
 
-- **Exports** — `ReportExport` on all admin grid CSV/PDF via `GridExportService`  
-  ✅
+**Admin UI:**
 
-- **Store checkout** — `CheckoutStarted` (order placed), `PaymentPaid` (Mollie webhook)  
-  ✅ `CheckoutUseCase`, `ProcessMollieWebhookUseCase`
+- `/admin/audit-logs` — reads `[Logging].[Error]` (Settings hub)
+- `/admin/orders` — **Order log (DossierLog)** when editing an order
 
-- **Self-profile** — `/admin/profile`, `/my-account` profile + `PasswordReset` action  
-  ✅
-
-- **Admin UI** — `/admin/audit-logs` (filters, legend, detail modal, export); Settings hub card  
-  ✅ See [AUDITS_open.md](./AUDITS_open.md)
+**Enums:** `LegacyAuditModules`, `LegacyProjectActivityCodes` — align `Actie` values with `SELECT DISTINCT Actie FROM Logging.ProjectActiviteit` on your DB if needed.
 
 ---
 
@@ -443,8 +445,8 @@ dotnet run
 
 ### 7.1 Logging
 
-- Structured logging (built-in)  
-  ⏳ Default ASP.NET Core logging only
+- **Legacy DB persistence** — `[Logging].[Error]`, `[Projecten].[DossierLog]`, `[Logging].[ProjectActiviteit]` via `LegacyAuditService` ✅
+- **ASP.NET Core console logging** — default only ⏳
 
 ### 7.2 Health checks
 
