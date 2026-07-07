@@ -20,6 +20,15 @@
 
     protected override void OnInitialized() => Cart.Changed += OnCartChanged;
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Cart.EnsureLoadedAsync();
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
     private void OnCartChanged() => InvokeAsync(StateHasChanged);
 
     public void Dispose() => Cart.Changed -= OnCartChanged;
