@@ -33,7 +33,7 @@
 | **Catalog & media** | ✅ Complete | Products, prices, webshop structures, `AzureFiles` |
 | **CRM & discounts** | ✅ Complete | Customers, addresses, contacts, product discounts |
 | **Sales & payments** | ✅ Complete | Orders, lines, advance payments (Mollie mock) |
-| **Stock & PO demo** | 🟢 Seeded | Locations, movements, open PO + partial GRN row |
+| **Stock & PO** | 🟢 Present | Locations, movements, open PO + partial GRN row |
 | **Email queue** | 🔷 Demo only | Queued rows ✅ — SMTP worker = **prod** |
 | **Login** | ✅ In SQL | `StaffUsers` + `LoginWebshop` / `PasswordWebshop` on `Klanten.Klant` |
 
@@ -75,7 +75,7 @@
 | **CRM** | `Crm.Manufacturer` | 1 | `/admin/manufacturers` | ✅ | Demo Manufacturer |
 | | `Crm.Supplier` | 1 | `/admin/suppliers` | ✅ | Demo Supplier |
 | | `Crm.CustomerProductDiscounts` | 3 | `/admin/customer-discounts` | ✅ | Customers 1, 2, 4 |
-| **Customers** | `Customers.Customers` | 4 | `/admin/customers` | ✅ | incl. `customer@webshop.com` + `LoginWebshop` / `PasswordWebshop` |
+| **Customers** | `Customers.Customers` | 4 | `/admin/customers` | ✅ | `LoginWebshop` / `PasswordWebshop` |
 | | `Crm.CustomerDeliveryAddresses` | 5 | `/admin/delivery-addresses` + checkout | ✅ | 2 addresses for customer 4 |
 | | `Customers.Contact` | 3 | CRM (no dedicated list) | ✅ | Buyers + supplier contact |
 | | `Customers.CustomerContacts` | 3 | CRM (no dedicated list) | ✅ | Linked to customers |
@@ -117,19 +117,18 @@
 
 ---
 
-## 3. Login (demo accounts on `abmatic_test`)
+## 3. Authentication
 
-| Portal | Login | Password (demo) | Table / columns |
-|--------|-------|-----------------|-----------------|
-| Admin | `admin@webshop.com` | `demo` | `Settings.StaffUsers` |
-| Admin | `manager@webshop.com` | `demo` | `Settings.StaffUsers` |
-| Store | `customer@webshop.com` | `demo` | `Klanten.Klant` (`LoginWebshop`, `PasswordWebshop`) |
+| Portal | Table | Fields |
+|--------|-------|--------|
+| Admin | `Settings.StaffUsers` | `Login`, `Password` |
+| Store | `Klanten.Klant` | `LoginWebshop`, `PasswordWebshop`, `SaltWebshop` |
 
-On **Azure with production ERP data**, use credentials from those tables in SSMS.
+Credentials come from the connected `abmatic_test` database only. Use `/admin/customers` or `/admin/staff-users` to find logins; reset webshop passwords in admin when needed.
 
 ---
 
-## 4. Not in scope (demo / UI)
+## 4. Not in scope (UI gaps)
 
 | Item | Reason |
 |------|--------|

@@ -47,8 +47,8 @@ This completes **dev** checkout for client demos. **B.9 prod** remains ⬜ until
 
 ## Prerequisites
 
-- SQL schema + seeds applied (`Sql/seeds.sql` on `abmatic_test`)
-- `PaymentMethods` row **iDEAL / card (Mollie)** with `IsPrePay = 1` (in `seeds.sql`)
+- EF migrations applied on `abmatic_test` (`WebShopABMATICDbContext`)
+- `PaymentMethods` row **iDEAL / card (Mollie)** with `IsPrePay = 1` in the database
 - Public HTTPS URL reachable by Mollie (ngrok, Cloudflare Tunnel, or deployed dev slot)
 
 ## 1. Mollie test API key
@@ -85,7 +85,7 @@ Use the ngrok **https** URL as the site you open in the browser when testing che
 
 ## 3. Manual E2E checklist (B.9)
 
-1. Sign in as `customer@webshop.com` / `demo` (after demo seed) or a real `WebshopLogin` from Azure.
+1. Sign in with a store customer (`WebshopLogin` from `/admin/customers` or the database).
 2. Add products to cart → **Place order** with **iDEAL / card (Mollie)**.
 3. Confirm redirect to Mollie hosted checkout.
 4. Complete payment with Mollie test method (e.g. paid status in test dashboard).
