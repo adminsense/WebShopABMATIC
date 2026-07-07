@@ -218,7 +218,7 @@ ORDER BY PublishToWeb DESC, Created DESC
 | # | Task | Status |
 |---|------|--------|
 | 1 | Document legacy model + client storage facts | ✅ |
-| 2 | Seed `AzureFileFolders` + demo `AzureFiles` | ✅ |
+| 2 | `AzureFileFolders` + `AzureFiles` rows on `abmatic_test` | ✅ |
 | 3 | `IProductMediaPort` + local adapter | ✅ |
 | 4 | Admin upload + preview | ✅ |
 | 5 | Store catalog/detail read via port | ✅ |

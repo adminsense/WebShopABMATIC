@@ -484,7 +484,7 @@ WebShopABMATIC/              ← repo root
 |------|--------|------------------|
 | 1 | Azure database | `abmatic_test` on `abmatic.database.windows.net` |
 | 2 | Apply EF migrations | `dotnet ef database update` on `WebShopABMATICDbContext` |
-| 3 | Demo data | Maintained on `abmatic_test` (Azure) — see [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) |
+| 3 | Demo data | Maintained on `abmatic_test` (Azure) — see [DATA_SUMMARY.md](./DATA_SUMMARY.md) |
 | 4 | Column mapping | `WebShopABMATICModelBuilder` → Dutch physical names |
 
 
