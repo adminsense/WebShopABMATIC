@@ -1,52 +1,11 @@
 # WebShop — Migração de layout da loja
 
-![Status](https://img.shields.io/badge/Layout%20loja-✅%20fechado-28a745?style=flat-square) ![Referência](https://img.shields.io/badge/Referência-adminsenceweb-512BD4?style=flat-square) ![Idioma](https://img.shields.io/badge/Loja-English-0dcaf0?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Fases%20B–D%20implementadas-28a745?style=flat-square) ![Referência](https://img.shields.io/badge/Referência-adminsenceweb-512BD4?style=flat-square) ![Idioma](https://img.shields.io/badge/Loja-English-0dcaf0?style=flat-square)
 
 > [!IMPORTANT]
-> **Resumo:** Layout da loja alinhado à referência **[adminsenceweb](https://adminsenceweb.azurewebsites.net/)** — **decisões fechadas** (§0). O trabalho em curso é **funcional**: login legacy ↔ BD, admin operacional, opções ERP na loja (§3.5), depois qualidade e prod.
+> **Resumo:** Migrar o **layout da loja** para ficar igual à referência que o cliente aprovou: **[https://adminsenceweb.azurewebsites.net/](https://adminsenceweb.azurewebsites.net/)**. Mantém-se a arquitectura hexagonal (`Application` → ports → `Infrastructure`); mudam UI/CSS da webstore e contratos de catálogo.
 
-**Documentos `open_*` sincronizados (Jul/2026):**
-
-| Documento | Âmbito | Estado |
-|-----------|--------|--------|
-| **open_UPDATES.md** (este) | Layout loja + backlog storefront | Layout ✅ · ver §0 |
-| **[open_IMPLEMENTATION_ROADMAP.md](./open_IMPLEMENTATION_ROADMAP.md)** | Stock, checkout, Mollie, admin ops | Dev core ✅ · ver backlog |
-| **[open_MOLLIE_PAYMENTS.md](./open_MOLLIE_PAYMENTS.md)** | Mollie mock (dev) + go-live (prod) | Mock ✅ · prod ⬜ |
-
----
-
-## 0. Decisões fechadas — layout loja ✅
-
-> **Não reabrir** estes itens salvo pedido explícito do cliente. Análise histórica mantida nas secções 2.x apenas como referência.
-
-| # | Tema | Decisão final | Estado código |
-|---|------|---------------|---------------|
-| L1 | Header (Back·Home·Cart·Contact·Search·Login) | Ordem e textos EN conforme §2.1.1 | ✅ |
-| L2 | Sidebar 300px + árvore `ProductStructuur` | Navegação principal | ✅ |
-| L3 | Homepage | Secções **Categories** (tiles) + **Deals** (fila); sem grelha genérica na `/` | ✅ |
-| L4 | Navegação por níveis | CD4: tiles até folha → produtos directos na folha | ✅ |
-| L5 | Paleta / tipografia | Laranja `#fe7109`, Segoe UI, shell branco | ✅ |
-| L6 | Carousel Bootstrap (referência) | **Não na v1** — `deals-row` + grelha responsiva; carousel = opcional futuro | ✅ fechado |
-| L7 | Deals mobile | Scroll horizontal CSS na v1; carousel dedicado = opcional | ✅ fechado |
-| L8 | Logo na navbar | Fora da barra (H3) | ✅ |
-| L9 | New products vs Deals | Só **Deals** na homepage; `GetNewProductsAsync` mantido para uso futuro | ✅ |
-| L10 | Ícones | Bootstrap Icons (equivalente FA6) | ✅ |
-| L11 | Login/sign-up shell | `StoreAuthLayout`, sem sidebar, botão laranja | ✅ |
-| L12 | Cart quick-add | `ProductCartButton` em todos os cards → `/cart` | ✅ |
-| L13 | Login unificado loja+admin (§2.2.2) | **Fora do scope actual** — manter `/sign-in` + `/admin/login` separados | ✅ fechado |
-
-### O que falta de verdade (dev) — prioridade actual
-
-| Prioridade | Bloco | Notas |
-|------------|-------|-------|
-| **1 — Alta** | **Auth + admin** | Login legacy já lê `Settings.StaffUsers` + `Customers` ([DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) §6). Validar E2E: staff → `/admin`, customer → loja/checkout. |
-| **2 — Alta** | **§3.5 storefront** | Opções de produto e textos de categoria **na loja** (admin `ProductOption` ✅; ports/UI loja ⬜). |
-| **3 — Média** | **Extras roadmap** | E.4–E.6, E.13 OrderStructure, SignalR — opcional |
-| **4 — Depois** | **Qualidade (ex-E/F)** | Testes catálogo/CD4, regressão, `SPEC_WEB_STORE.md`, validação com cliente — **após** features acima |
-| **5 — Último** | **Prod go-live** | Mollie real ([open_MOLLIE_PAYMENTS.md](./open_MOLLIE_PAYMENTS.md)), SMTP low-stock |
-
-> [!NOTE]
-> **Numeração C.x:** neste doc, C.4/C.5 = layout loja (✅). No [roadmap](./open_IMPLEMENTATION_ROADMAP.md), **Phase C** = visibilidade encomendas (✅, incl. C.2 `/orders/{id}`).
+**Próximo passo sugerido:** **C.5 + D.5** (navegação por níveis — prioridade pelo screenshot); depois C.4 + D.4 (homepage); E + F; §3.5 e §2.2.2 em paralelo.
 
 ---
 
@@ -56,7 +15,7 @@
 |------|--------|
 | **URL a seguir** | https://adminsenceweb.azurewebsites.net/ |
 | **App** | `Adminsence.Shop` — Blazor Server |
-| **Loja actual (código)** | Sidebar + header + homepage **Categories** + **Deals** + drill-down CD4 |
+| **Loja actual (código)** | Sidebar + header OK; homepage com **New products** + grelha genérica (≠ referência) |
 | **Loja alvo** | Homepage = **grelha ícones categorias** + secção **Deals** + sidebar árvore `ProductStructuur` — **inglês** |
 
 Toda a análise visual e decisões de UI partem **só** desta URL.
@@ -69,17 +28,17 @@ Toda a análise visual e decisões de UI partem **só** desta URL.
 
 A app de referência usa **Blazor Server + Bootstrap 4 + DevExpress (tema office-white) + BlazorStrap**. Elementos relevantes para a nossa loja:
 
-| Elemento | Referência (`adminsenceweb`) | Nossa loja (Jul/2026) |
-|----------|------------------------------|------------------------|
-| **Shell** | `height: 100%`, `overflow: hidden` | `StoreLayout` sidebar + main scroll ✅ |
-| **Header** | Navbar branca, `3.5rem`, sombra | `StoreHeader` branco §2.1.1 ✅ |
-| **Sidebar** | **300px** fixa, `nav-pills` | `StoreCategorySidebar` 300px ✅ |
-| **Conteúdo** | Padding `1.1rem 2rem`, scroll interno | `store-content-inner` ✅ |
-| **Cor primária** | Laranja `#fe7109` | `#fe7109` em `store.css` ✅ |
-| **Tipografia** | Segoe UI ~0.88rem | Segoe UI ✅ |
-| **Produtos / Deals** | Carousel Bootstrap (ref.) | **Decisão L6:** `deals-row` + grelha — sem carousel v1 ✅ |
-| **Ícones** | Font Awesome 6 | Bootstrap Icons ✅ (L10) |
-| **Mobile** | Sidebar colapsa &lt; 1200px | Header wrap; sidebar fixa — polish opcional |
+| Elemento | Referência (`adminsenceweb`) | Nossa loja actual |
+|----------|------------------------------|-------------------|
+| **Shell** | `height: 100%`, `overflow: hidden` — app a preencher viewport | Scroll livre, sem shell fixo |
+| **Header** | Navbar branca, `3.5rem`, sombra `0 2px 6px rgba(0,0,0,.12)` | `StoreHeader` sticky, azul claro, search centrada |
+| **Sidebar** | **300px** fixa, sombra lateral, `nav-pills`, fonte **600** | ❌ Não existe — chips horizontais |
+| **Conteúdo** | Padding `1.1rem 2rem`, scroll interno, `max-width: 1100px` | `.container` 1200px, hero + secções |
+| **Cor primária** | **Laranja** `#fe7109` / `#ff6c00` (DevExpress) | Azul `#3b82f6` |
+| **Tipografia** | Segoe UI / Helvetica Neue, `0.88rem` base | DM Sans + Instrument Serif |
+| **Produtos** | Carousel Bootstrap (5 itens por slide, `Navbar.js`) | Grelha CSS `minmax(240px, 1fr)` |
+| **Ícones** | Font Awesome 6 | Bootstrap Icons + SVG search |
+| **Mobile** | Sidebar colapsa &lt; 1200px, overlay full-width | Chips wrap, header flex |
 
 **Nota:** A URL live devolve o shell Blazor mas o circuito pode falhar no browser anónimo; a análise acima veio de `Adminsence.Shop.styles.css`, `css/site.css` e `js/Navbar.js` servidos pela mesma app.
 
@@ -158,7 +117,7 @@ A referência mostra uma **barra horizontal única** (fundo branco, ícone + tex
 ### 2.1.2 Homepage — estrutura da tela inicial (screenshot cliente)
 
 > [!NOTE]
-> **Fonte:** screenshot homepage da referência (NL: *Categorien*, *Deals*). **Estado:** ✅ **implementado** (2026-06+) — `Catalog.razor` com secções Categories + Deals.
+> **Fonte:** screenshot homepage da referência (NL: *Categorien*, *Deals*). **Estado:** análise para implementação futura — o `Catalog.razor` actual **não** replica esta estrutura.
 
 A página inicial da referência não é uma grelha única de produtos. É um **painel de três zonas** com conteúdo principal em **duas secções empilhadas**.
 
@@ -205,12 +164,12 @@ A sidebar é a **navegação profunda**; a homepage mostra só um **resumo visua
 
 | Aspecto | Referência | Nossa loja | Gap |
 |---------|------------|------------|-----|
-| Título secção | **Categorien** | **Categories** | ✅ |
-| Layout | Grelha de **cartões quadrados** com borda cinza fina | `category-tile-grid` | ✅ |
-| Quantidade | ~**16** cartões | Raízes `ProductStructuur` | ✅ |
-| Conteúdo cartão | **Ícone P&B** + etiqueta por baixo | `StoreCategoryTile` + endpoint ícone | ✅ |
-| Acção | Clique → catálogo dessa categoria | `/?categoryId={rootId}` | ✅ |
-| vs sidebar | Atalho visual das **raízes** | ✅ | — |
+| Título secção | **Categorien** | ❌ Não existe | **Categories** (EN) |
+| Layout | Grelha de **cartões quadrados** com borda cinza fina | ❌ | `category-tile-grid` |
+| Quantidade | ~**16** cartões (2 linhas: ~11 + ~5 centrados) | — | Raízes `ProductStructuur` com produtos webshop |
+| Conteúdo cartão | **Ícone P&B** + etiqueta por baixo | — | Ícone de `ProductStructure.Icon` (blob) ou fallback |
+| Acção | Clique → catálogo dessa categoria | Sidebar faz isto; main não | `/?categoryId={rootId}` |
+| vs sidebar | Atalho visual das **raízes** | Só sidebar lista categorias | **Falta grelha na homepage** |
 
 **Componente alvo:** `StoreCategoryTile.razor` — quadrado, ícone centrado, `NameEn`, hover borda/sombra laranja.
 
@@ -218,13 +177,13 @@ A sidebar é a **navegação profunda**; a homepage mostra só um **resumo visua
 
 | Aspecto | Referência | Nossa loja | Gap |
 |---------|------------|------------|-----|
-| Título secção | **Deals** | **Deals** | ✅ |
-| Layout | **Fila horizontal** ~8 cartões | `deals-row` | ✅ |
-| Imagem | Foto real do produto | ✅ `ImageUrl` blob | — |
-| Título produto | **MAIÚSCULAS**, negrito | `.deal-card-title` uppercase | ✅ |
-| Quick-add | Ícone **carrinho laranja** no cartão | ✅ `ProductCartButton` → `/cart` | ✅ |
-| Descrição | 2–3 linhas texto técnico | `.deal-card-description` | ✅ |
-| Preço | Não destacado na imagem | Preço no footer do card | 🟡 Confirmar com cliente |
+| Título secção | **Deals** | **New products** (≠ mesmo conceito) | Renomear / separar secções |
+| Layout | **Fila horizontal** ~8 cartões (não grelha 4 colunas) | Grelha `product-grid` | `deals-row` ou carousel |
+| Imagem | Foto real do produto (placas, caixas) | ✅ `ImageUrl` blob | — |
+| Título produto | **MAIÚSCULAS**, negrito (ex. BRAINY24, HEADY, THINKY) | Title case normal | Estilo `.deal-card-title` |
+| Quick-add | Ícone **carrinho laranja** no cartão | Só no detalhe / sem ícone no card | `Add to cart` rápido no card |
+| Descrição | 2–3 linhas texto técnico sob o título | Descrição no card genérico | Manter no deal card |
+| Preço | Não destacado na imagem (pode ser “on request”) | Preço na grelha actual | 🟡 Confirmar com cliente |
 
 **Nota:** *Deals* na referência **não é necessariamente** `IsNieuw` — pode ser promoções, destaques manuais ou outro critério ERP. Ver decisão **HP4**.
 
@@ -234,9 +193,9 @@ A sidebar é a **navegação profunda**; a homepage mostra só um **resumo visua
 |-------|------------|-------------------|
 | Hero | ❌ | ❌ (removido ✅) |
 | Chips horizontais | ❌ | ❌ (removido ✅) |
-| Grelha ícones categorias | ✅ **Categories** | ✅ |
-| Secção promoção | ✅ **Deals** (~8 produtos, fila) | ✅ |
-| Grelha produtos genérica na `/` | ❌ | ❌ (removida ✅) |
+| Grelha ícones categorias | ✅ **Categories** | ❌ |
+| Secção promoção | ✅ **Deals** (~8 produtos, fila) | 🟡 **New products** (12, grelha) — **substituir/ajustar** |
+| Grelha produtos genérica na `/` | ❌ (só deals + tiles) | ✅ 12 produtos — **remover ou mover** para `?categoryId=` |
 | Sidebar árvore | ✅ | ✅ |
 
 #### Decisões de UI — homepage (Fase A+)
@@ -246,13 +205,13 @@ A sidebar é a **navegação profunda**; a homepage mostra só um **resumo visua
 | HP1 | Estrutura `/` | **Categories (tiles)** → **Deals (row)**; sem grelha genérica na raiz |
 | HP2 | Títulos EN | **Categories** + **Deals** (não “Categorien” / “New products”) |
 | HP3 | Ícones categorias | `ProductStructure.Icon` (byte[] ERP); fallback ícone genérico por categoria |
-| HP4 | Fonte dos Deals | ✅ v1: produtos visíveis webshop (`ShowOnWebshop`, `!IsInactive`); ⏳ confirmar critério promo ERP com cliente |
+| HP4 | Fonte dos Deals | ⏳ Confirmar cliente: flag promoção ERP, lista fixa, `IsNieuw`, ou tabela dedicada |
 | HP5 | Quantidade Deals | **~8** na homepage (screenshot); configurável |
 | HP6 | Quantidade tiles | **Raízes** com `Webshop`+produtos (28 max.; screenshot ~16) — só com ícone ou todas |
-| HP7 | Quick-add no deal | ✅ `ProductCartButton` — carrinho laranja no card → add + navega para `/cart` |
+| HP7 | Quick-add no deal | Carrinho laranja no card → `StoreCartService.Add` sem ir ao detalhe (se preço OK) |
 | HP8 | Após clicar tile | `/?categoryId=` + opcional cabeçalho categoria §3.5 |
-| HP9 | Deals responsivo | ✅ v1: `deals-row` scroll horizontal; carousel Bootstrap = **não v1** (L6/L7) |
-| HP10 | New products | ✅ Secção New products removida; Deals na homepage; `GetNewProductsAsync` mantido para uso futuro |
+| HP9 | Deals responsivo | Desktop: fila horizontal scroll; mobile: carousel ou stack — alinhar `Navbar.js` ref. |
+| HP10 | New products | ⏳ Fundir com Deals, secção separada abaixo, ou remover — **confirmar cliente** |
 
 #### Implementação prevista (fases)
 
@@ -283,8 +242,8 @@ A sidebar é a **navegação profunda**; a homepage mostra só um **resumo visua
 - ❓ **Dúvida:** O que define um produto em **Deals** na referência — promoção ERP, lista manual, `IsNieuw`, ou outro campo?
 - Checklist:
   - ✅ Confirmado com cliente: `ProdNonActive == true` significa produto desativado e não deve aparecer na loja
-  - [ ] Mapear campo legacy se existir (ex. flag promoção em `Product`) — **decisão cliente pendente**
-  - ✅ `GetDealsAsync` via `StoreCatalogService` — produtos visíveis webshop (v1)
+  - [ ] Mapear campo legacy se existir (ex. flag promoção em `Product`)
+  - [ ] Implementar `GetDealsAsync(take)` com critério acordado
   - ✅ Verificado no código: deals usam `QueryVisibleProducts()` com `ShowOnWebshop == true` e `!IsInactive` (`ProdNonActive`)
 
 **HP6 — Quantidade de tiles na homepage**
@@ -295,11 +254,11 @@ A sidebar é a **navegação profunda**; a homepage mostra só um **resumo visua
   - ✅ Layout CSS para 2 linhas centradas (como screenshot)
 
 **HP10 — New products vs Deals**
-- ✅ **Decisão v1:** Secção **Deals** na homepage; **New products** removida do `Catalog.razor`
+- ❓ **Dúvida:** Substituímos **New products** por **Deals**, mantemos ambos, ou `IsNieuw` alimenta Deals?
 - Checklist:
-  - [ ] Decisão cliente final documentada em §10 (critério promo Deals)
-  - ✅ Remover secção New products do `Catalog.razor`
-  - 🟡 `GetNewProductsAsync` mantido — remover se ficar obsoleto
+  - [ ] Decisão cliente documentada em §10
+  - ✅ Remover secção New products do `Catalog.razor` após decisão
+  - [ ] Actualizar `GetNewProductsAsync` se ficar obsoleto
 
 **Grelha genérica na `/`**
 - ❓ **Dúvida:** Na homepage sem `categoryId`, mostramos **zero** produtos na grelha (só tiles + deals)?
@@ -440,7 +399,7 @@ Clique: Child 2 (sem filhos OU folha na BD)
 | **Application** | `StoreCategoryBrowseDto` — `Mode`, `CategoryName`, `IntroText?`, `Children`, `Products?` | Novo DTO |
 | **Application** | `GetCategoryBrowseAsync(categoryId?)` | Estender `IStoreCatalogPort` |
 | **Infrastructure** | Resolver modo CD2/CD3; filhos com contagens; produtos só em folha | ✅ `StoreCatalogService.GetCatalogCoreAsync` + `CatalogCategoryTree.HasStructuralChildren` |
-| `Catalog.razor` | BrowseMode: home / subcats / products / search | ✅ Ramificação CD2/CD3; refactor formal opcional |
+| **Client** | `Catalog.razor` — ramo por `BrowseMode` (home / subcats / products / search) | ✅ Ramificação CD2/CD3; refactor formal `BrowseMode` opcional |
 | **Client** | `StoreCategoryHeader.razor` — H1 + intro | Novo |
 | **Client** | Reutilizar `StoreCategoryTileGrid` para filhos | D.4 + D.5 |
 | **Client** | `StoreCategorySidebar` — estilo activo laranja CD5 | CSS + estado |
@@ -463,7 +422,7 @@ Clique: Child 2 (sem filhos OU folha na BD)
 |----------|---------------|-----|
 | `StoreLayout.razor` | Header + `@Body` sem sidebar | Precisa grid **sidebar + main** |
 | `StoreHeader.razor` | Logo, search, nav pills azuis | Reescrever §2.1.1: Back·Home·Cart·Contact·Search·Login |
-| `Catalog.razor` | Homepage Categories + Deals; drill-down CD4 | Testes E + regressão; deals mobile |
+| `Catalog.razor` | Homepage com Categories + Deals; `?categoryId=` com drill-down (tiles até folha; produtos directos na folha — CD4) | Testes E + regressão pesquisa/deals |
 | `store.css` | Tema azul claro, sem `.sidebar` | Novo tema laranja/branco + componentes sidebar + `.store-auth-*` |
 | `StoreCatalogService` | Lista plana de raízes; fallback `WebshopStructures` | Árvore completa só `ProductStructuur` |
 | `SignIn.razor` / `SignUp.razor` | Card azul, serif, `StoreLayout` | `StoreAuthLayout`, card branco/laranja, copy EN (§2.2.1) |
@@ -721,7 +680,7 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 
 ## 5. Gap — actual vs referência cliente
 
-| Área | Estado (2026-07-06) |
+| Área | Estado (2026-06-25) |
 |------|---------------------|
 | Layout geral | ✅ Sidebar 300px + header branco + área scroll |
 | Categorias | ✅ Árvore `ProductStructuur` na sidebar (`StoreCategorySidebar`) |
@@ -731,20 +690,16 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 | Filtro catálogo (folha) | ✅ Só produtos com `ProductStructureId == categoryId`; intermédio → `[]` em `GetCatalogAsync` |
 | Contagens tiles (`ProductCount`) | ✅ Subárvore via `CollectDescendantIds` (badges nos cartões) |
 | `WebshopStructures` | ✅ Fallback removido em `GetCategoriesAsync` |
-| **Cart + checkout dev** | ✅ `ProductCartButton` em todos os cards; `/cart` → mock Mollie → confirmação | §12 |
-| **Stock reservas** | ✅ Reserve / release / expiração / cancel admin | §14, [SPEC_STOCK_OPERATIONS_PROPOSAL.md](SPEC_STOCK_OPERATIONS_PROPOSAL.md) §3.7 |
 | **Login** | ✅ `StoreAuthLayout`, copy EN, sem link staff; botão laranja |
 | **Sign-up** | ✅ Mesmo shell auth que sign-in |
 | **Rota `/login`** | ✅ Redirect → `/sign-in` (`Program.cs`) |
 | **Header nav** | ✅ Back · Home · Cart · Contact · Search · Login |
 | **Contact** | ✅ `/contact` — conteúdo estático EN (placeholder email/tel) |
-| **My account** | 🟡 Restyle opcional — não bloqueante |
-| **Product detail** | 🟡 Breadcrumb opcional — não bloqueante |
-| **Deals mobile** | ✅ Decisão L7 — scroll horizontal v1 |
+| **My account** | 🟡 Usa `StoreLayout` com sidebar — sem restyle dedicado |
+| **Product detail** | 🟡 Sem breadcrumb (fase 2) |
 | **Formulários produto/categoria** | ❌ Opções e textos de categoria não expostos | Ver §3.5 |
-| **Login unificado admin** | ✅ **Fechado** — fora scope; `/sign-in` + `/admin/login` separados (L13) |
-| **Testes catálogo** | 🟡 Testes existentes passam; sem testes unitários novos da árvore/CD4 |
-| **Mollie prod** | ⬜ API key real + webhook público | §12, [open_IMPLEMENTATION_ROADMAP.md](open_IMPLEMENTATION_ROADMAP.md) B.9 |
+| **Login unificado admin** | ❌ `/sign-in` e `/admin/login` separados | Ver §2.2.2 |
+| **Testes catálogo** | 🟡 164 testes passam; sem testes unitários novos da árvore |
 
 ---
 
@@ -773,11 +728,11 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 - ✅ Labels em `NameEn` (`CatalogCategoryTree.PickDisplayName`)
 - ⬜ Testes dedicados: árvore, filtro intermédio, exclusões `ProdNonActive` / `Webshop=false`
 
-**Fase C.4 — Homepage referência ✅** — ver §2.1.2
+**Fase C.4 — Homepage referência (planeado ⬜)** — ver §2.1.2
 
-- ✅ Raízes homepage via `GetCategoryTreeAsync` + `StoreCategoryTile` (ícone endpoint `/api/store/category-icon/{id}`)
-- ✅ Deals via `GetDealsAsync(take)` — produtos visíveis webshop (v1; critério promo ERP ⏳ cliente)
-- ✅ UI: `StoreCategoryTile`, `StoreDealCard`, secções Categories + Deals em `Catalog.razor`
+- ⬜ `GetRootCategoryTilesAsync()` — raízes `ProductStructuur` + `NameEn` + URL ícone (`Icon` blob ou SAS)
+- ⬜ `GetDealsAsync(take)` — produtos destaque/promo (critério HP4 a confirmar)
+- ⬜ DTOs: `StoreCategoryTileDto`, `StoreDealProductDto` (quick-add: id, nome, imagem, descrição curta, preço)
 - ⬜ Testes: contagens tiles, deals só `Webshop` + `!ProdNonActive`
 
 **Fase C.5 — Navegação por níveis ✅** — ver §2.1.3
@@ -788,9 +743,7 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 - ✅ Regra CD4 implementada e testada em `abmatic_test` (4 nós / 16 produtos directos ocultos no intermédio)
 - ⬜ Testes automatizados: raiz → tiles; folha → produtos; contagem `ProductCount` por filho
 
-**Fase C.2 — Formulários produto/categoria (§3.5) — storefront ⬜** — ver §3.5
-
-> Admin `/admin/product-options` (cadastro) ✅. Falta expor na **loja** (ports + UI).
+**Fase C.2 — Formulários produto/categoria (planeado ⬜)** — ver §3.5
 
 - ⬜ DTOs store: opções de produto (`StoreProductOptionDto`, valores, `IsRequired`)
 - ⬜ `GetProductOptionsForStoreAsync(productId)` (read-only; dados de `ProductOption`)
@@ -816,19 +769,18 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 - ✅ `SignUp.razor` — `@layout StoreAuthLayout`
 - 🟡 `MyAccount.razor` — ainda `.auth-card` antigo dentro do layout com sidebar
 - ✅ `Catalog.razor` — homepage com **Categories + Deals** e sem grelha genérica na `/`
-- ✅ `ProductCard.razor` — card reutilizável + badge New + **`ProductCartButton`**
-- ✅ `ProductCartButton.razor` — quick-add em `ProductCard` e `StoreDealCard` → `/cart`
+- ✅ `ProductCard.razor` — card reutilizável + badge New
 - ✅ Textos principais da loja em inglês
 - ✅ Redirect `/login` → `/sign-in` (`Program.cs`)
 - ⬜ `ProductDetail.razor` — breadcrumb (opcional fase 2)
 
-**Fase D.4 — Homepage referência ✅** — ver §2.1.2
+**Fase D.4 — Homepage referência (em progresso 🟡)** — ver §2.1.2
 
 - ✅ `StoreCategoryTile.razor` — grelha de cartões com ícone/fallback e estado “No products”
 - ✅ `StoreDealCard.razor` — foto, título uppercase, descrição e quick-add laranja
 - ✅ `Catalog.razor` — secções **Categories** + **Deals**; removida grelha genérica na `/`
 - ✅ `store.css` — estilos de `.categories-grid`, `.deals-row`, `.deal-card` e cartões de categoria
-- ⬜ Responsivo: deals em scroll horizontal ou carousel &lt; 1200px (HP9)
+- ⬜ Responsivo: deals em scroll horizontal ou carousel &lt; 1200px
 
 **Fase D.5 — Navegação por níveis na UI ✅** — ver §2.1.3
 
@@ -884,10 +836,7 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 | `Client/Components/Layout/StoreAuthLayout.razor` | ✅ Novo |
 | `Client/Components/Store/StoreCategorySidebar.razor` | ✅ Novo |
 | `Client/Components/Store/CategoryNode.razor` | ✅ Novo |
-| `Client/Components/Store/ProductCard.razor` | ✅ + `ProductCartButton` |
-| `Client/Components/Store/ProductCartButton.razor` | ✅ Novo Jul/2026 |
-| `Client/Components/Store/StoreDealCard.razor` | ✅ + quick-add |
-| `Client/Components/Pages/Store/MollieMockCheckout.razor` | ✅ Demo checkout |
+| `Client/Components/Store/ProductCard.razor` | ✅ Novo |
 | `Client/Components/Store/StoreHeader.razor` | ✅ §2.1.1 |
 | `Client/Components/Pages/Store/Contact.razor` | ✅ Novo |
 | `Client/Components/Pages/Store/SignIn.razor` | ✅ |
@@ -924,7 +873,7 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 - ✅ Navegação: clicar categoria → **tiles subcategorias** → folha → produtos directos (§2.1.3, CD4)
 - ✅ Filtro folha: produtos com `ProductStructuurId` = nó activo (sem agregar descendentes)
 - ✅ `ProdNonActive` / `Webshop=false` excluídos
-- 🟡 Destaques promo: secção **Deals** na homepage (v1 = produtos visíveis; critério promo ⏳ cliente)
+- 🟡 Destaques promo: hoje **New products**; alvo secção **Deals** (~8)
 - ✅ Loja em inglês
 - ✅ Hexagonal preservada (páginas → ports)
 - ✅ Imagens e preços como hoje
@@ -943,12 +892,12 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 | 6 | Link staff no sign-in da loja? | ✅ Remover — admin fora do layout loja |
 | 7 | Conteúdo `/contact` | ✅ Estático EN v1 — placeholder; ligar `BaseCompany` depois |
 | 8 | Logo na navbar | ✅ Fora da barra — alinhar screenshot cliente |
-| 9 | Formulários produto/categoria na loja? | ⏳ Admin `ProductOption` ✅; storefront §3.5 + D.2 ⬜ |
+| 9 | Formulários produto/categoria na loja? | ⏳ Sim — §3.5; Fase C.2 + D.2 |
 | 10 | Login único loja + admin? | ⏳ Sim — §2.2.2; Fase C.3 + D.3; reutilizar admin pronto |
 | 11 | Formulário por categoria na referência | ⏳ Confirmar com cliente (screenshot / URL live) |
-| 12 | Secção Deals vs New products | ✅ v1: Deals na homepage; New products removida — ⏳ critério promo ERP (HP4) |
-| 13 | Grelha ícones Categories na `/` | ✅ |
-| 14 | Grelha produtos na homepage | ✅ Removida da `/`; produtos por categoria ou pesquisa |
+| 12 | Secção Deals vs New products | ⏳ Deals ~8 promo; HP4 — critério BD a confirmar |
+| 13 | Grelha ícones Categories na `/` | ⏳ Sim — raízes com ícone `ProductStructure.Icon` |
+| 14 | Grelha produtos na homepage | ⏳ Remover da `/`; produtos só por categoria ou pesquisa |
 | 15 | Tiles vs produtos ao clicar categoria | ✅ Filhos primeiro (CD2); produtos só na folha (CD3/CD4) |
 | 16 | Nó intermédio com produtos directos | ✅ CD4 — tiles apenas; 4 nós / 16 produtos em `abmatic_test` |
 | 17 | Sidebar activo laranja sólido | ✅ CD5 — `#fe7109` |
@@ -960,15 +909,12 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 
 1. ~~**A** — análise~~ ✅  
 2. ~~**B + C** — backend (árvore + `IsNew` + filtros)~~ ✅  
-3. ~~**D** — UI base (header, sidebar, tema)~~ ✅  
-4. ~~**C.4 + D.4** — homepage: **Categories** (tiles) + **Deals**~~ ✅  
-5. ~~**C.5 + D.5** — navegação por níveis (tiles subcategorias → produtos na folha, CD4)~~ ✅  
-6. ~~**Cart + mock Mollie + reservas stock**~~ ✅ — §12, §14  
-7. ~~**Roadmap Phase C.2** — `/orders/{id}` + payment badge~~ ✅ — [open_IMPLEMENTATION_ROADMAP.md](./open_IMPLEMENTATION_ROADMAP.md)  
-8. **E + F** — testes dedicados catálogo, `SPEC_WEB_STORE.md`, validação e deploy com cliente — **próximo**  
-9. **§3.5 + D.2** — formulários produto/categoria **na loja** (admin cadastro ✅; storefront ⬜)  
-10. **§2.2.2 + D.3** — login unificado navbar → admin + loja (se cliente confirmar §10)  
-11. **Prod go-live** — Mollie real (B.9), SMTP low-stock (3b) — último  
+3. ~~**D** — UI base (header, sidebar, tema)~~ ✅ — homepage completa em **C.4 + D.4**  
+4. **E + F** — testes dedicados catálogo, `SPEC_WEB_STORE.md`, validação e deploy com cliente  
+5. **C.2 + D.2** — formulários produto/categoria (opções, intro categoria, carrinho)  
+6. **C.3 + D.3** — login unificado navbar → admin + loja  
+7. ~~**C.4 + D.4** — homepage: **Categories** (tiles) + **Deals**~~ ✅  
+8. ~~**C.5 + D.5** — navegação por níveis (tiles subcategorias → produtos na folha, CD4)~~ ✅  
 
 ---
 
@@ -1003,20 +949,16 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 | Item | Status |
 |------|--------|
 | Cart persists in **session** (`StoreCartService`) across pages | ✅ |
-| **`ProductCartButton`** on `ProductCard` + `StoreDealCard` → add + navigate `/cart` | ✅ Jul/2026 |
 | `/cart` shows lines for guests; checkout requires login | ✅ |
 | **Place order & pay** — PrePay (Mollie) with `Mollie:UseMock=true` | ✅ |
-| Demo checkout **`/checkout/mollie-mock`** — card/iDEAL pre-filled | ✅ |
-| Mock URL encoding fix (`QueryHelpers.AddQueryString`; sem `#` na descrição) | ✅ Jul/2026 |
 | Stock reservation (`ReservedQuantity`) on PrePay order create | ✅ D.7 |
-| Release reservation on cancel / expired / abandoned payment | ✅ §14 |
 | Redirect → `/orders/{id}/payment-return` → confirmation (mock = paid) | ✅ |
 | PostPay (invoice) → direct confirmation + stock decrement | ✅ |
 | Webhook `POST /api/webhooks/mollie/payments` registered | ✅ |
 
 ### Local flow (mock)
 
-1. Click **cart icon** on any product card → `/cart` (item added).
+1. Add product → `/cart` (items visible).
 2. **Sign in** as webshop customer (`Klanten.Klant` / `WebshopLogin`).
 3. Choose address + **iDEAL / card (Mollie)** → **Place order & pay**.
 4. Redirect to **demo Mollie checkout** (`/checkout/mollie-mock`) — card/iDEAL pre-filled → click **Pay** → payment-return → **paid** → stock decremented → `/orders/{id}/confirmation`.

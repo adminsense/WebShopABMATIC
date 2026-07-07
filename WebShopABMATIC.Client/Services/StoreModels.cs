@@ -15,6 +15,7 @@ public sealed record StoreProduct(
     int? CategoryId,
     int? CategoryRootId,
     string CategoryName,
+    string ReferenceCode,
     string Tag);
 
 public sealed class CartLine
@@ -38,6 +39,7 @@ public sealed record StoreOrderSummary(
 public static class StorePriceFormatter
 {
     public const string OnRequestLabel = "Price on request";
+    public const string LoginForPriceLabel = "Meld u aan om uw prijs te zien";
 
     public static string Format(decimal? price) =>
         price.HasValue ? $"€{price.Value:F2}" : OnRequestLabel;
