@@ -31,7 +31,7 @@
 | **M** | Product images | ✅ Done | ✅ Azure Blob (`files`) |
 | **E** | PO / GRN / transfer / reservation | ✅ Done (core) | — |
 | **F** | SignalR real-time stock (optional) | ⬜ Pending | — |
-| **G** | Stock movement logging | ✅ Done | — |
+| **G** | Stock movement logging + legacy audit | ✅ Done | — |
 
 **Historical build order:** **0 → A ∥ B → C → D → …**
 
@@ -74,6 +74,21 @@ Layout loja ✅ — ver [open_UPDATES.md](./open_UPDATES.md) §0. Pendente **fun
 | **A.2** Staff → admin | ✅ | `[Instellingen].[User]`; flags `Admin` / `Bestellingen` / `Productie` → roles |
 | **A.3** Customer → store | ✅ | `Customers.WebshopLogin` + hash/salt |
 | **A.4** No AspNet Identity | ✅ | Cookie legacy; policies `AdminOrManager` / `CustomerOnly` |
+
+### G — Legacy audit logging ✅
+
+| Item | Status | Legacy table |
+|------|--------|--------------|
+| **G.1** `StockAdjust` in `AuditActions` | ✅ | — |
+| **G.2** `StockMovementService` → order audit | ✅ | `[Projecten].[DossierLog]` |
+| **G.3** `AuditSuppressionContext` on stock writes | ✅ | — |
+| **G.4** `LegacyAuditService` + `LegacyAuditWriter` | ✅ | DossierLog / Error / ProjectActiviteit |
+| **G.5** `LegacyAuditSaveChangesInterceptor` (admin CRUD) | ✅ | `[Logging].[Error]` |
+| **G.6** Auth login/logout/fail | ✅ | `[Logging].[Error]` (`Auth`) |
+| **G.7** `LegacyExceptionLoggingMiddleware` | ✅ | `[Logging].[Error]` |
+| **G.8** Admin `/admin/audit-logs` + order DossierLog UI | ✅ | — |
+
+Detail: [SPEC_INFRASTRUCTURE.md](./SPEC_INFRASTRUCTURE.md) §3.5.
 
 ### E — Stock ops
 
@@ -261,11 +276,12 @@ Detail: [AZUREBLOB.md](./AZUREBLOB.md)
 
 ---
 
-## Phase G — Stock movement logging ✅
+## Phase G — Stock movement logging & legacy audit ✅
 
 - ✅ **G.1** `StockAdjust` in `AuditActions`
-- ✅ **G.2** `StockMovementService` logs sale + manual adjustments
+- ✅ **G.2** `StockMovementService` logs sale + manual adjustments → `DossierLog` when order-linked
 - ✅ **G.3** `AuditSuppressionContext` on stock movement writes
+- ✅ **G.4–G.8** Legacy audit — [SPEC_INFRASTRUCTURE.md](./SPEC_INFRASTRUCTURE.md) §3.5
 
 ---
 

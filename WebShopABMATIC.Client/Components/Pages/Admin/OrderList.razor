@@ -2,6 +2,7 @@
 @layout AdminLayout
 @attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
 @using WebShopABMATIC.Application.Admin.Orders
+@using WebShopABMATIC.Application.Admin.AuditLogs
 @using WebShopABMATIC.Application.Common
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
@@ -108,6 +109,42 @@
                         </div>
                     </div>
                 }
+                @if (_isEditing)
+                {
+                    <div class="mt-4">
+                        <h3 class="h6 fw-bold">Order log (DossierLog)</h3>
+                        @if (_orderLogsLoading)
+                        {
+                            <p class="text-muted small mb-0">Loading log…</p>
+                        }
+                        else if (_orderLogs.Count == 0)
+                        {
+                            <p class="text-muted small mb-0">No log entries for this order.</p>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered mb-0">
+                                    <thead><tr>
+                                        <th>Id</th>
+                                        <th>User</th>
+                                        <th>Description</th>
+                                    </tr></thead>
+                                    <tbody>
+                                        @foreach (var log in _orderLogs)
+                                        {
+                                            <tr>
+                                                <td>@log.Id</td>
+                                                <td>@(log.UserDisplayName ?? $"User {log.UserId}")</td>
+                                                <td>@log.Description</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                }
             }
         </div>
     </div>
@@ -158,9 +195,10 @@
     private OrderListFilter _filter = new();
     private OrderEditDto _model = new OrderEditDto { ProjectId = 1, DeliveryTypeId = 1, CreatedAt = DateTime.UtcNow.Date };
     private string _searchDraft = string.Empty;
-    private bool _loading = true, _formLoading, _saving, _disposed, _initialized, _cancelling;
+    private bool _loading = true, _formLoading, _saving, _disposed, _initialized, _cancelling, _orderLogsLoading;
     private string? _formError, _gridError, _formSuccess;
     private PagedResult<OrderSummaryDto>? _result;
+    private IReadOnlyList<OrderLogListItemDto> _orderLogs = [];
     private bool _isEditing => _model.Id > 0;
 
     protected override async Task OnInitializedAsync() {
@@ -187,7 +225,25 @@ private async Task EditAsync(int id) {
             var item = await AdminPort.GetForEditAsync(id, _cts?.Token ?? CancellationToken.None);
             if (item is null) { _formError = "Record not found."; return; }
             _model = item;
+            await LoadOrderLogsAsync(id);
         } finally { _formLoading = false; }
+    }
+
+    private async Task LoadOrderLogsAsync(int orderId)
+    {
+        _orderLogsLoading = true;
+        try
+        {
+            _orderLogs = await AdminPort.GetOrderLogsAsync(orderId, _cts?.Token ?? CancellationToken.None);
+        }
+        catch
+        {
+            _orderLogs = [];
+        }
+        finally
+        {
+            _orderLogsLoading = false;
+        }
     }
     private async Task SaveAsync() {
         _saving = true; _formError = null;
