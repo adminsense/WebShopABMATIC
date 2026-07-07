@@ -51,8 +51,11 @@ internal static class CatalogCategoryTree
     public static bool HasStructuralChildren(int structureId, IReadOnlyDictionary<int, ProductStructure> structures) =>
         structures.Values.Any(s => NormalizeParentId(s.ParentTaskId) == structureId);
 
-    public static string PickDisplayName(ProductStructure structure) =>
-        !string.IsNullOrWhiteSpace(structure.NameEn) ? structure.NameEn
-        : !string.IsNullOrWhiteSpace(structure.NameNl) ? structure.NameNl
-        : structure.NameFr;
+    public static string PickDisplayName(ProductStructure structure) => PickStorefrontName(structure);
+
+    /// <summary>Storefront labels follow the legacy Dutch webshop (NaamNl).</summary>
+    public static string PickStorefrontName(ProductStructure structure) =>
+        !string.IsNullOrWhiteSpace(structure.NameNl) ? structure.NameNl.Trim()
+        : !string.IsNullOrWhiteSpace(structure.NameEn) ? structure.NameEn.Trim()
+        : structure.NameFr.Trim();
 }

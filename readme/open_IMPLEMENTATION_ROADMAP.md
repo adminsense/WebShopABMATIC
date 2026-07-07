@@ -22,7 +22,7 @@
 |-------|--------|------------|--------------|
 | **Auth** | Legacy cookie — `[Instellingen].[User]` + `Customers` | ✅ Done — login unificado §2.2.2 | — |
 | **Store layout** | Referência adminsenceweb (sidebar, CD4, deals) | ✅ Done — [open_UPDATES.md](./open_UPDATES.md) §0 | — |
-| **0** | Seeds + pricing foundation | ✅ Done | — |
+| **0** | Pricing foundation on `abmatic_test` | ✅ Done | — |
 | **A** | Stock admin (read-only) | ✅ Done | — |
 | **B** | Checkout + Mollie | ✅ Done (mock) | ⬜ **B.9** real E2E — last |
 | **C** | Store & admin order visibility | ✅ Done | — |
@@ -132,7 +132,7 @@ Optional for minimal webshop; needed for ERP-style inbound stock.
 | **SMTP / background worker** | n/a | ⬜ |
 | Production SMTP settings | n/a | ⬜ |
 
-See [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) (email queue rows only).
+Email queue rows exist on `abmatic_test` — see [DATA_SUMMARY.md](./DATA_SUMMARY.md).
 
 ### B.9 — Mollie E2E
 
@@ -156,7 +156,7 @@ See [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) (email queue rows only).
 | Low stock KPI + email mock (Phase 3b dev) | ✅ |
 | Stock movement audit hooks (Phase G) | ✅ |
 | Mollie integration + dev mock (B.9a) | ✅ |
-| Product media + seeds (Phase M dev) | ✅ |
+| Product media (Phase M) | ✅ |
 | Azure Blob production adapter (M.5) | ✅ |
 | `ReservedQuantity` display + available calc | ✅ display only |
 | `ReservedQuantity` increment on PrePay checkout | ✅ D.7 |
@@ -170,14 +170,14 @@ See [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) (email queue rows only).
 ## Phase 0 — Foundation ✅
 
 - ✅ **0.1** `ProductPrices` demo rows on `abmatic_test`
-- ✅ **0.2** Seed `PaymentMethods` + `PaymentTerms`
-- ✅ **0.3** Seed `OrderStatuses` with `ReserveStock` / `AffectsStock` flags
+- ✅ **0.2** `PaymentMethods` + `PaymentTerms` on `abmatic_test`
+- ✅ **0.3** `OrderStatuses` with `ReserveStock` / `AffectsStock` flags
 - ✅ **0.4** `IProductPricingPort` + repository
 - ✅ **0.5** Wire `StoreCatalogService` to real prices
 - ✅ **0.6** EF migration: Mollie columns on `OrderAdvancePayments`
 - ✅ **0.7** NuGet `Mollie.Api` + DI (`MollieDependencyInjection`)
 - ✅ **0.8** `IMolliePaymentPort` + `MolliePaymentAdapter`
-- ✅ **0.9** Update [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md)
+- ✅ **0.9** Update [DATA_SUMMARY.md](./DATA_SUMMARY.md)
 
 ---
 
@@ -187,7 +187,7 @@ See [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) (email queue rows only).
 - ✅ **A.2** `IStockOverviewPort` + `/admin/stock/overview`
 - ✅ **A.3** Movement journal `/admin/stock/movements`
 - ✅ **A.4** Dashboard KPIs: movements (7d), open POs
-- ✅ **A.5** Seed: `StockMovements` + open `StockOrder` demo
+- ✅ **A.5** `StockMovements` + open `StockOrder` on `abmatic_test`
 - ✅ **A.6** Update [SPEC_ADMIN.md](./SPEC_ADMIN.md) routes
 
 ---
@@ -213,7 +213,7 @@ See [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) (email queue rows only).
 - ✅ **C.2** Customer `/orders/{id}` + payment badge
 - ✅ **C.3** Admin orders: payment status + Mollie id
 - ✅ **C.4** Admin: `OrderAdvancePayments` read-only
-- ✅ **C.5** Seed demo advance payments
+- ✅ **C.5** Advance payments on `abmatic_test`
 
 ---
 
@@ -224,7 +224,7 @@ See [DATA_DEMO_SEED.md](./DATA_DEMO_SEED.md) (email queue rows only).
 - ✅ **D.3** Movement journal: `OrderLineId` on sales
 - ✅ **D.4** Negative stock blocked
 - ✅ **D.5** Low stock KPI on dashboard + product-stock grid (`ILowStockReadRepository`); storefront hints where implemented
-- ✅ **D.6** `ReservedQuantity` / available on product-stock grid + seeds
+- ✅ **D.6** `ReservedQuantity` / available on product-stock grid
 - ✅ **D.7** Reservation on checkout (`ReservedQuantity` increment) — PrePay via `ApplyReservationFromOrderAsync`
 
 ---

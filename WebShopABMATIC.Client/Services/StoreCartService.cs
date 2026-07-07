@@ -1,23 +1,22 @@
-using System.Text.Json;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using WebShopABMATIC.Application.Ports;
 
 namespace WebShopABMATIC.Web.Services;
 
 public sealed class StoreCartService
 {
-    private const string SessionKey = "store-cart-v1";
-    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    private const string StorageKey = "store-cart-v1";
 
     private readonly IStoreCatalogPort _catalog;
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ProtectedLocalStorage _storage;
     private readonly List<CartLine> _lines = [];
+    private readonly SemaphoreSlim _loadGate = new(1, 1);
+    private bool _loaded;
 
-    public StoreCartService(IStoreCatalogPort catalog, IHttpContextAccessor httpContextAccessor)
+    public StoreCartService(IStoreCatalogPort catalog, ProtectedLocalStorage storage)
     {
         _catalog = catalog;
-        _httpContextAccessor = httpContextAccessor;
-        LoadFromSession();
+        _storage = storage;
     }
 
     public event Action? Changed;
@@ -34,8 +33,47 @@ public sealed class StoreCartService
 
     public decimal Total => Subtotal + DeliveryFee + VatAmount;
 
+    public async Task EnsureLoadedAsync(CancellationToken cancellationToken = default)
+    {
+        if (_loaded)
+        {
+            return;
+        }
+
+        await _loadGate.WaitAsync(cancellationToken);
+        try
+        {
+            if (_loaded)
+            {
+                return;
+            }
+
+            try
+            {
+                var result = await _storage.GetAsync<List<CartLine>>(StorageKey);
+                if (result.Success && result.Value is { Count: > 0 })
+                {
+                    _lines.Clear();
+                    _lines.AddRange(result.Value);
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                // Browser storage is not available during static/prerender.
+            }
+
+            _loaded = true;
+        }
+        finally
+        {
+            _loadGate.Release();
+        }
+    }
+
     public async Task AddProductAsync(int productId, int quantity = 1, CancellationToken cancellationToken = default)
     {
+        await EnsureLoadedAsync(cancellationToken);
+
         var dto = await _catalog.GetByIdAsync(productId, cancellationToken);
         if (dto is null)
         {
@@ -65,12 +103,14 @@ public sealed class StoreCartService
             line.Quantity = Math.Min(line.Quantity + quantity, Math.Max(product.Stock, 1));
         }
 
-        Persist();
+        await PersistAsync(cancellationToken);
         Changed?.Invoke();
     }
 
-    public void SetQuantity(int productId, int quantity)
+    public async Task SetQuantityAsync(int productId, int quantity, CancellationToken cancellationToken = default)
     {
+        await EnsureLoadedAsync(cancellationToken);
+
         var line = _lines.FirstOrDefault(l => l.ProductId == productId);
         if (line is null)
         {
@@ -86,61 +126,44 @@ public sealed class StoreCartService
             line.Quantity = quantity;
         }
 
-        Persist();
+        await PersistAsync(cancellationToken);
         Changed?.Invoke();
     }
 
-    public void Remove(int productId)
+    public async Task RemoveAsync(int productId, CancellationToken cancellationToken = default)
     {
+        await EnsureLoadedAsync(cancellationToken);
+
         _lines.RemoveAll(l => l.ProductId == productId);
-        Persist();
+        await PersistAsync(cancellationToken);
         Changed?.Invoke();
     }
 
-    public void Clear()
+    public async Task ClearAsync(CancellationToken cancellationToken = default)
     {
+        await EnsureLoadedAsync(cancellationToken);
+
         _lines.Clear();
-        Persist();
+        await PersistAsync(cancellationToken);
         Changed?.Invoke();
     }
 
-    private void LoadFromSession()
+    private async Task PersistAsync(CancellationToken cancellationToken)
     {
-        var session = _httpContextAccessor.HttpContext?.Session;
-        if (session is null || !session.TryGetValue(SessionKey, out var bytes) || bytes.Length == 0)
-        {
-            return;
-        }
-
         try
         {
-            var lines = JsonSerializer.Deserialize<List<CartLine>>(bytes, JsonOptions);
-            if (lines is { Count: > 0 })
+            if (_lines.Count == 0)
             {
-                _lines.Clear();
-                _lines.AddRange(lines);
+                await _storage.DeleteAsync(StorageKey);
+            }
+            else
+            {
+                await _storage.SetAsync(StorageKey, _lines.ToList());
             }
         }
-        catch (JsonException)
+        catch (InvalidOperationException)
         {
-            session.Remove(SessionKey);
+            // Browser storage is not available during static/prerender.
         }
-    }
-
-    private void Persist()
-    {
-        var session = _httpContextAccessor.HttpContext?.Session;
-        if (session is null)
-        {
-            return;
-        }
-
-        if (_lines.Count == 0)
-        {
-            session.Remove(SessionKey);
-            return;
-        }
-
-        session.Set(SessionKey, JsonSerializer.SerializeToUtf8Bytes(_lines, JsonOptions));
     }
 }

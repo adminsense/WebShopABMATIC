@@ -75,7 +75,7 @@ Post-payment confirmation experience:
 - 🌐 **Multilingual-ready** -> prepared for PT/EN/NL
 
 ### Data Management
-- 📚 **40+ tables** seeded with realistic demo data
+- 📚 **40+ tables** with data on `abmatic_test`
 - 🔐 **ASP.NET Core Identity** -> robust authentication
 - 📋 **EF Core 10** -> optimized queries
 - 📊 **Audit trail** -> all changes tracked with userId + timestamp
@@ -119,26 +119,16 @@ Post-payment confirmation experience:
 
 **Legend:** R = Read | W = Write | RW = Read+Write | — = No access
 
-### 3.4 Valid test logins (legacy auth — Azure `abmatic_test`)
+### 3.4 Authentication (legacy — Azure `abmatic_test`)
 
 Login uses **legacy ABMATIC tables**, not ASP.NET Identity (`AspNetUsers` is not used at runtime).
 
 | Portal | URL | Table | Credential fields |
 |--------|-----|-------|-------------------|
-| **Admin** | `/admin/login` | `Settings.StaffUsers` | `Login` + `Password` (plaintext) |
+| **Admin** | `/admin/login` | `Settings.StaffUsers` | `Login` + `Password` |
 | **Store** | `/sign-in` | `Customers.Customers` | `WebshopLogin` + `PasswordWebshop` / `SaltWebshop` |
 
-**After demo seed** (`Sql/seeds.sql` on `abmatic_test`):
-
-| Login | Password | Access |
-|-------|----------|--------|
-| `admin@webshop.com` | `demo` | Admin + Manager |
-| `manager@webshop.com` | `demo` | Manager |
-| `customer@webshop.com` | `demo` | Store customer (Tailspin Toys) |
-
-**Real ERP data on Azure:** when the database has client ABMATIC rows (hundreds of webshop products, real staff), use credentials from `[Settings].[StaffUsers]` and `[Customers].[Customers]` in SSMS — **not** the old Identity passwords (`Admin@12345`, etc.).
-
-> Login credentials are in `Sql/seeds.sql` (`StaffUsers` + `Customers`) — not AspNet Identity.
+Use credentials from those tables in the connected database (`abmatic_test`). Inspect `LoginWebshop` / `Login` in admin (`/admin/customers`, `/admin/staff-users`) or via SSMS. Passwords are stored hashed (store) or per legacy rules (staff) — reset via admin when needed.
 
 ---
 
@@ -149,7 +139,7 @@ Login uses **legacy ABMATIC tables**, not ASP.NET Identity (`AspNetUsers` is not
 - 🛒 [`readme/SPEC_WEB_STORE.md`](readme/SPEC_WEB_STORE.md) — Web store: catalog, customer auth, checkout, stock display
 - 💳 [`readme/open_MOLLIE_PAYMENTS_open.md`](readme/open_MOLLIE_PAYMENTS_open.md) — Mollie test key, webhook, E2E checklist (open / pending)
 - 📦 [`readme/SPEC_STOCK_OPERATIONS_PROPOSAL.md`](readme/SPEC_STOCK_OPERATIONS_PROPOSAL.md) — Stock operations, checkout, Mollie
-- ✅ [`readme/DATA_SUMMARY.md`](readme/DATA_SUMMARY.md) — **Demo data summary** (all tables, live row counts, admin screens)
+- ✅ [`readme/DATA_SUMMARY.md`](readme/DATA_SUMMARY.md) — **Database summary** (tables, row counts, admin screens)
 - ✅ [`readme/open_IMPLEMENTATION_ROADMAP.md`](readme/open_IMPLEMENTATION_ROADMAP.md) — **Main delivery tracker** (dev 100% first · prod go-live last)
 - ✅ [`readme/AZUREBLOB.md`](readme/AZUREBLOB.md) — Product images: `AzureFiles` ↔ `Product`, Azure Blob `files` + SAS
 - 🎨 [`readme/PATTERNS_UI_QUICK_START.md`](readme/PATTERNS_UI_QUICK_START.md) — Buttons, grids, forms (copy-paste)

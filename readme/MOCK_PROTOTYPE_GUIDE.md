@@ -24,7 +24,7 @@ Legacy aliases (ignore for validation):
 | `readme/docs/mock-loja.html` | Old storefront mock — **out of scope** for this guide |
 | `readme/docs/mock-shopcart.html` | Redirect → `mock-loja.html` |
 
-**Blazor admin entry:** `/admin/login` — staff login on `Settings.StaffUsers`. Demo after seed: `admin@webshop.com` / `demo`.
+**Blazor admin entry:** `/admin/login` — staff login on `Settings.StaffUsers` (credentials from the database).
 
 ---
 
@@ -340,7 +340,7 @@ Open `readme/docs/mock-admin.html` directly (no storefront step):
 
 Optional Blazor cross-check (profile **WebShopABMATIC**, HTTPS **44357**):
 
-1. `/admin/login` → `admin@webshop.com` / `demo`
+1. `/admin/login` — use a `StaffUsers` login from the database
 2. `/admin` KPIs align with [DATA_SUMMARY.md](./DATA_SUMMARY.md) on `abmatic_test`
 
 ---
@@ -348,7 +348,7 @@ Optional Blazor cross-check (profile **WebShopABMATIC**, HTTPS **44357**):
 ## Documentation
 
 - 🏠 [Main Documentation](../README.md) — Project overview and requirements
-- 📊 [Demo data](./DATA_SUMMARY.md) — seeded tables and row counts
+- 📊 [Database summary](./DATA_SUMMARY.md) — tables and row counts
 - 🗂️ [Data model](./DATA_DUTCH_ENGLISH_MODEL.md) — Dutch → English mapping
 
 ---
