@@ -6,8 +6,8 @@
         class="@CssClass"
         title="@Title"
         aria-label="@AriaLabel"
-        disabled="@IsDisabled"
-        @onclick="AddAndGoToCartAsync"
+        disabled="@IsOutOfStock"
+        @onclick="OnClickAsync"
         @onclick:stopPropagation="true">
     <i class="bi bi-cart3" aria-hidden="true"></i>
 </button>
@@ -16,18 +16,32 @@
     [Parameter, EditorRequired] public StoreProduct Product { get; set; } = default!;
     [Parameter] public string CssClass { get; set; } = "product-cart-btn";
 
-    private bool IsDisabled => !Product.HasPrice || Product.IsOutOfStock;
+    private bool IsOutOfStock => Product.IsOutOfStock;
 
-    private string Title => IsDisabled ? "Unavailable" : "Add to cart";
+    private bool NeedsLogin => !Product.HasPrice && !IsOutOfStock;
 
-    private string AriaLabel => IsDisabled
+    private string Title => IsOutOfStock
+        ? "Unavailable"
+        : NeedsLogin
+            ? "Sign in to see price"
+            : "Add to cart";
+
+    private string AriaLabel => IsOutOfStock
         ? $"Cannot add {Product.Name} to cart"
-        : $"Add {Product.Name} to cart";
+        : NeedsLogin
+            ? $"Sign in to add {Product.Name} to cart"
+            : $"Add {Product.Name} to cart";
 
-    private async Task AddAndGoToCartAsync()
+    private async Task OnClickAsync()
     {
-        if (IsDisabled)
+        if (IsOutOfStock)
         {
+            return;
+        }
+
+        if (NeedsLogin)
+        {
+            Navigation.NavigateTo("/sign-in?returnUrl=/");
             return;
         }
 
