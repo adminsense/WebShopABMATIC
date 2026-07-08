@@ -10,6 +10,17 @@ public sealed class LegacySignInService(WebShopABMATICDbContext db) : ILegacySig
 {
     private readonly WebShopABMATICDbContext _db = db;
 
+    public async Task<LegacySignInResult> SignInAsync(string loginOrEmail, string password, CancellationToken cancellationToken = default)
+    {
+        var staff = await SignInStaffAsync(loginOrEmail, password, cancellationToken);
+        if (staff.Succeeded)
+        {
+            return staff;
+        }
+
+        return await SignInCustomerAsync(loginOrEmail, password, cancellationToken);
+    }
+
     public async Task<LegacySignInResult> SignInStaffAsync(string loginOrEmail, string password, CancellationToken cancellationToken = default)
     {
         var normalized = loginOrEmail.Trim();

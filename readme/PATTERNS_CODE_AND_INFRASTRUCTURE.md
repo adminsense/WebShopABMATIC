@@ -878,7 +878,7 @@ private GridExportRequest? BuildExportRequest() =>
 |--------|----------|----------|
 | **`SPEC_`** | Functional or technical **specifications** (admin, store, infra, stock, proposals) | `SPEC_ADMIN.md`, `SPEC_WEB_STORE.md`, `SPEC_INFRASTRUCTURE.md`, `SPEC_STOCK_OPERATIONS_PROPOSAL.md` |
 | **`MOCK_`** | Documentation **about HTML mocks** in `/readme/docs/` (screens, entity mapping, walkthrough) | `MOCK_PROTOTYPE_GUIDE.md` |
-| **`DATA_`** | **Database**: schema mapping, seeds, demo data, SQL/EF reference | `DATA_DEMO_SEED.md`, `DATA_SUMMARY.md`, `DATA_DUTCH_ENGLISH_MODEL.md` |
+| **`DATA_`** | **Database**: schema mapping, live data reference, SQL/EF | `DATA_SUMMARY.md`, `DATA_DUTCH_ENGLISH_MODEL.md` |
 | **`AUTH_`** | **Authentication & identity** (Identity, roles, customers, staff users) | `AUTH_IDENTITY_ROADMAP_open.md` |
 | **`PATTERNS_`** | **Implementation patterns** (code, UI, infra conventions — this file) | `PATTERNS_CODE_AND_INFRASTRUCTURE.md`, `PATTERNS_UI_QUICK_START.md` |
 
@@ -896,7 +896,7 @@ Use `_open` on roadmaps, ops runbooks with pending steps, and feature backlogs �
 
 | File | Scope |
 |------|--------|
-| `SUNDAY.md` | **Seed inventory** — what `seeds.sql` populates |
+| `DATA_SUMMARY.md` | **Database inventory** — tables, row counts, admin screens |
 | `open_IMPLEMENTATION_ROADMAP.md` | **Main delivery tracker** — dev-first priorities + prod go-live (last) |
 | `open_IMPLEMENTATION_ROADMAP.md` | Phased checklist (0 → E) |
 | `open_MOLLIE_PAYMENTS_open.md` | Mollie go-live (API key, webhook, E2E) |
@@ -919,7 +919,7 @@ New docs should **prefer the prefix table** unless Marco assigns a proper name.
 | **Spec** (admin, store, stock, infra, feature behaviour) | `readme/SPEC_<Topic>.md` — stable spec; add `_open` only if it is primarily a pending checklist |
 | **Auth / identity** | `readme/AUTH_<Topic>_open.md` while work is open |
 | **Mock** (HTML prototype doc) | Update or add `readme/MOCK_<Topic>.md` + `readme/docs/mock-<topic>.html` |
-| **Data / DB / seeds** | `readme/DATA_<Topic>.md` |
+| **Data / DB** | `readme/DATA_<Topic>.md` |
 | **Patterns / conventions** | `readme/PATTERNS_<Area>.md` |
 | **Tracker with pending tasks** | `<NAME>_open.md` with ⬜ items and “Mark ✅ when done” in the header |
 
