@@ -92,7 +92,7 @@ The admin UI is defined by **three screen types**. These match the legacy AB-MAT
 | **Content** | 2×2 **portfolio cards** with KPIs, progress indicators, and action pills |
 | **Footer** | Current date + application version (`v1.0`) |
 
-**Blazor route:** `/admin`   (`admin@webshop.com` / `demo` after demo seed on `StaffUsers`)
+**Blazor route:** `/admin`  
 **Purpose:** Landing page after login. Read-only summary with drill-down links to hubs (e.g. Webshop catalog → **Manage** → `/admin/hub/webshop`).
 
 #### Dashboard widgets (vNext)
@@ -170,19 +170,16 @@ The admin UI is defined by **three screen types**. These match the legacy AB-MAT
 
 Registration uses `ICustomerRegistrationPort` → links `Customers.IdentityUserId` and `ApplicationUser.CustomerId`, then auto sign-in.
 
-### 2.4 Development / demo logins (legacy auth)
+### 2.4 Authentication (legacy)
 
 Runtime login: `LegacySignInService` → `Settings.StaffUsers` (admin) and `Customers.Customers` (store). **Not** AspNetUsers.
 
-| Login | Password | Roles / access |
-|-------|----------|----------------|
-| `admin@webshop.com` | `demo` | Admin, Manager |
-| `manager@webshop.com` | `demo` | Manager |
-| `customer@webshop.com` | `demo` | Customer (CustomerId 4 — Tailspin Toys) |
+| Portal | Table | Fields |
+|--------|-------|--------|
+| Admin | `Settings.StaffUsers` | `Login`, `Password` |
+| Store | `Customers.Customers` | `WebshopLogin`, `PasswordWebshop`, `SaltWebshop` |
 
-Seeded in `Sql/seeds.sql` (`StaffUsers.Password` plaintext; `Customers.PasswordWebshop` for store).
-
-On **Azure `abmatic_test` with real ERP data**, use existing staff/customer credentials from the database.
+Use credentials from the connected database. Reset webshop passwords via `/admin/customers` when needed.
 
 ### 2.5 Logout
 
@@ -306,7 +303,7 @@ Each sidebar item opens a **hub** of entity cards. Below: what staff **register 
 | **Stock location** | `StockLocation` | Warehouses and storage sites (`IsWarehouse`) |
 | **Product stock location** | `ProductStockLocation` | Per product/location: `Quantity`, `ReservedQuantity`, **`MinQuantity`**, **`MaxQuantity`**, last count |
 | **Stock movement** | `StockMovements` | Historical in/out/reservation journal (read-only) |
-| **Stock order (PO)** | `StockOrder` / `StockOrderLines` | Purchase orders (demo seed; CRUD in Phase E) |
+| **Stock order (PO)** | `StockOrder` / `StockOrderLines` | Purchase orders (CRUD in Phase E) |
 
 **Blazor routes (Stock hub):**
 
@@ -453,7 +450,7 @@ dotnet run
 ```
 
 1. Open the HTTPS URL from the console.
-2. Sign in: `admin@webshop.com` / `demo` (after demo seed) or your `StaffUsers` login on Azure.
+2. Sign in with a `StaffUsers` login from the connected database.
 3. Land on `/admin`.
 
 > [!NOTE]

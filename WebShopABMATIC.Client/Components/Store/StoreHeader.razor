@@ -10,11 +10,13 @@
 @inject IStoreCatalogPort CatalogPort
 
 <header class="site-header">
-    <div class="header-inner store-header-nav">
-        <nav class="store-header-links" aria-label="Store navigation">
-            <button type="button" class="store-header-link" @onclick="GoBackAsync">
+    <div class="store-header-box">
+        <nav class="store-header-bar" aria-label="Store navigation">
+            <button type="button"
+                    class="store-header-link store-header-link--icon"
+                    aria-label="Back"
+                    @onclick="GoBackAsync">
                 <i class="bi bi-arrow-left" aria-hidden="true"></i>
-                <span>Back</span>
             </button>
             <NavLink href="/" class="store-header-link" Match="NavLinkMatch.All">
                 <i class="bi bi-house" aria-hidden="true"></i>
@@ -32,23 +34,17 @@
                 <i class="bi bi-compass" aria-hidden="true"></i>
                 <span>Contact</span>
             </NavLink>
-        </nav>
-
-        <div class="store-header-search">
             <input type="search"
-                   class="store-search-input"
-                   placeholder="Search products…"
+                   class="store-header-search-input"
+                   placeholder=""
                    aria-label="Search products"
                    @bind="_search"
                    @bind:event="oninput"
                    @onkeydown="OnSearchKey" />
-            <button type="button" class="store-search-btn" @onclick="SubmitSearchAsync">
+            <button type="button" class="store-header-link store-header-link--btn" @onclick="SubmitSearchAsync">
                 <i class="bi bi-search" aria-hidden="true"></i>
                 <span>Search</span>
             </button>
-        </div>
-
-        <div class="store-header-auth">
             @if (_isAuthenticated)
             {
                 @if (_isCustomer)
@@ -74,7 +70,7 @@
                     <span>Login</span>
                 </NavLink>
             }
-        </div>
+        </nav>
     </div>
 </header>
 
@@ -135,15 +131,8 @@
         }
     }
 
-    private static string ShortName(string name)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            return "Account";
-        }
-
-        return name.Length <= 18 ? name : name[..15] + "…";
-    }
+    private static string ShortName(string name) =>
+        string.IsNullOrWhiteSpace(name) ? "Account" : name.Length <= 18 ? name : name[..15] + "…";
 
     private async Task SignOutAsync()
     {

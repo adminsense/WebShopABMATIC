@@ -34,12 +34,12 @@
                             <p class="unit">@FormatPrice(line.UnitPrice) each</p>
                         </div>
                         <div class="qty-control">
-                            <button type="button" @onclick="() => CartService.SetQuantity(line.ProductId, line.Quantity - 1)">−</button>
+                            <button type="button" @onclick="() => ChangeQuantityAsync(line.ProductId, line.Quantity - 1)">−</button>
                             <span>@line.Quantity</span>
-                            <button type="button" @onclick="() => CartService.SetQuantity(line.ProductId, line.Quantity + 1)">+</button>
+                            <button type="button" @onclick="() => ChangeQuantityAsync(line.ProductId, line.Quantity + 1)">+</button>
                         </div>
                         <span class="line-total">@FormatPrice(line.LineTotal)</span>
-                        <button type="button" class="remove-btn" title="Remove" @onclick="() => CartService.Remove(line.ProductId)">×</button>
+                        <button type="button" class="remove-btn" title="Remove" @onclick="() => RemoveLineAsync(line.ProductId)">×</button>
                     </div>
                 }
             </div>
@@ -65,12 +65,12 @@
                             <p class="unit">@FormatPrice(line.UnitPrice) each</p>
                         </div>
                         <div class="qty-control">
-                            <button type="button" @onclick="() => CartService.SetQuantity(line.ProductId, line.Quantity - 1)">−</button>
+                            <button type="button" @onclick="() => ChangeQuantityAsync(line.ProductId, line.Quantity - 1)">−</button>
                             <span>@line.Quantity</span>
-                            <button type="button" @onclick="() => CartService.SetQuantity(line.ProductId, line.Quantity + 1)">+</button>
+                            <button type="button" @onclick="() => ChangeQuantityAsync(line.ProductId, line.Quantity + 1)">+</button>
                         </div>
                         <span class="line-total">@FormatPrice(line.LineTotal)</span>
-                        <button type="button" class="remove-btn" title="Remove" @onclick="() => CartService.Remove(line.ProductId)">×</button>
+                        <button type="button" class="remove-btn" title="Remove" @onclick="() => RemoveLineAsync(line.ProductId)">×</button>
                     </div>
                 }
             </div>
@@ -149,6 +149,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await CartService.EnsureLoadedAsync();
+
         var auth = await AuthStateProvider.GetAuthenticationStateAsync();
         _userEmail = auth.User.Identity?.Name;
         if (int.TryParse(auth.User.FindFirstValue(LegacyAuthClaims.CustomerId), out var customerId))
@@ -236,7 +238,7 @@
                 return;
             }
 
-            CartService.Clear();
+            await CartService.ClearAsync();
 
             if (!string.IsNullOrEmpty(result.RedirectUrl))
             {
@@ -262,6 +264,12 @@
         Email = _userEmail,
         CustomerId = _customerId
     };
+
+    private Task ChangeQuantityAsync(int productId, int quantity) =>
+        CartService.SetQuantityAsync(productId, quantity);
+
+    private Task RemoveLineAsync(int productId) =>
+        CartService.RemoveAsync(productId);
 
     private static string FormatPrice(decimal price) => $"€{price:F2}";
 }
