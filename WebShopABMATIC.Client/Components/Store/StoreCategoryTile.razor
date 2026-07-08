@@ -1,15 +1,16 @@
 @using WebShopABMATIC.Application.Store
 
 <button type="button"
-        class="category-tile @(!HasProductsInBranch(Category) ? "category-tile--empty" : string.Empty)"
-        @onclick="HandleSelect"
-        disabled="@(!HasProductsInBranch(Category))"
-        aria-disabled="@(!HasProductsInBranch(Category))"
-        title="@(HasProductsInBranch(Category) ? Category.Name : $"{Category.Name}: No products")">
+        class="category-tile"
+        @onclick="() => OnSelect.InvokeAsync(Category.Id)">
     <span class="category-tile-icon" aria-hidden="true">
-        @if (Category.HasIcon)
+        @if (Category.HasIcon && !_iconFailed)
         {
-            <img src="@($"/api/store/category-icon/{Category.Id}")" alt="" loading="lazy" decoding="async" />
+            <img src="@($"/api/store/category-icon/{Category.Id}")"
+                 alt=""
+                 loading="lazy"
+                 decoding="async"
+                 @onerror="OnIconError" />
         }
         else
         {
@@ -17,39 +18,13 @@
         }
     </span>
     <span class="category-tile-label">@Category.Name</span>
-    @if (!HasProductsInBranch(Category))
-    {
-        <span class="category-tile-empty">No products</span>
-    }
 </button>
 
 @code {
     [Parameter, EditorRequired] public StoreCategoryTreeNodeDto Category { get; set; } = default!;
     [Parameter] public EventCallback<int> OnSelect { get; set; }
 
-    private async Task HandleSelect()
-    {
-        if (HasProductsInBranch(Category))
-        {
-            await OnSelect.InvokeAsync(Category.Id);
-        }
-    }
+    private bool _iconFailed;
 
-    private static bool HasProductsInBranch(StoreCategoryTreeNodeDto node)
-    {
-        if (node.ProductCount is > 0)
-        {
-            return true;
-        }
-
-        foreach (var child in node.Children)
-        {
-            if (HasProductsInBranch(child))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    private void OnIconError() => _iconFailed = true;
 }

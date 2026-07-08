@@ -24,4 +24,7 @@ public sealed class NullAuditLogRepository : IAuditLogRepository
 
     public Task AddAsync(AuditLogWriteRequest request, CancellationToken cancellationToken = default) =>
         Task.CompletedTask;
+
+    public Task<IReadOnlyList<OrderLogListItemDto>> GetOrderLogsAsync(int orderId, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<OrderLogListItemDto>>([]);
 }

@@ -36,7 +36,7 @@ This document defines the **infrastructure and platform conventions** for WebSho
 | **Driving adapter (UI)** | `Web/` | Blazor pages — inject **inbound ports** only, no EF |
 | **Application** | `Application/` | **Use cases**, DTOs, **inbound + outbound port** interfaces |
 | **Domain** | `Domain/` | Entities, value objects, domain rules (pure .NET, no EF) |
-| **Driven adapters** | `Infrastructure/` | EF repositories, Identity, media, seed — implement **outbound ports** |
+| **Driven adapters** | `Infrastructure/` | EF repositories, Identity, media — implement **outbound ports** |
 | **Persistence models** | `Model/` + `Persistence/` | EF entity classes + `WebShopABMATICDbContext` (legacy schema) |
 
 **Dependency rule (inward only):**
@@ -137,7 +137,6 @@ WebShopABMATIC/                 ← repo root (solution parent)
 ├── WebShopABMATIC.Tests/
 ├── readme/                       ← documentation
 │   └── docs/                     ← HTML mocks
-└── Sql/                          ← SQL scripts
 ```
 
 - `readme/docs/` — static prototypes (HTML mocks)  
@@ -166,7 +165,7 @@ WebShopABMATIC/                 ← repo root (solution parent)
 - `Manager`  
   ✅
 - `Customer`  
-  ✅ (seed user for future storefront)
+  ✅ (future storefront Identity bridge)
 
 ### 3.3 Authorization rules (baseline)
 
@@ -198,8 +197,10 @@ WebShopABMATIC/                 ← repo root (solution parent)
 - Login redirect: Admin/Manager → `/admin` after sign-in  
   ✅ `/admin/login` (HTTP POST), `/sign-in` (store customers)
 
-- **Dev / demo staff:** use `Settings.StaffUsers` rows from `seeds.sql` (legacy login + password fields).  
-  **Dev store customer:** `Customers` row with matching `WebshopLogin` + password from seed.
+- **Staff (admin):** `Settings.StaffUsers` — `Login` + `Password`.
+- **Store customer:** `Customers.Customers` — `WebshopLogin` + `PasswordWebshop` / `SaltWebshop`.
+
+Use credentials from the connected `abmatic_test` database. Inspect logins in admin (`/admin/staff-users`, `/admin/customers`) or SSMS.
 
 ### 3.5 Audit logging (Auth-7) — legacy database ✅
 
@@ -242,7 +243,7 @@ WebShopABMATIC/                 ← repo root (solution parent)
   ✅ Identity: `Infrastructure/Identity/Migrations/InitialIdentity`
 
 - Domain DB: `WebShopABMATICDbContext` → connection `connWebShopABMATIC`  
-  ✅ Same server/database as Identity; legacy schema from `Sql/WebShopABMATIC-create-local.sql`
+  ✅ Same server/database as Identity; legacy schema on `abmatic_test`
 
 ### 4.2 Migrations workflow
 
@@ -250,40 +251,18 @@ WebShopABMATIC/                 ← repo root (solution parent)
   ```bash
   dotnet ef database update --project Infrastructure/WebShopABMATIC.Infrastructure.csproj --startup-project Web/WebShopABMATIC.Web.csproj --context ApplicationDbContext
   ```
-  ✅ Applied manually via `Sql/apply-pending-schema.sql` — **not** on app startup
+  ✅ Applied via `dotnet ef database update` on `WebShopABMATICDbContext` — **not** on app startup
 
 - For CI/Prod: run migrations as part of release  
   ⏳ Pipeline not configured yet
 
-### 4.3 Seeding (required for mock-first)
+### 4.3 Data source
 
-**Login credentials** live in SQL (`seeds.sql`), not AspNetUsers — see [§3.1](#31-authentication).
+All catalog, customers, orders, and stock data come from the connected **`abmatic_test`** database on Azure SQL. There is **no seed script in this repository**.
 
-**Demo logins** (after `seeds.sql` on `abmatic_test`):
-
-| Login | Password | Access |
-|-------|----------|--------|
-| `admin@webshop.com` | `demo` | Admin + Manager (`StaffUsers`) |
-| `manager@webshop.com` | `demo` | Manager |
-| `customer@webshop.com` | `demo` | Store customer (`Customers`, CustomerId 4) |
-
-> On Azure with **real ERP data**, use existing `StaffUsers` / `Customers` credentials from the database.
-
-**Domain / catalog seed (implemented)**
-
-- Products, prices, stock, orders, CRM, alerts, audit demo rows  
-  ✅ `Sql/seeds.sql` — full inventory in [SUNDAY.md](SUNDAY.md) · [DATA_SUMMARY.md](DATA_SUMMARY.md)
-- Product images metadata (`AzureFileFolders` + `AzureFiles` for all `ShowOnWebshop` SKUs)  
-  ✅ Blob bytes in Azure container `files` when `AzureStorage:ConnectionString` is set — [AZUREBLOB.md](AZUREBLOB.md)
-- Customer product discounts  
-  ✅ 3 rows in `seeds.sql`
-
-Seed strategy:
-
-- **SQL demo:** `sqlcmd … -i Sql\seeds.sql` against `abmatic_test`  
-  ✅ Idempotent `Sql/seeds.sql`
-- **Schema:** `Sql/apply-pending-schema.sql`  
-  ✅ See [DATA_DEMO_SEED.md](DATA_DEMO_SEED.md)
+- Schema changes: EF migrations on `WebShopABMATICDbContext` — see [DATA_SUMMARY.md](DATA_SUMMARY.md)
+- Product images: `AzureFiles` + blob storage — [AZUREBLOB.md](AZUREBLOB.md)
+- Authentication: legacy tables only — see [§3.1](#31-authentication)
 
 ---
 
@@ -404,18 +383,18 @@ dotnet run
 ```
 
 1. Open **http://localhost:5090** (`launchSettings.json` / IIS Express)
-2. **Admin:** `/admin/login` — `StaffUsers.Login` / `StaffUsers.Password` (e.g. `admin@webshop.com` / `demo` after demo seed)
-3. **Store:** `/sign-in` — `WebshopLogin` / password (e.g. `customer@webshop.com` / `demo` after demo seed)
+2. **Admin:** `/admin/login` — `StaffUsers.Login` / `StaffUsers.Password`
+3. **Store:** `/sign-in` — `WebshopLogin` / password
 
 **IIS / Visual Studio:** output under `.\bin\Debug\net10.0\WebShopABMATIC.dll`. Rebuild after code changes.
 
-> **Data:** Lists read from `abmatic_test`. Run `Sql\seeds.sql` for demo rows — [DATA_DEMO_SEED.md](DATA_DEMO_SEED.md).
+> **Data:** Lists read from `abmatic_test` — see [DATA_SUMMARY.md](DATA_SUMMARY.md).
 
 ### HTML prototypes and Blazor storefront
 
 ✅ `readme/docs/mock-loja.html` — light-blue storefront reference  
 ✅ **Blazor store:** `/` catalog (12 products), `/product/{id}`, `/cart`, `/orders`, `/sign-in`, `/my-account` — `IStoreCatalogPort` → `StoreCatalogService`  
-✅ Categories from ERP `ProductStructuur` on client DB; demo seed uses `WebshopProductStructures`  
+✅ Categories from ERP `ProductStructuur` on `abmatic_test`  
 ✅ Product images via `IProductMediaPort` → Azure Blob SAS or local fallback  
 ✅ Admin entry from store when staff is signed in  
 ✅ [MOCK_PROTOTYPE_GUIDE.md](MOCK_PROTOTYPE_GUIDE.md) — screen reference with `readme/images/*_screen.png`
@@ -612,7 +591,7 @@ Publish output to App Service (Visual Studio Publish, ZIP deploy, or CI). Ensure
 - 🏠 [Main Documentation](../README.md) — Project overview
 - 🗺️ [Implementation roadmap](open_IMPLEMENTATION_ROADMAP.md)
 - 🖼️ [Azure Blob media](AZUREBLOB.md)
-- 🌱 [Demo seed](SUNDAY.md) · [DATA_DEMO_SEED.md](DATA_DEMO_SEED.md)
+- 📊 [Database summary](DATA_SUMMARY.md)
 - 💳 [Mollie go-live](open_MOLLIE_PAYMENTS_open.md)
 - 🔐 [Auth roadmap](AUTH_IDENTITY_ROADMAP_open.md)
 
