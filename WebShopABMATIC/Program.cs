@@ -105,6 +105,7 @@ builder.Services.AddSession(options =>
     options.Cookie.SameSite = SameSiteMode.Lax;
     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 });
+builder.Services.AddScoped<Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedLocalStorage>();
 builder.Services.AddScoped<StoreCartService>();
 builder.Services.AddScoped<IGridExportService, GridExportService>();
 
