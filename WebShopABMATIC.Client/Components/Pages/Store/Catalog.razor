@@ -10,20 +10,20 @@
 <div class="store-content-inner">
     @if (_isHomepage)
     {
-        <section class="store-section">
+        <section class="store-section" id="categories-home">
             <h2 class="store-section-title">Categories</h2>
             @if (_loading)
             {
                 <p class="text-muted">Loading categories…</p>
             }
-            else if (_categories.Count == 0)
+            else if (_homepageCategories.Count == 0)
             {
                 <p class="text-muted">No categories available.</p>
             }
             else
             {
                 <div class="categories-grid">
-                    @foreach (var c in _categories)
+                    @foreach (var c in _homepageCategories)
                     {
                         <StoreCategoryTile Category="c" OnSelect="GoToCategory" />
                     }
@@ -46,7 +46,7 @@
                 <div class="deals-row">
                     @foreach (var p in _deals)
                     {
-                        <StoreDealCard Product="p" OnSelect="GoToProduct" />
+                        <StoreProductCard Product="p" OnSelect="GoToProduct" />
                     }
                 </div>
             }
@@ -59,7 +59,10 @@
             {
                 <StoreCategoryHeader CategoryName="@_selectedCategoryName" />
             }
-            <h2 class="store-section-title">@_productsTitle</h2>
+            else
+            {
+                <h2 class="store-section-title">@_productsTitle</h2>
+            }
             @if (_loading)
             {
                 <p class="text-muted">Loading categories…</p>
@@ -86,7 +89,10 @@
             {
                 <StoreCategoryHeader CategoryName="@_selectedCategoryName" />
             }
-            <h2 class="store-section-title">@_productsTitle</h2>
+            else
+            {
+                <h2 class="store-section-title">@_productsTitle</h2>
+            }
             @if (_loading)
             {
                 <p class="text-muted">Loading catalog…</p>
@@ -97,10 +103,10 @@
             }
             else
             {
-                <div class="product-grid">
+                <div class="catalog-products-row">
                     @foreach (var p in _products)
                     {
-                        <ProductCard Product="p" OnSelect="GoToProduct" />
+                        <StoreProductCard Product="p" OnSelect="GoToProduct" />
                     }
                 </div>
             }
@@ -120,6 +126,7 @@
     private string _productsTitle = "Products";
     private string _noProductsMessage = "No products found.";
     private IReadOnlyList<StoreCategoryTreeNodeDto> _categories = [];
+    private IReadOnlyList<StoreCategoryTreeNodeDto> _homepageCategories = [];
     private IReadOnlyList<StoreCategoryTreeNodeDto> _browseCategories = [];
     private IReadOnlyList<StoreProduct> _deals = [];
     private IReadOnlyList<StoreProduct> _products = [];
@@ -156,6 +163,7 @@
             if (_isHomepage)
             {
                 _categories = await CatalogPort.GetCategoryTreeAsync();
+                _homepageCategories = _categories.ToList();
                 var deals = await CatalogPort.GetDealsAsync(DealsLimit);
                 _deals = deals.Select(StoreProductMapper.ToModel).ToList();
                 _browseCategories = [];
