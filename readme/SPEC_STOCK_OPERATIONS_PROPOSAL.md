@@ -68,7 +68,7 @@ _Last updated: May 2026 — see [open_IMPLEMENTATION_ROADMAP.md](./open_IMPLEMEN
 | `ReservedQuantity` / `OrderStatus.ReserveStock` workflow | 4 | §3.7 — **we decrement on pay, not reserve** |
 | SignalR `StockUpdated` | optional | Roadmap Phase F |
 | Audit `StockAdjust` badge | 6 | [AUDITS_open.md](./AUDITS_open.md) |
-| Demo seed: movements + PO (full) | 1 | §5 — partial in seeds |
+| Sample data: movements + PO on `abmatic_test` | 1 | §5 |
 
 ### 0.6 Stock hub extension — transfer, PO, GRN (Jun/2026)
 
@@ -99,7 +99,7 @@ _Last updated: May 2026 — see [open_IMPLEMENTATION_ROADMAP.md](./open_IMPLEMEN
 | **Admin hub** | ✅ | Overview, movement journal, **stock adjustment**, product-stock, stock locations |
 | **Low stock** | ✅ | `MinQuantity`, filtered grid, dashboard table, in-app `StockLowAlerts`, storefront `IsLowStock` |
 | **Dashboard KPIs** | ✅ | Low/out counts + **products below minimum** table + notification banner |
-| **Demo seed** | 🟡 Partial | Movements + minimal PO in seeds; not full PO/GRN demo |
+| **Sample data on DB** | 🟡 Partial | Movements + minimal PO on `abmatic_test`; not full PO/GRN coverage |
 | **Storefront** | ✅ | Real prices, stock display, checkout decrements stock; **no reservation** model yet |
 
 
@@ -124,7 +124,7 @@ _Last updated: May 2026 — see [open_IMPLEMENTATION_ROADMAP.md](./open_IMPLEMEN
 
 | Area | Schema | App today | Gap |
 |------|--------|-----------|-----|
-| **ProductPrices** | ✅ | Store + checkout wired | Keep seeds in sync |
+| **ProductPrices** | ✅ | Store + checkout wired | Keep admin prices in sync with DB |
 | **Orders + OrderLines** | ✅ | Store checkout creates rows | Admin payment columns (Phase C) |
 | **OrderAdvancePayments + Mollie** | ✅ | Integrated in code | Ops: API key + webhook E2E |
 | **Stock movements on sale** | ✅ | `ApplySaleFromOrderAsync` | — |
@@ -462,38 +462,23 @@ Body: { "reason": "..." }
 
 ---
 
-## 5. Seed data proposal (`seeds.sql` extension)
+## 5. Required data on `abmatic_test`
 
-To demo screens without `ABMATIC.bacpac`:
+The app reads live ERP data — there is **no seed script in this repo**. For checkout and stock screens to work, these tables must have rows on the connected database:
 
-| Data | Rows | Purpose |
-|------|------|---------|
-| **`ProductPrices`** | 1 row per webshop product (10) | **Fix store/admin pricing** — currently missing entirely |
-| **`PaymentMethods`** | iDEAL/card (pre-pay) + invoice (post-pay) | Replace hardcoded cart dropdown |
-| **`PaymentTerms`** | Default 30 days | Satisfy `Order.BetaaltermijnId` FK |
-| **`OrderStatuses`** | Pending / Paid / Accepted + `ReserveStock` flags | Fulfilment + stock rules |
-| 5–10 `StockMovements` | In/out/reservation mix | Movement journal |
-| 1 open `StockOrder` + 3 lines | Supplier from seed | PO list |
-| 1 `StockOrderDelivery` | Partial delivery | Receive flow demo |
-| **`OrderAdvancePayments`** | 1× 100% on 2–3 demo orders | ✅ Payment schedule + Mollie ids in `seeds.sql` |
-| **`StockLowAlerts`** | 1 row per low-stock SKU (3 unread) | ✅ Dashboard banner / table |
-| **`AuditLogs`** | 12 demo rows | ✅ Audit grid + checkout/Mollie trail |
-| **`EmailQueues`** | `Outbound`, `LowStockAlerts` | ✅ Placeholder for future email push |
-| **`AccountingDocuments`** | 1 paid invoice linked to order | Show `BetaaldOp` / payment method |
-| Tie 1 movement to `OrderLineId` | Optional | Show sales link column |
+| Data | Purpose |
+|------|---------|
+| **`ProductPrices`** | Store + admin pricing (`IProductPricingPort`) |
+| **`PaymentMethods`** | iDEAL/card (pre-pay) + invoice (post-pay) at checkout |
+| **`PaymentTerms`** | `Order.BetaaltermijnId` FK |
+| **`OrderStatuses`** | Pending / Paid / Accepted + `ReserveStock` flags |
+| **`StockMovements`** | Movement journal |
+| **`StockOrder`** + lines | PO list (optional) |
+| **`OrderAdvancePayments`** | Mollie payment schedule |
+| **`StockLowAlerts`** | Dashboard banner |
+| **`AzureFiles`** | Product images |
 
-**ProductPrices seed example (concept):**
-
-```sql
-INSERT INTO [Products].[ProductPrices]
-    ([FromAddress], [ProductId], [GrossSalesPrice], [BasePrice], [AssemblyPrice], [InstallationPrice], ...)
-VALUES
-    (GETUTCDATE(), 1, 49.99, 49.99, 0, 0, ...),
-    (GETUTCDATE(), 2, 59.99, 59.99, 0, 0, ...);
--- one active row per ProductId; align with former hardcoded StoreCatalogService formula
-```
-
-**Effort:** Small–medium once pricing port and Phase 1 queries exist.
+Maintain via admin screens or existing ERP data on `abmatic_test`.
 
 ---
 
@@ -528,7 +513,7 @@ Web/*List.razor or *Overview.razor
 | Stock overview dashboard | ✅ Done | 1 | `/admin/stock/overview` |
 | Movement journal (consultation) | ✅ Done | 1 | `/admin/stock/movements` |
 | Extend dashboard KPIs (movements, open POs) | ✅ Done | 1 | + low-stock table & alerts |
-| Demo seed for movements + 1 PO | 🟡 Partial | 1 | Some seed rows exist |
+| Sample data for movements + 1 PO | 🟡 Partial | 1 | Rows on `abmatic_test` |
 | Manual adjustment | ✅ Done | 2 | `/admin/stock/adjustment` |
 | Low stock filter + notifications | ✅ Done | 2 | §3.8 |
 | Storefront `MinQuantity` display | ✅ Done | 2 | Catalog + product detail |
@@ -634,9 +619,9 @@ IStoreCatalogPort / ICheckoutPort
   → ProductPricingRepository         (queries ProductPrices + discounts)
 ```
 
-**Seed gap:** `seeds.sql` inserts 12 products and 34 orders with **inline `UnitPrice` on lines** but **zero `ProductPrices` rows** — admin product-price screen and store catalog will disagree until seeded.
+**Data note:** `ProductPrices` must exist for store catalog and `/admin/product-prices`. Orders may have inline `UnitPrice` on lines; ensure active price rows match what the store reads.
 
-**Admin hub:** `/admin/product-prices` already exists — after seed, staff can maintain prices that the store reads.
+**Admin hub:** `/admin/product-prices` — staff maintain prices the store uses.
 
 ---
 
@@ -777,7 +762,7 @@ We **do not** need a parallel order header — **`Orders` + `OrderAdvancePayment
 
 ### 14.4 `OrderStatus` + stock
 
-Use seeded/admin **`OrderStatuses`** — flags already on entity:
+Use admin **`OrderStatuses`** — flags already on entity:
 
 | Flag | When |
 |------|------|
@@ -821,7 +806,7 @@ Set `OrderStructure.StatusId` (or processing type’s default status) on create 
 | Order list enhancement | `/admin/orders` | `Orders` + join `OrderAdvancePayments` (Mollie status) + `AccountingDocuments.BetaaldOp` |
 | Order advance payments | `/admin/orders/{id}/advance-payments` | `OrderAdvancePayments` (read/edit schedule) |
 | Accounting documents | `/admin/accounting-documents` *(new hub card?)* | `AccountingDocuments`, lines |
-| Product prices | `/admin/product-prices` *(exists)* | `ProductPrices` — **ensure seeded** |
+| Product prices | `/admin/product-prices` *(exists)* | `ProductPrices` on `abmatic_test` |
 | Payment methods | `/admin/payment-methods` *(exists)* | `PaymentMethods` |
 | Refund (later) | action on paid order | Mollie `IRefundClient` + credit `AccountingDocument` |
 
@@ -833,7 +818,7 @@ Stock **movement journal** (Part I §3.2) links via `OrderLineId` once checkout 
 
 | Phase | Scope | Depends on | Effort |
 |-------|--------|------------|--------|
-| **P0 — Foundation** | NuGet, `AddMollieApi`, config, `IMolliePaymentPort`, **`IProductPricingPort`**, seed **`ProductPrices`** | — | Small |
+| **P0 — Foundation** | NuGet, `AddMollieApi`, config, `IMolliePaymentPort`, **`IProductPricingPort`**, **`ProductPrices`** on DB | — | Small |
 | **P1 — Happy path** | Persist `Order` + `OrderLine` + `OrderAdvancePayment`, Mollie redirect, webhook, **`BetaaldOp`** | P0 | High |
 | **P1b — Accounting doc** | Create `AccountingDocument` on pay (or on order) — full legacy parity | P1 | Medium |
 | **P2 — Store account** | `/orders` list/detail for customer; admin payment columns | P1 | Medium |
@@ -859,7 +844,7 @@ Stock overview and movement journal can ship **in parallel** with payment founda
 
 | Feature | Do now? | Phase | Rationale |
 |---------|---------|-------|-----------|
-| Seed **`ProductPrices`** + wire store catalog | ✅ Done | P0 | |
+| **`ProductPrices`** + wire store catalog | ✅ Done | P0 | |
 | Add `Mollie.Api` + config + port/adapter | ✅ Done | P0 | Ops: test key + webhook |
 | Checkout uses **`Orders` + `OrderLines` + `OrderAdvancePayments`** | ✅ Done | P1 | |
 | Mollie columns on **`OrderAdvancePayments`** | ✅ Done | P1 | Migration applied |
@@ -892,14 +877,14 @@ Stock overview and movement journal can ship **in parallel** with payment founda
 2. **`InvoicedAt` vs `MolliePaidAt`:** Does `InvoicedAt` mean “invoice sent” (before payment)? Confirm before mapping webhook.
 3. **`AccountingDocument` on pay:** Create invoice document immediately when Mollie pays, or only after staff acceptance?
 4. **`OrderStructure`:** Create dossier row for every web order, or only `Orders` header?
-5. **`ProjectId`:** Continue using seed pattern “Webshop — {Customer}” (`Project.IsStandardProject`)?
+5. **`ProjectId`:** Continue using “Webshop — {Customer}” pattern (`Project.IsStandardProject`)?
 6. **Pricing rules:** Which discount layers apply on web (customer product discount, type base discount, all)?
 7. **Currency:** Always EUR?
 8. **Mollie methods:** Fixed (iDEAL + card) or all enabled on profile?
 9. **Post-pay:** All B2B customers allowed, or only certain `CustomerType`?
 10. **Webhook URL in dev:** ngrok / Azure tunnel / staging?
 11. **Mollie id storage:** Approve columns on **`OrderAdvancePayments`** (recommended) vs new table?
-12. **`OrderStatus` ids:** Import from `ABMATIC.bacpac` or define minimal seed set?
+12. **`OrderStatus` ids:** Import from `ABMATIC.bacpac` or define minimal set on `abmatic_test`?
 
 ---
 
@@ -924,14 +909,14 @@ Stock Phase 1 read-only, checkout + Mollie (code), stock writes, manual adjustme
 
 1. Add cards to `AdminHubRegistry` for Overview and Movement journal. ✅
 2. Read-only ports + repositories + Razor pages. ✅
-3. Extend `seeds.sql` with sample movements. 🟡
+3. Sample movements on `abmatic_test`. 🟡
 4. Dashboard KPIs. ✅ (+ low-stock table 2026)
 </details>
 
 <details>
 <summary>Part II — Payments P0 + P1 (done in code)</summary>
 
-1. Seed prices, payment methods, terms, order statuses. ✅
+1. `ProductPrices`, payment methods, terms, order statuses on DB. ✅
 2. `IProductPricingPort` + store catalog. ✅
 3. Mollie NuGet + adapter + webhook. ✅
 4. `CheckoutUseCase` persisting orders. ✅
