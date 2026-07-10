@@ -12,7 +12,8 @@ namespace WebShopABMATIC.Infrastructure.Store;
 public sealed class StoreCatalogService : IStoreCatalogPort
 {
     private const string ProductStructuresCacheKey = "store:product-structures";
-    private const string CategoryTreeCacheKey = "store:category-tree";
+    private const string CategoryIconsCacheKey = "store:category-icons";
+    private const string CategoryTreeCacheKey = "store:category-tree:v5";
     private static readonly TimeSpan CategoryTreeCacheDuration = TimeSpan.FromMinutes(2);
 
     private readonly WebShopABMATICDbContext _db;
@@ -87,42 +88,34 @@ public sealed class StoreCatalogService : IStoreCatalogPort
     {
         try
         {
-            var webshopNav = await LoadWebshopNavTreeAsync(cancellationToken);
+            var structures = await LoadProductStructuresAsync(cancellationToken);
+            var productStructureIds = await _db.Products.AsNoTracking()
+                .Where(p => (p.ShowOnWebshop ?? false) && !p.IsInactive && p.ProductStructureId != null)
+                .Select(p => p.ProductStructureId!.Value)
+                .ToListAsync(cancellationToken);
+            var counts = structures.Count > 0
+                ? BuildProductCounts(structures, productStructureIds)
+                : new Dictionary<int, int>();
+
+            var webshopNav = await LoadWebshopNavTreeAsync(structures, counts, cancellationToken);
             if (webshopNav.Count > 0)
             {
                 _cache.Set(CategoryTreeCacheKey, webshopNav, CategoryTreeCacheDuration);
                 return webshopNav;
             }
 
-            var structures = await LoadProductStructuresAsync(cancellationToken);
             if (structures.Count == 0)
             {
                 return [];
             }
 
-            var productStructureIds = await _db.Products.AsNoTracking()
-                .Where(p => (p.ShowOnWebshop ?? false) && !p.IsInactive && p.ProductStructureId != null)
-                .Select(p => p.ProductStructureId!.Value)
-                .ToListAsync(cancellationToken);
-
-            var counts = BuildProductCounts(structures, productStructureIds);
-            var tree = BuildTreeNodes(structures, counts, parentId: null);
-
-            if (tree.Count == 0 && productStructureIds.Count > 0)
-            {
-                tree = BuildTreeFromProductRoots(structures, counts, productStructureIds);
-            }
-
-            if (tree.Count == 0 && productStructureIds.Count > 0)
-            {
-                tree = BuildFlatRootsFromProducts(structures, productStructureIds);
-            }
-
+            var tree = BuildProductStructureNavTree(structures, counts, parentId: null);
             _cache.Set(CategoryTreeCacheKey, tree, CategoryTreeCacheDuration);
             return tree;
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "Failed to load storefront category tree.");
             return [];
         }
     }
@@ -182,6 +175,8 @@ public sealed class StoreCatalogService : IStoreCatalogPort
                     var rows = await LoadProductRowsAsync(QueryVisibleProducts(), take: null, cancellationToken);
                     products = rows
                         .Where(p => p.ProductStructureId == category)
+                        .OrderBy(p => p.PriceListSortOrder ?? int.MaxValue)
+                        .ThenBy(p => p.NameEn, StringComparer.OrdinalIgnoreCase)
                         .ToList();
                     if (take is > 0)
                     {
@@ -203,23 +198,32 @@ public sealed class StoreCatalogService : IStoreCatalogPort
         }
     }
 
-    public Task<byte[]?> GetCategoryIconAsync(int categoryId, CancellationToken cancellationToken = default) =>
-        RunSerializedAsync(() => GetCategoryIconCoreAsync(categoryId, cancellationToken), cancellationToken);
-
-    private async Task<byte[]?> GetCategoryIconCoreAsync(int categoryId, CancellationToken cancellationToken)
+    public async Task<byte[]?> GetCategoryIconAsync(int categoryId, CancellationToken cancellationToken = default)
     {
-        try
+        var icons = await GetCategoryIconsAsync(cancellationToken);
+        return icons.TryGetValue(categoryId, out var bytes) ? bytes : null;
+    }
+
+    private async Task<IReadOnlyDictionary<int, byte[]>> GetCategoryIconsAsync(CancellationToken cancellationToken)
+    {
+        if (_cache.TryGetValue(CategoryIconsCacheKey, out IReadOnlyDictionary<int, byte[]>? cached)
+            && cached is not null)
         {
-            return await _db.ProductStructures.AsNoTracking()
-                .Where(s => s.Id == categoryId)
-                .Select(s => s.Icon)
-                .FirstOrDefaultAsync(cancellationToken);
+            return cached;
         }
-        catch (Exception ex)
+
+        return await RunSerializedAsync(async () =>
         {
-            _logger.LogWarning(ex, "Failed to load icon for category {CategoryId}.", categoryId);
-            return null;
-        }
+            if (_cache.TryGetValue(CategoryIconsCacheKey, out cached) && cached is not null)
+            {
+                return cached;
+            }
+
+            await LoadProductStructuresAsync(cancellationToken);
+            return _cache.TryGetValue(CategoryIconsCacheKey, out cached) && cached is not null
+                ? cached
+                : new Dictionary<int, byte[]>();
+        }, cancellationToken);
     }
 
     public Task<StoreProductDto?> GetByIdAsync(int productId, CancellationToken cancellationToken = default) =>
@@ -237,6 +241,7 @@ public sealed class StoreCatalogService : IStoreCatalogPort
                     IsNew = x.IsNew == true,
                     x.NameEn,
                     x.WebshopDescriptionNl,
+                    x.OrderPartNumber,
                     x.ProductStructureId,
                     x.HasNoPrice
                 })
@@ -259,6 +264,7 @@ public sealed class StoreCatalogService : IStoreCatalogPort
                 p.IsNew,
                 p.NameEn,
                 p.WebshopDescriptionNl,
+                p.OrderPartNumber,
                 await _media.GetPrimaryImageUrlAsync(productId, webPublishedOnly: true, cancellationToken)
                     ?? FallbackImage(productId),
                 level.Quantity,
@@ -296,28 +302,30 @@ public sealed class StoreCatalogService : IStoreCatalogPort
         return counts;
     }
 
-    private static List<StoreCategoryTreeNodeDto> BuildTreeNodes(
+    private static List<StoreCategoryTreeNodeDto> BuildProductStructureNavTree(
         IReadOnlyDictionary<int, ProductStructure> structures,
         IReadOnlyDictionary<int, int> counts,
         int? parentId)
     {
         var candidates = parentId is null
-            ? structures.Values.Where(s => CatalogCategoryTree.IsStructuralRoot(s, structures))
-            : structures.Values.Where(s => CatalogCategoryTree.NormalizeParentId(s.ParentTaskId) == parentId);
+            ? structures.Values.Where(s => CatalogCategoryTree.IsStructuralRoot(s, structures)
+                                           && s.ShowOnPriceList == true)
+            : structures.Values.Where(s => CatalogCategoryTree.NormalizeParentId(s.ParentTaskId) == parentId
+                                           && s.ShowOnPriceList == true);
 
         return candidates
-            .Where(s => counts.ContainsKey(s.Id))
             .OrderBy(s => s.SortOrder)
-            .ThenBy(s => CatalogCategoryTree.PickDisplayName(s))
+            .ThenBy(s => s.Id)
             .Select(s => new StoreCategoryTreeNodeDto
             {
                 Id = s.Id,
+                NavigationKey = s.Id,
                 ParentId = CatalogCategoryTree.NormalizeParentId(s.ParentTaskId),
-                Name = CatalogCategoryTree.PickDisplayName(s),
+                Name = CatalogCategoryTree.PickStorefrontName(s),
                 Level = s.Level,
-                ProductCount = counts[s.Id],
+                ProductCount = counts.GetValueOrDefault(s.Id),
                 HasIcon = HasIcon(s),
-                Children = BuildTreeNodes(structures, counts, s.Id)
+                Children = BuildProductStructureNavTree(structures, counts, s.Id)
             })
             .ToList();
     }
@@ -325,79 +333,10 @@ public sealed class StoreCatalogService : IStoreCatalogPort
     private static bool HasIcon(ProductStructure structure) =>
         structure.Icon is { Length: > 0 };
 
-    private static List<StoreCategoryTreeNodeDto> BuildTreeFromProductRoots(
+    private async Task<List<StoreCategoryTreeNodeDto>> LoadWebshopNavTreeAsync(
         IReadOnlyDictionary<int, ProductStructure> structures,
         IReadOnlyDictionary<int, int> counts,
-        IReadOnlyList<int> productStructureIds)
-    {
-        var rootIds = productStructureIds
-            .Select(id => CatalogCategoryTree.ResolveRootId(id, structures))
-            .Where(id => structures.ContainsKey(id) && counts.ContainsKey(id))
-            .Distinct()
-            .OrderBy(id => structures[id].SortOrder)
-            .ThenBy(id => CatalogCategoryTree.PickDisplayName(structures[id]))
-            .ToList();
-
-        return rootIds
-            .Select(id =>
-            {
-                var s = structures[id];
-                return new StoreCategoryTreeNodeDto
-                {
-                    Id = s.Id,
-                    ParentId = CatalogCategoryTree.NormalizeParentId(s.ParentTaskId),
-                    Name = CatalogCategoryTree.PickDisplayName(s),
-                    Level = s.Level,
-                    ProductCount = counts[id],
-                    HasIcon = HasIcon(s),
-                    Children = BuildTreeNodes(structures, counts, s.Id)
-                };
-            })
-            .ToList();
-    }
-
-    private static List<StoreCategoryTreeNodeDto> BuildFlatRootsFromProducts(
-        IReadOnlyDictionary<int, ProductStructure> structures,
-        IReadOnlyList<int> productStructureIds)
-    {
-        var rootCounts = new Dictionary<int, int>();
-        foreach (var structureId in productStructureIds)
-        {
-            if (!structures.ContainsKey(structureId))
-            {
-                continue;
-            }
-
-            var rootId = CatalogCategoryTree.ResolveRootId(structureId, structures);
-            if (!structures.ContainsKey(rootId))
-            {
-                continue;
-            }
-
-            rootCounts[rootId] = rootCounts.GetValueOrDefault(rootId) + 1;
-        }
-
-        return rootCounts
-            .Select(kv =>
-            {
-                var s = structures[kv.Key];
-                return new StoreCategoryTreeNodeDto
-                {
-                    Id = s.Id,
-                    ParentId = CatalogCategoryTree.NormalizeParentId(s.ParentTaskId),
-                    Name = CatalogCategoryTree.PickDisplayName(s),
-                    Level = s.Level,
-                    ProductCount = kv.Value,
-                    HasIcon = HasIcon(s),
-                    Children = []
-                };
-            })
-            .OrderBy(n => structures[n.Id].SortOrder)
-            .ThenBy(n => n.Name)
-            .ToList();
-    }
-
-    private async Task<List<StoreCategoryTreeNodeDto>> LoadWebshopNavTreeAsync(CancellationToken cancellationToken)
+        CancellationToken cancellationToken)
     {
         var rows = await _db.WebshopStructures.AsNoTracking()
             .OrderBy(s => s.SortOrder)
@@ -410,18 +349,177 @@ public sealed class StoreCatalogService : IStoreCatalogPort
         }
 
         var byId = rows.ToDictionary(s => s.Id);
+        var nameIndex = BuildProductStructureNameIndex(structures);
         return rows
             .Where(s => IsWebshopStructuralRoot(s, byId))
-            .Select(s => new StoreCategoryTreeNodeDto
-            {
-                Id = s.Id,
-                ParentId = CatalogCategoryTree.NormalizeParentId(s.ParentTaskId),
-                Name = s.NameNl,
-                ProductCount = 0,
-                Children = BuildWebshopNavChildren(rows, s.Id)
-            })
+            .Select(s => MapWebshopNavNode(s, rows, byId, structures, counts, nameIndex))
             .ToList();
     }
+
+    private static StoreCategoryTreeNodeDto MapWebshopNavNode(
+        WebshopStructure node,
+        IReadOnlyList<WebshopStructure> rows,
+        IReadOnlyDictionary<int, WebshopStructure> webshopById,
+        IReadOnlyDictionary<int, ProductStructure> structures,
+        IReadOnlyDictionary<int, int> counts,
+        IReadOnlyDictionary<string, List<int>> nameIndex)
+    {
+        var catalogId = ResolveCatalogCategoryId(node, rows, webshopById, structures, nameIndex, counts);
+        structures.TryGetValue(catalogId, out var structure);
+        var children = BuildWebshopNavChildren(rows, node.Id, webshopById, structures, counts, nameIndex);
+
+        return new StoreCategoryTreeNodeDto
+        {
+            Id = catalogId,
+            NavigationKey = node.Id,
+            ParentId = CatalogCategoryTree.NormalizeParentId(node.ParentTaskId),
+            Name = node.NameNl.Trim(),
+            Level = structure?.Level ?? 0,
+            ProductCount = counts.GetValueOrDefault(catalogId),
+            HasIcon = structure is not null && HasIcon(structure),
+            Children = children
+        };
+    }
+
+    private static List<StoreCategoryTreeNodeDto> BuildWebshopNavChildren(
+        IReadOnlyList<WebshopStructure> rows,
+        int parentId,
+        IReadOnlyDictionary<int, WebshopStructure> webshopById,
+        IReadOnlyDictionary<int, ProductStructure> structures,
+        IReadOnlyDictionary<int, int> counts,
+        IReadOnlyDictionary<string, List<int>> nameIndex) =>
+        rows
+            .Where(s => CatalogCategoryTree.NormalizeParentId(s.ParentTaskId) == parentId)
+            .OrderBy(s => s.SortOrder)
+            .ThenBy(s => s.NameNl, StringComparer.OrdinalIgnoreCase)
+            .Select(s => MapWebshopNavNode(s, rows, webshopById, structures, counts, nameIndex))
+            .ToList();
+
+    private static int ResolveCatalogCategoryId(
+        WebshopStructure node,
+        IReadOnlyList<WebshopStructure> rows,
+        IReadOnlyDictionary<int, WebshopStructure> webshopById,
+        IReadOnlyDictionary<int, ProductStructure> structures,
+        IReadOnlyDictionary<string, List<int>> nameIndex,
+        IReadOnlyDictionary<int, int> counts)
+    {
+        if (structures.ContainsKey(node.Id))
+        {
+            return node.Id;
+        }
+
+        var webshopPath = BuildWebshopPath(node, webshopById);
+        var normalized = NormalizeCategoryName(node.NameNl);
+        if (!nameIndex.TryGetValue(normalized, out var candidates) || candidates.Count == 0)
+        {
+            return node.Id;
+        }
+
+        if (candidates.Count == 1)
+        {
+            return candidates[0];
+        }
+
+        return candidates
+            .Select(id => (id, score: ScorePathMatch(webshopPath, BuildProductStructurePath(id, structures))))
+            .OrderByDescending(x => x.score)
+            .ThenByDescending(x => CatalogCategoryTree.HasStructuralChildren(x.id, structures) ? 0 : 1)
+            .ThenByDescending(x => counts.GetValueOrDefault(x.id))
+            .ThenByDescending(x => structures.TryGetValue(x.id, out var s) ? s.Level : 0)
+            .First().id;
+    }
+
+    private static List<string> BuildWebshopPath(
+        WebshopStructure node,
+        IReadOnlyDictionary<int, WebshopStructure> webshopById)
+    {
+        var path = new List<string> { NormalizeCategoryName(node.NameNl) };
+        var parentId = CatalogCategoryTree.NormalizeParentId(node.ParentTaskId);
+        var guard = 0;
+        while (parentId is int pid && webshopById.TryGetValue(pid, out var parent) && guard++ < 12)
+        {
+            path.Insert(0, NormalizeCategoryName(parent.NameNl));
+            parentId = CatalogCategoryTree.NormalizeParentId(parent.ParentTaskId);
+        }
+
+        return path;
+    }
+
+    private static List<string> BuildProductStructurePath(
+        int structureId,
+        IReadOnlyDictionary<int, ProductStructure> structures)
+    {
+        var path = new List<string>();
+        var currentId = structureId;
+        var guard = 0;
+        while (structures.TryGetValue(currentId, out var current) && guard++ < 12)
+        {
+            path.Insert(0, NormalizeCategoryName(CatalogCategoryTree.PickStorefrontName(current)));
+            var parentId = CatalogCategoryTree.NormalizeParentId(current.ParentTaskId);
+            if (parentId is null)
+            {
+                break;
+            }
+
+            currentId = parentId.Value;
+        }
+
+        return path;
+    }
+
+    private static int ScorePathMatch(IReadOnlyList<string> webshopPath, IReadOnlyList<string> productPath)
+    {
+        var score = 0;
+        foreach (var name in webshopPath)
+        {
+            if (productPath.Any(p => string.Equals(p, name, StringComparison.OrdinalIgnoreCase)))
+            {
+                score++;
+            }
+        }
+
+        if (webshopPath.Count > 0
+            && productPath.Count > 0
+            && string.Equals(webshopPath[^1], productPath[^1], StringComparison.OrdinalIgnoreCase))
+        {
+            score += 2;
+        }
+
+        return score;
+    }
+
+    private static Dictionary<string, List<int>> BuildProductStructureNameIndex(
+        IReadOnlyDictionary<int, ProductStructure> structures)
+    {
+        var index = new Dictionary<string, List<int>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var structure in structures.Values)
+        {
+            foreach (var candidate in new[] { structure.NameNl, structure.NameEn, structure.NameFr })
+            {
+                if (string.IsNullOrWhiteSpace(candidate))
+                {
+                    continue;
+                }
+
+                var key = NormalizeCategoryName(candidate);
+                if (!index.TryGetValue(key, out var ids))
+                {
+                    ids = [];
+                    index[key] = ids;
+                }
+
+                if (!ids.Contains(structure.Id))
+                {
+                    ids.Add(structure.Id);
+                }
+            }
+        }
+
+        return index;
+    }
+
+    private static string NormalizeCategoryName(string value) =>
+        string.Join(' ', value.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries));
 
     private static bool IsWebshopStructuralRoot(
         WebshopStructure structure,
@@ -436,20 +534,6 @@ public sealed class StoreCatalogService : IStoreCatalogPort
         return !structures.ContainsKey(parent.Value);
     }
 
-    private static List<StoreCategoryTreeNodeDto> BuildWebshopNavChildren(
-        IReadOnlyList<WebshopStructure> rows,
-        int parentId) =>
-        rows
-            .Where(s => CatalogCategoryTree.NormalizeParentId(s.ParentTaskId) == parentId)
-            .Select(s => new StoreCategoryTreeNodeDto
-            {
-                Id = s.Id,
-                ParentId = CatalogCategoryTree.NormalizeParentId(s.ParentTaskId),
-                Name = s.NameNl,
-                ProductCount = 0,
-                Children = BuildWebshopNavChildren(rows, s.Id)
-            })
-            .ToList();
     private IQueryable<Product> QueryVisibleProducts() =>
         _db.Products.AsNoTracking()
             .Where(p => (p.ShowOnWebshop ?? false) && !p.IsInactive);
@@ -459,7 +543,10 @@ public sealed class StoreCatalogService : IStoreCatalogPort
         int? take,
         CancellationToken cancellationToken)
     {
-        var ordered = query.OrderBy(p => p.NameEn);
+        var ordered = query
+            .OrderBy(p => p.PriceListSortOrder ?? int.MaxValue)
+            .ThenBy(p => p.NameEn);
+
         var limited = take is > 0 ? ordered.Take(take.Value) : ordered;
 
         var rows = await limited
@@ -469,6 +556,9 @@ public sealed class StoreCatalogService : IStoreCatalogPort
                 IsNew = p.IsNew == true,
                 p.NameEn,
                 p.DescriptionEn,
+                p.WebshopDescriptionNl,
+                p.OrderPartNumber,
+                p.PriceListSortOrder,
                 p.ProductStructureId,
                 p.HasNoPrice
             })
@@ -479,7 +569,9 @@ public sealed class StoreCatalogService : IStoreCatalogPort
                 p.ProductId,
                 p.IsNew,
                 p.NameEn ?? string.Empty,
-                p.DescriptionEn ?? string.Empty,
+                p.WebshopDescriptionNl ?? p.DescriptionEn ?? string.Empty,
+                p.OrderPartNumber ?? string.Empty,
+                p.PriceListSortOrder,
                 p.ProductStructureId,
                 p.HasNoPrice))
             .ToList();
@@ -554,6 +646,7 @@ public sealed class StoreCatalogService : IStoreCatalogPort
                 p.IsNew,
                 p.NameEn,
                 p.WebshopDescriptionNl,
+                p.OrderPartNumber,
                 imageUrls.GetValueOrDefault(p.ProductId) ?? FallbackImage(p.ProductId),
                 level.Quantity,
                 level.MinQuantity,
@@ -577,6 +670,10 @@ public sealed class StoreCatalogService : IStoreCatalogPort
         var rows = await _db.ProductStructures.AsNoTracking().ToListAsync(cancellationToken);
         var structures = rows.ToDictionary(s => s.Id);
         _cache.Set(ProductStructuresCacheKey, structures, TimeSpan.FromMinutes(10));
+        var icons = rows
+            .Where(s => s.Icon is { Length: > 0 })
+            .ToDictionary(s => s.Id, s => s.Icon!);
+        _cache.Set(CategoryIconsCacheKey, icons, TimeSpan.FromMinutes(10));
         return structures;
     }
 
@@ -590,7 +687,7 @@ public sealed class StoreCatalogService : IStoreCatalogPort
         }
 
         var rootId = CatalogCategoryTree.ResolveRootId(id, structures);
-        return (id, rootId, CatalogCategoryTree.PickDisplayName(structure));
+        return (id, rootId, CatalogCategoryTree.PickStorefrontName(structure));
     }
 
     private async Task<Dictionary<int, (int Quantity, decimal MinQuantity)>> GetDefaultStockLevelsAsync(
@@ -636,6 +733,8 @@ public sealed class StoreCatalogService : IStoreCatalogPort
         bool IsNew,
         string NameEn,
         string WebshopDescriptionNl,
+        string OrderPartNumber,
+        int? PriceListSortOrder,
         int? ProductStructureId,
         bool HasNoPrice);
 
@@ -644,6 +743,7 @@ public sealed class StoreCatalogService : IStoreCatalogPort
         bool isNew,
         string name,
         string description,
+        string referenceCode,
         string imageUrl,
         int qty,
         decimal minQuantity,
@@ -657,6 +757,7 @@ public sealed class StoreCatalogService : IStoreCatalogPort
             IsNew = isNew,
             Name = name,
             Description = description,
+            ReferenceCode = referenceCode.Trim(),
             ImageUrl = imageUrl,
             Price = price,
             Stock = qty,
