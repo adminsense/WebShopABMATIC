@@ -27,19 +27,23 @@
             <div class="cart-table">
                 @foreach (var line in CartService.Lines)
                 {
-                    <div class="cart-row" @key="line.ProductId">
+                    <div class="cart-row" @key="line.Id">
                         <img src="@line.ImageUrl" alt="@line.Name" />
                         <div>
                             <h4>@line.Name</h4>
+                            @if (line.HasOptions)
+                            {
+                                <p class="cart-line-options">@line.OptionsSummary</p>
+                            }
                             <p class="unit">@FormatPrice(line.UnitPrice) each</p>
                         </div>
                         <div class="qty-control">
-                            <button type="button" @onclick="() => ChangeQuantityAsync(line.ProductId, line.Quantity - 1)">−</button>
+                            <button type="button" @onclick="() => ChangeQuantityAsync(line.Id, line.Quantity - 1)">−</button>
                             <span>@line.Quantity</span>
-                            <button type="button" @onclick="() => ChangeQuantityAsync(line.ProductId, line.Quantity + 1)">+</button>
+                            <button type="button" @onclick="() => ChangeQuantityAsync(line.Id, line.Quantity + 1)">+</button>
                         </div>
                         <span class="line-total">@FormatPrice(line.LineTotal)</span>
-                        <button type="button" class="remove-btn" title="Remove" @onclick="() => RemoveLineAsync(line.ProductId)">×</button>
+                        <button type="button" class="remove-btn" title="Remove" @onclick="() => RemoveLineAsync(line.Id)">×</button>
                     </div>
                 }
             </div>
@@ -58,19 +62,23 @@
             <div class="cart-table">
                 @foreach (var line in CartService.Lines)
                 {
-                    <div class="cart-row" @key="line.ProductId">
+                    <div class="cart-row" @key="line.Id">
                         <img src="@line.ImageUrl" alt="@line.Name" />
                         <div>
                             <h4>@line.Name</h4>
+                            @if (line.HasOptions)
+                            {
+                                <p class="cart-line-options">@line.OptionsSummary</p>
+                            }
                             <p class="unit">@FormatPrice(line.UnitPrice) each</p>
                         </div>
                         <div class="qty-control">
-                            <button type="button" @onclick="() => ChangeQuantityAsync(line.ProductId, line.Quantity - 1)">−</button>
+                            <button type="button" @onclick="() => ChangeQuantityAsync(line.Id, line.Quantity - 1)">−</button>
                             <span>@line.Quantity</span>
-                            <button type="button" @onclick="() => ChangeQuantityAsync(line.ProductId, line.Quantity + 1)">+</button>
+                            <button type="button" @onclick="() => ChangeQuantityAsync(line.Id, line.Quantity + 1)">+</button>
                         </div>
                         <span class="line-total">@FormatPrice(line.LineTotal)</span>
-                        <button type="button" class="remove-btn" title="Remove" @onclick="() => RemoveLineAsync(line.ProductId)">×</button>
+                        <button type="button" class="remove-btn" title="Remove" @onclick="() => RemoveLineAsync(line.Id)">×</button>
                     </div>
                 }
             </div>
@@ -224,7 +232,14 @@
                 Lines = CartService.Lines.Select(l => new CheckoutLineRequest
                 {
                     ProductId = l.ProductId,
-                    Quantity = l.Quantity
+                    Quantity = l.Quantity,
+                    Options = l.Options.Select(o => new CheckoutLineOption
+                    {
+                        ProductOptionId = o.OptionId,
+                        ProductOptionValueId = o.ValueId,
+                        OptionName = o.OptionName,
+                        ValueText = o.ValueText
+                    }).ToList()
                 }).ToList(),
                 DeliveryAddressId = _deliveryAddressId,
                 PaymentMethodId = _paymentMethodId,
@@ -265,11 +280,11 @@
         CustomerId = _customerId
     };
 
-    private Task ChangeQuantityAsync(int productId, int quantity) =>
-        CartService.SetQuantityAsync(productId, quantity);
+    private Task ChangeQuantityAsync(string lineId, int quantity) =>
+        CartService.SetQuantityAsync(lineId, quantity);
 
-    private Task RemoveLineAsync(int productId) =>
-        CartService.RemoveAsync(productId);
+    private Task RemoveLineAsync(string lineId) =>
+        CartService.RemoveAsync(lineId);
 
     private static string FormatPrice(decimal price) => $"€{price:F2}";
 }

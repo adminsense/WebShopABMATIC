@@ -57,6 +57,15 @@ public sealed class StoreOrderLineCreate
     public decimal LineTotalExclVat { get; init; }
     public decimal VatAmount { get; init; }
     public decimal LineTotalInclVat { get; init; }
+    public IReadOnlyList<StoreOrderLineOptionCreate> Options { get; init; } = [];
+}
+
+public sealed class StoreOrderLineOptionCreate
+{
+    public int ProductOptionId { get; init; }
+    public int? ProductOptionValueId { get; init; }
+    public string OptionName { get; init; } = "";
+    public string ValueText { get; init; } = "";
 }
 
 public sealed class StoreOrderCreated
