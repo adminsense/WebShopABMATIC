@@ -8,4 +8,11 @@ public sealed class NullAuditService : IAuditService
 {
     public Task LogAsync(AuditLogWriteRequest request, CancellationToken cancellationToken = default) =>
         Task.CompletedTask;
+
+    public Task LogExceptionAsync(
+        Exception exception,
+        string moduleName,
+        string className,
+        CancellationToken cancellationToken = default) =>
+        Task.CompletedTask;
 }
