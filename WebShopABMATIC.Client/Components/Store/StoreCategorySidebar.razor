@@ -7,11 +7,6 @@
 
 <nav class="store-sidebar-nav" aria-label="Product categories">
     <ul class="store-nav-tree">
-        <li>
-            <a href="/" class="store-nav-link @(_selectedCategoryId is null ? "active" : "")">
-                All products
-            </a>
-        </li>
         @if (_loading)
         {
             <li class="store-nav-muted">Loading…</li>
@@ -132,12 +127,17 @@
     {
         foreach (var node in nodes)
         {
-            var nextPath = new List<int>(path) { node.Id };
+            var nextPath = new List<int>(path) { node.NavigationKey };
             if (node.Id == targetId)
             {
                 foreach (var id in path)
                 {
                     _expandedIds.Add(id);
+                }
+
+                if (node.Children.Count > 0)
+                {
+                    _expandedIds.Add(node.NavigationKey);
                 }
 
                 return true;
