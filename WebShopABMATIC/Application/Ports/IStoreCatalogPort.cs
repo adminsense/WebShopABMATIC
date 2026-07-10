@@ -11,5 +11,9 @@ public interface IStoreCatalogPort
     /// <summary>Visible webshop products; when <paramref name="categoryId"/> is set, returns direct products on that leaf node only (CD4).</summary>
     Task<IReadOnlyList<StoreProductDto>> GetCatalogAsync(int? take = null, int? categoryId = null, CancellationToken cancellationToken = default);
     Task<StoreProductDto?> GetByIdAsync(int productId, CancellationToken cancellationToken = default);
+    /// <summary>Configurable options for a product (read-only), ordered for display.</summary>
+    Task<IReadOnlyList<StoreProductOptionDto>> GetProductOptionsAsync(int productId, CancellationToken cancellationToken = default);
+    /// <summary>Category header content (name + intro/outro price-list texts) for the storefront.</summary>
+    Task<StoreCategoryDetailDto?> GetCategoryDetailAsync(int categoryId, CancellationToken cancellationToken = default);
     Task<byte[]?> GetCategoryIconAsync(int categoryId, CancellationToken cancellationToken = default);
 }

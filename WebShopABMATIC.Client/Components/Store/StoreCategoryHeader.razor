@@ -1,7 +1,12 @@
 <header class="store-category-header">
     <h1 class="store-category-title">@CategoryName</h1>
+    @if (!string.IsNullOrWhiteSpace(IntroText))
+    {
+        <p class="store-category-intro">@IntroText</p>
+    }
 </header>
 
 @code {
     [Parameter, EditorRequired] public string CategoryName { get; set; } = string.Empty;
+    [Parameter] public string? IntroText { get; set; }
 }
