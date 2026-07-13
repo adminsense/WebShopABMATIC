@@ -27,6 +27,15 @@ public sealed class CheckoutLineRequest
 {
     public int ProductId { get; init; }
     public int Quantity { get; init; }
+    public IReadOnlyList<CheckoutLineOption> Options { get; init; } = [];
+}
+
+public sealed class CheckoutLineOption
+{
+    public int ProductOptionId { get; init; }
+    public int? ProductOptionValueId { get; init; }
+    public string OptionName { get; init; } = "";
+    public string ValueText { get; init; } = "";
 }
 
 public sealed class CheckoutQuoteRequest

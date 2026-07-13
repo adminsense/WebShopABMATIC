@@ -26,58 +26,78 @@
             <ValidationSummary class="text-danger mb-3" role="alert" />
             <div class="form-group">
                 <label for="signup-email">Email *</label>
-                <InputText id="signup-email" @bind-Value="_input.Email" autocomplete="username" />
+                <InputText id="signup-email" @bind-Value="_input.Email" autocomplete="username" class="form-control" />
                 <ValidationMessage For="() => _input.Email" />
             </div>
             <div class="form-group">
                 <label for="signup-firstname">First name *</label>
-                <InputText id="signup-firstname" @bind-Value="_input.FirstName" autocomplete="given-name" />
+                <InputText id="signup-firstname" @bind-Value="_input.FirstName" autocomplete="given-name" class="form-control" />
                 <ValidationMessage For="() => _input.FirstName" />
             </div>
             <div class="form-group">
                 <label for="signup-lastname">Last name *</label>
-                <InputText id="signup-lastname" @bind-Value="_input.LastName" autocomplete="family-name" />
+                <InputText id="signup-lastname" @bind-Value="_input.LastName" autocomplete="family-name" class="form-control" />
                 <ValidationMessage For="() => _input.LastName" />
             </div>
             <div class="form-group">
                 <label for="signup-phone">Phone *</label>
-                <InputText id="signup-phone" @bind-Value="_input.Phone" autocomplete="tel" />
+                <InputText id="signup-phone" @bind-Value="_input.Phone" autocomplete="tel" class="form-control" />
                 <ValidationMessage For="() => _input.Phone" />
             </div>
             <div class="form-group">
                 <label for="signup-street">Street *</label>
-                <InputText id="signup-street" @bind-Value="_input.Street" autocomplete="street-address" />
+                <InputText id="signup-street" @bind-Value="_input.Street" autocomplete="street-address" class="form-control" />
                 <ValidationMessage For="() => _input.Street" />
             </div>
             <div class="row g-2">
                 <div class="col-4 form-group">
                     <label for="signup-number">House no. *</label>
-                    <InputText id="signup-number" @bind-Value="_input.HouseNumber" />
+                    <InputText id="signup-number" @bind-Value="_input.HouseNumber" class="form-control" />
                     <ValidationMessage For="() => _input.HouseNumber" />
                 </div>
                 <div class="col-4 form-group">
                     <label for="signup-box">Box</label>
-                    <InputText id="signup-box" @bind-Value="_input.Box" />
+                    <InputText id="signup-box" @bind-Value="_input.Box" class="form-control" />
                 </div>
                 <div class="col-4 form-group">
                     <label for="signup-postal">Postal code *</label>
-                    <InputText id="signup-postal" @bind-Value="_input.PostalCode" autocomplete="postal-code" />
+                    <InputText id="signup-postal" @bind-Value="_input.PostalCode" autocomplete="postal-code" class="form-control" />
                     <ValidationMessage For="() => _input.PostalCode" />
                 </div>
             </div>
             <div class="form-group">
                 <label for="signup-city">City *</label>
-                <InputText id="signup-city" @bind-Value="_input.CityName" autocomplete="address-level2" />
+                <InputText id="signup-city" @bind-Value="_input.CityName" autocomplete="address-level2" class="form-control" />
                 <ValidationMessage For="() => _input.CityName" />
             </div>
             <div class="form-group">
                 <label for="signup-password">Password *</label>
-                <InputText id="signup-password" type="password" @bind-Value="_input.Password" autocomplete="new-password" />
+                <div class="password-field">
+                    <InputText id="signup-password" type="password" @bind-Value="_input.Password" autocomplete="new-password" class="form-control" />
+                    <button type="button"
+                            class="password-toggle"
+                            aria-label="Show password"
+                            aria-pressed="false"
+                            aria-controls="signup-password"
+                            onclick="storePasswordToggle('signup-password', this)">
+                        <i class="bi bi-eye" aria-hidden="true"></i>
+                    </button>
+                </div>
                 <ValidationMessage For="() => _input.Password" />
             </div>
             <div class="form-group">
                 <label for="signup-confirm">Confirm password *</label>
-                <InputText id="signup-confirm" type="password" @bind-Value="_input.ConfirmPassword" autocomplete="new-password" />
+                <div class="password-field">
+                    <InputText id="signup-confirm" type="password" @bind-Value="_input.ConfirmPassword" autocomplete="new-password" class="form-control" />
+                    <button type="button"
+                            class="password-toggle"
+                            aria-label="Show password"
+                            aria-pressed="false"
+                            aria-controls="signup-confirm"
+                            onclick="storePasswordToggle('signup-confirm', this)">
+                        <i class="bi bi-eye" aria-hidden="true"></i>
+                    </button>
+                </div>
                 <ValidationMessage For="() => _input.ConfirmPassword" />
             </div>
             <button type="submit" class="btn btn-primary" disabled="@_submitting">@(_submitting ? "Creating account…" : "Create account")</button>
@@ -130,6 +150,10 @@
                 return;
             }
 
+            var destination = string.IsNullOrWhiteSpace(ReturnUrl) ? "/" : ReturnUrl;
+
+            // Static SSR pages must redirect via HttpContext to avoid Blazor NavigationException
+            // (same pattern as SignIn.razor).
             if (HttpContext is null)
             {
                 Navigation.NavigateTo("/sign-in", forceLoad: true);
@@ -139,13 +163,12 @@
             var signIn = await LegacySignIn.SignInCustomerAsync(_input.Email, _input.Password);
             if (!signIn.Succeeded || signIn.Principal is null)
             {
-                Navigation.NavigateTo("/sign-in", forceLoad: true);
+                HttpContext.Response.Redirect("/sign-in");
                 return;
             }
 
             await LegacyCookieAuthentication.SignInAsync(HttpContext, signIn.Principal, isPersistent: false);
-            var destination = string.IsNullOrWhiteSpace(ReturnUrl) ? "/" : ReturnUrl;
-            Navigation.NavigateTo(destination, forceLoad: true);
+            HttpContext.Response.Redirect(destination);
         }
         finally
         {
