@@ -10,6 +10,8 @@ public interface IStoreCatalogPort
     Task<IReadOnlyList<StoreProductDto>> GetDealsAsync(int take, CancellationToken cancellationToken = default);
     /// <summary>Visible webshop products; when <paramref name="categoryId"/> is set, returns direct products on that leaf node only (CD4).</summary>
     Task<IReadOnlyList<StoreProductDto>> GetCatalogAsync(int? take = null, int? categoryId = null, CancellationToken cancellationToken = default);
+    /// <summary>Server-side name search — does not load the full catalog.</summary>
+    Task<IReadOnlyList<StoreProductDto>> SearchProductsAsync(string term, int take = 24, CancellationToken cancellationToken = default);
     Task<StoreProductDto?> GetByIdAsync(int productId, CancellationToken cancellationToken = default);
     /// <summary>Configurable options for a product (read-only), ordered for display.</summary>
     Task<IReadOnlyList<StoreProductOptionDto>> GetProductOptionsAsync(int productId, CancellationToken cancellationToken = default);
