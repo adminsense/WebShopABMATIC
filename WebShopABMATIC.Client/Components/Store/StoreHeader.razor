@@ -49,10 +49,22 @@
             {
                 @if (_isCustomer)
                 {
+                    <NavLink href="/orders" class="store-header-link">
+                        <i class="bi bi-bag-check" aria-hidden="true"></i>
+                        <span>My orders</span>
+                    </NavLink>
                     <NavLink href="/my-account" class="store-header-link" title="@_displayName">
                         <i class="bi bi-person" aria-hidden="true"></i>
                         <span>@ShortName(_displayName)</span>
                     </NavLink>
+                }
+                else if (_isStaff)
+                {
+                    <NavLink href="/admin" class="store-header-link" data-enhance-nav="false">
+                        <i class="bi bi-gear" aria-hidden="true"></i>
+                        <span>Admin</span>
+                    </NavLink>
+                    <span class="store-header-user" title="@_displayName">@ShortName(_displayName)</span>
                 }
                 else
                 {
@@ -68,6 +80,10 @@
                 <NavLink href="/sign-in" class="store-header-link" data-enhance-nav="false">
                     <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i>
                     <span>Login</span>
+                </NavLink>
+                <NavLink href="/admin/login" class="store-header-link" data-enhance-nav="false">
+                    <i class="bi bi-gear" aria-hidden="true"></i>
+                    <span>Admin</span>
                 </NavLink>
             }
         </nav>
@@ -93,6 +109,7 @@
     private IReadOnlyList<StoreProduct> _searchResults = [];
     private bool _isAuthenticated;
     private bool _isCustomer;
+    private bool _isStaff;
     private string _displayName = "";
     private bool _idleMonitorStarted;
 
@@ -193,6 +210,7 @@
         var user = auth.User;
         _isAuthenticated = user.Identity?.IsAuthenticated == true;
         _isCustomer = user.IsInRole(AppRoles.Customer);
+        _isStaff = user.IsInRole(AppRoles.Admin) || user.IsInRole(AppRoles.Manager);
 
         int? customerId = null;
         if (_isAuthenticated && _isCustomer
@@ -328,12 +346,9 @@
 
         try
         {
-            var items = await CatalogPort.GetCatalogAsync(take: null, categoryId: null);
+            var items = await CatalogPort.SearchProductsAsync(term, take: 24);
             _searchResults = items
                 .Select(StoreProductMapper.ToModel)
-                .Where(p => p.Name.StartsWith(term, StringComparison.OrdinalIgnoreCase))
-                .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
-                .Take(24)
                 .ToList();
         }
         finally

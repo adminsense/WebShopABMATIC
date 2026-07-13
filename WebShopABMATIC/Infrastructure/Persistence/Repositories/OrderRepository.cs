@@ -3,6 +3,7 @@ using WebShopABMATIC.Application.Admin.Orders;
 using WebShopABMATIC.Application.Common;
 using WebShopABMATIC.Application.Ports.Outbound;
 using WebShopABMATIC.Infrastructure.Persistence;
+using WebShopABMATIC.Infrastructure.Store;
 using WebShopABMATIC.Data.Entities;
 using WebShopABMATIC.Data.Persistence;
 
@@ -72,7 +73,7 @@ public sealed class OrderRepository : IOrderRepository
             var hasAdvance = payments.ContainsKey(x.Id);
             var advance = hasAdvance ? payments[x.Id] : null;
             var status = hasAdvance
-                ? (string.IsNullOrWhiteSpace(advance!.MolliePaymentStatus) ? "open" : advance.MolliePaymentStatus!)
+                ? (string.IsNullOrWhiteSpace(advance!.AdvancePaymentVisibility) ? "open" : advance.AdvancePaymentVisibility!)
                 : "invoice";
 
             return new OrderSummaryDto
@@ -84,7 +85,7 @@ public sealed class OrderRepository : IOrderRepository
                 DeliveryTypeId = x.DeliveryTypeId,
                 IsAccepted = x.IsAccepted,
                 PaymentStatus = status,
-                MolliePaymentId = advance?.MolliePaymentId,
+                MolliePaymentId = StoreAdvancePaymentEncoding.ExtractMolliePaymentId(advance?.Name),
                 GeneralDiscount = x.GeneralDiscount,
                 IsUrgent = x.IsUrgent
             };
@@ -121,22 +122,23 @@ public sealed class OrderRepository : IOrderRepository
             return null;
         }
 
-        order.AdvancePayments = await _db.OrderAdvancePayments.AsNoTracking()
+        var advanceEntities = await _db.OrderAdvancePayments.AsNoTracking()
             .Where(a => a.OrderId == id)
             .OrderBy(a => a.SortOrder)
-            .Select(a => new OrderAdvancePaymentDto
-            {
-                Id = a.Id,
-                Name = a.Name,
-                Percent = a.Percent,
-                Amount = a.Amount,
-                SortOrder = a.SortOrder,
-                MolliePaymentId = a.MolliePaymentId,
-                MolliePaymentStatus = a.MolliePaymentStatus,
-                MolliePaidAt = a.MolliePaidAt,
-                MollieCheckoutUrl = a.MollieCheckoutUrl
-            })
             .ToListAsync(cancellationToken);
+
+        order.AdvancePayments = advanceEntities.Select(a => new OrderAdvancePaymentDto
+        {
+            Id = a.Id,
+            Name = a.Name,
+            Percent = a.Percent,
+            Amount = a.Amount,
+            SortOrder = a.SortOrder,
+            MolliePaymentId = StoreAdvancePaymentEncoding.ExtractMolliePaymentId(a.Name),
+            MolliePaymentStatus = a.AdvancePaymentVisibility,
+            MolliePaidAt = a.InvoicedAt,
+            MollieCheckoutUrl = null
+        }).ToList();
 
         return order;
     }

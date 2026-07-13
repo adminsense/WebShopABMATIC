@@ -1,16 +1,25 @@
 using Microsoft.EntityFrameworkCore;
 using WebShopABMATIC.Application.Ports.Outbound;
 using WebShopABMATIC.Data.Persistence;
+using WebShopABMATIC.Infrastructure.Store;
 
 namespace WebShopABMATIC.Infrastructure.Persistence.Repositories;
 
 public sealed class StoreCustomerRepository : IStoreCustomerRepository
 {
     private readonly WebShopABMATICDbContext _db;
+    private readonly StoreDbGate _dbGate;
 
-    public StoreCustomerRepository(WebShopABMATICDbContext db) => _db = db;
+    public StoreCustomerRepository(WebShopABMATICDbContext db, StoreDbGate dbGate)
+    {
+        _db = db;
+        _dbGate = dbGate;
+    }
 
-    public async Task<StoreCustomerContext?> GetForStoreUserAsync(StoreUserLookup lookup, CancellationToken cancellationToken = default)
+    public Task<StoreCustomerContext?> GetForStoreUserAsync(StoreUserLookup lookup, CancellationToken cancellationToken = default) =>
+        _dbGate.RunAsync(() => GetForStoreUserCoreAsync(lookup, cancellationToken), cancellationToken);
+
+    private async Task<StoreCustomerContext?> GetForStoreUserCoreAsync(StoreUserLookup lookup, CancellationToken cancellationToken)
     {
         var customerRow = await ResolveCustomerAsync(lookup, cancellationToken);
         if (customerRow is null)
@@ -40,10 +49,8 @@ public sealed class StoreCustomerRepository : IStoreCustomerRepository
         };
     }
 
-    public async Task<StoreCustomerProfile?> GetProfileAsync(StoreUserLookup lookup, CancellationToken cancellationToken = default)
-    {
-        return await ResolveCustomerProfileAsync(lookup, cancellationToken);
-    }
+    public Task<StoreCustomerProfile?> GetProfileAsync(StoreUserLookup lookup, CancellationToken cancellationToken = default) =>
+        _dbGate.RunAsync(() => ResolveCustomerProfileAsync(lookup, cancellationToken), cancellationToken);
 
     private async Task<CustomerRow?> ResolveCustomerAsync(StoreUserLookup lookup, CancellationToken cancellationToken)
     {

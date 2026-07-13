@@ -95,6 +95,9 @@ A referência mostra uma **barra horizontal única** (fundo branco, ícone + tex
 | H3 | Logo WebShop | **Fora da navbar** na v1 (sidebar ou conteúdo); não competir com a referência |
 | H4 | Catalog / My orders na barra | **Remover** — Home = catálogo; orders via conta pós-login |
 | H5 | Admin na barra | **Remover** da loja pública |
+
+> [!NOTE]
+> **Runtime amendment (2026-07):** Spec visual H4/H5 above were for matching Adminsence chrome. Product need + [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.5 require discoverable **My orders** for customers after checkout. Current `StoreHeader`: guest → Login + Admin (`/admin/login`); customer → **My orders** + account; staff → **Admin** (`/admin`). Auth tables remain split (Customer vs StaffUsers) — see [SPEC_ADMIN.md](./SPEC_ADMIN.md) §2. Unified login (§2.2.2) still ⬜.
 | H6 | Ícones | **Font Awesome 6** (CDN como referência) ou Bootstrap Icons equivalentes |
 | H7 | Página Contact | **Nova** `Contact.razor` em `/contact` — conteúdo estático EN (empresa, email, telefone de `Settings.BaseCompany` ou placeholder até port existir) |
 | H8 | Back | `NavigationManager` back; fallback `/` |

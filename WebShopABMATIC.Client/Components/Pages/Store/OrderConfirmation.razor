@@ -52,7 +52,10 @@
                 <span>Total (incl. VAT)</span>
                 <span>@FormatPrice(_order.TotalInclVat)</span>
             </div>
-            <NavLink href="/" class="btn btn-primary" style="margin-top:1rem">Continue shopping</NavLink>
+            <div class="d-flex flex-wrap gap-2" style="margin-top:1rem">
+                <NavLink href="/orders" class="btn btn-outline-secondary">My orders</NavLink>
+                <NavLink href="/" class="btn btn-primary">Continue shopping</NavLink>
+            </div>
         </div>
     }
 </div>
