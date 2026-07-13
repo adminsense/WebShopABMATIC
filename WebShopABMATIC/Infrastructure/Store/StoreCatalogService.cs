@@ -21,36 +21,25 @@ public sealed class StoreCatalogService : IStoreCatalogPort
     private readonly IProductPricingPort _pricing;
     private readonly IMemoryCache _cache;
     private readonly ILogger<StoreCatalogService> _logger;
+    private readonly StoreDbGate _dbGate;
 
-    // Blazor Server shares one scoped DbContext per circuit. The sidebar and the
-    // catalog page both query it, so concurrent access throws. Serialize all DB work.
-    private readonly SemaphoreSlim _dbGate = new(1, 1);
-
-    private async Task<T> RunSerializedAsync<T>(Func<Task<T>> operation, CancellationToken cancellationToken)
-    {
-        await _dbGate.WaitAsync(cancellationToken);
-        try
-        {
-            return await operation();
-        }
-        finally
-        {
-            _dbGate.Release();
-        }
-    }
+    private Task<T> RunSerializedAsync<T>(Func<Task<T>> operation, CancellationToken cancellationToken) =>
+        _dbGate.RunAsync(operation, cancellationToken);
 
     public StoreCatalogService(
         WebShopABMATICDbContext db,
         IProductMediaPort media,
         IProductPricingPort pricing,
         IMemoryCache cache,
-        ILogger<StoreCatalogService> logger)
+        ILogger<StoreCatalogService> logger,
+        StoreDbGate dbGate)
     {
         _db = db;
         _media = media;
         _pricing = pricing;
         _cache = cache;
         _logger = logger;
+        _dbGate = dbGate;
     }
 
     public async Task<IReadOnlyList<StoreCatalogCategoryDto>> GetCategoriesAsync(CancellationToken cancellationToken = default)
@@ -258,6 +247,7 @@ public sealed class StoreCatalogService : IStoreCatalogPort
 
             var price = await _pricing.GetUnitPriceAsync(productId, cancellationToken: cancellationToken);
             var (categoryIdValue, categoryRootId, categoryName) = ResolveCategory(p.ProductStructureId, structures);
+            var hasOptions = (await SafeGetProductIdsWithOptionsAsync([productId], cancellationToken)).Count > 0;
 
             return MapProduct(
                 p.ProductId,
@@ -272,13 +262,145 @@ public sealed class StoreCatalogService : IStoreCatalogPort
                 ResolveStorePrice(p.HasNoPrice, price),
                 categoryIdValue,
                 categoryRootId,
-                categoryName);
+                categoryName,
+                hasOptions);
         }
         catch
         {
             return null;
         }
     }
+
+    public Task<IReadOnlyList<StoreProductOptionDto>> GetProductOptionsAsync(int productId, CancellationToken cancellationToken = default) =>
+        RunSerializedAsync(() => GetProductOptionsCoreAsync(productId, cancellationToken), cancellationToken);
+
+    private async Task<IReadOnlyList<StoreProductOptionDto>> GetProductOptionsCoreAsync(int productId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var options = await _db.ProductOptions.AsNoTracking()
+                .Where(o => o.ProductId == productId)
+                .OrderBy(o => o.SortOrder)
+                .ThenBy(o => o.Id)
+                .Select(o => new { o.Id, o.Name, o.NameEn, o.ValueType, o.IsRequired, o.SortOrder })
+                .ToListAsync(cancellationToken);
+
+            if (options.Count == 0)
+            {
+                return [];
+            }
+
+            var optionIds = options.Select(o => o.Id).ToList();
+            var values = await _db.ProductOptionValues.AsNoTracking()
+                .Where(v => optionIds.Contains(v.ProductOptionId))
+                .OrderBy(v => v.SortOrder)
+                .ThenBy(v => v.Id)
+                .Select(v => new { v.Id, v.Value, v.ValueEn, v.ProductOptionId, v.SortOrder })
+                .ToListAsync(cancellationToken);
+
+            var valuesByOption = values
+                .GroupBy(v => v.ProductOptionId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => (IReadOnlyList<StoreProductOptionValueDto>)g
+                        .Select(v => new StoreProductOptionValueDto
+                        {
+                            Id = v.Id,
+                            Value = PickText(v.ValueEn, v.Value),
+                            SortOrder = v.SortOrder
+                        })
+                        .Where(v => !string.IsNullOrWhiteSpace(v.Value))
+                        .ToList());
+
+            return options
+                .Select(o => new StoreProductOptionDto
+                {
+                    Id = o.Id,
+                    Name = PickText(o.NameEn, o.Name),
+                    ValueType = o.ValueType ?? string.Empty,
+                    IsRequired = o.IsRequired,
+                    SortOrder = o.SortOrder,
+                    Values = valuesByOption.GetValueOrDefault(o.Id, [])
+                })
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to load product options for product {ProductId}.", productId);
+            return [];
+        }
+    }
+
+    public Task<StoreCategoryDetailDto?> GetCategoryDetailAsync(int categoryId, CancellationToken cancellationToken = default) =>
+        RunSerializedAsync(() => GetCategoryDetailCoreAsync(categoryId, cancellationToken), cancellationToken);
+
+    private async Task<StoreCategoryDetailDto?> GetCategoryDetailCoreAsync(int categoryId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var structures = await LoadProductStructuresAsync(cancellationToken);
+            if (!structures.TryGetValue(categoryId, out var structure))
+            {
+                return null;
+            }
+
+            var textIds = new List<int>();
+            if (structure.IntroPriceListTextId is int introId) textIds.Add(introId);
+            if (structure.OutroPriceListTextId is int outroId) textIds.Add(outroId);
+
+            Dictionary<int, (string? En, string? Nl)> texts = new();
+            if (textIds.Count > 0)
+            {
+                texts = (await _db.PriceListTexts.AsNoTracking()
+                        .Where(t => textIds.Contains(t.Id))
+                        .Select(t => new { t.Id, t.TextEn, t.Text })
+                        .ToListAsync(cancellationToken))
+                    .ToDictionary(t => t.Id, t => ((string?)t.TextEn, (string?)t.Text));
+            }
+
+            return new StoreCategoryDetailDto
+            {
+                Id = structure.Id,
+                Name = CatalogCategoryTree.PickStorefrontName(structure),
+                IntroText = ResolveText(structure.IntroPriceListTextId, texts),
+                OutroText = ResolveText(structure.OutroPriceListTextId, texts)
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to load category detail for {CategoryId}.", categoryId);
+            return null;
+        }
+    }
+
+    private static string? ResolveText(int? textId, IReadOnlyDictionary<int, (string? En, string? Nl)> texts)
+    {
+        if (textId is not int id || !texts.TryGetValue(id, out var value))
+        {
+            return null;
+        }
+
+        var resolved = PickText(value.En, value.Nl);
+        if (string.IsNullOrWhiteSpace(resolved) || IsRichTextMarkup(resolved))
+        {
+            // Price-list intros are often stored as RTF/binary in the ERP — never dump raw markup on the storefront.
+            return null;
+        }
+
+        return resolved;
+    }
+
+    private static bool IsRichTextMarkup(string text)
+    {
+        var trimmed = text.TrimStart();
+        return trimmed.StartsWith(@"{\rtf", StringComparison.OrdinalIgnoreCase)
+               || trimmed.StartsWith("{\\rtf", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string PickText(string? english, string? dutch) =>
+        !string.IsNullOrWhiteSpace(english) ? english.Trim()
+        : !string.IsNullOrWhiteSpace(dutch) ? dutch.Trim()
+        : string.Empty;
 
     private static Dictionary<int, int> BuildProductCounts(
         IReadOnlyDictionary<int, ProductStructure> structures,
@@ -634,6 +756,7 @@ public sealed class StoreCatalogService : IStoreCatalogPort
         var prices = await SafeGetCatalogPricesAsync(productIds, cancellationToken);
         var stockLevels = await SafeGetDefaultStockLevelsAsync(productIds, cancellationToken);
         var imageUrls = await SafeGetPrimaryImageUrlsAsync(productIds, cancellationToken);
+        var withOptions = await SafeGetProductIdsWithOptionsAsync(productIds, cancellationToken);
 
         var items = new List<StoreProductDto>();
         foreach (var p in products)
@@ -653,10 +776,36 @@ public sealed class StoreCatalogService : IStoreCatalogPort
                 ResolveStorePrice(p.HasNoPrice, prices, p.ProductId),
                 categoryIdValue,
                 categoryRootId,
-                categoryName));
+                categoryName,
+                withOptions.Contains(p.ProductId)));
         }
 
         return items;
+    }
+
+    private async Task<HashSet<int>> SafeGetProductIdsWithOptionsAsync(
+        IReadOnlyList<int> productIds,
+        CancellationToken cancellationToken)
+    {
+        if (productIds.Count == 0)
+        {
+            return [];
+        }
+
+        try
+        {
+            var ids = await _db.ProductOptions.AsNoTracking()
+                .Where(o => productIds.Contains(o.ProductId))
+                .Select(o => o.ProductId)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+            return [.. ids];
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to load product options flags for {Count} products.", productIds.Count);
+            return [];
+        }
     }
 
     private async Task<Dictionary<int, ProductStructure>> LoadProductStructuresAsync(CancellationToken cancellationToken)
@@ -750,7 +899,8 @@ public sealed class StoreCatalogService : IStoreCatalogPort
         decimal? price,
         int? categoryId,
         int? categoryRootId,
-        string categoryName) =>
+        string categoryName,
+        bool hasOptions = false) =>
         new()
         {
             Id = id,
@@ -764,6 +914,7 @@ public sealed class StoreCatalogService : IStoreCatalogPort
             MinQuantity = minQuantity,
             CategoryId = categoryId,
             CategoryRootId = categoryRootId,
-            CategoryName = categoryName
+            CategoryName = categoryName,
+            HasOptions = hasOptions
         };
 }
