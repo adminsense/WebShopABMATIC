@@ -57,7 +57,7 @@
         <section class="store-section" id="categories">
             @if (!string.IsNullOrWhiteSpace(_selectedCategoryName))
             {
-                <StoreCategoryHeader CategoryName="@_selectedCategoryName" />
+                <StoreCategoryHeader CategoryName="@_selectedCategoryName" IntroText="@_categoryDetail?.IntroText" />
             }
             else
             {
@@ -87,7 +87,7 @@
         <section class="store-section" id="products">
             @if (!string.IsNullOrWhiteSpace(_selectedCategoryName))
             {
-                <StoreCategoryHeader CategoryName="@_selectedCategoryName" />
+                <StoreCategoryHeader CategoryName="@_selectedCategoryName" IntroText="@_categoryDetail?.IntroText" />
             }
             else
             {
@@ -110,6 +110,10 @@
                     }
                 </div>
             }
+            @if (!string.IsNullOrWhiteSpace(_categoryDetail?.OutroText))
+            {
+                <p class="store-category-outro">@_categoryDetail!.OutroText</p>
+            }
         </section>
     }
 </div>
@@ -123,6 +127,7 @@
     private bool _isHomepage;
     private bool _isCategoryBrowse;
     private string? _selectedCategoryName;
+    private StoreCategoryDetailDto? _categoryDetail;
     private string _productsTitle = "Products";
     private string _noProductsMessage = "No products found.";
     private IReadOnlyList<StoreCategoryTreeNodeDto> _categories = [];
@@ -147,6 +152,7 @@
         _isHomepage = _selectedCategoryId is null && string.IsNullOrWhiteSpace(_search);
         _isCategoryBrowse = false;
         _selectedCategoryName = null;
+        _categoryDetail = null;
         _browseCategories = [];
         _noProductsMessage = string.IsNullOrWhiteSpace(_search)
             ? "No products available in this category."
@@ -177,6 +183,10 @@
                 _selectedCategoryName = string.IsNullOrWhiteSpace(_search)
                     ? selectedNode?.Name
                     : null;
+                if (string.IsNullOrWhiteSpace(_search) && _selectedCategoryId is int detailCategoryId && detailCategoryId > 0)
+                {
+                    _categoryDetail = await CatalogPort.GetCategoryDetailAsync(detailCategoryId);
+                }
                 if (string.IsNullOrWhiteSpace(_search)
                     && _selectedCategoryId is > 0
                     && selectedNode is not null)

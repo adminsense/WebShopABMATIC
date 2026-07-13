@@ -832,7 +832,7 @@ public class WebShopABMATICModelBuilder
         config.Property(t => t.Id).ValueGeneratedOnAdd();
         config.Property(t => t.CustomerId).HasColumnName("KlantKlantId");
         config.Property(t => t.DiscountPercentage).HasColumnType("decimal(18,4)").HasColumnName("KortingPercentage");
-        config.Property(t => t.ProductId).HasColumnName("ProdId");
+        config.Property(t => t.ProductId).HasColumnName("ProductProdId");
         config.Property(t => t.Notes).HasMaxLength(500).HasColumnName("Opmerking");
         config.Property(t => t.FromAddress).HasColumnName("Van");
         config.Property(t => t.ValidTo).HasColumnName("Tot");
@@ -1201,6 +1201,12 @@ public class WebShopABMATICModelBuilder
         config.Property(t => t.SortOrder).HasColumnName("Volgorde");
         config.Property(t => t.Amount).HasColumnType("decimal(18,6)").HasColumnName("Bedrag");
         config.Property(t => t.AdvancePaymentVisibility).HasMaxLength(50).HasColumnName("Voorschotzichtbaarheid");
+        // Mollie PSP ids are NOT ERP columns — kept on the CLR type only for in-memory use.
+        // Persist Mollie correlation via existing Naam / Voorschotzichtbaarheid / GefactureerdOp.
+        config.Ignore(t => t.MolliePaymentId);
+        config.Ignore(t => t.MolliePaymentStatus);
+        config.Ignore(t => t.MolliePaidAt);
+        config.Ignore(t => t.MollieCheckoutUrl);
     }
 
     private static void MapOrderDeliveryTypeProduct(EntityTypeBuilder<OrderDeliveryTypeProduct> config)

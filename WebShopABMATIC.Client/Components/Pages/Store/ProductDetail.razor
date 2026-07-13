@@ -1,10 +1,15 @@
 @page "/product/{ProductId:int}"
 @layout StoreLayout
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Application.Store
 @using WebShopABMATIC.Web.Services
 @inject IStoreCatalogPort CatalogPort
 @inject StoreCartService Cart
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>@(_product?.Name ?? "Product")</PageTitle>
 
@@ -34,16 +39,24 @@ else
                 <h1>@_product.Name</h1>
                 <p class="detail-price @(!_product.HasPrice ? "price-on-request text-muted" : "")">@StorePriceFormatter.Format(_product.Price)</p>
                 <p class="detail-desc">@_product.Description</p>
+                @if (_options.Count > 0)
+                {
+                    <StoreProductOptionsForm Options="_options" OnChanged="OnOptionsChanged" />
+                }
                 <div class="qty-row">
                     <div class="qty-control">
                         <button type="button" aria-label="Decrease" @onclick="DecreaseQty" disabled="@(!_product.HasPrice)">−</button>
                         <span>@_quantity</span>
                         <button type="button" aria-label="Increase" @onclick="IncreaseQty" disabled="@(!_product.HasPrice)">+</button>
                     </div>
-                    <button type="button" class="btn btn-primary" disabled="@(!_product.HasPrice || _product.IsOutOfStock)" @onclick="AddToCartAsync">
+                    <button type="button" class="btn btn-primary" disabled="@(!_product.HasPrice || _product.IsOutOfStock || !_optionsValid)" @onclick="AddToCartAsync">
                         @(_product.HasPrice ? "Add to cart" : StorePriceFormatter.OnRequestLabel)
                     </button>
                 </div>
+                @if (_product.HasPrice && !_product.IsOutOfStock && !_optionsValid)
+                {
+                    <p class="product-option-hint">Please choose the required options above.</p>
+                }
                 <p class="stock @(_product.IsOutOfStock ? "out" : _product.IsLowStock ? "low" : "")" style="font-size:0.85rem">@StockStatusLabel(_product)</p>
             </div>
         </div>
@@ -56,6 +69,9 @@ else
     private StoreProduct? _product;
     private int _quantity = 1;
     private bool _loading = true;
+    private IReadOnlyList<StoreProductOptionDto> _options = [];
+    private IReadOnlyList<CartLineOption> _selectedOptions = [];
+    private bool _optionsValid = true;
 
     protected override async Task OnParametersSetAsync() => await LoadAsync();
 
@@ -67,11 +83,20 @@ else
             var dto = await CatalogPort.GetByIdAsync(ProductId);
             _product = dto is null ? null : StoreProductMapper.ToModel(dto);
             _quantity = 1;
+            _selectedOptions = [];
+            _options = _product is null ? [] : await CatalogPort.GetProductOptionsAsync(ProductId);
+            _optionsValid = !_options.Any(o => o.IsRequired);
         }
         finally
         {
             _loading = false;
         }
+    }
+
+    private void OnOptionsChanged(StoreProductOptionsForm.StoreProductOptionsState state)
+    {
+        _selectedOptions = state.Selected;
+        _optionsValid = state.IsValid;
     }
 
     private void IncreaseQty()
@@ -86,8 +111,26 @@ else
 
     private async Task AddToCartAsync()
     {
-        if (_product is null || !_product.HasPrice) return;
-        await Cart.AddProductAsync(_product.Id, _quantity);
+        if (_product is null || !_product.HasPrice || !_optionsValid) return;
+
+        if (!Cart.IsCustomerCart)
+        {
+            var auth = await AuthStateProvider.GetAuthenticationStateAsync();
+            int? customerId = null;
+            if (int.TryParse(auth.User.FindFirstValue(LegacyAuthClaims.CustomerId), out var id) && id > 0)
+            {
+                customerId = id;
+            }
+
+            await Cart.BindToCustomerAsync(customerId);
+            if (!Cart.IsCustomerCart)
+            {
+                Navigation.NavigateTo($"/sign-in?returnUrl={Uri.EscapeDataString($"/product/{ProductId}")}", forceLoad: true);
+                return;
+            }
+        }
+
+        await Cart.AddProductAsync(_product.Id, _quantity, _selectedOptions);
         Navigation.NavigateTo("/cart");
     }
 
