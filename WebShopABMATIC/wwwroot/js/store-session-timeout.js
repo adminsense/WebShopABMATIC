@@ -51,19 +51,12 @@ window.storeBrowserSession = (function () {
     }
   }
 
-  function onPageHide() {
-    suspend();
-  }
-
-  function onPageShow() {
-    resume();
-  }
-
+  // Do NOT suspend on pagehide: same-tab forceLoad (cart → Mollie) fires pagehide
+  // and was killing the server session. Browser close is handled by the non-persistent
+  // auth cookie; idle logout handles inactivity.
   function start() {
     if (started) return;
     started = true;
-    window.addEventListener("pagehide", onPageHide);
-    window.addEventListener("pageshow", onPageShow);
     resume();
     ping();
     pingTimer = setInterval(ping, PING_MS);
@@ -72,8 +65,6 @@ window.storeBrowserSession = (function () {
   function stop() {
     if (!started) return;
     started = false;
-    window.removeEventListener("pagehide", onPageHide);
-    window.removeEventListener("pageshow", onPageShow);
     if (pingTimer) {
       clearInterval(pingTimer);
       pingTimer = null;
@@ -93,6 +84,7 @@ window.storeSessionTimeout = (function () {
     stop();
     try {
       window.storeBrowserSession && window.storeBrowserSession.stop();
+      window.storeBrowserSession && window.storeBrowserSession.suspend();
     } catch (e) {
       // Ignore.
     }
@@ -144,4 +136,3 @@ window.storeSessionTimeout = (function () {
 
   return { start: start, stop: stop, reset: reset };
 })();
-

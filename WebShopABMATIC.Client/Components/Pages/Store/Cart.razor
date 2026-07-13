@@ -16,45 +16,15 @@
 <div class="container">
     <h1 class="page-title">Your cart</h1>
 
-    @if (CartService.Lines.Count == 0)
+    @if (!CartService.IsCustomerCart)
+    {
+        <p style="color:var(--muted);margin-bottom:1.5rem">Sign in to view and manage your cart. Each account has its own cart.</p>
+        <NavLink href="/sign-in?returnUrl=/cart" class="btn btn-primary" data-enhance-nav="false">Sign in to view cart</NavLink>
+    }
+    else if (CartService.Lines.Count == 0)
     {
         <p style="color:var(--muted);margin-bottom:1.5rem">Your cart is empty.</p>
         <NavLink href="/" class="btn btn-primary">Continue shopping</NavLink>
-    }
-    else if (string.IsNullOrEmpty(_userEmail))
-    {
-        <div class="cart-layout">
-            <div class="cart-table">
-                @foreach (var line in CartService.Lines)
-                {
-                    <div class="cart-row" @key="line.Id">
-                        <img src="@line.ImageUrl" alt="@line.Name" />
-                        <div>
-                            <h4>@line.Name</h4>
-                            @if (line.HasOptions)
-                            {
-                                <p class="cart-line-options">@line.OptionsSummary</p>
-                            }
-                            <p class="unit">@FormatPrice(line.UnitPrice) each</p>
-                        </div>
-                        <div class="qty-control">
-                            <button type="button" @onclick="() => ChangeQuantityAsync(line.Id, line.Quantity - 1)">−</button>
-                            <span>@line.Quantity</span>
-                            <button type="button" @onclick="() => ChangeQuantityAsync(line.Id, line.Quantity + 1)">+</button>
-                        </div>
-                        <span class="line-total">@FormatPrice(line.LineTotal)</span>
-                        <button type="button" class="remove-btn" title="Remove" @onclick="() => RemoveLineAsync(line.Id)">×</button>
-                    </div>
-                }
-            </div>
-            <aside class="summary-card">
-                <h3>Order summary</h3>
-                <div class="summary-line"><span>Subtotal (@CartService.ItemCount items)</span><span>@FormatPrice(CartService.Subtotal)</span></div>
-                <div class="summary-line total"><span>Total (est.)</span><span>@FormatPrice(CartService.Total)</span></div>
-                <p class="text-muted small mt-3 mb-2">Sign in to choose delivery address and pay with Mollie (iDEAL/card) or invoice.</p>
-                <NavLink href="/sign-in?returnUrl=/cart" class="btn btn-primary" data-enhance-nav="false">Sign in to checkout</NavLink>
-            </aside>
-        </div>
     }
     else
     {
@@ -63,7 +33,7 @@
                 @foreach (var line in CartService.Lines)
                 {
                     <div class="cart-row" @key="line.Id">
-                        <img src="@line.ImageUrl" alt="@line.Name" />
+                        <StoreProductImage Src="@StoreCartService.ProductImageUrl(line.ProductId)" Alt="@line.Name" />
                         <div>
                             <h4>@line.Name</h4>
                             @if (line.HasOptions)
@@ -116,23 +86,47 @@
                 @if (_options is not null)
                 {
                     <div class="form-group" style="margin-top:1rem">
-                        <label>Delivery address</label>
-                        <select class="form-control" @bind="_deliveryAddressId">
-                            @foreach (var addr in _options.DeliveryAddresses)
-                            {
-                                <option value="@addr.Id">@addr.Label</option>
-                            }
-                        </select>
+                        <label for="cart-delivery-address">Delivery address</label>
+                        @if (_options.DeliveryAddresses.Count == 0)
+                        {
+                            <p class="store-field-hint mb-0">No delivery address found. <NavLink href="/my-account">Add one in My account</NavLink>.</p>
+                        }
+                        else
+                        {
+                            <div class="store-select-wrap">
+                                <select id="cart-delivery-address"
+                                        class="form-control store-select"
+                                        value="@_deliveryAddressId"
+                                        @onchange="OnDeliveryAddressChanged">
+                                    @foreach (var addr in _options.DeliveryAddresses)
+                                    {
+                                        <option value="@addr.Id">@addr.Label</option>
+                                    }
+                                </select>
+                            </div>
+                        }
                     </div>
                     <div class="form-group" style="margin-top:0.75rem">
-                        <label>Payment method</label>
-                        <select class="form-control" @bind="_paymentMethodId">
-                            @foreach (var pm in _options.PaymentMethods)
-                            {
-                                <option value="@pm.Id">@pm.Name</option>
-                            }
-                        </select>
+                        <label for="cart-payment-method">Payment method</label>
+                        <div class="store-select-wrap">
+                            <select id="cart-payment-method"
+                                    class="form-control store-select"
+                                    value="@_paymentMethodId"
+                                    @onchange="OnPaymentMethodChanged">
+                                @foreach (var pm in _options.PaymentMethods)
+                                {
+                                    <option value="@pm.Id" disabled="@(!pm.IsSelectable)">
+                                        @pm.Name@(pm.IsSelectable ? "" : " (unavailable online)")
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <p class="store-field-hint">Choose <strong>iDEAL / card (Mollie)</strong> to pay online. Other methods are for ERP/admin only.</p>
                     </div>
+                }
+                else if (string.IsNullOrEmpty(_checkoutError))
+                {
+                    <p class="store-field-hint mt-2">Loading checkout options…</p>
                 }
 
                 <button type="button" class="btn btn-primary" disabled="@(_placing || _quote?.Errors.Count > 0)" @onclick="PlaceOrderAsync">
@@ -157,29 +151,59 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await CartService.EnsureLoadedAsync();
-
         var auth = await AuthStateProvider.GetAuthenticationStateAsync();
-        _userEmail = auth.User.Identity?.Name;
-        if (int.TryParse(auth.User.FindFirstValue(LegacyAuthClaims.CustomerId), out var customerId))
+        _userEmail = auth.User.Identity?.Name
+            ?? auth.User.FindFirstValue(ClaimTypes.Email)
+            ?? auth.User.FindFirstValue(LegacyAuthClaims.Login);
+        if (int.TryParse(auth.User.FindFirstValue(LegacyAuthClaims.CustomerId), out var customerId) && customerId > 0)
         {
             _customerId = customerId;
         }
-        if (!string.IsNullOrEmpty(_userEmail))
+
+        await CartService.BindToCustomerAsync(_customerId);
+
+        if (!CartService.IsCustomerCart)
+        {
+            return;
+        }
+
+        await LoadCheckoutOptionsAsync();
+        await RefreshQuoteAsync();
+    }
+
+    private async Task LoadCheckoutOptionsAsync()
+    {
+        try
         {
             _options = await CheckoutPort.GetOptionsAsync(UserLookup());
-            if (_options?.DeliveryAddresses.Count > 0)
+            if (_options is null)
+            {
+                _checkoutError = "Could not load delivery address and payment options. Refresh the page or sign in again.";
+                return;
+            }
+
+            if (_options.DeliveryAddresses.Count == 0)
+            {
+                _checkoutError = "No delivery address on your account. Add one under My account before placing an order.";
+            }
+
+            if (_options.DeliveryAddresses.Count > 0)
             {
                 _deliveryAddressId = _options.DeliveryAddresses[0].Id;
             }
-            if (_options?.PaymentMethods.Count > 0)
+
+            if (_options.PaymentMethods.Count > 0)
             {
-                _paymentMethodId = _options.PaymentMethods.FirstOrDefault(p => p.IsPrePay)?.Id
+                _paymentMethodId = _options.PaymentMethods.FirstOrDefault(p => p.IsSelectable)?.Id
+                    ?? _options.PaymentMethods.FirstOrDefault(p => p.IsPrePay)?.Id
                     ?? _options.PaymentMethods[0].Id;
             }
         }
-
-        await RefreshQuoteAsync();
+        catch (Exception ex)
+        {
+            _options = null;
+            _checkoutError = $"Could not load checkout options: {ex.GetBaseException().Message}";
+        }
     }
 
     private async void OnCartChanged()
@@ -190,7 +214,13 @@
 
     private async Task RefreshQuoteAsync()
     {
-        if (string.IsNullOrEmpty(_userEmail) || CartService.Lines.Count == 0)
+        if ((_customerId is null or <= 0) && string.IsNullOrEmpty(_userEmail))
+        {
+            _quote = null;
+            return;
+        }
+
+        if (CartService.Lines.Count == 0)
         {
             _quote = null;
             return;
@@ -198,7 +228,7 @@
 
         _quote = await CheckoutPort.BuildQuoteAsync(new CheckoutQuoteRequest
         {
-            UserEmail = _userEmail,
+            UserEmail = _userEmail ?? "",
             Lines = CartService.Lines.Select(l => new CheckoutLineRequest
             {
                 ProductId = l.ProductId,
@@ -226,6 +256,27 @@
         _placing = true;
         try
         {
+            EnsureCheckoutSelections();
+            if (_options is null)
+            {
+                await LoadCheckoutOptionsAsync();
+                EnsureCheckoutSelections();
+            }
+
+            if (_options is null)
+            {
+                _checkoutError ??= "Could not load delivery address and payment options.";
+                return;
+            }
+
+            if (_deliveryAddressId <= 0)
+            {
+                _checkoutError = _options.DeliveryAddresses.Count == 0
+                    ? "No delivery address on your account. Add one under My account before placing an order."
+                    : "Select a delivery address before placing the order.";
+                return;
+            }
+
             var baseUrl = Navigation.BaseUri.TrimEnd('/');
             var result = await CheckoutPort.PlaceOrderAsync(new CheckoutRequest
             {
@@ -268,9 +319,65 @@
                 Navigation.NavigateTo("/orders", forceLoad: true);
             }
         }
+        catch (Exception ex)
+        {
+            _checkoutError = $"Checkout failed: {ex.GetBaseException().Message}";
+        }
         finally
         {
             _placing = false;
+        }
+    }
+
+    private void OnDeliveryAddressChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var id))
+        {
+            _deliveryAddressId = id;
+        }
+    }
+
+    private void OnPaymentMethodChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var id))
+        {
+            _paymentMethodId = id;
+        }
+    }
+
+    private void EnsureCheckoutSelections()
+    {
+        if (_options is null)
+        {
+            return;
+        }
+
+        if (_deliveryAddressId <= 0 && _options.DeliveryAddresses.Count > 0)
+        {
+            _deliveryAddressId = _options.DeliveryAddresses[0].Id;
+        }
+
+        if (_paymentMethodId <= 0 && _options.PaymentMethods.Count > 0)
+        {
+            _paymentMethodId = _options.PaymentMethods.FirstOrDefault(p => p.IsSelectable)?.Id
+                ?? _options.PaymentMethods.FirstOrDefault(p => p.IsPrePay)?.Id
+                ?? _options.PaymentMethods[0].Id;
+        }
+
+        if (_options.DeliveryAddresses.All(a => a.Id != _deliveryAddressId)
+            && _options.DeliveryAddresses.Count > 0)
+        {
+            _deliveryAddressId = _options.DeliveryAddresses[0].Id;
+        }
+
+        var selectedPm = _options.PaymentMethods.FirstOrDefault(p => p.Id == _paymentMethodId);
+        if (selectedPm is null || !selectedPm.IsSelectable)
+        {
+            var mollie = _options.PaymentMethods.FirstOrDefault(p => p.IsSelectable);
+            if (mollie is not null)
+            {
+                _paymentMethodId = mollie.Id;
+            }
         }
     }
 
