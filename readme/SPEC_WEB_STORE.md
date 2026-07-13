@@ -21,7 +21,7 @@
 | Aspect | Status | Details |
 |--------|--------|---------|
 | **Catalog UX** | ✅ Blazor + mock | `Catalog.razor` via `IStoreCatalogPort` |
-| **Stock hints** | 🟡 Partial | From DB when seeded; mock threshold in prototype |
+| **Stock hints** | 🟡 Partial | From DB; threshold rules in catalog service |
 | **Checkout** | 🟡 UI only | `Cart.razor` — in-memory cart, no order persist |
 | **Identity login** | 🟡 Partial | `/store/sign-in`; full Customer role binding ⏳ |
 | **Order creation** | ⏳ Planned | `Order` + `OrderLine` + stock service |
@@ -140,7 +140,7 @@ sequenceDiagram
 | 3 | On success: session cookie; load `CustomerId` for pricing and addresses |
 | 4 | On failure: generic error (no user enumeration) |
 
-**Store login (legacy):** `Customers.WebshopLogin` + `PasswordWebshop` / `SaltWebshop`. Demo seed: `customer@webshop.com` / `demo`. On Azure with ERP data, use real customer credentials from the database.
+**Store login (legacy):** `Customers.WebshopLogin` + `PasswordWebshop` / `SaltWebshop`. Credentials come from the connected `abmatic_test` database.
 
 ### 2.3 Logout
 

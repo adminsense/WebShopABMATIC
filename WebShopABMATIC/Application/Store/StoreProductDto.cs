@@ -16,6 +16,7 @@ public sealed class StoreProductDto
     public int? CategoryId { get; init; }
     public int? CategoryRootId { get; init; }
     public string CategoryName { get; init; } = string.Empty;
+    public bool HasOptions { get; init; }
     public string ReferenceCode { get; init; } = string.Empty;
     public string Tag => string.IsNullOrWhiteSpace(ReferenceCode) ? CategoryName : ReferenceCode;
 }

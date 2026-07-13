@@ -20,11 +20,15 @@
 
     private bool NeedsLogin => !Product.HasPrice && !IsOutOfStock;
 
+    private bool NeedsOptions => Product.HasOptions && !NeedsLogin && !IsOutOfStock;
+
     private string Title => IsOutOfStock
         ? "Unavailable"
         : NeedsLogin
             ? "Sign in to see price"
-            : "Add to cart";
+            : NeedsOptions
+                ? "Choose options"
+                : "Add to cart";
 
     private string AriaLabel => IsOutOfStock
         ? $"Cannot add {Product.Name} to cart"
@@ -42,6 +46,12 @@
         if (NeedsLogin)
         {
             Navigation.NavigateTo("/sign-in?returnUrl=/");
+            return;
+        }
+
+        if (NeedsOptions)
+        {
+            Navigation.NavigateTo($"/product/{Product.Id}");
             return;
         }
 
