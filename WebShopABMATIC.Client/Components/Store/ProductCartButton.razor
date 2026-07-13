@@ -1,6 +1,10 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Web.Services
 @inject StoreCartService Cart
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
 
 <button type="button"
         class="@CssClass"
@@ -18,13 +22,13 @@
 
     private bool IsOutOfStock => Product.IsOutOfStock;
 
-    private bool NeedsLogin => !Product.HasPrice && !IsOutOfStock;
+    private bool NeedsPriceLogin => !Product.HasPrice && !IsOutOfStock;
 
-    private bool NeedsOptions => Product.HasOptions && !NeedsLogin && !IsOutOfStock;
+    private bool NeedsOptions => Product.HasOptions && !NeedsPriceLogin && !IsOutOfStock;
 
     private string Title => IsOutOfStock
         ? "Unavailable"
-        : NeedsLogin
+        : NeedsPriceLogin
             ? "Sign in to see price"
             : NeedsOptions
                 ? "Choose options"
@@ -32,9 +36,11 @@
 
     private string AriaLabel => IsOutOfStock
         ? $"Cannot add {Product.Name} to cart"
-        : NeedsLogin
+        : NeedsPriceLogin
             ? $"Sign in to add {Product.Name} to cart"
-            : $"Add {Product.Name} to cart";
+            : NeedsOptions
+                ? $"Choose options for {Product.Name}"
+                : $"Add {Product.Name} to cart";
 
     private async Task OnClickAsync()
     {
@@ -43,9 +49,17 @@
             return;
         }
 
-        if (NeedsLogin)
+        var returnUrl = NeedsOptions ? $"/product/{Product.Id}" : "/cart";
+
+        if (NeedsPriceLogin)
         {
-            Navigation.NavigateTo("/sign-in?returnUrl=/");
+            Navigation.NavigateTo($"/sign-in?returnUrl={Uri.EscapeDataString(returnUrl)}", forceLoad: true);
+            return;
+        }
+
+        if (!await EnsureCustomerCartAsync())
+        {
+            Navigation.NavigateTo($"/sign-in?returnUrl={Uri.EscapeDataString(returnUrl)}", forceLoad: true);
             return;
         }
 
@@ -57,5 +71,22 @@
 
         await Cart.AddProductAsync(Product.Id);
         Navigation.NavigateTo("/cart");
+    }
+
+    private async Task<bool> EnsureCustomerCartAsync()
+    {
+        if (Cart.IsCustomerCart)
+        {
+            return true;
+        }
+
+        var auth = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (!int.TryParse(auth.User.FindFirstValue(LegacyAuthClaims.CustomerId), out var customerId) || customerId <= 0)
+        {
+            return false;
+        }
+
+        await Cart.BindToCustomerAsync(customerId);
+        return Cart.IsCustomerCart;
     }
 }
