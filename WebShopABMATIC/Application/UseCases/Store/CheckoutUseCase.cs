@@ -138,18 +138,40 @@ public sealed class CheckoutUseCase : ICheckoutPort
             return new CheckoutResult { Success = false, Errors = ["Checkout options unavailable."] };
         }
 
-        if (!options.DeliveryAddresses.Any(a => a.Id == request.DeliveryAddressId))
+        var deliveryAddressId = request.DeliveryAddressId;
+        if (!options.DeliveryAddresses.Any(a => a.Id == deliveryAddressId))
         {
-            return new CheckoutResult { Success = false, Errors = ["Invalid delivery address."] };
+            // Blazor <select> can leave Id=0 when the user never changed the dropdown.
+            if (deliveryAddressId <= 0 && options.DeliveryAddresses.Count > 0)
+            {
+                deliveryAddressId = options.DeliveryAddresses[0].Id;
+            }
+            else
+            {
+                return new CheckoutResult { Success = false, Errors = ["Invalid delivery address."] };
+            }
         }
 
-        var paymentMethod = options.PaymentMethods.FirstOrDefault(p => p.Id == request.PaymentMethodId);
+        var paymentMethodId = request.PaymentMethodId;
+        var paymentMethod = options.PaymentMethods.FirstOrDefault(p => p.Id == paymentMethodId && p.IsSelectable);
         if (paymentMethod is null)
         {
-            return new CheckoutResult { Success = false, Errors = ["Invalid payment method."] };
+            paymentMethod = options.PaymentMethods.FirstOrDefault(p => p.IsSelectable);
+            if (paymentMethod is null)
+            {
+                return new CheckoutResult
+                {
+                    Success = false,
+                    Errors = ["Online payment (Mollie) is not configured. Ask an administrator to enable a PrePay / Bancontact method."]
+                };
+            }
+
+            paymentMethodId = paymentMethod.Id;
         }
 
-        var lineCreates = quote.Lines.Select(l => new StoreOrderLineCreate
+        // Quote lines are produced 1:1 (and in order) from request.Lines whenever there
+        // are no errors, so we can align them by index to recover the selected options.
+        var lineCreates = quote.Lines.Select((l, index) => new StoreOrderLineCreate
         {
             ProductId = l.ProductId,
             ProductName = l.Name,
@@ -157,7 +179,8 @@ public sealed class CheckoutUseCase : ICheckoutPort
             UnitPrice = l.UnitPrice,
             LineTotalExclVat = l.LineTotal,
             VatAmount = Math.Round(l.LineTotal * VatPercentage / 100m, 2),
-            LineTotalInclVat = l.LineTotal + Math.Round(l.LineTotal * VatPercentage / 100m, 2)
+            LineTotalInclVat = l.LineTotal + Math.Round(l.LineTotal * VatPercentage / 100m, 2),
+            Options = MapLineOptions(request.Lines, index, l.ProductId)
         }).ToList();
 
         var currentUser = await _currentUser.GetCurrentUserAsync(cancellationToken);
@@ -170,8 +193,8 @@ public sealed class CheckoutUseCase : ICheckoutPort
             CustomerTypeId = ctx.CustomerTypeId,
             DeliveryTypeId = ctx.DeliveryTypeId,
             BetaaltermijnId = ctx.BetaaltermijnId,
-            DeliveryAddressId = request.DeliveryAddressId,
-            PaymentMethodId = request.PaymentMethodId,
+            DeliveryAddressId = deliveryAddressId,
+            PaymentMethodId = paymentMethodId,
             CreatedByUserId = createdByUserId,
             IsPrePay = paymentMethod.IsPrePay,
             DeliveryFee = quote.DeliveryFee,
@@ -181,7 +204,19 @@ public sealed class CheckoutUseCase : ICheckoutPort
 
         if (paymentMethod.IsPrePay)
         {
-            var prePayCreated = await _orders.CreateWebshopOrderAsync(orderCommand, cancellationToken);
+            StoreOrderCreated prePayCreated;
+            try
+            {
+                prePayCreated = await _orders.CreateWebshopOrderAsync(orderCommand, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                return new CheckoutResult
+                {
+                    Success = false,
+                    Errors = [$"Could not create order: {ex.GetBaseException().Message}"]
+                };
+            }
 
             var reserveResult = await _stock.ApplyReservationFromOrderAsync(prePayCreated.OrderId, cancellationToken);
             if (!reserveResult.IsSuccess)
@@ -248,7 +283,19 @@ public sealed class CheckoutUseCase : ICheckoutPort
             }
         }
 
-        var postPayCreated = await _orders.CreateWebshopOrderAsync(orderCommand, cancellationToken);
+        StoreOrderCreated postPayCreated;
+        try
+        {
+            postPayCreated = await _orders.CreateWebshopOrderAsync(orderCommand, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            return new CheckoutResult
+            {
+                Success = false,
+                Errors = [$"Could not create order: {ex.GetBaseException().Message}"]
+            };
+        }
 
         await LogCheckoutStartedAsync(postPayCreated.OrderId, postPayCreated.OrderNumber, postPayCreated.TotalInclVat, isPrePay: false, ctx.CustomerId, cancellationToken);
 
@@ -309,6 +356,33 @@ public sealed class CheckoutUseCase : ICheckoutPort
         (status.Equals("expired", StringComparison.OrdinalIgnoreCase) ||
          status.Equals("canceled", StringComparison.OrdinalIgnoreCase) ||
          status.Equals("failed", StringComparison.OrdinalIgnoreCase));
+
+    private static IReadOnlyList<StoreOrderLineOptionCreate> MapLineOptions(
+        IReadOnlyList<CheckoutLineRequest> requestLines,
+        int index,
+        int productId)
+    {
+        // Prefer positional alignment (quote lines mirror request lines 1:1 when valid);
+        // fall back to the first request line for this product if indexes ever drift.
+        var source = index >= 0 && index < requestLines.Count && requestLines[index].ProductId == productId
+            ? requestLines[index]
+            : requestLines.FirstOrDefault(l => l.ProductId == productId);
+
+        if (source is null || source.Options.Count == 0)
+        {
+            return [];
+        }
+
+        return source.Options
+            .Select(o => new StoreOrderLineOptionCreate
+            {
+                ProductOptionId = o.ProductOptionId,
+                ProductOptionValueId = o.ProductOptionValueId,
+                OptionName = o.OptionName,
+                ValueText = o.ValueText
+            })
+            .ToList();
+    }
 
     private static CheckoutQuoteDto EmptyQuote(IReadOnlyList<string> errors) =>
         new() { Errors = errors };

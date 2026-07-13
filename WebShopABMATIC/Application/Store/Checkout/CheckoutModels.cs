@@ -21,6 +21,8 @@ public sealed class CheckoutPaymentMethodDto
     public string Name { get; init; } = "";
     public bool IsPrePay { get; init; }
     public bool IsPostPay { get; init; }
+    /// <summary>Selectable for webshop checkout (Mollie / online PrePay). Others shown disabled.</summary>
+    public bool IsSelectable { get; init; }
 }
 
 public sealed class CheckoutLineRequest

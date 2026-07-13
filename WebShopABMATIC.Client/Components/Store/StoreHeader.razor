@@ -2,10 +2,10 @@
 @using WebShopABMATIC.Application.Ports
 @using WebShopABMATIC.Application.Store
 @using WebShopABMATIC.Web.Services
+@using Microsoft.JSInterop
 @inject NavigationManager Navigation
 @inject StoreCartService Cart
 @inject AuthenticationStateProvider AuthStateProvider
-@inject IHttpContextAccessor HttpContextAccessor
 @inject IJSRuntime Js
 @inject IStoreCatalogPort CatalogPort
 
@@ -81,6 +81,8 @@
                   OnClose="CloseSearchModal"
                   OnSelect="GoToProductFromSearchAsync" />
 
+@implements IDisposable
+
 @code {
     [Parameter] public bool ShowSidebar { get; set; } = true;
 
@@ -92,12 +94,81 @@
     private bool _isAuthenticated;
     private bool _isCustomer;
     private string _displayName = "";
+    private bool _idleMonitorStarted;
 
     protected override async Task OnInitializedAsync()
     {
-        Cart.Changed += () => InvokeAsync(StateHasChanged);
+        Cart.Changed += OnCartChanged;
         ReadSearchFromUri();
         await LoadUserAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Bind + load after browser storage is available (login/full reload).
+            await LoadUserAsync();
+            await InvokeAsync(StateHasChanged);
+        }
+
+        await SyncSessionTimeoutAsync();
+    }
+
+    private void OnCartChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        Cart.Changed -= OnCartChanged;
+        _ = StopSessionTimeoutAsync();
+    }
+
+    private async Task SyncSessionTimeoutAsync()
+    {
+        try
+        {
+            if (_isAuthenticated && _isCustomer)
+            {
+                if (_idleMonitorStarted)
+                {
+                    return;
+                }
+
+                await Js.InvokeVoidAsync(
+                    "storeSessionTimeout.start",
+                    (int)Infrastructure.Auth.LegacyCookieAuthentication.SessionIdleTimeout.TotalMinutes);
+                _idleMonitorStarted = true;
+            }
+            else if (_idleMonitorStarted)
+            {
+                await Js.InvokeVoidAsync("storeSessionTimeout.stop");
+                _idleMonitorStarted = false;
+            }
+        }
+        catch (JSException)
+        {
+            // Script may not be ready on first static paint.
+        }
+        catch (InvalidOperationException)
+        {
+            // JS interop unavailable during static rendering.
+        }
+    }
+
+    private async Task StopSessionTimeoutAsync()
+    {
+        try
+        {
+            if (_idleMonitorStarted)
+            {
+                await Js.InvokeVoidAsync("storeSessionTimeout.stop");
+                _idleMonitorStarted = false;
+            }
+        }
+        catch
+        {
+            // Ignore dispose-time failures.
+        }
     }
 
     protected override async Task OnParametersSetAsync()
@@ -123,6 +194,16 @@
         _isAuthenticated = user.Identity?.IsAuthenticated == true;
         _isCustomer = user.IsInRole(AppRoles.Customer);
 
+        int? customerId = null;
+        if (_isAuthenticated && _isCustomer
+            && int.TryParse(user.FindFirst(LegacyAuthClaims.CustomerId)?.Value, out var id)
+            && id > 0)
+        {
+            customerId = id;
+        }
+
+        await Cart.BindToCustomerAsync(customerId);
+
         if (_isAuthenticated)
         {
             _displayName = user.FindFirst(LegacyAuthClaims.DisplayName)?.Value
@@ -136,13 +217,35 @@
 
     private async Task SignOutAsync()
     {
-        var httpContext = HttpContextAccessor.HttpContext;
-        if (httpContext is not null)
+        try
         {
-            await Infrastructure.Auth.LegacyCookieAuthentication.SignOutAsync(httpContext);
+            await StopSessionTimeoutAsync();
+        }
+        catch
+        {
+            // Ignore — circuit is about to unload.
         }
 
-        Navigation.NavigateTo("/", forceLoad: true);
+        try
+        {
+            await Js.InvokeVoidAsync("storeBrowserSession.stop");
+        }
+        catch
+        {
+            // Ignore — logout navigation is authoritative.
+        }
+
+        try
+        {
+            await Cart.BindToCustomerAsync(null);
+        }
+        catch
+        {
+            // Ignore — logout navigation is authoritative.
+        }
+
+        // Full page load so the cookie is cleared before any response body starts.
+        Navigation.NavigateTo("/account/logout?returnUrl=/", forceLoad: true);
     }
 
     private async Task GoBackAsync()

@@ -32,7 +32,7 @@ else
         <NavLink href="/" class="back-link">← Back to catalog</NavLink>
         <div class="detail-layout">
             <div class="detail-gallery">
-                <img src="@_product.ImageUrl" alt="@_product.Name" />
+                <StoreProductImage Src="@_product.ImageUrl" Alt="@_product.Name" Loading="eager" />
             </div>
             <div class="detail-info">
                 <p class="detail-meta">@_product.Tag · @StockStatusLabel(_product)</p>
