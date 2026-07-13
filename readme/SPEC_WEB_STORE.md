@@ -1,30 +1,27 @@
 # Web Store — Functional Specification
 
-![Status](https://img.shields.io/badge/Status-Blazor%20partial%20build-ffc107?style=flat-square) ![Products](https://img.shields.io/badge/Catalog%20mock-6%20SKUs-0d47a1?style=flat-square) ![Auth](https://img.shields.io/badge/Login-Customer.WebshopLogin-512BD4?style=flat-square) ![Theme](https://img.shields.io/badge/Theme-Light%20blue-0dcaf0?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Blazor%20storefront%20live-28a745?style=flat-square) ![Auth](https://img.shields.io/badge/Login-Legacy%20WebshopLogin-512BD4?style=flat-square) ![Orders](https://img.shields.io/badge/My%20orders-%2Forders-0dcaf0?style=flat-square)
 
 > [!IMPORTANT]
-> **Executive Summary:** The WebShopABMATIC **Web Store** is the B2B customer-facing storefront for browsing products, managing the cart, and placing orders. The current **HTML prototype** (`docs/mock-loja.html`) demonstrates UX, catalog filtering, stock hints, and account flows. Production delivery will be a Blazor Server or WebAssembly app sharing the same domain entities and stock rules as the admin panel.
+> **Executive Summary:** B2B storefront for catalog, cart, checkout (Mollie mock PrePay), and **customer account area** (profile + **order history**). Customer never uses `/admin` for their own purchases — that is staff-only ([SPEC_ADMIN.md](./SPEC_ADMIN.md)).
 
 ### Coverage statistics
 
 | Category | Count | Status | Notes |
 |----------|-------|--------|-------|
-| **Prototype SKUs** | 6 | ✅ Documented | `product1.png` … `product6.png` |
-| **Store screens** | 7 | ✅ Documented | Catalog, detail, cart, checkout, account |
-| **Auth flows** | 2 | ✅ Documented | Customer login; staff link to admin |
-| **Stock rules** | 5 | ✅ Documented | Display, cart block, reservation |
-| **Blazor storefront** | 5 pages | 🟡 Partial | Catalog, detail, cart, orders, sign-in |
-
+| **Auth flows** | 2 | ✅ | Customer `/sign-in`; staff `/admin/login` (separate ERP tables) |
+| **Account area** | 3 | ✅ | `/my-account`, `/orders`, `/orders/{id}` |
+| **Checkout** | PrePay | ✅ | Cart → Mollie mock → payment-return → confirmation |
 
 ### Implementation quality
 
 | Aspect | Status | Details |
 |--------|--------|---------|
-| **Catalog UX** | ✅ Blazor + mock | `Catalog.razor` via `IStoreCatalogPort` |
-| **Stock hints** | 🟡 Partial | From DB; threshold rules in catalog service |
-| **Checkout** | 🟡 UI only | `Cart.razor` — in-memory cart, no order persist |
-| **Identity login** | 🟡 Partial | `/store/sign-in`; full Customer role binding ⏳ |
-| **Order creation** | ⏳ Planned | `Order` + `OrderLine` + stock service |
+| **Catalog UX** | ✅ | `IStoreCatalogPort` — lazy products per category; icons on demand |
+| **Checkout** | ✅ | `CheckoutUseCase` + Mollie mock; stock on pay |
+| **Customer login** | ✅ | Legacy `WebshopLogin` + hash/salt → role `Customer` |
+| **Order history** | ✅ | Header **My orders** → `/orders`; detail `/orders/{id}` |
+| **Staff entry** | ✅ | Header **Admin** → `/admin/login` (`StaffUsers`) |
 
 ---
 
@@ -32,21 +29,21 @@
 
 | Artifact | Path | Role |
 |----------|------|------|
-| **HTML prototype** | `docs/mock-loja.html` | Runnable UX reference (entry point for mocks) |
-| **Product images** | `docs/images/product1.png` … `product6.png` | Catalog and detail imagery |
-| **Admin data** | `Product`, `Customer`, `Order`, … | Maintained via admin use cases + repositories |
-| **Admin spec** | `readme/SPEC_ADMIN.md` | Registrations that feed the store |
+| **Store UI** | `WebShopABMATIC.Client/Components/Pages/Store/` | Blazor storefront |
+| **Admin data** | ERP tables via repositories | Maintained in admin panel |
+| **Admin spec** | [SPEC_ADMIN.md](./SPEC_ADMIN.md) | Staff panel + auth §2 |
 
 ### Implementation status
 
-| Area | Blazor (`Web/Components/Pages/Store/`) | Backend |
-|------|----------------------------------------|---------|
-| **Catalog browse** | ✅ `Catalog.razor` | `IStoreCatalogPort` → `StoreCatalogService` |
-| **Product detail** | ✅ `ProductDetail.razor` | Same port; static images Phase 1 |
-| **Cart** | 🟡 `Cart.razor` | `StoreCartService` (scoped, in-memory) |
-| **Orders list** | 🟡 `Orders.razor` | ⏳ `IOrderService` not implemented |
-| **Customer sign-in** | 🟡 `SignIn.razor` | ⏳ Identity Customer role |
-| **Admin entry** | ✅ Header link when staff signed in | Shared Identity cookie |
+| Area | Blazor | Backend |
+|------|--------|---------|
+| **Catalog browse** | ✅ `Catalog.razor` | `StoreCatalogService` |
+| **Product detail** | ✅ `ProductDetail.razor` | Same port |
+| **Cart / checkout** | ✅ `Cart.razor` | `StoreCartService` + `ICheckoutPort` |
+| **Orders list** | ✅ `Orders.razor` | `ICheckoutPort.GetCustomerOrdersAsync` |
+| **Order detail / confirmation** | ✅ | `GetOrderSummaryAsync` |
+| **Customer sign-in** | ✅ `SignIn.razor` | `POST /account/store-login` |
+| **Admin entry** | ✅ Header **Admin** | `POST /account/admin-login` |
 
 ### Backend architecture (hexagonal)
 
@@ -109,13 +106,12 @@ docs/mock-loja.html
 
 | Concept | Entity / field | Description |
 |---------|----------------|-------------|
-| **Store login** | `Customer.WebshopLogin` | Unique username (often email) for the shop |
-| **Password** | `Customer` password hash + salt | Legacy fields; production maps to ASP.NET Identity **Customer** role |
-| **Account link** | `Customer` ↔ Identity user | One login per B2B customer company |
-| **Role** | `AppRoles.Customer` | Policy `CustomerOnly` for storefront routes |
+| **Store login** | `Customer.WebshopLogin` / email | Shop username |
+| **Password** | `PasswordWebshop` + `SaltWebshop` | Legacy hash (not AspNetUsers at runtime) |
+| **Role** | `AppRoles.Customer` | Policy `CustomerOnly` for store routes |
 
 > [!NOTE]
-> Customers do **not** self-register in the target B2B model unless explicitly enabled. Typically an **admin** creates the `Customer` record and webshop credentials in the admin panel.
+> Customers typically get credentials from admin (`WebshopLogin`). Self-register exists at `/sign-up` when enabled.
 
 ### 2.2 Login flow
 
@@ -123,34 +119,34 @@ docs/mock-loja.html
 sequenceDiagram
   participant C as Customer
   participant S as Web Store
-  participant I as Identity
-  participant DB as Customer table
+  participant L as LegacySignInService
+  participant DB as Customers table
 
   C->>S: Enter WebshopLogin + password
-  S->>I: Authenticate
-  I->>DB: Resolve Customer by login
-  I-->>S: Cookie + Customer role
-  S-->>C: Catalog with customer prices/discounts
+  S->>L: POST /account/store-login
+  L->>DB: Resolve Customer + verify hash
+  L-->>S: Cookie + Customer role + CustomerId
+  S-->>C: Store with My orders / My account
 ```
 
 | Step | Behaviour |
 |------|-----------|
-| 1 | Customer opens **Sign in** |
-| 2 | Enters `WebshopLogin` and password |
-| 3 | On success: session cookie; load `CustomerId` for pricing and addresses |
-| 4 | On failure: generic error (no user enumeration) |
+| 1 | Customer opens **Login** → `/sign-in` |
+| 2 | Enters webshop login + password |
+| 3 | Cookie session; `CustomerId` for pricing, addresses, orders |
+| 4 | Header shows **My orders** + account name |
 
-**Store login (legacy):** `Customers.WebshopLogin` + `PasswordWebshop` / `SaltWebshop`. Credentials come from the connected `abmatic_test` database.
+**Runtime:** `Customers.WebshopLogin` + hash/salt on `abmatic_test`.
 
 ### 2.3 Logout
 
-- Clears session; cart may be persisted in cookie/local storage (implementation choice).
-- Guest browsing remains allowed for catalog; checkout requires login.
+- Header **Sign out** → `/account/logout`. Guest may browse catalog; checkout needs login.
 
 ### 2.4 Staff access from store
 
-- Footer / utility link: **Admin panel** → staff use **separate** credentials (`admin@…`, `manager@…`).
-- Customers must not access `/admin/*` routes (authorization policy).
+- Header **Admin** → `/admin/login` with **StaffUsers** credentials (separate from customer).
+- Customers must not access `/admin/*` (`AdminOrManager` policy).
+- **Customer order history is never in admin for that buyer’s self-service** — use store **My orders**.
 
 ---
 
@@ -231,14 +227,18 @@ The store does not own master data; it **reads** configurations maintained in th
 | **Review** | Lines, discounts, VAT, total |
 | **Submit** | Create `Order`, `OrderLine`; trigger stock reservation per `OrderStatus` |
 
-### 4.5 Account area (logged-in)
+### 4.5 Account area (logged-in customer)
 
-| Screen | Content |
-|--------|---------|
-| **Profile** | Company name, email, `WebshopLogin` (read-only) |
-| **Orders** | List of customer `Order` with status |
-| **Addresses** | CRUD on allowed `CustomerDeliveryAddress` |
-| **Change password** | Identity password change |
+| Screen | Route | Content |
+|--------|-------|---------|
+| **My orders** | `/orders` | List of this customer’s orders + payment status |
+| **Order detail** | `/orders/{id}` | Lines, totals, Mollie id when PrePay |
+| **Order confirmation** | `/orders/{id}/confirmation` | After successful pay; links back to My orders |
+| **My account** | `/my-account` | Profile + link to My orders; password change |
+| **Nav** | `StoreHeader` | **My orders** + account name when role `Customer` |
+
+> [!IMPORTANT]
+> After checkout, the customer stays in the **store** account area. Staff use `/admin/orders` to see **all** customers’ orders.
 
 ---
 

@@ -1,0 +1,30 @@
+<img src="@ResolvedSrc"
+     alt="@Alt"
+     class="@CssClass"
+     loading="@Loading"
+     decoding="async"
+     @onerror="OnError" />
+
+@code {
+    public const string PlaceholderUrl = "/images/product-placeholder.png";
+
+    [Parameter] public string? Src { get; set; }
+    [Parameter] public string Alt { get; set; } = "";
+    [Parameter] public string? CssClass { get; set; }
+    [Parameter] public string Loading { get; set; } = "lazy";
+
+    private bool _failed;
+
+    private string ResolvedSrc =>
+        _failed || string.IsNullOrWhiteSpace(Src) ? PlaceholderUrl : Src!;
+
+    protected override void OnParametersSet() => _failed = false;
+
+    private void OnError()
+    {
+        if (!_failed)
+        {
+            _failed = true;
+        }
+    }
+}
