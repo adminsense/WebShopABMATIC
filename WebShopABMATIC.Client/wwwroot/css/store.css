@@ -548,6 +548,7 @@
       line-height: 1.25;
       text-align: center;
     }
+    .store-product-card-price--muted,
     .store-product-card-price--login {
       color: var(--accent);
     }
