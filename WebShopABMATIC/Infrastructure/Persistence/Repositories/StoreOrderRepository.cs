@@ -358,21 +358,35 @@ public sealed class StoreOrderRepository : IStoreOrderRepository
             return null;
         }
 
-        var lines = await (
+        // Do not coalesce NameEn / DocumentDisplayName in SQL — different collations
+        // (Latin1_General_CI_AS vs SQL_Latin1_General_CP1_CI_AS) blow up the CASE.
+        var lineRows = await (
             from l in _db.OrderLines.AsNoTracking()
             join prod in _db.Products.AsNoTracking() on l.ProductId equals prod.ProductId into prodJoin
             from prod in prodJoin.DefaultIfEmpty()
             where l.OrderId == orderId && l.ProductId != null
             orderby l.SortOrder
-            select new CheckoutLineQuoteDto
+            select new
             {
                 ProductId = l.ProductId!.Value,
-                Name = prod != null ? prod.NameEn : l.DocumentDisplayName,
-                UnitPrice = l.UnitPrice,
+                ProductName = prod.NameEn,
+                LineName = l.DocumentDisplayName,
+                l.UnitPrice,
                 Quantity = (int)l.Quantity,
-                LineTotal = l.TotalExclVat,
-                AvailableStock = 0
+                LineTotal = l.TotalExclVat
             }).ToListAsync(cancellationToken);
+
+        var lines = lineRows
+            .Select(l => new CheckoutLineQuoteDto
+            {
+                ProductId = l.ProductId,
+                Name = !string.IsNullOrWhiteSpace(l.ProductName) ? l.ProductName! : (l.LineName ?? $"Product #{l.ProductId}"),
+                UnitPrice = l.UnitPrice,
+                Quantity = l.Quantity,
+                LineTotal = l.LineTotal,
+                AvailableStock = 0
+            })
+            .ToList();
 
         var advance = await _db.OrderAdvancePayments.AsNoTracking()
             .Where(a => a.OrderId == orderId)
@@ -643,7 +657,8 @@ public sealed class StoreOrderRepository : IStoreOrderRepository
             select new
             {
                 l.OrderId,
-                Name = prod != null ? prod.NameEn : l.DocumentDisplayName,
+                ProductName = prod.NameEn,
+                LineName = l.DocumentDisplayName,
                 l.Quantity
             }).ToListAsync(cancellationToken);
 
@@ -651,8 +666,18 @@ public sealed class StoreOrderRepository : IStoreOrderRepository
             .GroupBy(x => x.OrderId)
             .ToDictionary(
                 g => g.Key,
-                g => string.Join(", ", g.Take(3).Select(x => $"{x.Name} ×{(int)x.Quantity}"))
-                    + (g.Count() > 3 ? $" +{g.Count() - 3} more" : ""));
+                g =>
+                {
+                    var items = g.Take(3).Select(x =>
+                    {
+                        var name = !string.IsNullOrWhiteSpace(x.ProductName)
+                            ? x.ProductName!
+                            : (x.LineName ?? "Item");
+                        return $"{name} ×{(int)x.Quantity}";
+                    });
+                    return string.Join(", ", items)
+                           + (g.Count() > 3 ? $" +{g.Count() - 3} more" : "");
+                });
 
         return orders.Select(o =>
         {

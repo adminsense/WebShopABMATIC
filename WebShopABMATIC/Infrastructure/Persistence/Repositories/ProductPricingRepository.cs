@@ -1,19 +1,28 @@
 using Microsoft.EntityFrameworkCore;
 using WebShopABMATIC.Application.Ports.Outbound;
 using WebShopABMATIC.Data.Persistence;
+using WebShopABMATIC.Infrastructure.Store;
 
 namespace WebShopABMATIC.Infrastructure.Persistence.Repositories;
 
 public sealed class ProductPricingRepository : IProductPricingPort
 {
     private readonly WebShopABMATICDbContext _db;
+    private readonly StoreDbGate _dbGate;
 
-    public ProductPricingRepository(WebShopABMATICDbContext db) => _db = db;
+    public ProductPricingRepository(WebShopABMATICDbContext db, StoreDbGate dbGate)
+    {
+        _db = db;
+        _dbGate = dbGate;
+    }
 
     public Task<decimal?> GetUnitPriceAsync(int productId, int? customerId = null, decimal quantity = 1, CancellationToken cancellationToken = default) =>
-        ResolveUnitPriceAsync(productId, customerId, cancellationToken);
+        _dbGate.RunAsync(() => ResolveUnitPriceAsync(productId, customerId, cancellationToken), cancellationToken);
 
-    public async Task<IReadOnlyDictionary<int, decimal>> GetCatalogPricesAsync(IEnumerable<int> productIds, int? customerId = null, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyDictionary<int, decimal>> GetCatalogPricesAsync(IEnumerable<int> productIds, int? customerId = null, CancellationToken cancellationToken = default) =>
+        _dbGate.RunAsync(() => GetCatalogPricesCoreAsync(productIds, customerId, cancellationToken), cancellationToken);
+
+    private async Task<IReadOnlyDictionary<int, decimal>> GetCatalogPricesCoreAsync(IEnumerable<int> productIds, int? customerId, CancellationToken cancellationToken)
     {
         var ids = productIds.Distinct().ToList();
         if (ids.Count == 0)

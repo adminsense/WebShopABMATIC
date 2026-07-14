@@ -151,12 +151,13 @@ WebShopABMATIC/                 ← repo root (solution parent)
 ### 3.1 Authentication
 
 - **Legacy ABMATIC cookie auth** (current runtime) — validates against `Settings.StaffUsers` (admin) and `Customers.Customers` (store).  
-  ✅ `LegacySignInService`, `LegacyCookieAuthentication`, HTTP login endpoints (`/account/admin-login`, `/account/store-login`)
+  ✅ `LegacySignInService`, `LegacyCookieAuthentication`, HTTP login endpoints (`/account/admin-login`, `/account/store-login`)  
+  ✅ Cookie is authoritative — **no** in-memory server browser-session gate (removed; it broke login after App Service recycle / multi-instance)
 
 - **ASP.NET Identity** — migrations and `IdentitySeed` remain in repo (`ApplicationDbContext`, `AspNetUsers`); login UI routes exist but **runtime auth uses legacy cookies** aligned with the ERP password model.  
   See [AUTH_IDENTITY_ROADMAP_open.md](./AUTH_IDENTITY_ROADMAP_open.md) for the Identity ↔ domain bridge history.
 
-- **Blazor circuits:** `LegacyAuthenticationStateProvider` bridges cookie auth into interactive Server components on Azure.
+- **Blazor circuits:** `LegacyAuthenticationStateProvider` bridges cookie auth into Interactive Server (prerender **on**). Azure App Service must have **Web sockets = On** (same as working Immo apps — see troubleshooting below).
 
 ### 3.2 Roles (minimum)
 
@@ -570,13 +571,15 @@ Publish output to App Service (Visual Studio Publish, ZIP deploy, or CI). Ensure
 |---------|-------|-----|
 | Build fails: file locked by `iisexpress.exe` or `devenv.exe` | App still running under IIS Express while rebuilding | **Stop Debugging** (Shift+F5) in Visual Studio, then **Build → Rebuild**. If needed: Task Manager → end **IIS Express** for this site |
 
-### Blazor blank `/admin` or WebSocket warnings on Azure
+### Blazor blank UI / login or cart “does nothing” on Azure
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| Console: `Failed to connect via WebSockets, using Long Polling` | WebSockets **Off** on App Service | Portal → `abmaticwebshop` → **Web sockets** → **On** → Restart |
-| `/admin` blank after login | Circuit auth / prerender | Ensure latest publish; `LegacyAuthenticationStateProvider` + HTTP login endpoints; check stdout logs |
-| 404 storm for static assets | Stale DLLs or wrong `web.config` path | Rebuild Release; fix `web.config` to published DLL; clear `Web/*.dll` from repo root |
+| Console: `Failed to connect via WebSockets` / `_blazor/negotiate` **without** `WebSockets` | WebSockets **Off** on App Service | Portal → App Service → **Configuration → General settings → Web sockets → On** → Save (restart). Reference: working Immo `bcimmoapp` negotiate lists WebSockets |
+| Login / cart clicks do nothing | Circuit never attaches (blank interactive shell) | Enable WebSockets; publish build with prerender on + cookie-only auth |
+| Login succeeds then immediately logged out | Was: in-memory session store rejecting cookie after recycle | **Fixed in code** — cookie-only auth; redeploy latest |
+| ARR stickiness | Multi-instance without affinity | Keep **ARR affinity** On (default cookie `ARRAffinity`) |
+| 404 storm for static assets | Stale DLLs or wrong `web.config` path | Rebuild Release; fix `web.config` to published DLL; clear stale published DLLs |
 
 ### Wrong port locally
 
