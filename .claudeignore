@@ -1,0 +1,11 @@
+# Reduce noise for Claude Code context
+**/bin/
+**/obj/
+**/.vs/
+**/publish/
+docs/archive/
+docs/mocks/
+docs/images/
+*.dll
+*.pdb
+*.user
