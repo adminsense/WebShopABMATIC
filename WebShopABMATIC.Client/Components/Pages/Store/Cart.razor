@@ -32,7 +32,8 @@
             <div class="cart-table">
                 @foreach (var line in CartService.Lines)
                 {
-                    <div class="cart-row" @key="line.Id">
+                    var stockIssue = GetLineStockIssue(line.ProductId, line.Quantity);
+                    <div class="cart-row @(stockIssue is not null ? "cart-row--stock-issue" : null)" @key="line.Id">
                         <StoreProductImage Src="@StoreCartService.ProductImageUrl(line.ProductId)" Alt="@line.Name" />
                         <div>
                             <h4>@line.Name</h4>
@@ -41,11 +42,21 @@
                                 <p class="cart-line-options">@line.OptionsSummary</p>
                             }
                             <p class="unit">@FormatPrice(line.UnitPrice) each</p>
+                            @if (stockIssue is not null)
+                            {
+                                <p class="cart-line-stock-issue">
+                                    <span class="cart-stock-badge">@stockIssue.Badge</span>
+                                    @stockIssue.Hint
+                                    <button type="button" class="cart-stock-remove-link" @onclick="() => RemoveLineAsync(line.Id)">Remove</button>
+                                </p>
+                            }
                         </div>
                         <div class="qty-control">
                             <button type="button" @onclick="() => ChangeQuantityAsync(line.Id, line.Quantity - 1)">−</button>
                             <span>@line.Quantity</span>
-                            <button type="button" @onclick="() => ChangeQuantityAsync(line.Id, line.Quantity + 1)">+</button>
+                            <button type="button"
+                                    disabled="@(stockIssue?.Available is int max && line.Quantity >= max)"
+                                    @onclick="() => ChangeQuantityAsync(line.Id, line.Quantity + 1)">+</button>
                         </div>
                         <span class="line-total">@FormatPrice(line.LineTotal)</span>
                         <button type="button" class="remove-btn" title="Remove" @onclick="() => RemoveLineAsync(line.Id)">×</button>
@@ -57,14 +68,14 @@
                 @if (_quote is not null)
                 {
                     <div class="summary-line"><span>Subtotal (@CartService.ItemCount items)</span><span>@FormatPrice(_quote.Subtotal)</span></div>
-                    <div class="summary-line"><span>Delivery</span><span>Standard — @FormatPrice(_quote.DeliveryFee)</span></div>
+                    <div class="summary-line"><span>Delivery</span><span>@DeliverySummaryLabel</span></div>
                     <div class="summary-line"><span>VAT 21%</span><span>@FormatPrice(_quote.VatAmount)</span></div>
                     <div class="summary-line total"><span>Total</span><span>@FormatPrice(_quote.Total)</span></div>
                 }
                 else
                 {
                     <div class="summary-line"><span>Subtotal (@CartService.ItemCount items)</span><span>@FormatPrice(CartService.Subtotal)</span></div>
-                    <div class="summary-line"><span>Delivery</span><span>Standard — @FormatPrice(CartService.DeliveryFee)</span></div>
+                    <div class="summary-line"><span>Delivery</span><span>@FormatPrice(0m)</span></div>
                     <div class="summary-line"><span>VAT 21%</span><span>@FormatPrice(CartService.VatAmount)</span></div>
                     <div class="summary-line total"><span>Total</span><span>@FormatPrice(CartService.Total)</span></div>
                 }
@@ -73,10 +84,12 @@
                 {
                     <div class="alert alert-danger mt-2 mb-0 small">@_checkoutError</div>
                 }
-                @if (_quote?.Errors.Count > 0)
+                @if (HasBlockingQuoteErrors)
                 {
-                    <div class="alert alert-warning mt-2 mb-0 small">
-                        @foreach (var err in _quote.Errors)
+                    <div class="alert alert-danger mt-2 mb-0 small cart-checkout-blocked" role="alert">
+                        <strong>Cannot place order.</strong>
+                        <span> Fix or remove lines that exceed available stock.</span>
+                        @foreach (var err in _quote!.Errors)
                         {
                             <div>@err</div>
                         }
@@ -107,6 +120,29 @@
                         }
                     </div>
                     <div class="form-group" style="margin-top:0.75rem">
+                        <label for="cart-freight-option">Delivery / freight</label>
+                        @if (!string.IsNullOrWhiteSpace(_options.DeliveryTypeName))
+                        {
+                            <p class="store-field-hint mb-1">Account type: <strong>@_options.DeliveryTypeName</strong></p>
+                        }
+                        <div class="store-select-wrap">
+                            <select id="cart-freight-option"
+                                    class="form-control store-select"
+                                    value="@(_deliveryProductId?.ToString() ?? "0")"
+                                    @onchange="OnFreightChangedAsync">
+                                <option value="0">No delivery charge (€0.00)</option>
+                                @foreach (var freight in _options.FreightOptions)
+                                {
+                                    <option value="@freight.ProductId">@freight.Name — @FormatPrice(freight.UnitPrice)</option>
+                                }
+                            </select>
+                        </div>
+                        @if (_options.FreightOptions.Count == 0)
+                        {
+                            <p class="store-field-hint">No freight products linked for this delivery type in ERP — fee stays €0 until admin maps prices.</p>
+                        }
+                    </div>
+                    <div class="form-group" style="margin-top:0.75rem">
                         <label for="cart-payment-method">Payment method</label>
                         <div class="store-select-wrap">
                             <select id="cart-payment-method"
@@ -129,8 +165,11 @@
                     <p class="store-field-hint mt-2">Loading checkout options…</p>
                 }
 
-                <button type="button" class="btn btn-primary" disabled="@(_placing || _quote?.Errors.Count > 0)" @onclick="PlaceOrderAsync">
-                    @(_placing ? "Processing…" : "Place order & pay")
+                <button type="button"
+                        class="btn btn-primary @(HasBlockingQuoteErrors ? "btn-checkout-blocked" : null)"
+                        disabled="@(_placing || HasBlockingQuoteErrors)"
+                        @onclick="PlaceOrderAsync">
+                    @CheckoutButtonLabel
                 </button>
             </aside>
         </div>
@@ -142,10 +181,36 @@
     private CheckoutQuoteDto? _quote;
     private int _deliveryAddressId;
     private int _paymentMethodId = 1;
+    private int? _deliveryProductId;
     private string? _checkoutError;
     private bool _placing;
     private string? _userEmail;
     private int? _customerId;
+
+    private bool HasBlockingQuoteErrors => _quote?.Errors.Count > 0;
+
+    private string DeliverySummaryLabel
+    {
+        get
+        {
+            if (_quote is null)
+            {
+                return FormatPrice(0m);
+            }
+
+            var label = string.IsNullOrWhiteSpace(_quote.DeliveryLabel) ? "Delivery" : _quote.DeliveryLabel;
+            return $"{Truncate(label, 42)} — {FormatPrice(_quote.DeliveryFee)}";
+        }
+    }
+
+    private string CheckoutButtonLabel =>
+        _placing
+            ? "Processing…"
+            : HasBlockingQuoteErrors
+                ? "Cannot place order — fix stock"
+                : "Place order & pay";
+
+    private sealed record LineStockIssue(string Badge, string Hint, int Available);
 
     protected override void OnInitialized() => CartService.Changed += OnCartChanged;
 
@@ -229,6 +294,7 @@
         _quote = await CheckoutPort.BuildQuoteAsync(new CheckoutQuoteRequest
         {
             UserEmail = _userEmail ?? "",
+            DeliveryProductId = _deliveryProductId,
             Lines = CartService.Lines.Select(l => new CheckoutLineRequest
             {
                 ProductId = l.ProductId,
@@ -256,6 +322,13 @@
         _placing = true;
         try
         {
+            await RefreshQuoteAsync();
+            if (HasBlockingQuoteErrors)
+            {
+                _checkoutError = null;
+                return;
+            }
+
             EnsureCheckoutSelections();
             if (_options is null)
             {
@@ -294,6 +367,7 @@
                 }).ToList(),
                 DeliveryAddressId = _deliveryAddressId,
                 PaymentMethodId = _paymentMethodId,
+                DeliveryProductId = _deliveryProductId,
                 RedirectBaseUrl = baseUrl,
                 WebhookBaseUrl = baseUrl
             }, UserLookup());
@@ -301,6 +375,7 @@
             if (!result.Success)
             {
                 _checkoutError = string.Join(" ", result.Errors);
+                await RefreshQuoteAsync();
                 return;
             }
 
@@ -322,6 +397,7 @@
         catch (Exception ex)
         {
             _checkoutError = $"Checkout failed: {ex.GetBaseException().Message}";
+            await RefreshQuoteAsync();
         }
         finally
         {
@@ -335,6 +411,20 @@
         {
             _deliveryAddressId = id;
         }
+    }
+
+    private async Task OnFreightChangedAsync(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var id) && id > 0)
+        {
+            _deliveryProductId = id;
+        }
+        else
+        {
+            _deliveryProductId = null;
+        }
+
+        await RefreshQuoteAsync();
     }
 
     private void OnPaymentMethodChanged(ChangeEventArgs e)
@@ -392,6 +482,36 @@
 
     private Task RemoveLineAsync(string lineId) =>
         CartService.RemoveAsync(lineId);
+
+    private LineStockIssue? GetLineStockIssue(int productId, int quantity)
+    {
+        var quoteLine = _quote?.Lines.FirstOrDefault(l => l.ProductId == productId);
+        if (quoteLine is null)
+        {
+            return null;
+        }
+
+        if (quantity <= quoteLine.AvailableStock)
+        {
+            return null;
+        }
+
+        if (quoteLine.AvailableStock <= 0)
+        {
+            return new LineStockIssue(
+                StorePriceFormatter.OutOfStockLabel,
+                "Another order may have taken the last units. Remove this line to continue.",
+                0);
+        }
+
+        return new LineStockIssue(
+            $"Only {quoteLine.AvailableStock} left",
+            $"Reduce quantity to {quoteLine.AvailableStock} or remove this line.",
+            quoteLine.AvailableStock);
+    }
+
+    private static string Truncate(string value, int max) =>
+        value.Length <= max ? value : value[..(max - 1)] + "…";
 
     private static string FormatPrice(decimal price) => $"€{price:F2}";
 }

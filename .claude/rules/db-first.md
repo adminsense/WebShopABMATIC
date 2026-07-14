@@ -1,0 +1,11 @@
+# Database first (global)
+
+Live Azure SQL **`abmatic_test`** is the source of truth for **every** feature (store, admin, frete, Mollie, stock, docs).
+
+**Never invent** columns, tables, EF migrations, `Migrate()` / `EnsureCreated()`, or schema scripts for the ERP — in code or documentation.
+
+- Map English C# → existing Dutch names (`WebShopABMATICModelBuilder` / `docs/DATA_DUTCH_ENGLISH_MODEL.md`).
+- Encode new behaviour in **existing** columns when possible.
+- Real schema change = explicit DBA/ERP work on the database — **not** from this app.
+
+Canonical text: `AGENTS.md`, `docs/SPEC_INFRASTRUCTURE.md` §4. Mirror: `.cursor/rules/db-first.mdc`.

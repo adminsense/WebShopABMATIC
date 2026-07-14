@@ -9,7 +9,6 @@ namespace WebShopABMATIC.Application.UseCases.Store;
 
 public sealed class CheckoutUseCase : ICheckoutPort
 {
-    private const decimal DeliveryFee = 9.00m;
     private const decimal VatPercentage = 21m;
 
     private readonly IStoreCustomerRepository _customers;
@@ -70,6 +69,8 @@ public sealed class CheckoutUseCase : ICheckoutPort
         var prices = await _pricing.GetCatalogPricesAsync(productIds, ctx.CustomerId, cancellationToken);
         var stock = await _orders.GetAvailableStockAsync(productIds, cancellationToken);
         var names = await _orders.GetProductNamesAsync(productIds, cancellationToken);
+        var options = await _orders.GetCheckoutOptionsAsync(ctx.CustomerId, cancellationToken);
+        var freightOptions = options?.FreightOptions ?? [];
 
         var errors = new List<string>();
         var quoteLines = new List<CheckoutLineQuoteDto>();
@@ -99,7 +100,27 @@ public sealed class CheckoutUseCase : ICheckoutPort
         }
 
         var subtotal = quoteLines.Sum(l => l.LineTotal);
-        var delivery = quoteLines.Count > 0 ? DeliveryFee : 0m;
+        var deliveryProductId = request.DeliveryProductId is > 0 ? request.DeliveryProductId : null;
+        decimal delivery = 0m;
+        var deliveryLabel = "No delivery charge";
+        int? resolvedDeliveryProductId = null;
+
+        if (deliveryProductId is int freightProductId)
+        {
+            var freight = freightOptions.FirstOrDefault(f => f.ProductId == freightProductId);
+            if (freight is null)
+            {
+                errors.Add("Selected delivery option is not valid for your account.");
+            }
+            else
+            {
+                // Missing ERP price → €0 (admin can fix ProductPrices later).
+                delivery = Math.Max(0m, freight.UnitPrice);
+                deliveryLabel = freight.Name;
+                resolvedDeliveryProductId = freight.ProductId;
+            }
+        }
+
         var vatAmount = Math.Round((subtotal + delivery) * VatPercentage / 100m, 2);
 
         return new CheckoutQuoteDto
@@ -107,6 +128,8 @@ public sealed class CheckoutUseCase : ICheckoutPort
             Lines = quoteLines,
             Subtotal = subtotal,
             DeliveryFee = delivery,
+            DeliveryLabel = deliveryLabel,
+            DeliveryProductId = resolvedDeliveryProductId,
             VatAmount = vatAmount,
             Total = subtotal + delivery + vatAmount,
             Errors = errors
@@ -118,7 +141,8 @@ public sealed class CheckoutUseCase : ICheckoutPort
         var quote = await BuildQuoteAsync(new CheckoutQuoteRequest
         {
             Lines = request.Lines,
-            UserEmail = user.Email ?? ""
+            UserEmail = user.Email ?? "",
+            DeliveryProductId = request.DeliveryProductId
         }, cancellationToken);
 
         if (quote.Errors.Count > 0)
@@ -198,6 +222,8 @@ public sealed class CheckoutUseCase : ICheckoutPort
             CreatedByUserId = createdByUserId,
             IsPrePay = paymentMethod.IsPrePay,
             DeliveryFee = quote.DeliveryFee,
+            DeliveryProductId = quote.DeliveryProductId,
+            DeliveryProductName = quote.DeliveryLabel,
             VatPercentage = VatPercentage,
             Lines = lineCreates
         };
