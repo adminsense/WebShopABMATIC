@@ -3,7 +3,7 @@
 ![Status](https://img.shields.io/badge/Status-Blazor%20storefront%20live-28a745?style=flat-square) ![Auth](https://img.shields.io/badge/Login-Legacy%20WebshopLogin-512BD4?style=flat-square) ![Orders](https://img.shields.io/badge/My%20orders-%2Forders-0dcaf0?style=flat-square)
 
 > [!IMPORTANT]
-> **Executive Summary:** B2B storefront for catalog, cart, checkout (Mollie mock PrePay), and **customer account area** (profile + **order history**). Customer never uses `/admin` for their own purchases — that is staff-only ([SPEC_ADMIN.md](./SPEC_ADMIN.md)).
+> **Executive Summary:** B2B storefront for catalog, cart, checkout (**Mollie mock PrePay** until the client sends API keys — see [SPEC_MOLLIE_PAYMENTS_open.md](./SPEC_MOLLIE_PAYMENTS_open.md)), and **customer account area** (profile + **order history**). Customer never uses `/admin` for their own purchases — that is staff-only ([SPEC_ADMIN.md](./SPEC_ADMIN.md)).
 
 ### Coverage statistics
 
@@ -11,14 +11,14 @@
 |----------|-------|--------|-------|
 | **Auth flows** | 2 | ✅ | Customer `/sign-in`; staff `/admin/login` (separate ERP tables) |
 | **Account area** | 3 | ✅ | `/my-account`, `/orders`, `/orders/{id}` |
-| **Checkout** | PrePay | ✅ | Cart → Mollie mock → payment-return → confirmation |
+| **Checkout** | PrePay | ✅ | Cart → **Mollie mock** (required until client keys) → payment-return → confirmation |
 
 ### Implementation quality
 
 | Aspect | Status | Details |
 |--------|--------|---------|
 | **Catalog UX** | ✅ | `IStoreCatalogPort` — lazy products per category; icons on demand |
-| **Checkout** | ✅ | `CheckoutUseCase` + Mollie mock; stock on pay |
+| **Checkout** | ✅ | `CheckoutUseCase` + **`Mollie:UseMock`** until client delivers keys; stock on pay |
 | **Customer login** | ✅ | Legacy `WebshopLogin` + hash/salt → role `Customer` |
 | **Order history** | ✅ | Header **My orders** → `/orders`; detail `/orders/{id}` |
 | **Staff entry** | ✅ | Header **Admin** → `/admin/login` (`StaffUsers`) |
@@ -133,10 +133,16 @@ sequenceDiagram
 |------|-----------|
 | 1 | Customer opens **Login** → `/sign-in` |
 | 2 | Enters webshop login + password |
-| 3 | Cookie session; `CustomerId` for pricing, addresses, orders |
+| 3 | Cookie session (`.WebShopABMATIC.Auth.Session`); `CustomerId` for pricing, addresses, orders |
 | 4 | Header shows **My orders** + account name |
 
 **Runtime:** `Customers.WebshopLogin` + hash/salt on `abmatic_test`.
+
+**Session rules (store):**
+- Session cookie (`IsPersistent=false`) — ends when the browser is closed.
+- Sliding idle **15 minutes** (cookie + `store-session-timeout.js` → `/account/logout`).
+- Auth validity = cookie only (no server-side in-memory browser-session dictionary).
+- Interactive catalog uses `InteractiveServer` with **prerender on** so HTML (nav/links) renders before the SignalR circuit connects.
 
 ### 2.3 Logout
 
@@ -250,24 +256,28 @@ Stock behaviour must stay **consistent** with admin rules ([SPEC_ADMIN.md §4](S
 
 | Condition | UI behaviour | Implementation |
 |-----------|----------------|----------------|
-| `available > MinQuantity` (or min = 0) | Green “N in stock” | `StoreProductDto` from default location |
+| `available > 0` + list price | Show **€…** to guests and customers (list price; customer discounts when logged in) | `StoreProductCard` / detail — **not** “login to see price” |
+| `available > 0` + no ERP price | **Price on request** | `!HasPrice` (`HasNoPrice` or missing `ProductPrice`) |
+| `available > MinQuantity` (or min = 0) | Optional green “N in stock” on legacy cards | `StoreProductDto` from default location |
 | `available <= MinQuantity` and `> 0` | Orange **low** class | `IsLowStock` — uses DB `MinQuantity`, not hardcoded 10 |
-| `available = 0` | “Out of stock” | `IsOutOfStock` |
+| `available = 0` | **Out of stock** (card label + cart button disabled) | `IsOutOfStock` — do **not** use “Unavailable” |
 | Product not on webshop | Hidden | `ShowOnWebshop != true` |
 
-**Implemented** in `StoreCatalogService`, `Catalog.razor`, `ProductDetail.razor` (May 2026).
+**Login:** required when **buying** (add to cart / checkout), not to browse or view list price (§9.1).
 
-### 5.2 Cart and checkout validation (planned)
+**Implemented** in `StoreCatalogService`, `StoreProductCard.razor`, `ProductCartButton.razor`, `StoreSearchModal.razor`, `ProductDetail.razor`, `StorePriceFormatter.FormatListPrice`.
+
+### 5.2 Cart and checkout validation
 
 | Rule | When | Action |
 |------|------|--------|
-| **Reserve on submit** | Order created with initial status | ⬜ Not used — **decrement on pay** (PrePay) or checkout (PostPay) via `IStockMovementService` |
-| **Sufficient stock** | Add to cart / checkout | ✅ Reject if `requestedQty > available` |
-| **Consume on fulfilment** | Status with `AffectsStock` | Decrease `Quantity`, release reservation |
+| **Reserve on pay** | PrePay after order create | ✅ `ApplyReservationFromOrderAsync` (release if pay fails) |
+| **Sufficient stock** | Quote + place order | ✅ Reject if `requestedQty > available` (`CheckoutUseCase.BuildQuoteAsync`) |
+| **Stale cart (stock hit 0 later)** | Cart still has the line | ✅ Keep line; show **blocking** UI (danger alert, Out of stock / “only N left”, disabled checkout). Do **not** auto-remove. |
+| **Consume on fulfilment** | Status with `AffectsStock` / sale on pay | ✅ via `IStockMovementService` |
 | **Multi-location** | Warehouse selection (future) | Pick `ProductStockLocation` with `IsDefault` or nearest |
 
-> [!WARNING]
-> The HTML prototype does **not** enforce server-side stock checks. Implement validation in the application service before persisting `OrderLine` rows.
+**UI:** `Cart.razor` — blocking quote errors disable **Place order** (label: “Cannot place order — fix stock”); line badge + Remove link. Server still re-checks on `PlaceOrderAsync`.
 
 ### 5.3 Order status interaction
 
@@ -349,10 +359,12 @@ flowchart LR
 | Capability | Guest | Logged-in customer |
 |------------|-------|-------------------|
 | Browse catalog | ✅ | ✅ |
-| View prices | List price | List + customer discounts |
-| Add to cart | ✅ (session) | ✅ (persisted) |
+| View prices | **List price** (or Price on request / Out of stock) | List + customer discounts |
+| Add to cart | ❌ → redirect `/sign-in` (buy gate) | ✅ (persisted cart) |
 | Checkout | ❌ | ✅ |
 | Order history | ❌ | ✅ |
+
+> Guest UI must **not** show “Meld u aan om uw prijs te zien” / “login to see price” on product cards. Login is only for purchasing.
 
 ---
 

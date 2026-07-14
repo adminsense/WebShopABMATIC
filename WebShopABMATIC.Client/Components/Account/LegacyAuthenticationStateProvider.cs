@@ -1,10 +1,8 @@
-using System.Diagnostics;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
 using WebShopABMATIC.Application.Auth;
-using WebShopABMATIC.Infrastructure.Auth;
 using WebShopABMATIC.Web.Components;
 
 namespace WebShopABMATIC.Web.Components.Account;
@@ -15,7 +13,6 @@ namespace WebShopABMATIC.Web.Components.Account;
 public sealed class LegacyAuthenticationStateProvider : RevalidatingServerAuthenticationStateProvider, IDisposable
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly IStoreBrowserSessionStore _browserSessions;
     private readonly PersistentComponentState _persistentState;
     private readonly PersistingComponentStateSubscription _subscription;
     private Task<AuthenticationState>? _authenticationStateTask;
@@ -23,12 +20,10 @@ public sealed class LegacyAuthenticationStateProvider : RevalidatingServerAuthen
     public LegacyAuthenticationStateProvider(
         ILoggerFactory loggerFactory,
         IHttpContextAccessor httpContextAccessor,
-        IStoreBrowserSessionStore browserSessions,
         PersistentComponentState persistentComponentState)
         : base(loggerFactory)
     {
         _httpContextAccessor = httpContextAccessor;
-        _browserSessions = browserSessions;
         _persistentState = persistentComponentState;
 
         AuthenticationStateChanged += OnAuthenticationStateChanged;
@@ -37,7 +32,7 @@ public sealed class LegacyAuthenticationStateProvider : RevalidatingServerAuthen
             AppRenderModes.InteractiveServer);
     }
 
-    protected override TimeSpan RevalidationInterval => TimeSpan.FromSeconds(20);
+    protected override TimeSpan RevalidationInterval => TimeSpan.FromSeconds(30);
 
     public override Task<AuthenticationState> GetAuthenticationStateAsync()
     {
@@ -51,11 +46,6 @@ public sealed class LegacyAuthenticationStateProvider : RevalidatingServerAuthen
         var httpUser = _httpContextAccessor.HttpContext?.User;
         if (httpUser?.Identity?.IsAuthenticated == true)
         {
-            if (!IsStoreBrowserSessionValid(httpUser))
-            {
-                return Task.FromResult(new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity())));
-            }
-
             return Task.FromResult(new AuthenticationState(httpUser));
         }
 
@@ -69,13 +59,7 @@ public sealed class LegacyAuthenticationStateProvider : RevalidatingServerAuthen
             && userInfo is not null
             && !string.IsNullOrEmpty(userInfo.UserId))
         {
-            var principal = CreatePrincipal(userInfo);
-            if (!IsStoreBrowserSessionValid(principal))
-            {
-                return Task.FromResult(new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity())));
-            }
-
-            return Task.FromResult(new AuthenticationState(principal));
+            return Task.FromResult(new AuthenticationState(CreatePrincipal(userInfo)));
         }
 
         return Task.FromResult(new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity())));
@@ -98,26 +82,10 @@ public sealed class LegacyAuthenticationStateProvider : RevalidatingServerAuthen
             return Task.FromResult(false);
         }
 
-        if (!IsStoreBrowserSessionValid(user))
-        {
-            return Task.FromResult(false);
-        }
-
         var hasLegacyId = user.HasClaim(c =>
             c.Type is ClaimTypes.NameIdentifier or "legacy_staff_id" or "legacy_customer_id");
 
         return Task.FromResult(hasLegacyId);
-    }
-
-    private bool IsStoreBrowserSessionValid(ClaimsPrincipal user)
-    {
-        if (!user.IsInRole(AppRoles.Customer))
-        {
-            return true;
-        }
-
-        var sessionId = user.FindFirstValue(LegacyAuthClaims.StoreBrowserSession);
-        return !string.IsNullOrEmpty(sessionId) && _browserSessions.IsActive(sessionId);
     }
 
     private void OnAuthenticationStateChanged(Task<AuthenticationState> task) =>
@@ -140,7 +108,6 @@ public sealed class LegacyAuthenticationStateProvider : RevalidatingServerAuthen
             UserId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value,
             Name = principal.FindFirst(ClaimTypes.Name)?.Value,
             DisplayName = principal.FindFirst(LegacyAuthClaims.DisplayName)?.Value,
-            StoreBrowserSession = principal.FindFirst(LegacyAuthClaims.StoreBrowserSession)?.Value,
             Roles = principal.FindAll(ClaimTypes.Role).Select(c => c.Value).ToArray()
         };
 
@@ -158,11 +125,6 @@ public sealed class LegacyAuthenticationStateProvider : RevalidatingServerAuthen
         if (!string.IsNullOrWhiteSpace(userInfo.DisplayName))
         {
             claims.Add(new Claim(LegacyAuthClaims.DisplayName, userInfo.DisplayName));
-        }
-
-        if (!string.IsNullOrWhiteSpace(userInfo.StoreBrowserSession))
-        {
-            claims.Add(new Claim(LegacyAuthClaims.StoreBrowserSession, userInfo.StoreBrowserSession));
         }
 
         claims.AddRange(userInfo.Roles.Select(r => new Claim(ClaimTypes.Role, r)));
@@ -191,6 +153,5 @@ internal sealed class UserInfo
     public string? UserId { get; set; }
     public string? Name { get; set; }
     public string? DisplayName { get; set; }
-    public string? StoreBrowserSession { get; set; }
     public string[] Roles { get; set; } = [];
 }
