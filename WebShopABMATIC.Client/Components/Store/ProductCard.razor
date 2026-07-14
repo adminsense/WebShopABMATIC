@@ -6,16 +6,18 @@
     {
       <span class="product-badge-new">New</span>
     }
-    <img src="@Product.ImageUrl" alt="@Product.Name" loading="lazy" decoding="async" />
+    <StoreProductImage Src="@Product.ImageUrl" Alt="@Product.Name" />
   </div>
   <div class="body">
     <p class="category">@Product.Tag</p>
     <h3>@Product.Name</h3>
     <p class="brand">@Product.Description</p>
     <div class="price-row">
-      <span class="price @(!Product.HasPrice ? "price-on-request text-muted" : "")">@StorePriceFormatter.Format(Product.Price)</span>
+      <span class="price @(Product.IsOutOfStock || !Product.HasPrice ? "price-on-request text-muted" : "")">
+        @StorePriceFormatter.FormatListPrice(Product.IsOutOfStock, Product.Price)
+      </span>
       <span class="stock @(Product.IsOutOfStock ? "out" : Product.IsLowStock ? "low" : "")">
-        @(Product.IsOutOfStock ? "Out of stock" : $"{Product.Stock} in stock")
+        @(Product.IsOutOfStock ? StorePriceFormatter.OutOfStockLabel : $"{Product.Stock} in stock")
       </span>
     </div>
   </div>

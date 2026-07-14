@@ -42,7 +42,7 @@
                     {
                         <li>
                             <button type="button" class="store-search-modal-item" @onclick="() => OnSelect.InvokeAsync(product.Id)">
-                                <img src="@product.ImageUrl" alt="" class="store-search-modal-thumb" loading="lazy" decoding="async" />
+                                <StoreProductImage Src="@product.ImageUrl" Alt="" CssClass="store-search-modal-thumb" />
                                 <span class="store-search-modal-item-text">
                                     <span class="store-search-modal-item-name">@product.Name</span>
                                     @if (!string.IsNullOrWhiteSpace(product.Tag))
@@ -50,8 +50,8 @@
                                         <span class="store-search-modal-item-tag">@product.Tag</span>
                                     }
                                 </span>
-                                <span class="store-search-modal-item-price @(!product.HasPrice ? "text-muted" : "")">
-                                    @StorePriceFormatter.Format(product.Price)
+                                <span class="store-search-modal-item-price @(product.IsOutOfStock || !product.HasPrice ? "text-muted" : "")">
+                                    @StorePriceFormatter.FormatListPrice(product.IsOutOfStock, product.Price)
                                 </span>
                             </button>
                         </li>

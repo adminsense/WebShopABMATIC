@@ -1,0 +1,131 @@
+@using WebShopABMATIC.Application.Store
+
+@if (Options.Count > 0)
+{
+    <div class="product-options">
+        @foreach (var option in Options)
+        {
+            <div class="product-option" @key="option.Id">
+                <label class="product-option-label" for="@($"opt-{option.Id}")">
+                    @option.Name
+                    @if (option.IsRequired)
+                    {
+                        <span class="product-option-required" aria-hidden="true">*</span>
+                    }
+                </label>
+
+                @if (option.HasValues)
+                {
+                    <select id="@($"opt-{option.Id}")"
+                            class="form-control product-option-input"
+                            value="@GetValueId(option.Id)"
+                            @onchange="e => OnSelectValue(option, e.Value?.ToString())">
+                        <option value="">@PlaceholderFor(option)</option>
+                        @foreach (var value in option.Values)
+                        {
+                            <option value="@value.Id">@value.Value</option>
+                        }
+                    </select>
+                }
+                else
+                {
+                    <input id="@($"opt-{option.Id}")"
+                           type="text"
+                           class="form-control product-option-input"
+                           value="@GetText(option.Id)"
+                           placeholder="@PlaceholderFor(option)"
+                           @oninput="e => OnEnterText(option, e.Value?.ToString())" />
+                }
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<StoreProductOptionDto> Options { get; set; } = [];
+
+    /// <summary>Raised whenever the selection changes, carrying the current lines and whether all required options are filled.</summary>
+    [Parameter] public EventCallback<StoreProductOptionsState> OnChanged { get; set; }
+
+    private readonly Dictionary<int, CartLineOption> _selected = new();
+
+    protected override void OnParametersSet()
+    {
+        var validIds = Options.Select(o => o.Id).ToHashSet();
+        var stale = _selected.Keys.Where(id => !validIds.Contains(id)).ToList();
+        foreach (var id in stale)
+        {
+            _selected.Remove(id);
+        }
+    }
+
+    private int? GetValueId(int optionId) =>
+        _selected.TryGetValue(optionId, out var sel) ? sel.ValueId : null;
+
+    private string GetText(int optionId) =>
+        _selected.TryGetValue(optionId, out var sel) ? sel.ValueText : string.Empty;
+
+    private static string PlaceholderFor(StoreProductOptionDto option) =>
+        option.HasValues ? "Select…" : "Enter a value…";
+
+    private async Task OnSelectValue(StoreProductOptionDto option, string? raw)
+    {
+        if (int.TryParse(raw, out var valueId))
+        {
+            var value = option.Values.FirstOrDefault(v => v.Id == valueId);
+            if (value is not null)
+            {
+                _selected[option.Id] = new CartLineOption
+                {
+                    OptionId = option.Id,
+                    OptionName = option.Name,
+                    ValueId = value.Id,
+                    ValueText = value.Value
+                };
+            }
+        }
+        else
+        {
+            _selected.Remove(option.Id);
+        }
+
+        await NotifyAsync();
+    }
+
+    private async Task OnEnterText(StoreProductOptionDto option, string? raw)
+    {
+        var text = raw?.Trim() ?? string.Empty;
+        if (string.IsNullOrEmpty(text))
+        {
+            _selected.Remove(option.Id);
+        }
+        else
+        {
+            _selected[option.Id] = new CartLineOption
+            {
+                OptionId = option.Id,
+                OptionName = option.Name,
+                ValueId = null,
+                ValueText = text
+            };
+        }
+
+        await NotifyAsync();
+    }
+
+    private Task NotifyAsync()
+    {
+        var lines = Options
+            .Where(o => _selected.ContainsKey(o.Id))
+            .Select(o => _selected[o.Id])
+            .ToList();
+
+        var isValid = Options
+            .Where(o => o.IsRequired)
+            .All(o => _selected.TryGetValue(o.Id, out var sel) && !string.IsNullOrWhiteSpace(sel.ValueText));
+
+        return OnChanged.InvokeAsync(new StoreProductOptionsState(lines, isValid));
+    }
+
+    public sealed record StoreProductOptionsState(IReadOnlyList<CartLineOption> Selected, bool IsValid);
+}

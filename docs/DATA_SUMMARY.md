@@ -140,14 +140,10 @@ Credentials come from the connected `abmatic_test` database only. Use `/admin/cu
 
 ---
 
-## 5. Schema update (EF only)
+## 5. Schema policy (DB-first)
 
-```powershell
-dotnet ef database update `
-  --project WebShopABMATIC\Persistence\WebShopABMATIC.Data.Persistence.csproj `
-  --startup-project WebShopABMATIC\WebShopABMATIC.csproj `
-  --context WebShopABMATICDbContext
-```
+> [!IMPORTANT]
+> **`abmatic_test` is authoritative.** Do **not** run `dotnet ef database update`, EF migrations, or schema scripts from this repository to alter the ERP database. Change mapping code to match the live schema; schema changes (if ever needed) are DBA/ERP outside this app.
 
 ---
 

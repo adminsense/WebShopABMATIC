@@ -1,0 +1,44 @@
+@using WebShopABMATIC.Web.Services
+
+<article class="store-product-card">
+    <button type="button" class="store-product-card-image-area" @onclick="() => OnSelect.InvokeAsync(Product.Id)">
+        <span class="store-product-card-image-frame">
+            <StoreProductImage Src="@Product.ImageUrl" Alt="@Product.Name" />
+        </span>
+    </button>
+
+    <div class="store-product-card-info">
+        <div class="store-product-card-title-block">
+            <button type="button" class="store-product-card-title" @onclick="() => OnSelect.InvokeAsync(Product.Id)">
+                @Product.Name.ToUpperInvariant()
+            </button>
+            @if (!string.IsNullOrWhiteSpace(Product.ReferenceCode))
+            {
+                <span class="store-product-card-ref">@Product.ReferenceCode</span>
+            }
+        </div>
+        <div class="store-product-card-cta">
+            <span class="store-product-card-price @PriceCssClass">@PriceLabel</span>
+            <ProductCartButton Product="Product" CssClass="store-product-card-cart-btn" />
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Product.Description))
+    {
+        <div class="store-product-card-description-block">
+            <hr class="store-product-card-divider" />
+            <p class="store-product-card-description">@Product.Description</p>
+        </div>
+    }
+</article>
+
+@code {
+    [Parameter, EditorRequired] public StoreProduct Product { get; set; } = default!;
+    [Parameter] public EventCallback<int> OnSelect { get; set; }
+
+    private string PriceLabel => StorePriceFormatter.FormatListPrice(Product.IsOutOfStock, Product.Price);
+
+    private string PriceCssClass => Product.IsOutOfStock || !Product.HasPrice
+        ? "store-product-card-price--muted"
+        : string.Empty;
+}
