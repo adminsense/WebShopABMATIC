@@ -246,15 +246,6 @@
 
         try
         {
-            await Js.InvokeVoidAsync("storeBrowserSession.stop");
-        }
-        catch
-        {
-            // Ignore — logout navigation is authoritative.
-        }
-
-        try
-        {
             await Cart.BindToCustomerAsync(null);
         }
         catch

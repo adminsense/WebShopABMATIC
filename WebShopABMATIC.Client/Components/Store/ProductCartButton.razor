@@ -22,22 +22,22 @@
 
     private bool IsOutOfStock => Product.IsOutOfStock;
 
-    private bool NeedsPriceLogin => !Product.HasPrice && !IsOutOfStock;
+    private bool NeedsPrice => !Product.HasPrice && !IsOutOfStock;
 
-    private bool NeedsOptions => Product.HasOptions && !NeedsPriceLogin && !IsOutOfStock;
+    private bool NeedsOptions => Product.HasOptions && !NeedsPrice && !IsOutOfStock;
 
     private string Title => IsOutOfStock
-        ? "Unavailable"
-        : NeedsPriceLogin
-            ? "Sign in to see price"
+        ? StorePriceFormatter.OutOfStockLabel
+        : NeedsPrice
+            ? StorePriceFormatter.OnRequestLabel
             : NeedsOptions
                 ? "Choose options"
                 : "Add to cart";
 
     private string AriaLabel => IsOutOfStock
-        ? $"Cannot add {Product.Name} to cart"
-        : NeedsPriceLogin
-            ? $"Sign in to add {Product.Name} to cart"
+        ? $"{Product.Name}: {StorePriceFormatter.OutOfStockLabel}"
+        : NeedsPrice
+            ? $"{Product.Name}: {StorePriceFormatter.OnRequestLabel}"
             : NeedsOptions
                 ? $"Choose options for {Product.Name}"
                 : $"Add {Product.Name} to cart";
@@ -49,14 +49,16 @@
             return;
         }
 
-        var returnUrl = NeedsOptions ? $"/product/{Product.Id}" : "/cart";
-
-        if (NeedsPriceLogin)
+        // No list price in ERP — open detail (same as “Price on request”), do not force login.
+        if (NeedsPrice)
         {
-            Navigation.NavigateTo($"/sign-in?returnUrl={Uri.EscapeDataString(returnUrl)}", forceLoad: true);
+            Navigation.NavigateTo($"/product/{Product.Id}");
             return;
         }
 
+        var returnUrl = NeedsOptions ? $"/product/{Product.Id}" : "/cart";
+
+        // Buying requires a customer account (login at add-to-cart / checkout).
         if (!await EnsureCustomerCartAsync())
         {
             Navigation.NavigateTo($"/sign-in?returnUrl={Uri.EscapeDataString(returnUrl)}", forceLoad: true);

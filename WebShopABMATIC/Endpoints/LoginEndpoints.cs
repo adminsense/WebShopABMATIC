@@ -14,7 +14,8 @@ public static class LoginEndpoints
 
     private static async Task<IResult> AdminLoginAsync(
         HttpContext httpContext,
-        ILegacySignInPort signIn,        IFormCollection form)
+        ILegacySignInPort signIn,
+        IFormCollection form)
     {
         var login = form["login"].ToString();
         var password = form["password"].ToString();
@@ -40,7 +41,6 @@ public static class LoginEndpoints
     {
         var login = form["login"].ToString();
         var password = form["password"].ToString();
-        var rememberMe = form["rememberMe"].Count > 0;
         var returnUrl = form["returnUrl"].ToString();
 
         var result = await signIn.SignInCustomerAsync(login, password);
@@ -51,7 +51,7 @@ public static class LoginEndpoints
             return Results.Redirect($"/sign-in?error={error}&returnUrl={safeReturn}");
         }
 
-        await LegacyCookieAuthentication.SignInAsync(httpContext, result.Principal, rememberMe);
+        await LegacyCookieAuthentication.SignInAsync(httpContext, result.Principal, isPersistent: false);
         return Results.Redirect(LoginFormHelpers.ResolveStoreReturnUrl(returnUrl));
     }
 }
