@@ -12,6 +12,16 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 
 ## Amendments (newest first)
 
+> **2026-07-14 — DB-first = global hard rule:** Never invent columns/tables/migrations/schema scripts for **any** feature. Reinforced in `AGENTS.md`, `SPEC_INFRASTRUCTURE` §4, `docs/README`, `.cursor/rules/db-first.mdc`, `.claude/rules/db-first.md` (not frete-only).
+
+> **2026-07-14 — Freight from ERP (S.5):** Removed hardcoded €9. Fee from `OrderDeliveryTypeProduct` → `ProductPrices` (Dutch `DossierLeveringsTypeProduct` / `ProductPrijzen`); default **€0**. Dutch ERP labels in UI; English code DE-PARA. See [DATA_FREIGHT_DELIVERY.md](./DATA_FREIGHT_DELIVERY.md).
+
+> **2026-07-14 — Mollie mock until client keys:** Hard rule — keep `Mollie:UseMock`; do not start real Mollie (B.9) until the client delivers API keys. Documented in [SPEC_MOLLIE_PAYMENTS_open.md](./SPEC_MOLLIE_PAYMENTS_open.md), `AGENTS.md`, roadmap B.9.
+
+> **2026-07-14 — Cart stock blocking UX:** Stale cart lines with insufficient stock stay in the cart but checkout is clearly blocked (danger alert, line Out of stock / “only N left”, disabled CTA “Cannot place order — fix stock”). Server quote/place-order already rejected; UI made blocking obvious. See [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §5.2.
+
+> **2026-07-14 — Format hook:** `.claude/hooks/format-csharp.ps1` runs after agent edits (Claude `PostToolUse` + Cursor `afterFileEdit`) — `dotnet format whitespace` on `.cs` only. Product rules (DB / Adminsence / Mollie) stay in SPECs & path rules, not hooks.
+
 > **2026-07-14 — Store price/stock (AGENTS workflow):** Aligned search + detail + cards on `StorePriceFormatter.FormatListPrice` (guest list price; OOS label wins). CLAUDE.md documents build-as-smoke (no test project yet). Owner still enables Azure WebSockets manually.
 
 > **2026-07-14 — Owner-only git/publish:** Agents never commit, push, or publish/deploy unless Marco explicitly asks. See `AGENTS.md` § Git & publish and `.cursor/rules/owner-only-git-publish.mdc`.
@@ -40,7 +50,7 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 |-------|--------|
 | Unified store login → admin redirect | Archive §2.2.2 |
 | Store layout polish vs reference | Archive phases C–F |
-| Mollie prod key + webhook E2E | [SPEC_MOLLIE_PAYMENTS_open.md](./SPEC_MOLLIE_PAYMENTS_open.md) |
+| Mollie real key + webhook E2E | **Blocked on client keys** — mock required — [SPEC_MOLLIE_PAYMENTS_open.md](./SPEC_MOLLIE_PAYMENTS_open.md) |
 | Implementation tracker | [SPEC_IMPLEMENTATION_ROADMAP_open.md](./SPEC_IMPLEMENTATION_ROADMAP_open.md) |
 
 ---
