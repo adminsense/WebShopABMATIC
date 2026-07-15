@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "deny": [
+      "Edit(**/appsettings.json)",
+      "Edit(**/appsettings.*.json)",
+      "Edit(publish/**)",
+      "Bash(git commit*)",
+      "Bash(git push*)",
+      "Bash(git amend*)",
+      "Bash(gh pr create*)",
+      "Bash(dotnet publish*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/format-csharp.ps1",
+            "timeout": 60,
+            "async": true
+          }
+        ]
+      }
+    ]
+  }
+}
