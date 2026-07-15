@@ -36,6 +36,7 @@ public static class DependencyInjection
 
         services.AddSingleton<IAdminHubPort, AdminHubRegistry>();
         services.AddProductMedia(configuration);
+        services.AddScoped<StoreDbGate>();
         services.AddScoped<IStoreCatalogPort, StoreCatalogService>();
 
         services.AddScoped<IAdminDashboardRepository, AdminDashboardRepository>();
