@@ -25,7 +25,8 @@ Naming: `SPEC_<Topic>.md` (stable) · `SPEC_<Topic>_open.md` (checklist in progr
 
 - Change **current-state** tables/sections; mark obsolete claims clearly.
 - Prefer short factual amendments; add a dated line to `AMENDMENTS.md` when needed; archive bulky history under `docs/archive/`.
-- Do not invent ERP columns or features in docs that are not in the live database.
-- **DB-first:** no EF migrations / schema scripts for `abmatic_test` — adapt the app to the existing ERP schema.
+- **DB-first (global):** never invent ERP columns, tables, migrations, or schema scripts in docs or imply they are planned app work — any feature. Adapt to the live schema (`AGENTS.md`, `SPEC_INFRASTRUCTURE` §4).
+- Do not document features/columns that are not in `abmatic_test`.
+- Freight/Mollie/etc. examples of mapping onto **existing** tables belong in `DATA_*`; they do not invent schema.
 
 Code without matching doc updates for the areas above = incomplete.

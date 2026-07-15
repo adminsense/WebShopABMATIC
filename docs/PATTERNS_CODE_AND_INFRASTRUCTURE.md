@@ -651,7 +651,7 @@ private GridExportRequest? BuildExportRequest() =>
 
 **CSS classes:** `.entity-form-card-header`, `.admin-export-dropdown`, `.entity-grid-toolbar`, `.entity-grid-search` in `wwwroot/css/admin.css`
 
-**Audit (future):** wire `ReportExport` in `readme/AUDITS_open.md` when `IAuditService` exists.
+**Audit (future):** wire `ReportExport` in `docs/AUDITS_open.md` when `IAuditService` exists.
 
 ---
 
@@ -861,76 +861,77 @@ private GridExportRequest? BuildExportRequest() =>
 
 ---
 
-## 📁 Readme file naming convention (`/readme/`)
+## 📁 Documentation file naming convention (`/docs/`)
 
-**Owner rule (Marco):** prefixes and suffixes classify each document so open work is easy to find. When creating new docs, **follow this table first**. The main delivery tracker is [open_IMPLEMENTATION_ROADMAP.md](./open_IMPLEMENTATION_ROADMAP.md).
+**Owner rule (Marco):** prefixes and suffixes classify each document so open work is easy to find. Index: [README.md](./README.md). When creating new docs, **follow this table first**. The main delivery tracker is [SPEC_IMPLEMENTATION_ROADMAP_open.md](./SPEC_IMPLEMENTATION_ROADMAP_open.md).
 
 ### Where files live
 
 | Location | Format | Purpose |
 |----------|--------|---------|
-| `/readme/` | `*.md` | Specifications, roadmaps, data docs, patterns |
-| `/readme/docs/` | `mock-*.html` | Static HTML UI prototypes (self-contained; images in `readme/docs/images/`) |
+| `/docs/` | `*.md` | Specifications, roadmaps, data docs, patterns |
+| `/docs/mocks/` | `mock-*.html` | Static HTML UI prototypes (images in `docs/mocks/images/`) |
+| `/docs/images/` | screenshots | Approved UI references |
+| `/docs/archive/` | `*.md` | Bulky / closed historical notes |
+| `/publish/` | `*.publishsettings` | Local publish profiles (**not** docs; gitignored) |
 
 ### Prefixes (functional area)
 
-| Prefix | Use when | Examples |
-|--------|----------|----------|
-| **`SPEC_`** | Functional or technical **specifications** (admin, store, infra, stock, proposals) | `SPEC_ADMIN.md`, `SPEC_WEB_STORE.md`, `SPEC_INFRASTRUCTURE.md`, `SPEC_STOCK_OPERATIONS_PROPOSAL.md` |
-| **`MOCK_`** | Documentation **about HTML mocks** in `/readme/docs/` (screens, entity mapping, walkthrough) | `MOCK_PROTOTYPE_GUIDE.md` |
+| Prefix / pattern | Use when | Examples |
+|------------------|----------|----------|
+| **`SPEC_`** | Product / architecture **specifications** | `SPEC_ADMIN.md`, `SPEC_WEB_STORE.md`, `SPEC_INFRASTRUCTURE.md` |
+| **`SPEC_*_open.md`** | Same as SPEC, but **still in development** with ✅/⬜ checklist | `SPEC_MOLLIE_PAYMENTS_open.md`, `SPEC_IMPLEMENTATION_ROADMAP_open.md` |
+| **`AMENDMENTS`** | Short dated runtime changelog (not a feature checklist) | `AMENDMENTS.md`, `archive/AMENDMENTS_*.md` |
+| **`MOCK_`** | Documentation **about HTML mocks** in `/docs/mocks/` | `MOCK_PROTOTYPE_GUIDE.md` |
 | **`DATA_`** | **Database**: schema mapping, live data reference, SQL/EF | `DATA_SUMMARY.md`, `DATA_DUTCH_ENGLISH_MODEL.md` |
-| **`AUTH_`** | **Authentication & identity** (Identity, roles, customers, staff users) | `AUTH_IDENTITY_ROADMAP_open.md` |
 | **`PATTERNS_`** | **Implementation patterns** (code, UI, infra conventions — this file) | `PATTERNS_CODE_AND_INFRASTRUCTURE.md`, `PATTERNS_UI_QUICK_START.md` |
 
-**HTML mocks:** use lowercase `mock-<topic>.html` under `/readme/docs/` — e.g. `mock-loja.html`, `mock-admin.html`, `mock-payments.html`.
+**HTML mocks:** use lowercase `mock-<topic>.html` under `/docs/mocks/` — e.g. `mock-admin.html`, `mock-payments.html`.
 
 ### Suffix `_open`
 
 | Suffix | Meaning |
 |--------|---------|
-| **`_open`** | **Living tracker** — still has pending tasks (✅ / ⬜ / 🔶). Update until work is done; then remove `_open` or archive. |
+| **`_open`** | Spec still has pending checklist items. When done: drop `_open` or move to `archive/`. |
 
-Use `_open` on roadmaps, ops runbooks with pending steps, and feature backlogs — not on stable reference specs that are “done”.
+**Do not** use the old `open_` **prefix** for new files.
 
-**Current `_open` trackers:**
+**Current open specs / related docs:**
 
 | File | Scope |
 |------|--------|
-| `DATA_SUMMARY.md` | **Database inventory** — tables, row counts, admin screens |
-| `open_IMPLEMENTATION_ROADMAP.md` | **Main delivery tracker** — dev-first priorities + prod go-live (last) |
-| `open_IMPLEMENTATION_ROADMAP.md` | Phased checklist (0 → E) |
-| `open_MOLLIE_PAYMENTS_open.md` | Mollie go-live (API key, webhook, E2E) |
-| `AUTH_IDENTITY_ROADMAP_open.md` | Identity ↔ domain |
-| `AUDITS_open.md` | Audit system (+ SMTP worker pending) |
-| `AZUREBLOB.md` | Product images / `AzureFiles` / Azure Blob |
+| `SPEC_IMPLEMENTATION_ROADMAP_open.md` | **Main delivery tracker** — checklist 0 → E + prod go-live |
+| `SPEC_MOLLIE_PAYMENTS_open.md` | Mollie go-live (API key, webhook, E2E) |
+| `AMENDMENTS.md` | Runtime changelog |
+| `DATA_SUMMARY.md` | Database inventory |
+| `DATA_AZUREBLOB.md` | Product images / `AzureFiles` / Blob |
 
 ### Proper names (exceptions)
 
-Some files use a **descriptive name + `_open`** instead of a prefix when the name is clearer for the team:
+- `AMENDMENTS.md` — runtime changelog (not a `SPEC_`).
 
-- `open_IMPLEMENTATION_ROADMAP.md`, `open_MOLLIE_PAYMENTS_open.md`, `AUDITS_open.md`, `AZUREBLOB.md`
+New feature specs should be `SPEC_<Topic>.md` or `SPEC_<Topic>_open.md`. Media/table mapping docs use `DATA_*` (e.g. `DATA_AZUREBLOB.md`).
 
-New docs should **prefer the prefix table** unless Marco assigns a proper name.
-
-### Agent / contributor checklist — “create a readme md”
+### Agent / contributor checklist — “create a docs md”
 
 | User asks for… | Create |
 |----------------|--------|
-| **Spec** (admin, store, stock, infra, feature behaviour) | `readme/SPEC_<Topic>.md` — stable spec; add `_open` only if it is primarily a pending checklist |
-| **Auth / identity** | `readme/AUTH_<Topic>_open.md` while work is open |
-| **Mock** (HTML prototype doc) | Update or add `readme/MOCK_<Topic>.md` + `readme/docs/mock-<topic>.html` |
-| **Data / DB** | `readme/DATA_<Topic>.md` |
-| **Patterns / conventions** | `readme/PATTERNS_<Area>.md` |
-| **Tracker with pending tasks** | `<NAME>_open.md` with ⬜ items and “Mark ✅ when done” in the header |
+| **Spec** (stable behaviour) | `docs/SPEC_<Topic>.md` |
+| **Spec still in development + checklist** | `docs/SPEC_<Topic>_open.md` |
+| **Runtime amendment note** | One-liner in `docs/AMENDMENTS.md` |
+| **Auth / identity** | Prefer updating `SPEC_ADMIN.md` §2 |
+| **Mock** (HTML prototype doc) | `docs/MOCK_<Topic>.md` + `docs/mocks/mock-<topic>.html` |
+| **Data / DB** | `docs/DATA_<Topic>.md` |
+| **Patterns / conventions** | `docs/PATTERNS_<Area>.md` |
 
-**Do not** duplicate trackers: link to [open_IMPLEMENTATION_ROADMAP.md](./open_IMPLEMENTATION_ROADMAP.md).
+**Do not** duplicate trackers: link to [SPEC_IMPLEMENTATION_ROADMAP_open.md](./SPEC_IMPLEMENTATION_ROADMAP_open.md).
 
 ### Delivery priority (owner rule)
 
 1. **Dev 100% first** — all features working locally with mocks (`Mollie:UseMock`, `Notifications:LowStock:UseMock`, local file media). Mocks = ✅ for dev.
 2. **Prod go-live last** — real Mollie, SMTP worker, Azure Blob — only after dev is complete; needs client credentials / infra.
 
-**Do not** delete or rename `_open` files Marco created without asking first.
+**Do not** delete or rename `SPEC_*_open` files without asking first (except the agreed renames in the naming convention).
 
 ### Legacy names (migrate over time)
 
@@ -942,7 +943,7 @@ Older files without prefixes (`ADMIN.md`, `WEB_STORE.md`, …) are superseded by
 
 **🎯 STANDARD (LABELS_OVERRRIDES.md Reference)**
 
-Every readme file in `/readme/` MUST follow this EXACT footer pattern:
+Every markdown file in `/docs/` MUST follow this EXACT footer pattern:
 
 ```markdown
 ## Documentation
@@ -962,13 +963,13 @@ Every readme file in `/readme/` MUST follow this EXACT footer pattern:
 | Documentation Links | Single link to main README only | ✅ Required | Use 🏠 emoji for main |
 | Link Format | `[Main Documentation](../README.md) — Project overview and requirements` | ✅ Required | Exact description text |
 | Main Link | Always include `../README.md` | ✅ Required | Points to root project README |
-| Cross-links | All other doc links live in root `README.md` only | ✅ Required | No sibling links in `/readme/` footers |
+| Cross-links | All other doc links live in root `README.md` only | ✅ Required | Cross-links within docs/ are OK; prefer the index |
 | Separator | Horizontal rule `---` | ✅ Required | Before copyright |
 | Copyright Line | Exact: `**© 2026 AdminSense. All rights reserved.**` | ✅ Required | **NO version info**, **NO dates** |
 | No Extra Info | NO "Last Updated", NO version numbers | ✅ Critical | Keep footer minimal and clean |
 
 **Implementation Note:**
-When creating a NEW readme file in `/readme/`:
+When creating a NEW docs file in `/docs/`:
 1. Add your content
 2. Add level-2 heading: `## Documentation`
 3. Add only the main README link (see pattern above)
@@ -998,7 +999,7 @@ All documentation and UI-facing text in this repository MUST be written in **Eng
 
 ### 🔢 Numbered Icon Headings (MANDATORY)
 
-All feature/spec documentation in `/readme/` MUST use **numbered section headings with icons** to make large documents scannable.
+All feature/spec documentation in `/docs/` MUST use **numbered section headings with icons** to make large documents scannable.
 
 **Pattern:**
 

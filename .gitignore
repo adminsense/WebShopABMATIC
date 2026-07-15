@@ -387,3 +387,7 @@ appsettings.*.json
 
 # PDA release binaries (build with tools/publish-pda-apk.ps1)
 dist/
+
+# Claude Code — personal project overrides (use CLAUDE.local.md.example)
+CLAUDE.local.md
+.claude/settings.local.json
