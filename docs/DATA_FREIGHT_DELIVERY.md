@@ -15,7 +15,7 @@
 | **Database** | Mostly **Dutch** schemas/tables/columns (`Projecten`, `Klanten`, `ProductPrijzen`…). Some names already look English (`Products`, `Emails`) but treat physical names as ERP truth. | Never rename live tables from the app |
 | **C# entities / ports / use cases** | **English** | `DeliveryType`, `OrderDeliveryTypeProduct`, `GrossSalesPrice` |
 | **EF ModelBuilder** | English prop → Dutch column | e.g. `DeliveryTypeId` → `LeverigsType` on `Klant` (note ERP typo) |
-| **XML / comments on entities** | **English**, with DE-PARA | `/// Entity for [Projects].[DeliveryTypes] (legacy: [Projecten].[LeveringType]).` |
+| **XML / comments on entities** | **English**, with mapping notes | `/// Entity for [Projects].[DeliveryTypes] (legacy: [Projecten].[LeveringType]).` |
 | **Customer-facing labels** | As in ERP (often Dutch `ProdName` / `Naam`) | Show DB text; do not invent EN product names for freight SKUs |
 | **Store UI chrome** (buttons) | English app copy today | Separate from ERP product names |
 
@@ -46,7 +46,7 @@ Product + ProductPrice           (NL Products.Product + Products.ProductPrijzen.
 Store checkout DeliveryFee       (English code) — €0 if no usable link/price
 ```
 
-### DE-PARA (freight)
+### Mapping (freight)
 
 | English (code) | Dutch (DB) | Role |
 |----------------|------------|------|
