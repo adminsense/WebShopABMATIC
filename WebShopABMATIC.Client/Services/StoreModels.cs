@@ -56,8 +56,12 @@ public sealed record StoreOrderSummary(
 public static class StorePriceFormatter
 {
     public const string OnRequestLabel = "Price on request";
-    public const string LoginForPriceLabel = "Meld u aan om uw prijs te zien";
+    public const string OutOfStockLabel = "Out of stock";
 
     public static string Format(decimal? price) =>
         price.HasValue ? $"€{price.Value:F2}" : OnRequestLabel;
+
+    /// <summary>Catalog/search/detail price line per SPEC_WEB_STORE §5.1 (guests see list price; OOS wins).</summary>
+    public static string FormatListPrice(bool isOutOfStock, decimal? price) =>
+        isOutOfStock ? OutOfStockLabel : Format(price);
 }
