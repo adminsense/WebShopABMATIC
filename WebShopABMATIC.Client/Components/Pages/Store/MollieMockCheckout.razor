@@ -14,16 +14,14 @@
 {
     <div class="alert alert-danger mollie-mock-error">@_errorMessage</div>
     <p class="text-center mt-3">
-        <button type="button" class="btn btn-outline-secondary" @onclick="GoBackToCart">Back to cart</button>
+        <a class="btn btn-outline-secondary" href="/cart">Back to cart</a>
     </p>
 }
 else
 {
     <div class="mollie-mock-page">
         <div class="mollie-mock-shell">
-            <button type="button" class="mollie-mock-back" @onclick="GoBackToCart" disabled="@_processing">
-                ← Back to WebShop
-            </button>
+            <a class="mollie-mock-back" href="/cart">← Back to WebShop</a>
 
             <div class="mollie-mock-card">
                 <div class="mollie-mock-header">
@@ -37,19 +35,20 @@ else
                 <div class="mollie-mock-body">
                     <div class="mollie-mock-methods">
                         <button type="button"
-                                class="mollie-mock-method @(_method == PayMethod.Ideal ? "active" : null)"
-                                @onclick="() => SelectMethod(PayMethod.Ideal)">
+                                class="mollie-mock-method active"
+                                id="mollie-method-ideal"
+                                data-method="ideal">
                             iDEAL
                         </button>
                         <button type="button"
-                                class="mollie-mock-method @(_method == PayMethod.Card ? "active" : null)"
-                                @onclick="() => SelectMethod(PayMethod.Card)">
+                                class="mollie-mock-method"
+                                id="mollie-method-card"
+                                data-method="card">
                             Card
                         </button>
                     </div>
 
-                    @if (_method == PayMethod.Card)
-                    {
+                    <div id="mollie-panel-card" class="mollie-mock-panel" hidden>
                         <div class="mollie-mock-cards-icons">
                             <span>VISA</span>
                             <span>MC</span>
@@ -58,25 +57,25 @@ else
 
                         <div class="mollie-mock-field">
                             <label for="card-number">Card number</label>
-                            <input id="card-number" type="text" readonly value="@_cardNumber" autocomplete="cc-number" />
+                            <input id="card-number" type="text" readonly value="4111 1111 1111 1111" autocomplete="cc-number" />
                         </div>
                         <div class="mollie-mock-field">
                             <label for="card-name">Cardholder name</label>
-                            <input id="card-name" type="text" readonly value="@_cardholderName" autocomplete="cc-name" />
+                            <input id="card-name" type="text" readonly value="Demo Customer" autocomplete="cc-name" />
                         </div>
                         <div class="mollie-mock-row">
                             <div class="mollie-mock-field">
                                 <label for="card-exp">Expiry</label>
-                                <input id="card-exp" type="text" readonly value="@_cardExpiry" autocomplete="cc-exp" />
+                                <input id="card-exp" type="text" readonly value="12 / 28" autocomplete="cc-exp" />
                             </div>
                             <div class="mollie-mock-field">
                                 <label for="card-cvc">CVC</label>
-                                <input id="card-cvc" type="text" readonly value="@_cardCvc" autocomplete="cc-csc" />
+                                <input id="card-cvc" type="text" readonly value="123" autocomplete="cc-csc" />
                             </div>
                         </div>
-                    }
-                    else
-                    {
+                    </div>
+
+                    <div id="mollie-panel-ideal" class="mollie-mock-panel">
                         <p class="mollie-mock-ideal-hint">
                             You will authorise this payment in your banking app. For this demo, the bank is pre-selected.
                         </p>
@@ -86,24 +85,28 @@ else
                                 <option selected>ABN AMRO (demo)</option>
                             </select>
                         </div>
-                    }
+                    </div>
 
-                    <button type="button" class="mollie-mock-pay" disabled="@_processing" @onclick="CompletePaymentAsync">
-                        @(_processing ? "Processing…" : $"Pay {FormattedAmount}")
+                    @* returnUrl via data-* — Razor HTML-encodes inline JS JSON and breaks Pay (SyntaxError). *@
+                    <button type="button"
+                            class="mollie-mock-pay"
+                            id="mollie-pay-btn"
+                            data-return-url="@ReturnUrl">
+                        Pay @FormattedAmount
                     </button>
 
-                    <p class="mollie-mock-secure">🔒 Secured by Mollie</p>
+                    <p class="mollie-mock-secure">Secured by Mollie</p>
                 </div>
             </div>
 
             <p class="mollie-mock-footer">Payments processed by <strong>mollie</strong></p>
         </div>
     </div>
+
+    <script src="/_content/WebShopABMATIC.Client/js/mollie-mock-checkout.js"></script>
 }
 
 @code {
-    private enum PayMethod { Ideal, Card }
-
     [SupplyParameterFromQuery(Name = "paymentId")]
     public string? PaymentId { get; set; }
 
@@ -119,13 +122,6 @@ else
     [SupplyParameterFromQuery(Name = "returnUrl")]
     public string? ReturnUrl { get; set; }
 
-    private const string _cardNumber = "4111 1111 1111 1111";
-    private const string _cardholderName = "Demo Customer";
-    private const string _cardExpiry = "12 / 28";
-    private const string _cardCvc = "123";
-
-    private PayMethod _method = PayMethod.Card;
-    private bool _processing;
     private bool _invalid;
     private string _errorMessage = "Invalid payment session.";
 
@@ -178,21 +174,5 @@ else
         }
 
         return true;
-    }
-
-    private void SelectMethod(PayMethod method) => _method = method;
-
-    private void GoBackToCart() => Navigation.NavigateTo("/cart");
-
-    private async Task CompletePaymentAsync()
-    {
-        if (_invalid || string.IsNullOrWhiteSpace(ReturnUrl))
-        {
-            return;
-        }
-
-        _processing = true;
-        await Task.Delay(900);
-        Navigation.NavigateTo(ReturnUrl, forceLoad: true);
     }
 }
