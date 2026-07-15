@@ -1,0 +1,15 @@
+---
+description: Follow AGENTS.md — specs, patterns, and docs sync without waiting to be told
+alwaysApply: true
+---
+
+# Follow AGENTS.md
+
+At the start of non-trivial work, treat **`AGENTS.md`** (repo root) as mandatory process.
+
+1. Use `docs/README.md` to choose the SPEC.
+2. Apply `docs/PATTERNS_*` instead of inventing UI/code style.
+3. Sync `docs/SPEC_*` / `AMENDMENTS.md` after behaviour changes (see `docs-sync` rule).
+4. Obey hard constraints in `.claude/CLAUDE.md` and `AGENTS.md` (auth, **DB-first: never invent columns/tables/migrations/schema scripts**, **Mollie mock until client keys**, Azure, store price/login, **owner-only commit/publish**).
+
+Do not ask the user to restate these defaults unless a requirement genuinely conflicts with a SPEC.

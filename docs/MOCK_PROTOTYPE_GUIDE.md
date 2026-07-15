@@ -1,8 +1,8 @@
-# WebShopABMATIC — Admin mock prototype guide
+﻿# WebShopABMATIC — Admin mock prototype guide
 
 ![Status](https://img.shields.io/badge/Status-Validation%20ready-28a745?style=flat-square) ![Layout](https://img.shields.io/badge/Layout-AB-MATIC%20style-512BD4?style=flat-square) ![Scope](https://img.shields.io/badge/Scope-Admin%20only-0d47a1?style=flat-square)
 
-This document explains the **admin HTML prototype** in `readme/docs/`, how it maps to the **AB-MATIC reference layout**, and what each **sidebar menu / entity / screen** represents in the real Blazor admin app.
+This document explains the **admin HTML prototype** in `docs/mocks/`, how it maps to the **AB-MATIC reference layout**, and what each **sidebar menu / entity / screen** represents in the real Blazor admin app.
 
 > **Scope:** Admin panel only. The storefront (`/store`, cart, checkout) is implemented separately in Blazor — not covered by this mock walkthrough.
 
@@ -14,15 +14,15 @@ Visual reference (AB-MATIC admin shell): [adminsenceweb.azurewebsites.net](https
 
 | File | Role | Open from |
 |------|------|-----------|
-| [`readme/docs/mock-admin.html`](docs/mock-admin.html) | Staff **admin panel** (AB-MATIC layout) — **primary entry** | Browser direct |
-| [`readme/docs/mock-payments.html`](docs/mock-payments.html) | **Mollie hosted checkout** mock (reference for payment UX) | Browser direct |
+| [`docs/mocks/mock-admin.html`](docs/mock-admin.html) | Staff **admin panel** (AB-MATIC layout) — **primary entry** | Browser direct |
+| [`docs/mocks/mock-payments.html`](docs/mock-payments.html) | **Mollie hosted checkout** mock (reference for payment UX) | Browser direct |
 
 Legacy aliases (ignore for validation):
 
 | File | Note |
 |------|------|
-| `readme/docs/mock-loja.html` | Old storefront mock — **out of scope** for this guide |
-| `readme/docs/mock-shopcart.html` | Redirect → `mock-loja.html` |
+| `docs/mocks/mock-loja.html` | Old storefront mock — **out of scope** for this guide |
+| `docs/mocks/mock-shopcart.html` | Redirect → `mock-loja.html` |
 
 **Blazor admin entry:** `/admin/login` — staff login on `Settings.StaffUsers` (credentials from the database).
 
@@ -30,7 +30,7 @@ Legacy aliases (ignore for validation):
 
 ## Reference layout — three screen types
 
-The admin mock follows the same three-level pattern as the AB-MATIC reference app. Screenshots live in `readme/images/`.
+The admin mock follows the same three-level pattern as the AB-MATIC reference app. Screenshots live in `docs/images/`.
 
 ### 1. Main dashboard — `main_screen.png`
 
@@ -38,7 +38,7 @@ The admin mock follows the same three-level pattern as the AB-MATIC reference ap
 
 **What it shows (reference):** Dark sidebar, top bar with user greeting and red **Logout**, and a **2×2 grid of portfolio cards** with KPIs, progress bars, and status pills. Sidebar footer shows **date** and **version**.
 
-**WebShop mock equivalent:** `readme/docs/mock-admin.html` → view `#view-dashboard` (sidebar item **Start**).
+**WebShop mock equivalent:** `docs/mocks/mock-admin.html` → view `#view-dashboard` (sidebar item **Start**).
 
 | Reference element | Mock implementation |
 |-------------------|---------------------|
@@ -59,7 +59,7 @@ The admin mock follows the same three-level pattern as the AB-MATIC reference ap
 
 **What it shows (reference):** **Back to start**, page title + subtitle, and a **grid of entity cards**. Each card has a coloured icon, title, short description, and a full-width **“X form”** button.
 
-**WebShop mock equivalent:** `readme/docs/mock-admin.html` → view `#view-hub` (sidebar items **Webshop**, **Catalog**, **Customers**, **Sales**, **Stock**, **Settings**, **My profile**).
+**WebShop mock equivalent:** `docs/mocks/mock-admin.html` → view `#view-hub` (sidebar items **Webshop**, **Catalog**, **Customers**, **Sales**, **Stock**, **Settings**, **My profile**).
 
 | Reference element | Mock implementation |
 |-------------------|---------------------|
@@ -80,7 +80,7 @@ The admin mock follows the same three-level pattern as the AB-MATIC reference ap
 
 **What it shows (reference):** Page title, green **Refresh**, **filter panel** (dropdowns + search + checkbox), **Apply Filters** (blue) / **Clear** (red), and a **dark-header striped table** with icon-only edit actions.
 
-**WebShop mock equivalent:** `readme/docs/mock-admin.html` → views `#view-list` and `#view-form`.
+**WebShop mock equivalent:** `docs/mocks/mock-admin.html` → views `#view-list` and `#view-form`.
 
 | Reference element | Mock implementation |
 |-------------------|---------------------|
@@ -323,13 +323,13 @@ Same `StaffUser` table — **form only** (`formOnly: true` in mock) for the logg
 
 ## Mollie payment mock (reference only)
 
-[`readme/docs/mock-payments.html`](docs/mock-payments.html) illustrates the **hosted checkout** and **confirmation** screens. The real flow is implemented in Blazor (`CheckoutUseCase`, `ProcessMollieWebhookUseCase`) with `Mollie:UseMock=true` for local dev.
+[`docs/mocks/mock-payments.html`](docs/mock-payments.html) illustrates the **hosted checkout** and **confirmation** screens. The real flow is implemented in Blazor (`CheckoutUseCase`, `ProcessMollieWebhookUseCase`) with `Mollie:UseMock=true` for local dev.
 
 ---
 
 ## Validation checklist (admin mock)
 
-Open `readme/docs/mock-admin.html` directly (no storefront step):
+Open `docs/mocks/mock-admin.html` directly (no storefront step):
 
 1. **Start** — matches `main_screen.png` layout (sidebar, top bar, 4 cards, footer).
 2. **Catalog** hub — matches `menu_screen.png` (back link, cards, form buttons).

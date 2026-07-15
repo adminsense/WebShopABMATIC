@@ -1,4 +1,4 @@
-# WebShopABMATIC — B2B E-Commerce Platform
+﻿# WebShopABMATIC — B2B E-Commerce Platform
 
 ![Blazor](https://img.shields.io/badge/Blazor-Server-512BD4?style=flat-square&logo=blazor&logoColor=white) ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white) ![C#](https://img.shields.io/badge/C%23-13.0-239120?style=flat-square&logo=csharp&logoColor=white) ![SQL Server](https://img.shields.io/badge/SQL%20Server-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white) ![Hexagonal](https://img.shields.io/badge/Architecture-Hexagonal-9b59b6?style=flat-square) ![Status](https://img.shields.io/badge/Status-Production%20Ready-28a745?style=flat-square)
 
@@ -20,12 +20,12 @@ Complete B2B online sales system with **two core applications**:
 #### 📦 **Storefront**
 
 **Storefront interface — Catalog & shopping:**
-![Webstore Frontend](readme/images/webstore_front.png)
+![Webstore Frontend](docs/images/webstore_front.png)
 
 Customer purchase experience:
 - 🔍 **Product catalog** with search and filters
 - 🛒 **Smart shopping cart** with stock validation
-- 💳 **Integrated Mollie checkout** (debit/card/iDEAL)
+- 💳 **Integrated Mollie checkout** (debit/card/iDEAL) — **mock until client API keys**
 - 📋 **Order management** and purchase history
 - 👤 **Customer profile** with addresses and preferences
 
@@ -34,7 +34,7 @@ Customer purchase experience:
 #### 🎛️ **Admin Panel**
 
 **Dashboard — Real-time KPIs and alerts:**
-![Admin Dashboard](readme/images/main_screen.png)
+![Admin Dashboard](docs/images/main_screen.png)
 
 - 📊 **Administrative dashboard** with KPIs, operational alerts, and executive business visibility.
 
@@ -43,14 +43,14 @@ Customer purchase experience:
 #### 💳 **Payments** (Mollie)
 
 **Checkout payment screen:**
-![Payments](readme/images/payments.png)
+![Payments](docs/images/payments.png)
 
 PrePay checkout experience:
 - 💳 **Integrated Mollie checkout** (iDEAL/card) with secure redirect
-- 🧪 **Mock mode for local development** without requiring a real key
+- 🧪 **Mock mode is the current rule** (`Mollie:UseMock`) until the client delivers API keys — see [SPEC_MOLLIE_PAYMENTS_open.md](docs/SPEC_MOLLIE_PAYMENTS_open.md)
 
 **Payment received / confirmation screen:**
-![Payments Received](readme/images/payments%20received.png)
+![Payments Received](docs/images/payments%20received.png)
 
 Post-payment confirmation experience:
 - ✅ **Payment confirmation screen** with clear customer feedback
@@ -134,18 +134,26 @@ Use credentials from those tables in the connected database (`abmatic_test`). In
 
 ## Documentation
 
-- 🏗️ [`readme/SPEC_INFRASTRUCTURE.md`](readme/SPEC_INFRASTRUCTURE.md) — Hexagonal architecture, connection strings, migrations, DI
-- 🖥️ [`readme/SPEC_ADMIN.md`](readme/SPEC_ADMIN.md) — Admin panel: logins, registrations, stock, dashboards
-- 🛒 [`readme/SPEC_WEB_STORE.md`](readme/SPEC_WEB_STORE.md) — Web store: catalog, customer auth, checkout, stock display
-- 💳 [`readme/open_MOLLIE_PAYMENTS_open.md`](readme/open_MOLLIE_PAYMENTS_open.md) — Mollie test key, webhook, E2E checklist (open / pending)
-- 📦 [`readme/SPEC_STOCK_OPERATIONS_PROPOSAL.md`](readme/SPEC_STOCK_OPERATIONS_PROPOSAL.md) — Stock operations, checkout, Mollie
-- ✅ [`readme/DATA_SUMMARY.md`](readme/DATA_SUMMARY.md) — **Database summary** (tables, row counts, admin screens)
-- ✅ [`readme/open_IMPLEMENTATION_ROADMAP.md`](readme/open_IMPLEMENTATION_ROADMAP.md) — **Main delivery tracker** (dev 100% first · prod go-live last)
-- ✅ [`readme/AZUREBLOB.md`](readme/AZUREBLOB.md) — Product images: `AzureFiles` ↔ `Product`, Azure Blob `files` + SAS
-- 🎨 [`readme/PATTERNS_UI_QUICK_START.md`](readme/PATTERNS_UI_QUICK_START.md) — Buttons, grids, forms (copy-paste)
-- 🏗️ [`readme/PATTERNS_CODE_AND_INFRASTRUCTURE.md`](readme/PATTERNS_CODE_AND_INFRASTRUCTURE.md) — Blazor patterns,
-- 📋 [`readme/docs/mock-payments.html`](readme/docs/mock-payments.html) — Mollie card checkout + payment success
-- 📋 [`readme/docs/mock-admin.html`](readme/docs/mock-admin.html) — Admin prototype
+**Agents / Claude / Cursor:** start at **[`AGENTS.md`](AGENTS.md)** (process + which SPEC/patterns to use).  
+**Humans:** **[`docs/README.md`](docs/README.md)** (full index).
+
+| Doc | Purpose |
+|-----|---------|
+| [SPEC_WEB_STORE.md](docs/SPEC_WEB_STORE.md) | Storefront: catalog, auth, checkout, stock display |
+| [SPEC_ADMIN.md](docs/SPEC_ADMIN.md) | Admin panel, staff vs customer auth |
+| [SPEC_INFRASTRUCTURE.md](docs/SPEC_INFRASTRUCTURE.md) | Hexagonal layout, Azure, Blazor, DI |
+| [AMENDMENTS.md](docs/AMENDMENTS.md) | Short runtime amendments |
+| [SPEC_MOLLIE_PAYMENTS_open.md](docs/SPEC_MOLLIE_PAYMENTS_open.md) | Mollie go-live checklist |
+| [SPEC_IMPLEMENTATION_ROADMAP_open.md](docs/SPEC_IMPLEMENTATION_ROADMAP_open.md) | Delivery tracker |
+| [DATA_SUMMARY.md](docs/DATA_SUMMARY.md) | Database summary |
+| [DATA_DUTCH_ENGLISH_MODEL.md](docs/DATA_DUTCH_ENGLISH_MODEL.md) | Dutch DB ↔ English code map |
+| [DATA_FREIGHT_DELIVERY.md](docs/DATA_FREIGHT_DELIVERY.md) | Store freight from ERP products |
+| [DATA_AZUREBLOB.md](docs/DATA_AZUREBLOB.md) | Product images / Blob |
+| [PATTERNS_UI_QUICK_START.md](docs/PATTERNS_UI_QUICK_START.md) | UI patterns |
+| [PATTERNS_CODE_AND_INFRASTRUCTURE.md](docs/PATTERNS_CODE_AND_INFRASTRUCTURE.md) | Code patterns + doc naming |
+| [mocks/](docs/mocks/) | HTML prototypes (`mock-admin.html`, `mock-payments.html`) |
+
+Agent guides: [`AGENTS.md`](AGENTS.md) · [`CLAUDE.md`](CLAUDE.md) · [`.claude/CLAUDE.md`](.claude/CLAUDE.md) · Cursor: `.cursor/rules/agents.mdc` + `docs-sync.mdc`
 
 ---
 
