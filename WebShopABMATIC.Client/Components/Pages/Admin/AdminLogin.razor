@@ -2,22 +2,94 @@
 @layout AdminLoginLayout
 
 @using WebShopABMATIC.Application.Auth
-@using WebShopABMATIC.Web.Forms
+@using WebShopABMATIC.Web.Components.Account.Shared
 
-@inject NavigationManager Navigation
+<PageTitle>Staff log in</PageTitle>
 
-<PageTitle>Sign in</PageTitle>
+<div class="auth-card">
+    <h1>Staff log in</h1>
+    <p>Sign in with your staff account to open the admin panel (orders, stock, customers).</p>
+
+    <StatusMessage Message="@_errorMessage" />
+
+    <form method="post" action="/account/admin-login">
+        <input type="hidden" name="returnUrl" value="@(ReturnUrl ?? "")" />
+        <div class="form-group">
+            <label for="admin-login">Login or email</label>
+            <input id="admin-login" name="login" class="form-control" value="@_login" autocomplete="username" required />
+        </div>
+        <div class="form-group">
+            <label for="admin-password">Password</label>
+            <div class="password-field">
+                <input id="admin-password" name="password" type="password" class="form-control" autocomplete="current-password" required />
+                <button type="button"
+                        class="password-toggle"
+                        aria-label="Show password"
+                        aria-pressed="false"
+                        aria-controls="admin-password"
+                        onclick="storePasswordToggle('admin-password', this)">
+                    <i class="bi bi-eye" aria-hidden="true"></i>
+                </button>
+            </div>
+        </div>
+        <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" name="rememberMe" value="true" id="admin-remember" />
+            <label class="form-check-label" for="admin-remember">Remember me</label>
+        </div>
+        <button type="submit" class="btn btn-primary">Log in</button>
+    </form>
+
+    <p class="mt-3 mb-0" style="font-size:0.85rem;color:var(--muted)">
+        <a href="/">← Back to store</a>
+    </p>
+</div>
 
 @code {
+    private string? _errorMessage;
+    private string _login = "";
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
 
+    [SupplyParameterFromQuery(Name = "error")]
+    private string? Error { get; set; }
+
     protected override void OnInitialized()
     {
-        var destination = string.IsNullOrWhiteSpace(ReturnUrl)
-            ? "/sign-in?returnUrl=%2Fadmin"
-            : $"/sign-in?returnUrl={Uri.EscapeDataString(ReturnUrl)}";
+        if (!string.IsNullOrWhiteSpace(Error))
+        {
+            _errorMessage = Error;
+        }
 
-        Navigation.NavigateTo(destination, replace: true);
+        if (HttpContext is null)
+        {
+            return;
+        }
+
+        // Use HTTP redirect (not NavigateTo) — this page is static SSR; NavigateTo throws NavigationException.
+        if (HttpMethods.IsGet(HttpContext.Request.Method)
+            && HttpContext.User.Identity?.IsAuthenticated == true
+            && (HttpContext.User.IsInRole(AppRoles.Admin) || HttpContext.User.IsInRole(AppRoles.Manager)))
+        {
+            HttpContext.Response.Redirect(ResolveReturnUrl(ReturnUrl));
+        }
+    }
+
+    private static string ResolveReturnUrl(string? returnUrl)
+    {
+        if (string.IsNullOrWhiteSpace(returnUrl))
+        {
+            return "/admin";
+        }
+
+        if (returnUrl.StartsWith('/') && !returnUrl.StartsWith("//", StringComparison.Ordinal))
+        {
+            return returnUrl;
+        }
+
+        return "/admin";
     }
 }

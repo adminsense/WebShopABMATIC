@@ -228,10 +228,10 @@ The store does not own master data; it **reads** configurations maintained in th
 | Step | Fields / logic |
 |------|----------------|
 | **Delivery address** | Select `CustomerDeliveryAddress` or default |
-| **Delivery type** | `DeliveryType` — cost rules per type |
-| **Payment method** | `PaymentMethod` |
-| **Review** | Lines, discounts, VAT, total |
-| **Submit** | Create `Order`, `OrderLine`; trigger stock reservation per `OrderStatus` |
+| **Delivery type / frete** | From ERP only — see [DATA_FREIGHT_DELIVERY.md](./DATA_FREIGHT_DELIVERY.md). Customer `DeliveryTypeId` (`Klant.LeverigsType`) → `OrderDeliveryTypeProduct` products → `ProductPrices.GrossSalesPrice`. **No hardcoded fee.** Missing link/price → **€0**. User selects at most one freight product (Dutch `ProdName`). |
+| **Payment method** | `PaymentMethod` (Mollie mock until client keys) |
+| **Review** | Lines, delivery fee, VAT, total |
+| **Submit** | Create `Order`, `OrderLine`; delivery line when fee &gt; 0 (`IsLeveringsTypeProduct`) |
 
 ### 4.5 Account area (logged-in customer)
 
