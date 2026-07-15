@@ -41,6 +41,9 @@ public sealed class StoreOrderCreateCommand
     public int CreatedByUserId { get; init; } = 1;
     public bool IsPrePay { get; init; }
     public decimal DeliveryFee { get; init; }
+    /// <summary>ERP freight product when fee &gt; 0; null for €0 / text-only line.</summary>
+    public int? DeliveryProductId { get; init; }
+    public string? DeliveryProductName { get; init; }
     public decimal VatPercentage { get; init; }
     public required IReadOnlyList<StoreOrderLineCreate> Lines { get; init; }
     public string? MolliePaymentId { get; init; }
