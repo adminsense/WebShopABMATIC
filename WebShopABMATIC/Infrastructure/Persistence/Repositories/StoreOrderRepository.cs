@@ -10,7 +10,6 @@ namespace WebShopABMATIC.Infrastructure.Persistence.Repositories;
 
 public sealed class StoreOrderRepository : IStoreOrderRepository
 {
-    private const decimal DefaultDeliveryFee = 9.00m;
     private const decimal DefaultVatPercentage = 21m;
 
     private readonly WebShopABMATICDbContext _db;
@@ -104,14 +103,90 @@ public sealed class StoreOrderRepository : IStoreOrderRepository
             return null;
         }
 
+        var customerDelivery = await _db.Customers.AsNoTracking()
+            .Where(c => c.CustomerId == customerId)
+            .Select(c => new { c.DeliveryTypeId })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var deliveryTypeId = customerDelivery?.DeliveryTypeId ?? 0;
+        var deliveryTypeName = "";
+        if (deliveryTypeId > 0)
+        {
+            deliveryTypeName = await _db.DeliveryTypes.AsNoTracking()
+                .Where(d => d.Id == deliveryTypeId)
+                .Select(d => d.Name)
+                .FirstOrDefaultAsync(cancellationToken) ?? "";
+        }
+
+        var freightOptions = await LoadFreightOptionsAsync(deliveryTypeId, cancellationToken);
+
         return new CheckoutOptionsDto
         {
             CustomerId = customerId,
+            DeliveryTypeId = deliveryTypeId,
+            DeliveryTypeName = deliveryTypeName,
             DeliveryAddresses = addresses,
             PaymentMethods = paymentMethods,
-            DeliveryFee = DefaultDeliveryFee,
+            FreightOptions = freightOptions,
+            DeliveryFee = 0m,
             VatPercentage = DefaultVatPercentage
         };
+    }
+
+    private async Task<IReadOnlyList<CheckoutFreightOptionDto>> LoadFreightOptionsAsync(
+        int deliveryTypeId,
+        CancellationToken cancellationToken)
+    {
+        if (deliveryTypeId <= 0)
+        {
+            return [];
+        }
+
+        var productIds = await _db.OrderDeliveryTypeProducts.AsNoTracking()
+            .Where(x => x.LeveringTypeId == deliveryTypeId)
+            .Select(x => x.ProductId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        if (productIds.Count == 0)
+        {
+            return [];
+        }
+
+        var today = DateTime.UtcNow.Date;
+        var names = await _db.Products.AsNoTracking()
+            .Where(p => productIds.Contains(p.ProductId))
+            .Select(p => new { p.ProductId, p.NameNl, p.NameEn })
+            .ToListAsync(cancellationToken);
+
+        var priceRows = await _db.ProductPrices.AsNoTracking()
+            .Where(p => productIds.Contains(p.ProductId)
+                        && p.FromAddress.Date <= today
+                        && (p.ValidTo == null || p.ValidTo.Value.Date >= today))
+            .Select(p => new { p.ProductId, p.FromAddress, p.GrossSalesPrice, p.CorrectedGrossPrice })
+            .ToListAsync(cancellationToken);
+
+        var prices = priceRows
+            .GroupBy(p => p.ProductId)
+            .ToDictionary(
+                g => g.Key,
+                g =>
+                {
+                    var latest = g.OrderByDescending(x => x.FromAddress).First();
+                    var corrected = latest.CorrectedGrossPrice;
+                    var gross = latest.GrossSalesPrice;
+                    return corrected > 0 ? corrected : Math.Max(0, gross);
+                });
+
+        return names
+            .OrderBy(n => n.NameNl)
+            .Select(n => new CheckoutFreightOptionDto
+            {
+                ProductId = n.ProductId,
+                Name = string.IsNullOrWhiteSpace(n.NameNl) ? (n.NameEn ?? $"Product {n.ProductId}") : n.NameNl,
+                UnitPrice = prices.GetValueOrDefault(n.ProductId)
+            })
+            .ToList();
     }
 
     public Task<IReadOnlyDictionary<int, int>> GetAvailableStockAsync(IEnumerable<int> productIds, CancellationToken cancellationToken = default) =>
@@ -232,7 +307,8 @@ public sealed class StoreOrderRepository : IStoreOrderRepository
             var deliveryVat = Math.Round(deliveryExcl * command.VatPercentage / 100m, 2);
             _db.OrderLines.Add(CreateDeliveryLine(
                 order.Id, sortOrder, deliveryExcl, deliveryVat, command.VatPercentage,
-                fallbackProductTypeId, fallbackReportingGroupId, fallbackVatTypeId));
+                fallbackProductTypeId, fallbackReportingGroupId, fallbackVatTypeId,
+                command.DeliveryProductId, command.DeliveryProductName));
         }
 
         int? advancePaymentId = null;
@@ -514,12 +590,18 @@ public sealed class StoreOrderRepository : IStoreOrderRepository
         decimal vatPct,
         int productType,
         int reportingGroupId,
-        int vatTypeId)
+        int vatTypeId,
+        int? deliveryProductId,
+        string? deliveryProductName)
     {
+        var display = string.IsNullOrWhiteSpace(deliveryProductName)
+            ? "Delivery"
+            : deliveryProductName.Trim();
+
         var line = CreateOrderLine(orderId, new StoreOrderLineCreate
         {
-            ProductId = 1,
-            ProductName = "Standard delivery",
+            ProductId = deliveryProductId ?? 0,
+            ProductName = display,
             Quantity = 1,
             UnitPrice = exclVat,
             LineTotalExclVat = exclVat,
@@ -527,9 +609,17 @@ public sealed class StoreOrderRepository : IStoreOrderRepository
             LineTotalInclVat = exclVat + vatAmount
         }, sortOrder, vatPct, productType, reportingGroupId, vatTypeId);
 
-        line.ProductId = null;
-        line.DocumentDisplayName = "Standard delivery";
-        line.DocumentDisplayNameFr = "Standard delivery";
+        if (deliveryProductId is > 0)
+        {
+            line.ProductId = deliveryProductId;
+        }
+        else
+        {
+            line.ProductId = null;
+        }
+
+        line.DocumentDisplayName = display;
+        line.DocumentDisplayNameFr = display;
         line.IsLeveringsTypeProduct = true;
         return line;
     }
