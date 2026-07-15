@@ -1,6 +1,6 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.HttpOverrides;
 using WebShopABMATIC.Application;
 using WebShopABMATIC.Application.Auth;
@@ -25,7 +25,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents(options =>
     {
-        options.DetailedErrors = true;
+        options.DetailedErrors = builder.Environment.IsDevelopment();
     });
 
 builder.Services.Configure<Microsoft.AspNetCore.SignalR.HubOptions>(options =>
@@ -43,10 +43,13 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     {
         options.LoginPath = "/sign-in";
         options.AccessDeniedPath = "/sign-in";
-        options.Cookie.Name = ".WebShopABMATIC.Auth";
+        options.Cookie.Name = WebShopABMATIC.Infrastructure.Auth.LegacyCookieAuthentication.CookieName;
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        // Store login uses IsPersistent=false → session cookie; idle = sliding 15 minutes.
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(15);
+        options.SlidingExpiration = true;
         options.Events = new CookieAuthenticationEvents
         {
             OnRedirectToLogin = context =>
@@ -89,7 +92,17 @@ builder.Services.AddWebShopApplication();
 builder.Services.AddWebShopInfrastructure(builder.Configuration);
 builder.Services.AddHttpsRedirection(options =>
 {
-    options.HttpsPort = 44357;
+    // Only force a port when the process actually listens on HTTPS (IIS Express / dual URL).
+    // Hardcoding 44357 makes http-only runs redirect to a dead port and look "hung".
+    var urls = (builder.Configuration["ASPNETCORE_URLS"]
+                ?? Environment.GetEnvironmentVariable("ASPNETCORE_URLS")
+                ?? string.Empty);
+    if (urls.Contains("https://", StringComparison.OrdinalIgnoreCase)
+        || !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ASPNETCORE_HTTPS_PORT"))
+        || !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ASPNETCORE_HTTPS_PORTS")))
+    {
+        options.HttpsPort = 44357;
+    }
 });
 builder.Services.AddAntiforgery(options =>
 {
@@ -112,17 +125,35 @@ builder.Services.AddScoped<IGridExportService, GridExportService>();
 var app = builder.Build();
 
 app.UseForwardedHeaders();
-app.UseDeveloperExceptionPage();
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+else
+{
+    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    app.UseHsts();
+}
 
-app.UseHttpsRedirection();
+// Skip HTTPS redirect when the app is bound HTTP-only (local perf / tooling).
+var listenUrls = (app.Configuration["ASPNETCORE_URLS"]
+                  ?? Environment.GetEnvironmentVariable("ASPNETCORE_URLS")
+                  ?? string.Empty);
+if (listenUrls.Contains("https://", StringComparison.OrdinalIgnoreCase)
+    || !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ASPNETCORE_HTTPS_PORT"))
+    || !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ASPNETCORE_HTTPS_PORTS")))
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseRouting();
-app.MapStaticAssets();
+app.UseStaticFiles();
 app.UseSession();
 app.UseAntiforgery();
-
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
@@ -135,20 +166,48 @@ app.MapGet("/login", () => Results.Redirect("/sign-in"));
 
 app.MapGet("/api/store/category-icon/{id:int}", async (int id, IStoreCatalogPort catalog, CancellationToken ct) =>
 {
-    var bytes = await catalog.GetCategoryIconAsync(id, ct);
-    if (bytes is null || bytes.Length == 0)
+    try
     {
-        return Results.NotFound();
-    }
+        var bytes = await catalog.GetCategoryIconAsync(id, ct);
+        if (bytes is null || bytes.Length == 0)
+        {
+            return Results.NotFound();
+        }
 
-    return Results.File(bytes, ImageContentType(bytes));
+        return Results.File(bytes, ImageContentType(bytes));
+    }
+    catch (OperationCanceledException) when (ct.IsCancellationRequested)
+    {
+        return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+    }
 });
 
-app.MapPost("/account/logout", async (HttpContext context, string? returnUrl) =>
+static IResult ResolveLogoutReturnUrl(HttpContext context)
+{
+    var returnUrl = context.Request.HasFormContentType
+        ? context.Request.Form["returnUrl"].ToString()
+        : string.Empty;
+    if (string.IsNullOrWhiteSpace(returnUrl))
+    {
+        returnUrl = context.Request.Query["returnUrl"].ToString();
+    }
+
+    if (string.IsNullOrWhiteSpace(returnUrl) || !returnUrl.StartsWith('/'))
+    {
+        returnUrl = "/";
+    }
+
+    return Results.Redirect(returnUrl);
+}
+
+async Task<IResult> LogoutHandler(HttpContext context)
 {
     await WebShopABMATIC.Infrastructure.Auth.LegacyCookieAuthentication.SignOutAsync(context);
-    return Results.Redirect(string.IsNullOrWhiteSpace(returnUrl) ? "/" : returnUrl);
-}).DisableAntiforgery();
+    return ResolveLogoutReturnUrl(context);
+}
+
+app.MapGet("/account/logout", LogoutHandler).DisableAntiforgery();
+app.MapPost("/account/logout", LogoutHandler).DisableAntiforgery();
 
 app.Run();
 
