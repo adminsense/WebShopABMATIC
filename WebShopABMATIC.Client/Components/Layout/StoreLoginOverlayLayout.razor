@@ -1,0 +1,94 @@
+@inherits LayoutComponentBase
+@using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Application.Store
+@inject IStoreCatalogPort CatalogPort
+@inject StoreCartService Cart
+@implements IDisposable
+
+<div class="store-shell store-shell--login-overlay">
+    <StoreHeader />
+    <div class="store-page store-page--under-login" aria-hidden="true">
+        <aside class="store-sidebar" aria-label="Categories">
+            <StoreCategorySidebar />
+        </aside>
+        <main class="store-main">
+            <div class="store-content-inner">
+                <section class="store-section">
+                    <h2 class="store-section-title">Categories</h2>
+                    @if (_loading)
+                    {
+                        <p class="text-muted">Loading…</p>
+                    }
+                    else if (_roots.Count == 0)
+                    {
+                        <p class="text-muted">WebShop ABMATIC</p>
+                    }
+                    else
+                    {
+                        <div class="categories-grid">
+                            @foreach (var c in _roots)
+                            {
+                                <div class="category-tile category-tile--static" aria-hidden="true">
+                                    <span class="category-tile-icon">
+                                        @if (c.HasIcon)
+                                        {
+                                            <img src="@($"/api/store/category-icon/{c.Id}")" alt="" loading="lazy" />
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-box-seam"></i>
+                                        }
+                                    </span>
+                                    <span class="category-tile-label">@c.Name</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <div class="store-auth-overlay" role="dialog" aria-modal="true" aria-labelledby="store-login-title">
+        <div class="store-auth-overlay-panel">
+            @Body
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool _loading = true;
+    private IReadOnlyList<StoreCategoryTreeNodeDto> _roots = [];
+
+    protected override void OnInitialized() => Cart.Changed += OnCartChanged;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var tree = await CatalogPort.GetCategoryTreeAsync();
+            _roots = tree.Take(12).ToList();
+        }
+        catch
+        {
+            _roots = [];
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Cart.EnsureLoadedAsync();
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void OnCartChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Cart.Changed -= OnCartChanged;
+}
