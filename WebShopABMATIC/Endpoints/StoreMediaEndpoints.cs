@@ -15,13 +15,10 @@ public static class StoreMediaEndpoints
             var url = await media.GetPrimaryImageUrlAsync(productId, webPublishedOnly: true, cancellationToken);
             if (string.IsNullOrWhiteSpace(url))
             {
-                return Results.LocalRedirect(FallbackImage(productId));
+                return Results.LocalRedirect("/images/product-placeholder.png");
             }
 
             return Results.Redirect(url);
         }).DisableAntiforgery();
     }
-
-    private static string FallbackImage(int productId) =>
-        productId is >= 1 and <= 6 ? $"/images/product{productId}.png" : "/images/product1.png";
 }
