@@ -1,17 +1,17 @@
-# Stock operations & storefront payments — proposal
+﻿# Stock operations & storefront payments — proposal
 
 ![Status](https://img.shields.io/badge/Status-Partially%20implemented-22c55e?style=flat-square) ![Schema](https://img.shields.io/badge/Schema-Products%20%2B%20Orders-512BD4?style=flat-square) ![Architecture](https://img.shields.io/badge/Fit-Hexagonal-28a745?style=flat-square) ![Payments](https://img.shields.io/badge/Payments-Mollie.Api-0a0a0a?style=flat-square) ![Tracker](https://img.shields.io/badge/Live-IMPLEMENTATION__ROADMAP__open.md-informational?style=flat-square)
 
 > [!IMPORTANT] 
-> **Executive summary:** Originally an analysis proposal — **core stock writes, checkout, Mollie (dev mock), manual adjustment, and low-stock alerts are now implemented** (see **§0** and [open_IMPLEMENTATION_ROADMAP.md](./open_IMPLEMENTATION_ROADMAP.md)). **Dev priority:** Phase E stock ops. **Prod go-live (last):** 3b SMTP, B.9 Mollie E2E, M.5 Azure Blob.
+> **Executive summary:** Originally an analysis proposal — **core stock writes, checkout, Mollie (dev mock), manual adjustment, and low-stock alerts are now implemented** (see **§0** and [SPEC_IMPLEMENTATION_ROADMAP_open.md](./SPEC_IMPLEMENTATION_ROADMAP_open.md)). **Dev priority:** Phase E stock ops. **Prod go-live (last):** 3b SMTP, B.9 Mollie E2E, M.5 Azure Blob.
 
-> **Live tracker:** [open_IMPLEMENTATION_ROADMAP.md](./open_IMPLEMENTATION_ROADMAP.md)
+> **Live tracker:** [SPEC_IMPLEMENTATION_ROADMAP_open.md](./SPEC_IMPLEMENTATION_ROADMAP_open.md)
 
 ---
 
 ## 0. Implementation log (delivered)
 
-_Last updated: May 2026 — see [open_IMPLEMENTATION_ROADMAP.md](./open_IMPLEMENTATION_ROADMAP.md) for current phase status._
+_Last updated: May 2026 — see [SPEC_IMPLEMENTATION_ROADMAP_open.md](./SPEC_IMPLEMENTATION_ROADMAP_open.md) for current phase status._
 
 ### 0.1 Stock movement service (sale + manual)
 
@@ -41,7 +41,7 @@ _Last updated: May 2026 — see [open_IMPLEMENTATION_ROADMAP.md](./open_IMPLEMEN
 
 | Item | Status | Notes |
 |------|--------|-------|
-| **Min quantity cadastro** | ✅ | `/admin/product-stock` → `ProductStockLocation.MinQuantity` |
+| **Min quantity setup** | ✅ | `/admin/product-stock` → `ProductStockLocation.MinQuantity` |
 | **Low-stock filter** | ✅ | `/admin/product-stock?lowStock=true` + **All / Low stock** toggle |
 | **Red row highlight** | ✅ | `table-danger` when `Quantity <= MinQuantity` |
 | **Stock overview link** | ✅ | Review → `?lowStock=true` |
@@ -66,7 +66,6 @@ _Last updated: May 2026 — see [open_IMPLEMENTATION_ROADMAP.md](./open_IMPLEMEN
 | Feature | Phase | Reference |
 |---------|-------|-----------|
 | `ReservedQuantity` / `OrderStatus.ReserveStock` workflow | 4 | §3.7 — **we decrement on pay, not reserve** |
-| SignalR `StockUpdated` | optional | Roadmap Phase F |
 | Audit `StockAdjust` badge | 6 | [AUDITS_open.md](./AUDITS_open.md) |
 | Sample data: movements + PO on `abmatic_test` | 1 | §5 |
 
@@ -81,7 +80,7 @@ _Last updated: May 2026 — see [open_IMPLEMENTATION_ROADMAP.md](./open_IMPLEMEN
 | GRN API | `POST /api/admin/stock/purchase-orders/{id}/receive` | ✅ |
 | `ApplyPurchaseOrderReceiveAsync` | `StockMovementService` | ✅ |
 
-**Mollie (storefront):** code + dev mock ✅ — real `test_…` API key + public webhook when you create a Mollie dev account ([open_MOLLIE_PAYMENTS_open.md](./open_MOLLIE_PAYMENTS_open.md) **B.9**).
+**Mollie (storefront):** code + dev mock ✅ — real `test_…` API key + public webhook when you create a Mollie dev account ([SPEC_MOLLIE_PAYMENTS_open.md](./SPEC_MOLLIE_PAYMENTS_open.md) **B.9**).
 
 ---
 
@@ -391,34 +390,30 @@ Webshop sales link **`OrderLineId`** on movement rows created by `ApplySaleFromO
 
 **Depends on:** Stable order fulfilment workflow (today orders are edit-only in admin).
 
-#### Solução — Implementada
+#### Solution — implemented
 
-| Cenário | Estado | Componente |
-|---------|:---:|------------|
-| PrePay (Mollie) → reservar stock | ✅ | `ApplyReservationFromOrderAsync` no `CheckoutUseCase` |
-| Pagamento confirmado → sale + libertar reserva | ✅ | `ApplySaleFromOrderAsync` no `ProcessMollieWebhookUseCase` |
-| PostPay (fatura) → decrementar imediatamente | ✅ | `ApplySaleFromOrderAsync` no `CheckoutUseCase` |
-| Pagamento **expirado/cancelado/falhado** → libertar reserva | ✅ | `ProcessMollieWebhookUseCase` detecta status terminal e chama `ReleaseReservationAsync` |
-| **Background expiration** → libertar reservas abandonadas | ✅ | `ReservationExpirationService` (hosted service, 5 min interval, 30 min max age) |
-| Admin **cancela encomenda** → libertar reserva | ✅ | `OrderAdminUseCase.CancelOrderAsync` + botão na página `/admin/orders` |
-| **Customer return page** → libertar se expirado | ✅ | `CheckoutUseCase.GetOrderSummaryAsync` liberta reserva se status terminal |
-| Catálogo mostra "disponível" (Qty - Reserved) | ✅ | `StoreCatalogService` e `StoreOrderRepository` |
-| Admin grid mostra Reserved | ✅ | `ProductStockLocationDto.AvailableQuantity` |
-| **Legacy status workflow** (OrderStructure.StatusId) | ✅ Ready | `OrderStockWorkflowService` avalia `OrderStatus.ReserveStock` / `AffectsStock` (para uso futuro com admin CRUD de OrderStructure) |
-| Concorrência (2 clientes reservam o último item) | ✅ | Transação SQL garante atomicidade; segundo cliente recebe erro "Insufficient available stock" |
+| Scenario | Status | Component |
+|----------|:---:|-----------|
+| PrePay (Mollie) → reserve stock | ✅ | `ApplyReservationFromOrderAsync` in `CheckoutUseCase` |
+| Payment confirmed → sale + release reservation | ✅ | `ApplySaleFromOrderAsync` in `ProcessMollieWebhookUseCase` |
+| PostPay (invoice) → decrement immediately | ✅ | `ApplySaleFromOrderAsync` in `CheckoutUseCase` |
+| Payment **expired/canceled/failed** → release reservation | ✅ | `ProcessMollieWebhookUseCase` detects terminal status and calls `ReleaseReservationAsync` |
+| **Background expiration** → release abandoned reservations | ✅ | `ReservationExpirationService` (hosted service, 5 min interval, 30 min max age) |
+| Admin **cancels order** → release reservation | ✅ | `OrderAdminUseCase.CancelOrderAsync` + button on `/admin/orders` |
+| **Customer return page** → release if expired | ✅ | `CheckoutUseCase.GetOrderSummaryAsync` releases reservation on terminal status |
+| Catalog shows “available” (Qty − Reserved) | ✅ | `StoreCatalogService` and `StoreOrderRepository` |
+| Admin grid shows Reserved | ✅ | `ProductStockLocationDto.AvailableQuantity` |
+| **Legacy status workflow** (OrderStructure.StatusId) | ✅ Ready | `OrderStockWorkflowService` evaluates `OrderStatus.ReserveStock` / `AffectsStock` (for future admin OrderStructure CRUD) |
+| Concurrency (2 customers reserve the last unit) | ✅ | SQL transaction ensures atomicity; second customer gets “Insufficient available stock” |
 
-**Decisão sobre SignalR:**
+**Services implemented:**
 
-SignalR **não é necessário** e **não foi implementado**. A transação SQL garante que dois clientes não reservam mais do que o disponível. SignalR seria apenas para feedback em tempo real na UI (ex.: "Últimas 2 unidades!" a actualizar live) — fica como nice-to-have para uma fase futura, independente deste workflow.
-
-**Serviços implementados:**
-
-| Serviço | Ficheiro | Responsabilidade |
-|---------|----------|-----------------|
-| `IStockMovementService.ReleaseReservationAsync` | `StockMovementService.cs` | Liberta `ReservedQuantity`, cria movimentos de reversão. Idempotente |
-| `ReservationExpirationService` | `ReservationExpirationService.cs` | Background service que a cada 5 min verifica encomendas PrePay > 30 min sem pagamento e liberta reservas |
-| `IOrderStockWorkflowService` | `OrderStockWorkflowService.cs` | Avalia flags `ReserveStock` / `AffectsStock` do `OrderStatus` legacy em transições de estado |
-| `ProcessMollieWebhookUseCase` | (enhanced) | Agora trata statuses `expired`, `canceled`, `failed` → release + audit |
+| Service | File | Responsibility |
+|---------|------|----------------|
+| `IStockMovementService.ReleaseReservationAsync` | `StockMovementService.cs` | Releases `ReservedQuantity`, creates reversing movements. Idempotent |
+| `ReservationExpirationService` | `ReservationExpirationService.cs` | Every 5 min, finds PrePay orders unpaid for > 30 min and releases reservations |
+| `IOrderStockWorkflowService` | `OrderStockWorkflowService.cs` | Evaluates legacy `OrderStatus` `ReserveStock` / `AffectsStock` flags on status transitions |
+| `ProcessMollieWebhookUseCase` | (enhanced) | Handles `expired`, `canceled`, `failed` → release + audit |
 
 **API endpoint:**
 
@@ -435,7 +430,7 @@ Body: { "reason": "..." }
 
 | Layer | Delivered |
 |-------|-----------|
-| **Cadastro** | `MinQuantity` on `/admin/product-stock` |
+| **Setup** | `MinQuantity` on `/admin/product-stock` |
 | **Admin grid** | Filter `?lowStock=true`, red rows, product name column |
 | **Dashboard** | Table **Products below minimum**, notification banner, dismiss all |
 | **In-app alerts** | `StockLowAlerts` (`ApplicationDbContext`); `ILowStockAlertService` |
@@ -896,11 +891,11 @@ Stock Phase 1 read-only, checkout + Mollie (code), stock writes, manual adjustme
 
 ### Recommended next
 
-1. **Mollie prod go-live** — `Mollie:ApiKey`, webhook URL, E2E test ([open_IMPLEMENTATION_ROADMAP.md](./open_IMPLEMENTATION_ROADMAP.md) **B.9 — prod, last**).
+1. **Mollie prod go-live** — `Mollie:ApiKey`, webhook URL, E2E test ([SPEC_IMPLEMENTATION_ROADMAP_open.md](./SPEC_IMPLEMENTATION_ROADMAP_open.md) **B.9 — prod, last**).
 2. **Audit `StockAdjust`** badge on movement operations ([AUDITS_open.md](./AUDITS_open.md)).
-3. **Phase C** — customer/admin order visibility ([open_IMPLEMENTATION_ROADMAP.md](./open_IMPLEMENTATION_ROADMAP.md)).
+3. **Phase C** — customer/admin order visibility ([SPEC_IMPLEMENTATION_ROADMAP_open.md](./SPEC_IMPLEMENTATION_ROADMAP_open.md)).
 4. **Transfer / PO / GRN** — §3.4–3.6 when purchasing team needs admin flows.
-5. **Optional:** SignalR (roadmap Phase F). **Prod last:** SMTP worker (Phase 3b), Mollie E2E (B.9).
+5. **Prod last:** SMTP worker (Phase 3b), Mollie E2E (B.9).
 
 ### Original approval checklist (historical)
 

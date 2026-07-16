@@ -1,4 +1,4 @@
-# 🧱 Infrastructure (WebShopABMATIC vNext)
+﻿# 🧱 Infrastructure (WebShopABMATIC vNext)
 
 ![Status](https://img.shields.io/badge/Status-Store%20%2B%20Admin%20live-28a745?style=flat-square) ![Runtime](https://img.shields.io/badge/Runtime-.NET%208-512BD4?style=flat-square&logo=dotnet&logoColor=white) ![UI](https://img.shields.io/badge/UI-Blazor%20Server-512BD4?style=flat-square&logo=blazor&logoColor=white) ![DB](https://img.shields.io/badge/DB-Azure%20SQL-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white) ![Host](https://img.shields.io/badge/Host-Azure%20App%20Service-0078D4?style=flat-square&logo=microsoftazure&logoColor=white)
 
@@ -13,7 +13,7 @@ This document defines the **infrastructure and platform conventions** for WebSho
 | **App Service** | `abmaticwebshop` → `https://abmaticwebshop.azurewebsites.net` | Hosts Blazor Server (store + admin) |
 | **Visual reference** | `https://adminsenceweb.azurewebsites.net/` | Earlier admin shell mock (not the vNext deploy target) |
 | **Azure SQL** | `abmatic.database.windows.net` / database `abmatic_test` | Legacy ERP schema + vNext EF tables |
-| **Blob Storage** | Account `abmatic` · container `files` · `https://abmatic.blob.core.windows.net` | Product image bytes — [AZUREBLOB.md](AZUREBLOB.md) |
+| **Blob Storage** | Account `abmatic` · container `files` · `https://abmatic.blob.core.windows.net` | Product image bytes — [DATA_AZUREBLOB.md](DATA_AZUREBLOB.md) |
 | **File Share** | `abmaticprojecten` / share `projecten` | ERP project files — **not** webshop catalog |
 
 > **Secrets:** connection strings, storage keys, and Mollie API keys live in **Azure App Service → Configuration → Application settings** (or local User Secrets). Never commit `Web/appsettings.json` — it is listed in `.gitignore`.
@@ -106,8 +106,8 @@ Web/                  ← Blazor driving adapter
 
 ### 1.3 Data flow (mock-first → real)
 
-- **Static mocks** (`readme/docs/`) define screen requirements and reference DTO fields
-  ✅ `readme/docs/mock-admin.html`, `readme/docs/mock-loja.html`, [MOCK_PROTOTYPE_GUIDE.md](MOCK_PROTOTYPE_GUIDE.md)
+- **Static mocks** (`docs/mocks/`) define screen requirements and reference DTO fields
+  ✅ `docs/mocks/mock-admin.html`, `docs/mocks/mock-loja.html`, [MOCK_PROTOTYPE_GUIDE.md](MOCK_PROTOTYPE_GUIDE.md)
 
 - **DTOs** become the contract between UI and Application services  
   ✅ `ProductDto`, `CustomerDto`, `OrderSummaryDto`, `AdminDashboardDto`, etc.
@@ -135,13 +135,13 @@ WebShopABMATIC/                 ← repo root (solution parent)
 ├── WebShopABMATIC/               ← host + Application, Domain, Infrastructure, …
 ├── WebShopABMATIC.Client/        ← Blazor UI (Components, wwwroot)
 ├── WebShopABMATIC.Tests/
-├── readme/                       ← documentation
+├── docs/                       ← documentation (SPEC_*, SPEC_*_open, AMENDMENTS, mocks/, archive/)
 │   └── docs/                     ← HTML mocks
 ```
 
-- `readme/docs/` — static prototypes (HTML mocks)  
+- `docs/mocks/` — static HTML prototypes  
   ✅
-- `readme/` — project documentation  
+- `docs/` — project documentation (see `docs/README.md`)  
   ✅
 
 ---
@@ -154,8 +154,7 @@ WebShopABMATIC/                 ← repo root (solution parent)
   ✅ `LegacySignInService`, `LegacyCookieAuthentication`, HTTP login endpoints (`/account/admin-login`, `/account/store-login`)  
   ✅ Cookie is authoritative — **no** in-memory server browser-session gate (removed; it broke login after App Service recycle / multi-instance)
 
-- **ASP.NET Identity** — migrations and `IdentitySeed` remain in repo (`ApplicationDbContext`, `AspNetUsers`); login UI routes exist but **runtime auth uses legacy cookies** aligned with the ERP password model.  
-  See [AUTH_IDENTITY_ROADMAP_open.md](./AUTH_IDENTITY_ROADMAP_open.md) for the Identity ↔ domain bridge history.
+- **ASP.NET Identity** — `AspNet*` / Identity migrations may remain as unused artifacts in the repo; **runtime auth uses legacy cookies** only (see [SPEC_ADMIN.md](./SPEC_ADMIN.md) §2).
 
 - **Blazor circuits:** `LegacyAuthenticationStateProvider` bridges cookie auth into Interactive Server (prerender **on**). Azure App Service must have **Web sockets = On** (same as working Immo apps — see troubleshooting below).
 
@@ -233,37 +232,27 @@ Use credentials from the connected `abmatic_test` database. Inspect logins in ad
 
 ---
 
-## 💾 4. Database & migrations
+## 💾 4. Database (DB-first — no app migrations)
 
-### 4.1 Database
+### 4.1 Source of truth
 
-- **SQL Server** as the primary persistence.  
-  ✅ Azure SQL `abmatic.database.windows.net` (database `abmatic_test`) in all environments
+- **Azure SQL** `abmatic.database.windows.net` / database **`abmatic_test`**.
+- Connection: `connWebShopABMATIC` → `WebShopABMATICDbContext`.
+- Physical schema is the **Dutch ERP** (139 business tables). C# uses English names mapped via `WebShopABMATICModelBuilder`.
 
-- EF Core migrations committed to repo.  
-  ✅ Identity: `Infrastructure/Identity/Migrations/InitialIdentity`
+> [!IMPORTANT]
+> **Database first (global — every feature).** The live ERP database is authoritative.  
+> **Never invent** columns, tables, EF migrations, `Migrate()` / `EnsureCreated()`, or SQL/schema scripts in this repo to create or alter the ERP schema — store, admin, freight, payments, stock, docs, etc.  
+> The app **adapts** to existing tables/columns (encode PSP/payment data in documented legacy fields when needed).  
+> Identity `AspNet*` migrations may still exist as dead code in the repo — **not** used at runtime for login.
 
-- Domain DB: `WebShopABMATICDbContext` → connection `connWebShopABMATIC`  
-  ✅ Same server/database as Identity; legacy schema on `abmatic_test`
+### 4.2 Data source
 
-### 4.2 Migrations workflow
+All catalog, customers, orders, and stock data come from **`abmatic_test`**. There is **no seed script** and **no migration workflow** for day-to-day development.
 
-- Local dev:
-  ```bash
-  dotnet ef database update --project Infrastructure/WebShopABMATIC.Infrastructure.csproj --startup-project Web/WebShopABMATIC.Web.csproj --context ApplicationDbContext
-  ```
-  ✅ Applied via `dotnet ef database update` on `WebShopABMATICDbContext` — **not** on app startup
-
-- For CI/Prod: run migrations as part of release  
-  ⏳ Pipeline not configured yet
-
-### 4.3 Data source
-
-All catalog, customers, orders, and stock data come from the connected **`abmatic_test`** database on Azure SQL. There is **no seed script in this repository**.
-
-- Schema changes: EF migrations on `WebShopABMATICDbContext` — see [DATA_SUMMARY.md](DATA_SUMMARY.md)
-- Product images: `AzureFiles` + blob storage — [AZUREBLOB.md](AZUREBLOB.md)
-- Authentication: legacy tables only — see [§3.1](#31-authentication)
+- Schema / mapping: [DATA_DUTCH_ENGLISH_MODEL.md](DATA_DUTCH_ENGLISH_MODEL.md), [DATA_SUMMARY.md](DATA_SUMMARY.md)
+- Product images: `AzureFiles` + blob — [DATA_AZUREBLOB.md](DATA_AZUREBLOB.md)
+- Authentication: legacy tables only — [§3.1](#31-authentication)
 
 ---
 
@@ -290,8 +279,8 @@ Single **Azure SQL** database (`abmatic_test`) is used for local dev and deploye
 | `AzureStorage:ContainerName` | Product images container | `files` | `files` |
 | `AzureStorage:UseSasUrls` | Private container SAS URLs | `true` | `true` |
 | `AzureStorage:SasValidityHours` | SAS cache TTL | `12` | `12` |
-| `Mollie:ApiKey` | Real Mollie payments | User Secrets | ✅ Prod go-live |
-| `Mollie:UseMock` | Mock checkout without API key | `true` (dev) | `false` (prod) |
+| `Mollie:ApiKey` | Real Mollie payments | User Secrets / Azure | ⬜ **After client keys** — keep mock until then |
+| `Mollie:UseMock` | Mock checkout without API key | **`true` (required until client keys)** | `false` only after keys |
 | `Notifications:LowStock:UseMock` | In-app mock vs SMTP queue | `true` (dev) | `false` (prod) |
 
 Example **Azure App Service** block (placeholders — never commit real values):
@@ -319,7 +308,7 @@ Portal path: **App Service `abmaticwebshop`** → **Settings** → **Environment
 - Azure Storage account key / connection string  
   ✅ Same — rotate if exposed in chat or email
 - Mollie API key (test / live)  
-  ⏳ Prod go-live — [open_MOLLIE_PAYMENTS_open.md](open_MOLLIE_PAYMENTS_open.md)
+  ⏳ Prod go-live — [SPEC_MOLLIE_PAYMENTS_open.md](SPEC_MOLLIE_PAYMENTS_open.md)
 
 **Connection string keys**
 
@@ -349,7 +338,7 @@ This section records everything delivered beyond the baseline items 1–5 above.
 
 ### Admin UI (AB-MATIC-style layout)
 
-Matches `readme/docs/mock-admin.html` and [PATTERNS_UI_QUICK_START.md](PATTERNS_UI_QUICK_START.md):
+Matches `docs/mocks/mock-admin.html` and [PATTERNS_UI_QUICK_START.md](PATTERNS_UI_QUICK_START.md):
 
 | Route | Screen | Status |
 |-------|--------|--------|
@@ -393,18 +382,18 @@ dotnet run
 
 ### HTML prototypes and Blazor storefront
 
-✅ `readme/docs/mock-loja.html` — light-blue storefront reference  
+✅ `docs/mocks/mock-loja.html` — light-blue storefront reference  
 ✅ **Blazor store:** `/` catalog (12 products), `/product/{id}`, `/cart`, `/orders`, `/sign-in`, `/my-account` — `IStoreCatalogPort` → `StoreCatalogService`  
 ✅ Categories from ERP `ProductStructuur` on `abmatic_test`  
 ✅ Product images via `IProductMediaPort` → Azure Blob SAS or local fallback  
 ✅ Admin entry from store when staff is signed in  
-✅ [MOCK_PROTOTYPE_GUIDE.md](MOCK_PROTOTYPE_GUIDE.md) — screen reference with `readme/images/*_screen.png`
+✅ [MOCK_PROTOTYPE_GUIDE.md](MOCK_PROTOTYPE_GUIDE.md) — screen reference with `docs/images/*_screen.png`
 
 ---
 
 ## 🖼️ 6. Media (product images)
 
-**Target model:** legacy `[Bestanden].[AzureFile]` linked to `Products.Product` via `ProductId` (`IsPrimaryImage`, `PublishToWeb`, `BlobRef`). Production uses Azure Blob container `files` with SAS URLs; local dev falls back to `wwwroot/media/products/`. Full spec: [AZUREBLOB.md](AZUREBLOB.md).
+**Target model:** legacy `[Bestanden].[AzureFile]` linked to `Products.Product` via `ProductId` (`IsPrimaryImage`, `PublishToWeb`, `BlobRef`). Production uses Azure Blob container `files` with SAS URLs; local dev falls back to `wwwroot/media/products/`. Full spec: [DATA_AZUREBLOB.md](DATA_AZUREBLOB.md).
 
 ### 6.1 Storefront (implemented)
 
@@ -448,7 +437,7 @@ dotnet run
   ⏳
 - run tests  
   ⏳
-- database migrations compile check  
+- build + smoke of store/admin pages (no DB migration step)
   ⏳
 
 ---
@@ -468,7 +457,7 @@ dotnet run
 
 | Setting | Value | Why |
 |---------|--------|-----|
-| **Web sockets** | **On** | SignalR / `_blazor` hub — without it, Long Polling only (slow, fragile) |
+| **Web sockets** | **On** | Blazor interactive / `_blazor` — without it, Long Polling only (slow, fragile) |
 | **Always On** | **On** | Keeps circuits alive (if plan allows) |
 | **HTTPS Only** | **On** | Secure cookies + Mollie redirects |
 
@@ -498,7 +487,7 @@ Publish output to App Service (Visual Studio Publish, ZIP deploy, or CI). Ensure
 ### 9.3 Blob storage
 
 - **Storage account** `abmatic`, container **`files`** (private → SAS)  
-  ✅ See [AZUREBLOB.md](AZUREBLOB.md)
+  ✅ See [DATA_AZUREBLOB.md](DATA_AZUREBLOB.md)
 
 ### 9.4 Deployment model
 
@@ -531,7 +520,7 @@ Publish output to App Service (Visual Studio Publish, ZIP deploy, or CI). Ensure
 
 ### 10.3 Output artifacts (in-repo)
 
-- `readme/docs/mock-data/*.json`  
+- `docs/mocks/mock-data/*.json`  
   ⏳
 - endpoint → DTO → screen mapping doc  
   ✅ [MOCK_PROTOTYPE_GUIDE.md](MOCK_PROTOTYPE_GUIDE.md)
@@ -592,11 +581,11 @@ Publish output to App Service (Visual Studio Publish, ZIP deploy, or CI). Ensure
 ## Documentation
 
 - 🏠 [Main Documentation](../README.md) — Project overview
-- 🗺️ [Implementation roadmap](open_IMPLEMENTATION_ROADMAP.md)
-- 🖼️ [Azure Blob media](AZUREBLOB.md)
+- 🗺️ [Implementation roadmap](SPEC_IMPLEMENTATION_ROADMAP_open.md)
+- 🖼️ [Azure Blob media](DATA_AZUREBLOB.md)
 - 📊 [Database summary](DATA_SUMMARY.md)
-- 💳 [Mollie go-live](open_MOLLIE_PAYMENTS_open.md)
-- 🔐 [Auth roadmap](AUTH_IDENTITY_ROADMAP_open.md)
+- 💳 [Mollie go-live](SPEC_MOLLIE_PAYMENTS_open.md)
+- 🔐 [Admin auth (current)](SPEC_ADMIN.md)
 
 ---
 
