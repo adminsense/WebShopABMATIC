@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "afterFileEdit": [
+      {
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/format-csharp.ps1",
+        "timeout": 60
+      }
+    ]
+  }
+}
