@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WebShopABMATIC — Store prototype (layout + filters)</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="../../WebShopABMATIC.Client/wwwroot/css/store.css" rel="stylesheet">
+  <style>
+    /* Prototype-only: toggle + filter column (not in live store yet) */
+    .proto-bar {
+      background: #1e2a3a;
+      color: #cbd5e1;
+      padding: 0.5rem 1rem;
+      font-size: 0.78rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      align-items: center;
+      border-bottom: 3px solid var(--accent);
+    }
+    .proto-bar strong { color: #fff; }
+    .proto-bar button {
+      border: 1px solid #475569;
+      background: #334155;
+      color: #fff;
+      padding: 0.25rem 0.65rem;
+      font-size: 0.78rem;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .proto-bar button.active { background: var(--accent); border-color: var(--accent); }
+    .proto-view { display: none; }
+    .proto-view.active { display: block; }
+    .store-catalog-with-filters {
+      display: flex;
+      gap: 1.25rem;
+      align-items: flex-start;
+    }
+    .store-facet-panel {
+      width: 220px;
+      flex-shrink: 0;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.85rem 0.75rem 1.25rem;
+    }
+    .store-facet-panel h2 {
+      font-size: 0.95rem;
+      margin: 0 0 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .facet-group { margin-bottom: 1rem; }
+    .facet-group h3 { font-size: 0.8rem; font-weight: 700; margin-bottom: 0.35rem; }
+    .facet-group--muted { opacity: 0.5; }
+    .facet-option {
+      display: flex;
+      gap: 0.35rem;
+      font-size: 0.78rem;
+      margin-bottom: 0.25rem;
+      cursor: pointer;
+    }
+    .facet-count { color: var(--muted); margin-left: auto; }
+    .facet-note {
+      font-size: 0.7rem;
+      color: #b45309;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 4px;
+      padding: 0.4rem;
+      margin-top: 0.35rem;
+    }
+    .store-catalog-with-filters .catalog-products-row { flex: 1; min-width: 0; }
+    .store-product-card.hidden { display: none !important; }
+    .facet-results { font-size: 0.85rem; color: var(--muted); margin-bottom: 0.75rem; }
+  </style>
+</head>
+<body>
+  <div class="proto-bar">
+    <strong>Static prototype</strong> — real store chrome (<code>store.css</code>). Data from <code>abmatic_test</code>.
+    <button type="button" class="active" data-view="home">Home (live layout)</button>
+    <button type="button" data-view="filters">Category + filters (pilot)</button>
+  </div>
+
+  <div class="store-shell">
+    <header class="site-header">
+      <div class="store-header-box">
+        <nav class="store-header-bar" aria-label="Store navigation">
+          <button type="button" class="store-header-link store-header-link--icon" aria-label="Back">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i>
+          </button>
+          <a href="#" class="store-header-link active">
+            <i class="bi bi-house" aria-hidden="true"></i><span>Home</span>
+          </a>
+          <a href="#" class="store-header-link">
+            <i class="bi bi-cart3" aria-hidden="true"></i><span>Cart</span>
+          </a>
+          <a href="#" class="store-header-link">
+            <i class="bi bi-compass" aria-hidden="true"></i><span>Contact</span>
+          </a>
+          <input type="search" class="store-header-search-input" aria-label="Search products">
+          <button type="button" class="store-header-link store-header-link--btn">
+            <i class="bi bi-search" aria-hidden="true"></i><span>Search</span>
+          </button>
+          <a href="#" class="store-header-link">
+            <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i><span>Login</span>
+          </a>
+          <a href="#" class="store-header-link">
+            <i class="bi bi-gear" aria-hidden="true"></i><span>Admin</span>
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="store-page">
+      <aside class="store-sidebar" aria-label="Categories">
+        <nav class="store-sidebar-nav" aria-label="Product categories">
+          <ul class="store-nav-tree">
+            <!-- Root nodes: Products.ProductStructuur (ParentId null) — abmatic_test -->
+            <li class="store-nav-group">
+              <div class="store-nav-row">
+                <button type="button" class="store-nav-toggle" aria-label="Expand"><i class="bi bi-chevron-right"></i></button>
+                <a class="store-nav-link" href="#">Automatische aandrijvingen voor kantel- en sectionale poorten</a>
+              </div>
+            </li>
+            <li class="store-nav-group">
+              <div class="store-nav-row">
+                <button type="button" class="store-nav-toggle" aria-label="Expand"><i class="bi bi-chevron-right"></i></button>
+                <a class="store-nav-link" href="#">Automatische aandrijvingen voor draaivleugels</a>
+              </div>
+            </li>
+            <li class="store-nav-group">
+              <div class="store-nav-row">
+                <button type="button" class="store-nav-toggle" aria-label="Expand"><i class="bi bi-chevron-right"></i></button>
+                <a class="store-nav-link" href="#">Automatische aandrijvingen voor schuifpoorten</a>
+              </div>
+            </li>
+            <li class="store-nav-group">
+              <div class="store-nav-row">
+                <button type="button" class="store-nav-toggle" aria-label="Expand"><i class="bi bi-chevron-right"></i></button>
+                <a class="store-nav-link" href="#">Slagbomen en wegzinkpalen</a>
+              </div>
+            </li>
+            <li class="store-nav-group">
+              <div class="store-nav-row">
+                <button type="button" class="store-nav-toggle" aria-label="Expand"><i class="bi bi-chevron-right"></i></button>
+                <a class="store-nav-link" href="#">Besturingen voor poortopeners</a>
+              </div>
+            </li>
+            <li class="store-nav-group">
+              <div class="store-nav-row">
+                <button type="button" class="store-nav-toggle" aria-label="Expand"><i class="bi bi-chevron-right"></i></button>
+                <a class="store-nav-link" href="#">GSM module - SPIDER - LPR camera - Videofoon met sim-kaart</a>
+              </div>
+            </li>
+            <li class="store-nav-group">
+              <div class="store-nav-row">
+                <button type="button" class="store-nav-toggle" aria-label="Expand"><i class="bi bi-chevron-right"></i></button>
+                <a class="store-nav-link" href="#">Bedieningen, signaallampen, accessoires, toegangscontrole</a>
+              </div>
+              <ul class="store-nav-children">
+                <li><a class="store-nav-link store-nav-link--leaf active" href="#" data-goto="filters">Handzenders</a></li>
+                <li><a class="store-nav-link store-nav-link--leaf" href="#">Ontvangers en antennes</a></li>
+              </ul>
+            </li>
+            <li class="store-nav-group">
+              <div class="store-nav-row">
+                <button type="button" class="store-nav-toggle" aria-label="Expand"><i class="bi bi-chevron-right"></i></button>
+                <a class="store-nav-link" href="#">Deurintercom systemen</a>
+              </div>
+            </li>
+            <li class="store-nav-group">
+              <div class="store-nav-row">
+                <button type="button" class="store-nav-toggle" aria-label="Expand"><i class="bi bi-chevron-right"></i></button>
+                <a class="store-nav-link" href="#">Veiligheidsdetecties</a>
+              </div>
+            </li>
+            <li class="store-nav-group">
+              <div class="store-nav-row">
+                <button type="button" class="store-nav-toggle" aria-label="Expand"><i class="bi bi-chevron-right"></i></button>
+                <a class="store-nav-link" href="#">Automatische deur- en raamopeners</a>
+              </div>
+            </li>
+            <li class="store-nav-group">
+              <div class="store-nav-row">
+                <button type="button" class="store-nav-toggle" aria-label="Expand"><i class="bi bi-chevron-right"></i></button>
+                <a class="store-nav-link" href="#">Smart Slider®</a>
+              </div>
+            </li>
+            <li class="store-nav-group">
+              <div class="store-nav-row">
+                <button type="button" class="store-nav-toggle" aria-label="Expand"><i class="bi bi-chevron-right"></i></button>
+                <a class="store-nav-link" href="#">Poortbeslag en mechanische onderdelen</a>
+              </div>
+            </li>
+            <li class="store-nav-group">
+              <div class="store-nav-row">
+                <button type="button" class="store-nav-toggle" aria-label="Expand"><i class="bi bi-chevron-right"></i></button>
+                <a class="store-nav-link" href="#">Knelijsten, detectiematten, veiligheidsbumpers, signaaloverbrenging sytemen</a>
+              </div>
+            </li>
+            <li class="store-nav-group">
+              <div class="store-nav-row">
+                <button type="button" class="store-nav-toggle" aria-label="Expand"><i class="bi bi-chevron-right"></i></button>
+                <a class="store-nav-link" href="#">Montage</a>
+              </div>
+            </li>
+          </ul>
+        </nav>
+      </aside>
+
+      <main class="store-main">
+        <div class="store-content-inner">
+
+          <!-- HOME: matches live Catalog.razor homepage -->
+          <div id="view-home" class="proto-view active">
+            <section class="store-section" id="categories-home">
+              <h2 class="store-section-title">Categories</h2>
+              <div class="categories-grid">
+                <button type="button" class="category-tile"><span class="category-tile-icon"><i class="bi bi-box-seam"></i></span><span class="category-tile-label">Slagbomen en wegzinkpalen</span></button>
+                <button type="button" class="category-tile"><span class="category-tile-icon"><i class="bi bi-box-seam"></i></span><span class="category-tile-label">Montage</span></button>
+                <button type="button" class="category-tile"><span class="category-tile-icon"><i class="bi bi-box-seam"></i></span><span class="category-tile-label">Besturingen voor poortopeners</span></button>
+                <button type="button" class="category-tile"><span class="category-tile-icon"><i class="bi bi-box-seam"></i></span><span class="category-tile-label">GSM module - SPIDER - LPR camera - Videofoon met sim-kaart</span></button>
+                <button type="button" class="category-tile"><span class="category-tile-icon"><i class="bi bi-box-seam"></i></span><span class="category-tile-label">Bedieningen, signaallampen, accessoires, toegangscontrole</span></button>
+                <button type="button" class="category-tile"><span class="category-tile-icon"><i class="bi bi-box-seam"></i></span><span class="category-tile-label">Deurintercom systemen</span></button>
+                <button type="button" class="category-tile"><span class="category-tile-icon"><i class="bi bi-box-seam"></i></span><span class="category-tile-label">Veiligheidsdetecties</span></button>
+                <button type="button" class="category-tile"><span class="category-tile-icon"><i class="bi bi-box-seam"></i></span><span class="category-tile-label">Automatische deur- en raamopeners</span></button>
+                <button type="button" class="category-tile"><span class="category-tile-icon"><i class="bi bi-box-seam"></i></span><span class="category-tile-label">Smart Slider®</span></button>
+                <button type="button" class="category-tile"><span class="category-tile-icon"><i class="bi bi-box-seam"></i></span><span class="category-tile-label">Poortbeslag en mechanische onderdelen</span></button>
+                <button type="button" class="category-tile"><span class="category-tile-icon"><i class="bi bi-box-seam"></i></span><span class="category-tile-label">Knelijsten, detectiematten, veiligheidsbumpers, signaaloverbrenging sytemen</span></button>
+              </div>
+            </section>
+
+            <section class="store-section">
+              <h2 class="store-section-title">Deals</h2>
+              <div class="deals-row">
+                <!-- IsNieuw=1 webshop products — abmatic_test -->
+                <article class="store-product-card">
+                  <button type="button" class="store-product-card-image-area"><span class="store-product-card-image-frame"><img src="images/product1.png" alt=""></span></button>
+                  <div class="store-product-card-info">
+                    <div class="store-product-card-title-block">
+                      <button type="button" class="store-product-card-title">DIVA.3</button>
+                      <span class="store-product-card-ref">908301853</span>
+                    </div>
+                    <div class="store-product-card-cta">
+                      <span class="store-product-card-price store-product-card-price--muted">Out of stock</span>
+                      <button type="button" class="store-product-card-cart-btn" disabled><i class="bi bi-cart3"></i></button>
+                    </div>
+                  </div>
+                </article>
+                <article class="store-product-card">
+                  <button type="button" class="store-product-card-image-area"><span class="store-product-card-image-frame"><img src="images/product2.png" alt=""></span></button>
+                  <div class="store-product-card-info">
+                    <div class="store-product-card-title-block">
+                      <button type="button" class="store-product-card-title">KBILL40M</button>
+                      <span class="store-product-card-ref">9592190</span>
+                    </div>
+                    <div class="store-product-card-cta">
+                      <span class="store-product-card-price store-product-card-price--muted">Out of stock</span>
+                      <button type="button" class="store-product-card-cart-btn" disabled><i class="bi bi-cart3"></i></button>
+                    </div>
+                  </div>
+                </article>
+                <article class="store-product-card">
+                  <button type="button" class="store-product-card-image-area"><span class="store-product-card-image-frame"><img src="images/product3.png" alt=""></span></button>
+                  <div class="store-product-card-info">
+                    <div class="store-product-card-title-block">
+                      <button type="button" class="store-product-card-title">KEY-OPERATED ROTARY SELECTOR FOR..</button>
+                      <span class="store-product-card-ref">315R0018</span>
+                    </div>
+                    <div class="store-product-card-cta">
+                      <span class="store-product-card-price store-product-card-price--muted">Out of stock</span>
+                      <button type="button" class="store-product-card-cart-btn" disabled><i class="bi bi-cart3"></i></button>
+                    </div>
+                  </div>
+                </article>
+                <article class="store-product-card">
+                  <button type="button" class="store-product-card-image-area"><span class="store-product-card-image-frame"><img src="images/product4.png" alt=""></span></button>
+                  <div class="store-product-card-info">
+                    <div class="store-product-card-title-block">
+                      <button type="button" class="store-product-card-title">NEW - BULL424SE</button>
+                      <span class="store-product-card-ref">959003654</span>
+                    </div>
+                    <div class="store-product-card-cta">
+                      <span class="store-product-card-price store-product-card-price--muted">Out of stock</span>
+                      <button type="button" class="store-product-card-cart-btn" disabled><i class="bi bi-cart3"></i></button>
+                    </div>
+                  </div>
+                </article>
+                <article class="store-product-card">
+                  <button type="button" class="store-product-card-image-area"><span class="store-product-card-image-frame"><img src="images/product5.png" alt=""></span></button>
+                  <div class="store-product-card-info">
+                    <div class="store-product-card-title-block">
+                      <button type="button" class="store-product-card-title">NEW - TOM30M</button>
+                      <span class="store-product-card-ref">959102890</span>
+                    </div>
+                    <div class="store-product-card-cta">
+                      <span class="store-product-card-price">€572.00</span>
+                      <button type="button" class="store-product-card-cart-btn"><i class="bi bi-cart3"></i></button>
+                    </div>
+                  </div>
+                </article>
+                <article class="store-product-card">
+                  <button type="button" class="store-product-card-image-area"><span class="store-product-card-image-frame"><img src="images/product6.png" alt=""></span></button>
+                  <div class="store-product-card-info">
+                    <div class="store-product-card-title-block">
+                      <button type="button" class="store-product-card-title">SPIDER - 50</button>
+                      <span class="store-product-card-ref">SP300</span>
+                    </div>
+                    <div class="store-product-card-cta">
+                      <span class="store-product-card-price">€264.44</span>
+                      <button type="button" class="store-product-card-cart-btn"><i class="bi bi-cart3"></i></button>
+                    </div>
+                  </div>
+                </article>
+                <article class="store-product-card">
+                  <button type="button" class="store-product-card-image-area"><span class="store-product-card-image-frame"><img src="images/product1.png" alt=""></span></button>
+                  <div class="store-product-card-info">
+                    <div class="store-product-card-title-block">
+                      <button type="button" class="store-product-card-title">NEW - BULL624SE</button>
+                      <span class="store-product-card-ref">959002693</span>
+                    </div>
+                    <div class="store-product-card-cta">
+                      <span class="store-product-card-price">€770.00</span>
+                      <button type="button" class="store-product-card-cart-btn"><i class="bi bi-cart3"></i></button>
+                    </div>
+                  </div>
+                </article>
+                <article class="store-product-card">
+                  <button type="button" class="store-product-card-image-area"><span class="store-product-card-image-frame"><img src="images/product2.png" alt=""></span></button>
+                  <div class="store-product-card-info">
+                    <div class="store-product-card-title-block">
+                      <button type="button" class="store-product-card-title">NEW - KWOLF624</button>
+                      <span class="store-product-card-ref">959007206</span>
+                    </div>
+                    <div class="store-product-card-cta">
+                      <span class="store-product-card-price">€780.00</span>
+                      <button type="button" class="store-product-card-cart-btn"><i class="bi bi-cart3"></i></button>
+                    </div>
+                  </div>
+                </article>
+              </div>
+            </section>
+          </div>
+
+          <!-- CATEGORY + FILTERS: pilot — Handzenders (ProductStructuur 54) -->
+          <div id="view-filters" class="proto-view">
+            <div class="store-category-header">
+              <h1 class="store-category-title">Handzenders</h1>
+            </div>
+
+            <div class="store-catalog-with-filters">
+              <aside class="store-facet-panel" aria-label="Filters">
+                <h2>Filters</h2>
+                <div class="facet-group" data-facet="manufacturer">
+                  <h3>Merk</h3>
+                  <label class="facet-option"><input type="checkbox" value="Geen" checked> Geen <span class="facet-count">(16)</span></label>
+                </div>
+                <div class="facet-group" data-facet="stock">
+                  <h3>Voorraad</h3>
+                  <label class="facet-option"><input type="checkbox" value="in" checked> Op voorraad <span class="facet-count">(13)</span></label>
+                  <label class="facet-option"><input type="checkbox" value="out" checked> Uit voorraad <span class="facet-count">(3)</span></label>
+                </div>
+                <div class="facet-group" data-facet="price">
+                  <h3>Prijs</h3>
+                  <label class="facet-option"><input type="checkbox" value="request" checked> Prijs op aanvraag <span class="facet-count">(16)</span></label>
+                </div>
+                <div class="facet-group facet-group--muted">
+                  <h3>Processor, RAM, opslag…</h3>
+                  <p class="facet-note">Geen data in ProductProperty vandaag — fase futura (Coolblue-stijl).</p>
+                </div>
+              </aside>
+
+              <div>
+                <p class="facet-results"><strong id="result-count">16</strong> producten</p>
+                <div class="catalog-products-row" id="product-grid">
+                  <article class="store-product-card" data-stock="out" data-manufacturer="Geen" data-price="request">
+                    <button type="button" class="store-product-card-image-area"><span class="store-product-card-image-frame"><img src="images/product3.png" alt=""></span></button>
+                    <div class="store-product-card-info"><div class="store-product-card-title-block"><button type="button" class="store-product-card-title">HAPPY 2AK</button><span class="store-product-card-ref">9863200</span></div><div class="store-product-card-cta"><span class="store-product-card-price store-product-card-price--muted">Out of stock</span><button type="button" class="store-product-card-cart-btn" disabled><i class="bi bi-cart3"></i></button></div></div>
+                  </article>
+                  <article class="store-product-card" data-stock="in" data-manufacturer="Geen" data-price="request">
+                    <button type="button" class="store-product-card-image-area"><span class="store-product-card-image-frame"><img src="images/product4.png" alt=""></span></button>
+                    <div class="store-product-card-info"><div class="store-product-card-title-block"><button type="button" class="store-product-card-title">HAPPY 2VA</button><span class="store-product-card-ref">9863202</span></div><div class="store-product-card-cta"><span class="store-product-card-price store-product-card-price--muted">Price on request</span><button type="button" class="store-product-card-cart-btn"><i class="bi bi-cart3"></i></button></div></div>
+                  </article>
+                  <article class="store-product-card" data-stock="out" data-manufacturer="Geen" data-price="request">
+                    <button type="button" class="store-product-card-image-area"><span class="store-product-card-image-frame"><img src="images/product5.png" alt=""></span></button>
+                    <div class="store-product-card-info"><div class="store-product-card-title-block"><button type="button" class="store-product-card-title">HAPPY 4AK</button><span class="store-product-card-ref">9863201</span></div><div class="store-product-card-cta"><span class="store-product-card-price store-product-card-price--muted">Out of stock</span><button type="button" class="store-product-card-cart-btn" disabled><i class="bi bi-cart3"></i></button></div></div>
+                  </article>
+                  <article class="store-product-card" data-stock="in" data-manufacturer="Geen" data-price="request">
+                    <button type="button" class="store-product-card-image-area"><span class="store-product-card-image-frame"><img src="images/product6.png" alt=""></span></button>
+                    <div class="store-product-card-info"><div class="store-product-card-title-block"><button type="button" class="store-product-card-title">HAPPY 4VA</button><span class="store-product-card-ref">9863203</span></div><div class="store-product-card-cta"><span class="store-product-card-price store-product-card-price--muted">Price on request</span><button type="button" class="store-product-card-cart-btn"><i class="bi bi-cart3"></i></button></div></div>
+                  </article>
+                  <article class="store-product-card" data-stock="in" data-manufacturer="Geen" data-price="request">
+                    <button type="button" class="store-product-card-image-area"><span class="store-product-card-image-frame"><img src="images/product1.png" alt=""></span></button>
+                    <div class="store-product-card-info"><div class="store-product-card-title-block"><button type="button" class="store-product-card-title">IR02M</button><span class="store-product-card-ref">IR02M</span></div><div class="store-product-card-cta"><span class="store-product-card-price store-product-card-price--muted">Price on request</span><button type="button" class="store-product-card-cart-btn"><i class="bi bi-cart3"></i></button></div></div>
+                  </article>
+                  <article class="store-product-card" data-stock="in" data-manufacturer="Geen" data-price="request">
+                    <button type="button" class="store-product-card-image-area"><span class="store-product-card-image-frame"><img src="images/product2.png" alt=""></span></button>
+                    <div class="store-product-card-info"><div class="store-product-card-title-block"><button type="button" class="store-product-card-title">IR04M</button><span class="store-product-card-ref">IR04M</span></div><div class="store-product-card-cta"><span class="store-product-card-price store-product-card-price--muted">Price on request</span><button type="button" class="store-product-card-cart-btn"><i class="bi bi-cart3"></i></button></div></div>
+                  </article>
+                  <article class="store-product-card" data-stock="in" data-manufacturer="Geen" data-price="request">
+                    <button type="button" class="store-product-card-image-area"><span class="store-product-card-image-frame"><img src="images/product3.png" alt=""></span></button>
+                    <div class="store-product-card-info"><div class="store-product-card-title-block"><button type="button" class="store-product-card-title">IRI.TX4AK</button><span class="store-product-card-ref">9863208</span></div><div class="store-product-card-cta"><span class="store-product-card-price store-product-card-price--muted">Price on request</span><button type="button" class="store-product-card-cart-btn"><i class="bi bi-cart3"></i></button></div></div>
+                  </article>
+                  <article class="store-product-card" data-stock="in" data-manufacturer="Geen" data-price="request">
+                    <button type="button" class="store-product-card-image-area"><span class="store-product-card-image-frame"><img src="images/product4.png" alt=""></span></button>
+                    <div class="store-product-card-info"><div class="store-product-card-title-block"><button type="button" class="store-product-card-title">IRI.TX4VA</button><span class="store-product-card-ref">9863198</span></div><div class="store-product-card-cta"><span class="store-product-card-price store-product-card-price--muted">Price on request</span><button type="button" class="store-product-card-cart-btn"><i class="bi bi-cart3"></i></button></div></div>
+                  </article>
+                  <article class="store-product-card" data-stock="in" data-manufacturer="Geen" data-price="request">
+                    <button type="button" class="store-product-card-image-area"><span class="store-product-card-image-frame"><img src="images/product5.png" alt=""></span></button>
+                    <div class="store-product-card-info"><div class="store-product-card-title-block"><button type="button" class="store-product-card-title">TO.CLIP</button><span class="store-product-card-ref">9830081</span></div><div class="store-product-card-cta"><span class="store-product-card-price store-product-card-price--muted">Price on request</span><button type="button" class="store-product-card-cart-btn"><i class="bi bi-cart3"></i></button></div></div>
+                  </article>
+                  <article class="store-product-card" data-stock="out" data-manufacturer="Geen" data-price="request">
+                    <button type="button" class="store-product-card-image-area"><span class="store-product-card-image-frame"><img src="images/product6.png" alt=""></span></button>
+                    <div class="store-product-card-info"><div class="store-product-card-title-block"><button type="button" class="store-product-card-title">TO.GO4QV</button><span class="store-product-card-ref">9863110</span></div><div class="store-product-card-cta"><span class="store-product-card-price store-product-card-price--muted">Out of stock</span><button type="button" class="store-product-card-cart-btn" disabled><i class="bi bi-cart3"></i></button></div></div>
+                  </article>
+                  <article class="store-product-card" data-stock="in" data-manufacturer="Geen" data-price="request">
+                    <button type="button" class="store-product-card-image-area"><span class="store-product-card-image-frame"><img src="images/product1.png" alt=""></span></button>
+                    <div class="store-product-card-info"><div class="store-product-card-title-block"><button type="button" class="store-product-card-title">TOGO2AK</button><span class="store-product-card-ref">9863176</span></div><div class="store-product-card-cta"><span class="store-product-card-price store-product-card-price--muted">Price on request</span><button type="button" class="store-product-card-cart-btn"><i class="bi bi-cart3"></i></button></div></div>
+                  </article>
+                  <article class="store-product-card" data-stock="in" data-manufacturer="Geen" data-price="request">
+                    <button type="button" class="store-product-card-image-area"><span class="store-product-card-image-frame"><img src="images/product2.png" alt=""></span></button>
+                    <div class="store-product-card-info"><div class="store-product-card-title-block"><button type="button" class="store-product-card-title">TOGO2VA</button><span class="store-product-card-ref">9863173</span></div><div class="store-product-card-cta"><span class="store-product-card-price store-product-card-price--muted">Price on request</span><button type="button" class="store-product-card-cart-btn"><i class="bi bi-cart3"></i></button></div></div>
+                  </article>
+                  <article class="store-product-card" data-stock="in" data-manufacturer="Geen" data-price="request">
+                    <button type="button" class="store-product-card-image-area"><span class="store-product-card-image-frame"><img src="images/product3.png" alt=""></span></button>
+                    <div class="store-product-card-info"><div class="store-product-card-title-block"><button type="button" class="store-product-card-title">TOGO4AK</button><span class="store-product-card-ref">9863177</span></div><div class="store-product-card-cta"><span class="store-product-card-price store-product-card-price--muted">Price on request</span><button type="button" class="store-product-card-cart-btn"><i class="bi bi-cart3"></i></button></div></div>
+                  </article>
+                  <article class="store-product-card" data-stock="in" data-manufacturer="Geen" data-price="request">
+                    <button type="button" class="store-product-card-image-area"><span class="store-product-card-image-frame"><img src="images/product4.png" alt=""></span></button>
+                    <div class="store-product-card-info"><div class="store-product-card-title-block"><button type="button" class="store-product-card-title">TOGO4VA</button><span class="store-product-card-ref">9863174</span></div><div class="store-product-card-cta"><span class="store-product-card-price store-product-card-price--muted">Price on request</span><button type="button" class="store-product-card-cart-btn"><i class="bi bi-cart3"></i></button></div></div>
+                  </article>
+                  <article class="store-product-card" data-stock="in" data-manufacturer="Geen" data-price="request">
+                    <button type="button" class="store-product-card-image-area"><span class="store-product-card-image-frame"><img src="images/product5.png" alt=""></span></button>
+                    <div class="store-product-card-info"><div class="store-product-card-title-block"><button type="button" class="store-product-card-title">TR2GIM</button><span class="store-product-card-ref">S2TR2641E2.AB</span></div><div class="store-product-card-cta"><span class="store-product-card-price store-product-card-price--muted">Price on request</span><button type="button" class="store-product-card-cart-btn"><i class="bi bi-cart3"></i></button></div></div>
+                  </article>
+                  <article class="store-product-card" data-stock="in" data-manufacturer="Geen" data-price="request">
+                    <button type="button" class="store-product-card-image-area"><span class="store-product-card-image-frame"><img src="images/product6.png" alt=""></span></button>
+                    <div class="store-product-card-info"><div class="store-product-card-title-block"><button type="button" class="store-product-card-title">TR4GIM</button><span class="store-product-card-ref">S2TR2641E4.AB</span></div><div class="store-product-card-cta"><span class="store-product-card-price store-product-card-price--muted">Price on request</span><button type="button" class="store-product-card-cart-btn"><i class="bi bi-cart3"></i></button></div></div>
+                  </article>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const views = { home: document.getElementById('view-home'), filters: document.getElementById('view-filters') };
+      const buttons = document.querySelectorAll('.proto-bar button[data-view]');
+
+      function showView(name) {
+        Object.keys(views).forEach(k => views[k].classList.toggle('active', k === name));
+        buttons.forEach(b => b.classList.toggle('active', b.dataset.view === name));
+      }
+
+      buttons.forEach(b => b.addEventListener('click', () => showView(b.dataset.view)));
+      document.querySelectorAll('[data-goto]').forEach(el => {
+        el.addEventListener('click', e => { e.preventDefault(); showView(el.dataset.goto); });
+      });
+
+      const cards = document.querySelectorAll('#product-grid .store-product-card');
+      const countEl = document.getElementById('result-count');
+      const inputs = document.querySelectorAll('.store-facet-panel input[type=checkbox]');
+
+      function selected(group) {
+        return Array.from(document.querySelectorAll('.store-facet-panel [data-facet="' + group + '"] input:checked')).map(i => i.value);
+      }
+
+      function applyFilters() {
+        const stock = selected('stock');
+        let n = 0;
+        cards.forEach(card => {
+          const show = stock.length === 0 || stock.includes(card.dataset.stock);
+          card.classList.toggle('hidden', !show);
+          if (show) n++;
+        });
+        if (countEl) countEl.textContent = String(n);
+      }
+
+      inputs.forEach(i => i.addEventListener('change', applyFilters));
+    })();
+  </script>
+</body>
+</html>
