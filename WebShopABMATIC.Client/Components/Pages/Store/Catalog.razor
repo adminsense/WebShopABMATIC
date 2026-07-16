@@ -210,23 +210,21 @@
                 }
                 else
                 {
-                    var items = await CatalogPort.GetCatalogAsync(take: null, _selectedCategoryId);
-                    var mapped = items.Select(StoreProductMapper.ToModel).ToList();
-
                     if (!string.IsNullOrWhiteSpace(_search))
                     {
-                        mapped = mapped
-                            .Where(p => p.Name.StartsWith(_search, StringComparison.OrdinalIgnoreCase))
-                            .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
-                            .ToList();
+                        var items = await CatalogPort.SearchProductsAsync(_search, take: 48);
+                        _products = items.Select(StoreProductMapper.ToModel).ToList();
+                    }
+                    else
+                    {
+                        var items = await CatalogPort.GetCatalogAsync(take: null, _selectedCategoryId);
+                        _products = items.Select(StoreProductMapper.ToModel).ToList();
                     }
 
                     if (string.IsNullOrWhiteSpace(_search) && selectedNode is not null)
                     {
                         _productsTitle = selectedNode.Name;
                     }
-
-                    _products = mapped;
                 }
             }
         }

@@ -1,4 +1,4 @@
-# Admin Panel — Functional Specification
+﻿# Admin Panel — Functional Specification
 
 ![Status](https://img.shields.io/badge/Status-Implemented-28a745?style=flat-square) ![Screens](https://img.shields.io/badge/Screens-3%20layout%20types-0d47a1?style=flat-square) ![Entities](https://img.shields.io/badge/Hub%20entities-22-512BD4?style=flat-square) ![UI](https://img.shields.io/badge/UI-AB-MATIC%20shell-0dcaf0?style=flat-square)
 
@@ -33,9 +33,9 @@
 |----------|------|------|
 | **Blazor app** | `Web/` | Runnable admin + store UI (legacy login — see §2.4) |
 | **HTML prototype** | `docs/mock-admin.html` | Visual reference before Blazor |
-| **Layout screenshots** | `readme/images/*_screen.png` | Approved shell patterns |
-| **UI patterns** | `readme/PATTERNS_UI_QUICK_START.md` | Buttons, grids, forms |
-| **Architecture** | `readme/SPEC_INFRASTRUCTURE.md` | Hexagonal layers, DI, connection strings |
+| **Layout screenshots** | `docs/images/*_screen.png` | Approved shell patterns |
+| **UI patterns** | `docs/PATTERNS_UI_QUICK_START.md` | Buttons, grids, forms |
+| **Architecture** | `docs/SPEC_INFRASTRUCTURE.md` | Hexagonal layers, DI, connection strings |
 
 ### Implementation status
 
@@ -141,52 +141,58 @@ The admin UI is defined by **three screen types**. These match the legacy AB-MAT
 
 ## 🔐 2. Authentication and login
 
-### 2.1 Technology
+> [!IMPORTANT]
+> **Runtime (current):** cookie auth via `LegacySignInService` — **not** ASP.NET Identity `AspNetUsers`.  
+> Sections below that mention Identity as the live store are **historical targets**; do not treat them as current behaviour.
+
+### 2.1 Technology (current)
 
 | Item | Specification |
 |------|----------------|
-| **Provider** | ASP.NET Core Identity (cookie authentication) |
-| **User store** | `ApplicationUser` + `ApplicationDbContext` |
-| **Login page** | `/Account/Login` |
-| **Post-login redirect** | Admin/Manager → `/admin`; others → return URL or home |
+| **Provider** | Cookie authentication (`LegacyCookieAuthentication`) |
+| **Cookie name** | `.WebShopABMATIC.Auth.Session` |
+| **Sign-in service** | `LegacySignInService` |
+| **Admin login page** | `/admin/login` → `POST /account/admin-login` |
+| **Store login page** | `/sign-in` → `POST /account/store-login` |
+| **Post-login redirect** | Admin/Manager → `/admin` (or `returnUrl`); Customer → store `returnUrl` or `/` |
+| **Store session** | Customer: `IsPersistent=false` (browser session cookie) + sliding **15 min** idle; client idle logout via `store-session-timeout.js` |
+| **Staff “remember me”** | Admin login may set `IsPersistent=true` when checked |
+| **Server session store** | **None** — cookie alone is authoritative (no in-memory `StoreBrowserSession` gate) |
+| **Blazor bridge** | `LegacyAuthenticationStateProvider` flows the cookie into Interactive Server circuits |
 
 ### 2.2 Roles and policies
 
-| Role | Policy | Admin panel access |
-|------|--------|-------------------|
-| **Admin** | `AppPolicies.AdminOnly` | Full access; system user management (`/admin/system-users`) |
-| **Manager** | `AppPolicies.AdminOrManager` | All operational menus (catalog, sales, stock, …) |
-| **Customer** | `AppPolicies.CustomerOnly` | No admin — storefront only (`/sign-in`, `/sign-up`) |
+| Role | Policy | Access |
+|------|--------|--------|
+| **Admin** | `AppPolicies.AdminOnly` | Full admin panel |
+| **Manager** | `AppPolicies.AdminOrManager` | Operational admin menus |
+| **Customer** | `AppPolicies.CustomerOnly` | **Storefront only** — profile, cart, checkout, **My orders** (`/orders`). **No** `/admin/*` |
 
-> [!NOTE]
-> **System users** (`AspNetUsers` with Admin/Manager roles) are managed at `/admin/system-users` via `ISystemUserAdminPort`. Legacy **`StaffUser`** rows in `[Settings].[StaffUsers]` remain for HR/module flags but are **not** used for login — the hub card was removed; the CRUD page stays at `/admin/staff-users` for reference.
-
-### 2.3 Store registration
-
-| Route | Purpose |
-|-------|---------|
-| `/sign-up` | Create Identity account (Customer role) + `Customers` row + standard project |
-| `/sign-in` | Existing customer login |
-
-Registration uses `ICustomerRegistrationPort` → links `Customers.IdentityUserId` and `ApplicationUser.CustomerId`, then auto sign-in.
-
-### 2.4 Authentication (legacy)
-
-Runtime login: `LegacySignInService` → `Settings.StaffUsers` (admin) and `Customers.Customers` (store). **Not** AspNetUsers.
+### 2.3 Credentials (ERP / `abmatic_test`)
 
 | Portal | Table | Fields |
 |--------|-------|--------|
-| Admin | `Settings.StaffUsers` | `Login`, `Password` |
-| Store | `Customers.Customers` | `WebshopLogin`, `PasswordWebshop`, `SaltWebshop` |
+| **Admin (staff)** | `Settings.StaffUsers` (`Instellingen.User`) | `Login`, `Password` (plaintext in legacy DB) |
+| **Store (customer)** | `Customers.Customers` (`Klanten.Klant`) | `WebshopLogin` / email, `PasswordWebshop`, `SaltWebshop` |
 
-Use credentials from the connected database. Reset webshop passwords via `/admin/customers` when needed.
+These are **two different identities** in the ABMATIC schema. A webshop customer account does **not** open the admin panel. Customer purchase history is on the **store**: `/orders`, `/orders/{id}`, `/my-account` — not under `/admin`.
 
-### 2.5 Logout
+### 2.4 Store registration
 
-- Red **Logout** in top bar (matches `main_screen.png`).
-- Ends cookie session; returns to login or storefront mock.
+| Route | Purpose |
+|-------|---------|
+| `/sign-up` | Create webshop customer (`ICustomerRegistrationPort`) + auto store sign-in |
+| `/sign-in` | Existing customer login |
 
-### 2.6 Password reset (dev / admin)
+### 2.5 Legacy StaffUsers in admin UI
+
+`/admin/staff-users` remains for ERP/HR-style staff rows. **Admin authentication uses those rows today** via `SignInStaffAsync`. Any older note that “StaffUsers are not used for login” is **obsolete**.
+
+### 2.6 Logout
+
+- Admin top bar **Logout**; store header **Sign out** → `/account/logout`.
+
+### 2.7 Password reset (dev / admin)
 
 | Screen | Route | Who | Behaviour |
 |--------|-------|-----|-----------|
@@ -195,7 +201,7 @@ Use credentials from the connected database. Reset webshop passwords via `/admin
 
 Implementation: `IIdentityPasswordPort` → `UserManager.ResetPasswordAsync`. No email is sent in development — copy the temporary password from the success alert.
 
-### 2.7 Current user context (Auth-6)
+### 2.8 Current user context (Auth-6)
 
 | Port | Implementation | Used for |
 |------|----------------|----------|
@@ -332,7 +338,7 @@ Each sidebar item opens a **hub** of entity cards. Below: what staff **register 
 > [!WARNING]
 > **System user** management is **Admin-only** (`AppPolicies.AdminOnly`). Managers cannot create admin accounts.
 
-> Legacy **Staff user** (`[Settings].[StaffUsers]`) is deprecated for authentication. Use **System users** instead; StaffUsers CRUD remains for HR data migration.
+> Legacy **Staff user** (`[Settings].[StaffUsers]`) is the **current** admin login source (`SignInStaffAsync`). System-users / AspNetUsers Identity path is not the active storefront/admin runtime.
 
 ---
 
@@ -454,7 +460,7 @@ dotnet run
 3. Land on `/admin`.
 
 > [!NOTE]
-> Domain data requires SQL Server with the ABMATIC schema (`connWebShopABMATIC`). Identity database is created via EF migrations on first run in Development.
+> Domain data requires Azure SQL with the ABMATIC schema (`connWebShopABMATIC` → `abmatic_test`). Login is legacy tables only — **not** Identity migrations.
 
 ---
 
