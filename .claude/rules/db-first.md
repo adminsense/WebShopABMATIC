@@ -1,6 +1,6 @@
 # Database first (global)
 
-Live Azure SQL **`abmatic_test`** is the source of truth for **every** feature (store, admin, frete, Mollie, stock, docs).
+Live Azure SQL **`abmatic_test`** is the source of truth for **every** feature (store, admin, freight, Mollie, stock, docs).
 
 **Never invent** columns, tables, EF migrations, `Migrate()` / `EnsureCreated()`, or schema scripts for the ERP — in code or documentation.
 

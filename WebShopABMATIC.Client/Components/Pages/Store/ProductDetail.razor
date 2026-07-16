@@ -37,7 +37,9 @@ else
             <div class="detail-info">
                 <p class="detail-meta">@_product.Tag · @StockStatusLabel(_product)</p>
                 <h1>@_product.Name</h1>
-                <p class="detail-price @(!_product.HasPrice ? "price-on-request text-muted" : "")">@StorePriceFormatter.Format(_product.Price)</p>
+                <p class="detail-price @(_product.IsOutOfStock || !_product.HasPrice ? "price-on-request text-muted" : "")">
+                    @StorePriceFormatter.FormatListPrice(_product.IsOutOfStock, _product.Price)
+                </p>
                 <p class="detail-desc">@_product.Description</p>
                 @if (_options.Count > 0)
                 {
@@ -50,7 +52,9 @@ else
                         <button type="button" aria-label="Increase" @onclick="IncreaseQty" disabled="@(!_product.HasPrice)">+</button>
                     </div>
                     <button type="button" class="btn btn-primary" disabled="@(!_product.HasPrice || _product.IsOutOfStock || !_optionsValid)" @onclick="AddToCartAsync">
-                        @(_product.HasPrice ? "Add to cart" : StorePriceFormatter.OnRequestLabel)
+                        @(_product.IsOutOfStock
+                            ? StorePriceFormatter.OutOfStockLabel
+                            : _product.HasPrice ? "Add to cart" : StorePriceFormatter.OnRequestLabel)
                     </button>
                 </div>
                 @if (_product.HasPrice && !_product.IsOutOfStock && !_optionsValid)
@@ -135,5 +139,5 @@ else
     }
 
     private static string StockStatusLabel(StoreProduct product) =>
-        product.IsOutOfStock ? "Out of stock" : $"{product.Stock} in stock";
+        product.IsOutOfStock ? StorePriceFormatter.OutOfStockLabel : $"{product.Stock} in stock";
 }
