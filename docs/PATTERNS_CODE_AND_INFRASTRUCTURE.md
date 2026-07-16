@@ -203,7 +203,7 @@ Isolates component errors from crashing the entire application:
 
 #### 4. **Circuit Handler for Connection Monitoring** - 🔄 READY FOR IMPLEMENTATION
 
-Monitors SignalR circuit lifecycle for connection health:
+Monitors Blazor circuit lifecycle for connection health:
 
 ```csharp
 // Infrastructure/Services/AppCircuitHandler.cs

@@ -1,5 +1,7 @@
 @page "/orders"
 @layout StoreLayout
+@attribute [Authorize(Policy = AppPolicies.CustomerOnly)]
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
 @using WebShopABMATIC.Application.Auth
@@ -13,43 +15,36 @@
 
 <div class="container">
     <h1 class="page-title">My orders</h1>
+    <p class="text-muted mb-3">Your purchase history and payment status. Shipping updates appear here when the warehouse processes the order.</p>
 
-    <AuthorizeView>
-        <Authorized>
-            @if (_loading)
+    @if (_loading)
+    {
+        <p style="color:var(--muted)">Loading…</p>
+    }
+    else if (_orders.Count == 0)
+    {
+        <p style="color:var(--muted)">You have no orders yet.</p>
+        <NavLink href="/" class="btn btn-primary">Browse catalog</NavLink>
+    }
+    else
+    {
+        <div class="orders-list">
+            @foreach (var order in _orders)
             {
-                <p style="color:var(--muted)">Loading…</p>
+                <article class="order-card">
+                    <div class="order-header">
+                        <a href="@($"/orders/{order.OrderId}")" class="order-id">
+                            Order @(order.OrderNumber ?? order.OrderId) · @order.CreatedAt.ToLocalTime().ToString("d")
+                        </a>
+                        <span class="status @order.StatusClass">@order.StatusLabel</span>
+                    </div>
+                    <p class="order-items">@order.ItemsSummary</p>
+                    <p class="order-total">Total: €@order.TotalInclVat.ToString("F2")</p>
+                    <NavLink href="@($"/orders/{order.OrderId}")" class="btn btn-secondary btn-sm">View details</NavLink>
+                </article>
             }
-            else if (_orders.Count == 0)
-            {
-                <p style="color:var(--muted)">You have no orders yet.</p>
-                <NavLink href="/" class="btn btn-primary">Browse catalog</NavLink>
-            }
-            else
-            {
-                <div class="orders-list">
-                    @foreach (var order in _orders)
-                    {
-                        <article class="order-card">
-                            <div class="order-header">
-                                <a href="@($"/orders/{order.OrderId}")" class="order-id">
-                                    Order @(order.OrderNumber ?? order.OrderId) · @order.CreatedAt.ToLocalTime().ToString("d")
-                                </a>
-                                <span class="status @order.StatusClass">@order.StatusLabel</span>
-                            </div>
-                            <p class="order-items">@order.ItemsSummary</p>
-                            <p class="order-total">Total: €@order.TotalInclVat.ToString("F2")</p>
-                            <NavLink href="@($"/orders/{order.OrderId}")" class="btn btn-secondary btn-sm">View details</NavLink>
-                        </article>
-                    }
-                </div>
-            }
-        </Authorized>
-        <NotAuthorized>
-            <p style="color:var(--muted);margin-bottom:1rem">Sign in to view your order history.</p>
-            <a href="/sign-in?returnUrl=/orders" class="btn btn-primary" data-enhance-nav="false">Sign in</a>
-        </NotAuthorized>
-    </AuthorizeView>
+        </div>
+    }
 </div>
 
 @code {
@@ -59,14 +54,11 @@
     protected override async Task OnInitializedAsync()
     {
         var auth = await AuthStateProvider.GetAuthenticationStateAsync();
-        if (auth.User.Identity?.IsAuthenticated == true)
+        _orders = await CheckoutPort.GetCustomerOrdersAsync(new StoreUserLookup
         {
-            _orders = await CheckoutPort.GetCustomerOrdersAsync(new StoreUserLookup
-            {
-                Email = auth.User.Identity?.Name,
-                CustomerId = int.TryParse(auth.User.FindFirstValue(LegacyAuthClaims.CustomerId), out var cid) ? cid : null
-            });
-        }
+            Email = auth.User.Identity?.Name,
+            CustomerId = int.TryParse(auth.User.FindFirstValue(LegacyAuthClaims.CustomerId), out var cid) ? cid : null
+        });
 
         _loading = false;
     }
