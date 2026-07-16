@@ -4,24 +4,27 @@
 
 ## 📋 Overview
 
-> [!NOTE]
-> All mappings are **generated from SQL** — not from the old LLBLGen code. The generator reads the backup schema and produces English DDL, EF entities, and DbContext configuration.
+> [!IMPORTANT]
+> **Database first (global):** Live Azure SQL **`abmatic_test`** is the source of truth. The app maps English C# names → Dutch physical schema.  
+> **Never invent** columns, tables, EF migrations, `dotnet ef database update`, or schema scripts for the ERP — for **any** feature. Map to what already exists.
 
-| Category | Source | Output |
-|----------|--------|--------|
-| **Legacy schema** | `Bkp_Db/ABMATIC-create-local.sql` | Dutch tables (input) |
-| **English DDL** | `Bkp_Db/WebShopABMATIC-create-local.sql` | 139 business tables |
-| **EF entities** | `Model/Entities/` | 139 C# classes |
-| **Persistence** | `Persistence/` | DbContext + ModelBuilder |
-| **Generator** | `scripts/generate-from-sql.ps1` | Regenerates everything |
+### Language layers (DE-PARA)
 
-> [!TIP]
-> Regenerate after any mapping change:
+| Layer | Convention |
+|-------|------------|
+| **SQL / ERP** | Mostly **Dutch** (`Projecten`, `Klanten`, `ProductPrijzen`, …). Physical names never “fixed” from the app. |
+| **C# code** | **English** types, properties, ports, use cases (`DeliveryType`, `GrossSalesPrice`). |
+| **EF mapping** | English property → Dutch column in `WebShopABMATICModelBuilder` (+ entity XML with legacy Dutch name). |
+| **Labels / product names / messages from ERP** | Keep **as stored** (usually Dutch). UI chrome may stay English. |
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/generate-from-sql.ps1
-dotnet build Persistence/WebShopABMATIC.Data.Persistence.csproj
-```
+Freight/delivery fee mapping (no mock €9): [DATA_FREIGHT_DELIVERY.md](./DATA_FREIGHT_DELIVERY.md).
+
+| Category | Role |
+|----------|------|
+| **Live DB** | `abmatic.database.windows.net` / `abmatic_test` — **authoritative** Dutch ERP tables |
+| **EF entities** | `Model/Entities/` — 139 C# classes mapped to Dutch tables |
+| **Persistence** | `Persistence/` — `WebShopABMATICDbContext` + `WebShopABMATICModelBuilder` |
+| **Historical SQL dumps** | `Bkp_Db/*` (if present) — **reference only**, not a migrate/seed workflow |
 
 ---
 
@@ -29,8 +32,7 @@ dotnet build Persistence/WebShopABMATIC.Data.Persistence.csproj
 
 | Metric | Count | Status | Notes |
 |--------|-------|--------|-------|
-| **Business tables** | 139 | ✅ Complete | Mapped in EF (`WebShopABMATICDbContext`) |
-| **EF column patch** | 4 columns | ✅ Active | Mollie fields on `OrderAdvancePayment` |
+| **Business tables** | 139 | ✅ Complete | Mapped in EF (`WebShopABMATICDbContext`) to live `abmatic_test` |
 | **English schemas** | 11 | ✅ Complete | NL → EN in code; Dutch names in SQL |
 | **EF entities** | 139 | ✅ Complete | `Model/Entities/` |
 | **TypedList read models** | ~60 | 🟡 Pending | Recreate as Application query DTOs |
@@ -61,7 +63,7 @@ dotnet build Persistence/WebShopABMATIC.Data.Persistence.csproj
 |--------|--------|---------|
 | **Schema mapping** | ✅ Complete | 11 schemas NL → EN |
 | **Table mapping** | ✅ Complete | 139 / 139 business tables |
-| **Column mapping** | ✅ Complete | `$ColumnReplacements` in generator |
+| **Column mapping** | ✅ Complete | Fluent mapping in `WebShopABMATICModelBuilder` |
 | **FK normalization** | ✅ Complete | `KlantKlantId` → `CustomerId`, etc. |
 | **Duplicate resolution** | ✅ Complete | e.g. `SupplierId` / `RelatedSupplierId` |
 | **Entity XML docs** | ✅ Complete | Legacy name in every entity summary |
@@ -71,18 +73,18 @@ dotnet build Persistence/WebShopABMATIC.Data.Persistence.csproj
 
 ## 🔄 1. Source of truth
 
-| Artifact | Path | Role |
-|----------|------|------|
-| Legacy SQL | `Bkp_Db/ABMATIC-create-local.sql` | **Input** — Dutch schema from backup |
-| English SQL | `Bkp_Db/WebShopABMATIC-create-local.sql` | **Reference** — English DDL for codegen |
-| Generator | `scripts/generate-from-sql.ps1` | Parses SQL, applies mapping, codegen |
+| Artifact | Path / location | Role |
+|----------|-----------------|------|
+| **Live ERP database** | Azure SQL `abmatic_test` | **Authoritative** Dutch schema + data |
 | Entities | `Model/Entities/` | 139 EF POCOs (`WebShopABMATIC.Data`) |
 | DbContext | `Persistence/WebShopABMATICDbContext.cs` | EF Core entry point |
+| ModelBuilder | `Persistence/` mapping | English ↔ Dutch physical names |
 
 > [!WARNING]
-> The old LLBLGen folders (`EntityClasses/`, `TypedListClasses/`) are **not** authoritative.
+> Do **not** use EF migrations or repo SQL scripts to alter `abmatic_test`.  
+> Historical `Bkp_Db/` / codegen scripts (if still in the tree) are **archive/reference only**.
 
-Each generated entity documents its mapping:
+Each entity documents its mapping:
 
 ```csharp
 /// Entity for [Projects].[Orders] (legacy: [Projecten].[Bestelling]).
@@ -125,17 +127,13 @@ public class Order { … }
 
 ---
 
-## ➕ 4. Schema extensions used by the app
+## ➕ 4. Schema extensions / integrations
 
 The application uses the **139 legacy business tables** on `abmatic_test`. English property names in C# map to Dutch schema/table/column names via `WebShopABMATICModelBuilder`.
 
-### EF migration (Mollie)
+### Payments (Mollie)
 
-| Dutch table | English entity | Columns added | Purpose |
-|-------------|----------------|---------------|---------|
-| `Projecten.DossierVoorschot` | `OrderAdvancePayment` | `MollieCheckoutUrl`, `MolliePaidAt`, `MolliePaymentId`, `MolliePaymentStatus` | Mollie advance payment |
-
-**Migration:** `20260606141224_OrderAdvancePaymentMollieColumns`.
+Store/checkout integrations **encode** payment state in **existing** ERP advance-payment fields (see [SPEC_MOLLIE_PAYMENTS_open.md](./SPEC_MOLLIE_PAYMENTS_open.md) and store checkout code). Do **not** add Mollie columns via EF migrations.
 
 ### Webshop auth (`Klanten.Klant`)
 
@@ -153,8 +151,8 @@ Staff admin login: **`Instellingen.User`** (`Settings.StaffUsers`) — `Login` +
 |--------|--------|
 | **Server** | `abmatic.database.windows.net` |
 | **Database** | `abmatic_test` |
-| **Schema** | Dutch legacy (139 tables) |
-| **EF** | `dotnet ef database update` on `WebShopABMATICDbContext` when migrations change |
+| **Schema** | Dutch legacy (139 tables) — **DB-first** |
+| **EF** | Read/write mapped tables only — **no** `dotnet ef database update` for ERP |
 | **Mapping** | `WebShopABMATICModelBuilder` → Dutch physical names |
 
 ---
@@ -424,7 +422,7 @@ Grouped by English schema. SQL table names are plural; C# entity names are singu
 | Duplicate property | Fallback suffix | `SupplierId` → `RelatedSupplierId` |
 | Price columns | Distinct names | `StukPrijs` → `PieceUnitPrice` |
 
-Column mappings live in `$ColumnReplacements` inside `scripts/generate-from-sql.ps1`.
+Column mappings are maintained in `WebShopABMATICModelBuilder` (fluent EF). Historical codegen scripts are **not** part of the active workflow.
 
 ---
 
@@ -478,15 +476,14 @@ WebShopABMATIC/              ← repo root
 
 ---
 
-## 10. Data migration from ABMATIC
+## 10. Working against ABMATIC (DB-first)
 
-| Step | Action | Command / artifact |
-|------|--------|------------------|
-| 1 | Azure database | `abmatic_test` on `abmatic.database.windows.net` |
-| 2 | Apply EF migrations | `dotnet ef database update` on `WebShopABMATICDbContext` |
-| 3 | Demo data | Maintained on `abmatic_test` (Azure) — see [DATA_SUMMARY.md](./DATA_SUMMARY.md) |
-| 4 | Column mapping | `WebShopABMATICModelBuilder` → Dutch physical names |
-
+| Step | Action |
+|------|--------|
+| 1 | Connect to Azure SQL `abmatic_test` (`connWebShopABMATIC`) |
+| 2 | Map entities via `WebShopABMATICModelBuilder` to **existing** Dutch tables |
+| 3 | Use data already on `abmatic_test` — see [DATA_SUMMARY.md](./DATA_SUMMARY.md) |
+| 4 | **Never** apply EF migrations or schema scripts from this app to change the ERP DB |
 
 ## Documentation
 
