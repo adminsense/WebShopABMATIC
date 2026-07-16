@@ -1,76 +1,75 @@
-# Implementation roadmap — stock, checkout, Mollie & open backlog
+﻿# Implementation roadmap — stock, checkout, Mollie & open backlog
 
 ![Status](https://img.shields.io/badge/Status-Core%20done%20%2B%20open%20backlog-22c55e?style=flat-square) ![Scope](https://img.shields.io/badge/Scope-0–E%20%2B%20media%20%2B%20alerts-512BD4?style=flat-square)
 
 > **Purpose:** Single delivery tracker for WebShopABMATIC — phased checkboxes, open backlog, and **dev-first** priority.  
 > **Mark ✅ when done · ⬜ when pending · 🔶 partial.**  
 > **Analysis:** [SPEC_STOCK_OPERATIONS_PROPOSAL.md](./SPEC_STOCK_OPERATIONS_PROPOSAL.md)  
-> **Related:** [open_MOLLIE_PAYMENTS.md](./open_MOLLIE_PAYMENTS.md) · [open_UPDATES.md](./open_UPDATES.md) §0 (layout loja) · [AZUREBLOB.md](./AZUREBLOB.md)
+> **Related:** [SPEC_MOLLIE_PAYMENTS_open.md](./SPEC_MOLLIE_PAYMENTS_open.md) · [AMENDMENTS.md](./AMENDMENTS.md) §0 (layout loja) · [DATA_AZUREBLOB.md](./DATA_AZUREBLOB.md)
 
 ### Delivery model (owner rule)
 
 | Track | Goal | When |
 |-------|------|------|
 | **Dev 100%** | All features working locally with **mocks** (`Mollie:UseMock`, `Notifications:LowStock:UseMock`, local file media) | **Now — finish this first** |
-| **Prod go-live** | Real Mollie, SMTP worker, Azure Blob — needs client credentials / infra | **Last — only after dev is 100%** |
+| **Prod go-live** | Real Mollie (**only after client keys**), SMTP worker, etc. | **Last — never before client delivers Mollie keys** |
 
-**Mocks count as ✅ for dev.** Prod adapters are a separate go-live track — never block dev priority.
+**Mocks count as ✅ for dev.** **Mollie stays on mock** until the client sends API keys — see [SPEC_MOLLIE_PAYMENTS_open.md](./SPEC_MOLLIE_PAYMENTS_open.md). Agents must not treat real Mollie as current work.
 
 ### Master phase map
 
 | Phase | Focus | Dev status | Prod go-live |
 |-------|--------|------------|--------------|
 | **Auth** | Legacy cookie — `[Instellingen].[User]` + `Customers` | ✅ Done — login unificado §2.2.2 | — |
-| **Store layout** | Referência adminsenceweb (sidebar, CD4, deals) | ✅ Done — [open_UPDATES.md](./open_UPDATES.md) §0 | — |
+| **Store layout** | Referência adminsenceweb (sidebar, CD4, deals) | ✅ Done — [AMENDMENTS.md](./AMENDMENTS.md) | — |
 | **0** | Pricing foundation on `abmatic_test` | ✅ Done | — |
 | **A** | Stock admin (read-only) | ✅ Done | — |
-| **B** | Checkout + Mollie | ✅ Done (mock) | ⬜ **B.9** real E2E — last |
+| **B** | Checkout + Mollie | ✅ Done (**mock — required**) | ⬜ **B.9** real E2E — **blocked on client keys** |
 | **C** | Store & admin order visibility | ✅ Done | — |
 | **D** | Stock writes + low-stock in-app | ✅ Done | — |
 | **3b** | Low stock email | ✅ Done (mock + in-app KPI from stock grid) | ⬜ SMTP worker — last |
 | **M** | Product images | ✅ Done | ✅ Azure Blob (`files`) |
 | **E** | PO / GRN / transfer / reservation | ✅ Done (core) | — |
-| **F** | SignalR real-time stock (optional) | ⬜ Pending | — |
 | **G** | Stock movement logging + legacy audit | ✅ Done | — |
 
 **Historical build order:** **0 → A ∥ B → C → D → …**
 
-### Dev priority — próximo trabalho (Jul/2026)
+### Dev priority — next work (Jul/2026)
 
-Sincronizado com [open_UPDATES.md](./open_UPDATES.md) §0.
+1. ~~**S.4**~~ ✅ — server-side required product options on checkout
+2. ~~**E.12**~~ ✅ — [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) refreshed (legacy auth, live catalog, no mock SKUs)
+3. **Quality** — smoke = `dotnet build`; no test project yet (see `.claude/CLAUDE.md`)
 
-1. **§3.5 storefront** — opções produto + textos categoria na loja (admin CRUD ✅)
-2. **F** — SignalR *(optional)*
-3. **E.12** — Refresh [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md)
-4. **Qualidade** — testes catálogo, regressão (ex-E/F em open_UPDATES) — **depois** dos itens acima
+**Done recently:** **S.5** freight from ERP; **S.4** server option validation; **E.12** store SPEC sync.  
+**Not in sprint:** real Mollie (**B.9**) until client keys.
 
-### Prod go-live — last (after dev 100%)
+### Prod go-live — last (after keys + remaining prod items)
 
-Do **not** start until dev track above is complete:
-
-1. **3b** — SMTP / background worker for low-stock queue  
-2. **B.9** — Mollie real E2E — [open_MOLLIE_PAYMENTS.md](./open_MOLLIE_PAYMENTS.md)
+1. **B.9** — Mollie real E2E — **waiting on client keys** — [SPEC_MOLLIE_PAYMENTS_open.md](./SPEC_MOLLIE_PAYMENTS_open.md)
+2. **3b** — SMTP / background worker for low-stock queue
 
 ---
 
 ## ⬜ Open backlog — dev (finish 100% first)
 
-### Storefront — ERP forms (not layout)
+### Storefront — ERP forms
 
-Layout loja ✅ — ver [open_UPDATES.md](./open_UPDATES.md) §0. Pendente **funcional**:
+Layout loja ✅. Options / category detail mostly shipped; checklist synced to code (Jul/2026):
 
 | Item | Status | Notes |
 |------|--------|-------|
-| **S.1** `GetProductOptionsForStoreAsync` | ⬜ | Admin `/admin/product-options` ✅ |
-| **S.2** `StoreProductOptionsForm` + `ProductDetail` | ⬜ | §3.5 |
-| **S.3** `GetCategoryDetailAsync` + intro text | ⬜ | H1 nome ✅; intro EN ⬜ |
-| **S.4** Cart/checkout line options | ⬜ | Validação Application |
+| **S.1** `GetProductOptionsAsync` | ✅ | Port + `StoreCatalogService` (admin `/admin/product-options` ✅) |
+| **S.2** `StoreProductOptionsForm` + `ProductDetail` | ✅ | Required options gated in UI before add |
+| **S.3** `GetCategoryDetailAsync` + intro/outro | ✅ | EN→NL; RTF markup omitted on storefront |
+| **S.4** Cart/checkout line options | ✅ | Persist + cart display; **server** validates required options on quote/`PlaceOrderAsync` (`CheckoutUseCase`) |
+| **S.5** Delivery / freight from ERP | ✅ | No mock €9 — fee from `OrderDeliveryTypeProduct` + `ProductPrices`; default €0; cart freight select. [DATA_FREIGHT_DELIVERY.md](./DATA_FREIGHT_DELIVERY.md) |
+| **S.6** Cart stock blocking UX | ✅ | Stale OOS lines kept; checkout CTA blocked — [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §5.2 |
 
 ### Auth — legacy database ✅
 
 | Item | Status | Notes |
 |------|--------|-------|
-| **A.1** Unified login | ✅ | `POST /account/login` → `SignInAsync` — [open_UPDATES.md](./open_UPDATES.md) §2.2.2 |
+| **A.1** Unified login | ✅ | `POST /account/login` → `SignInAsync` — [AMENDMENTS.md](./AMENDMENTS.md) §2.2.2 |
 | **A.2** Staff → admin | ✅ | `[Instellingen].[User]`; flags `Admin` / `Bestellingen` / `Productie` → roles |
 | **A.3** Customer → store | ✅ | `Customers.WebshopLogin` + hash/salt |
 | **A.4** No AspNet Identity | ✅ | Cookie legacy; policies `AdminOrManager` / `CustomerOnly` |
@@ -106,16 +105,17 @@ Optional for minimal webshop; needed for ERP-style inbound stock.
 | **E.10 Admin cancel order** | ✅ | `POST /api/admin/stock/orders/{id}/cancel` + button on `/admin/orders` |
 | **E.11 Status workflow service** | ✅ | `OrderStockWorkflowService` — evaluates `OrderStatus.ReserveStock/AffectsStock` flags |
 
-### F — SignalR (optional)
+### Quality
 
-- ⬜ Real-time stock refresh — not started
+- ✅ Smoke: `dotnet build WebShopABMATIC.sln` (no dedicated test project yet — `.claude/CLAUDE.md`)
+- ⬜ Automated store/admin regression suite — when a test project is added
 
 ### Later (E extras — not MVP)
 
 - ⬜ **E.4** `AccountingDocument` on payment  
 - ⬜ **E.5** Mollie refunds in admin  
 - ⬜ **E.6** Retry payment / expired session UX  
-- ⬜ **E.12** Refresh [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) (outdated status text)
+- ✅ **E.12** Refresh [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) to match Blazor store (Jul/2026)
 - ⬜ **E.13** OrderStructure admin CRUD (to wire `OrderStockWorkflowService` on status change)
 
 ---
@@ -138,12 +138,15 @@ Email queue rows exist on `abmatic_test` — see [DATA_SUMMARY.md](./DATA_SUMMAR
 
 | Item | Dev | Prod |
 |------|-----|------|
-| Code + `MollieMockPaymentAdapter` | ✅ | n/a |
-| `Mollie:ApiKey`, webhook, E2E checklist | n/a | ⬜ — [open_MOLLIE_PAYMENTS.md](./open_MOLLIE_PAYMENTS.md) |
+| Code + `MollieMockPaymentAdapter` | ✅ **Required until client keys** | n/a |
+| Client delivers `Mollie:ApiKey` | n/a | ⬜ **Waiting on client** |
+| `Mollie:ApiKey`, webhook, E2E checklist | n/a | ⬜ — [SPEC_MOLLIE_PAYMENTS_open.md](./SPEC_MOLLIE_PAYMENTS_open.md) |
+
+Do **not** start B.9 configuration work until keys are received.
 
 ### M.5 — Azure Blob (production) ✅
 
-- ✅ Real Azure Blob storage adapter — [AZUREBLOB.md](./AZUREBLOB.md) (container `files`, SAS URLs)
+- ✅ Real Azure Blob storage adapter — [DATA_AZUREBLOB.md](./DATA_AZUREBLOB.md) (container `files`, SAS URLs)
 
 ---
 
@@ -174,7 +177,7 @@ Email queue rows exist on `abmatic_test` — see [DATA_SUMMARY.md](./DATA_SUMMAR
 - ✅ **0.3** `OrderStatuses` with `ReserveStock` / `AffectsStock` flags
 - ✅ **0.4** `IProductPricingPort` + repository
 - ✅ **0.5** Wire `StoreCatalogService` to real prices
-- ✅ **0.6** EF migration: Mollie columns on `OrderAdvancePayments`
+- ✅ **0.6** Checkout/advance-payment integration on existing ERP fields (DB-first; **no** EF schema migration)
 - ✅ **0.7** NuGet `Mollie.Api` + DI (`MollieDependencyInjection`)
 - ✅ **0.8** `IMolliePaymentPort` + `MolliePaymentAdapter`
 - ✅ **0.9** Update [DATA_SUMMARY.md](./DATA_SUMMARY.md)
@@ -203,7 +206,7 @@ Email queue rows exist on `abmatic_test` — see [DATA_SUMMARY.md](./DATA_SUMMAR
 - ✅ **B.7** `/orders/{id}/payment-return` + confirmation
 - ✅ **B.8** Post-pay path (no Mollie)
 - ✅ **B.9a** `MollieMockPaymentAdapter` when `Mollie:UseMock=true` — **dev done**
-- ⬜ **B.9** Real Mollie test key + public webhook + E2E — [open_MOLLIE_PAYMENTS.md](./open_MOLLIE_PAYMENTS.md) — **prod go-live (last)**
+- ⬜ **B.9** Real Mollie test key + public webhook + E2E — [SPEC_MOLLIE_PAYMENTS_open.md](./SPEC_MOLLIE_PAYMENTS_open.md) — **prod go-live (last)**
 
 ---
 
@@ -242,7 +245,7 @@ Email queue rows exist on `abmatic_test` — see [DATA_SUMMARY.md](./DATA_SUMMAR
 
 ## Phase M — Product media ✅
 
-Detail: [AZUREBLOB.md](./AZUREBLOB.md)
+Detail: [DATA_AZUREBLOB.md](./DATA_AZUREBLOB.md)
 
 - ✅ **M.1** `IProductMediaPort` + `LocalProductMediaService`
 - ✅ **M.2** Admin product upload
@@ -265,14 +268,8 @@ Detail: [AZUREBLOB.md](./AZUREBLOB.md)
 - ⬜ **E.6** Retry payment / expired session UX
 
 ### Docs
-- ✅ **E.14** [open_MOLLIE_PAYMENTS.md](./open_MOLLIE_PAYMENTS.md) written
-- ⬜ **E.12** Update [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) to match current Blazor store
-
----
-
-## Phase F — SignalR (optional) ⬜
-
-- ⬜ **F.1** Push stock updates to admin / store UI
+- ✅ **E.14** [SPEC_MOLLIE_PAYMENTS_open.md](./SPEC_MOLLIE_PAYMENTS_open.md) written
+- ✅ **E.12** [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) matched to current Blazor store (legacy auth, live ERP catalog, freight, options)
 
 ---
 
@@ -308,7 +305,6 @@ Phase D   [██████████] D.7 reservation ✅
 Phase 3b  [██████████] dev mock ✅
 Phase M   [██████████] M.1–M.5 ✅
 Phase E   [██████████] E.1–E.11 transfer + PO + GRN + reservations ✅
-Phase F   [░░░░░░░░░░] ⬜ optional SignalR
 Phase G   [██████████] Stock movement logging ✅
 
 PROD GO-LIVE (last — after dev 100%)
