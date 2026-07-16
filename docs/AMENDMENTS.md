@@ -12,7 +12,11 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 
 ## Amendments (newest first)
 
-> **2026-07-14 — DB-first = global hard rule:** Never invent columns/tables/migrations/schema scripts for **any** feature. Reinforced in `AGENTS.md`, `SPEC_INFRASTRUCTURE` §4, `docs/README`, `.cursor/rules/db-first.mdc`, `.claude/rules/db-first.md` (not frete-only).
+> **2026-07-16 — S.4 server required options:** `CheckoutUseCase.BuildQuoteAsync` loads catalog options and rejects missing/invalid required options (and unknown option ids). Cart quote now sends line `Options` (same as place-order). CTA: “Cannot place order — fix stock or options”.
+
+> **2026-07-16 — E.12 SPEC_WEB_STORE refresh:** Removed Identity leftovers and mock “Hard drive” SKUs; documented live ERP catalog, legacy login, freight, server option validation.
+
+> **2026-07-14 — DB-first = global hard rule:** Never invent columns/tables/migrations/schema scripts for **any** feature. Reinforced in `AGENTS.md`, `SPEC_INFRASTRUCTURE` §4, `docs/README`, `.cursor/rules/db-first.mdc`, `.claude/rules/db-first.md` (not freight-only).
 
 > **2026-07-14 — Freight from ERP (S.5):** Removed hardcoded €9. Fee from `OrderDeliveryTypeProduct` → `ProductPrices` (Dutch `DossierLeveringsTypeProduct` / `ProductPrijzen`); default **€0**. Dutch ERP labels in UI; English code DE-PARA. See [DATA_FREIGHT_DELIVERY.md](./DATA_FREIGHT_DELIVERY.md).
 
