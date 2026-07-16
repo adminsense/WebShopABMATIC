@@ -25,10 +25,10 @@ Full table map: [DATA_DUTCH_ENGLISH_MODEL.md](./DATA_DUTCH_ENGLISH_MODEL.md).
 
 ---
 
-## How frete actually works in AB-MATIC
+## How freight actually works in AB-MATIC
 
 `DeliveryType` (**NL** `LeveringType`) has **no price column**.  
-Frete = **product(s)** linked to a delivery type, priced via **product prices**.
+Freight = **product(s)** linked to a delivery type, priced via **product prices**.
 
 ```text
 Customer.DeliveryTypeId          (NL Klanten.Klant.LeverigsType)
@@ -116,7 +116,7 @@ The store **does not** know trip km (no geocoding, no route table wired for chec
 
 ## Related
 
-- Store behaviour: [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.4 / frete  
+- Store behaviour: [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.4 / freight  
 - Roadmap item **S.5**: [SPEC_IMPLEMENTATION_ROADMAP_open.md](./SPEC_IMPLEMENTATION_ROADMAP_open.md)  
 - NL↔EN map: [DATA_DUTCH_ENGLISH_MODEL.md](./DATA_DUTCH_ENGLISH_MODEL.md)
 - DB-first hard rule: `AGENTS.md` / `.cursor/rules/db-first.mdc` (not repeated here)
