@@ -10,7 +10,7 @@
 
 ## Storefront
 
-![Webstore Frontend](docs/images/webstore_front.png)
+![Current WebShop storefront — categories and deals](docs/images/webstore_front_current.png)
 
 - Product catalog with search (guest list price, or Out of stock / Price on request)
 - Shopping cart with stock and required-option validation
@@ -31,17 +31,11 @@ Staff dashboard and operational screens (catalog, orders, stock, settings). Staf
 
 ## Payments (Mollie)
 
-![Payments](docs/images/payments.png)
-
-*Illustrative / mock reference — live UX is the Blazor store (`/checkout/mollie-mock`), not the static HTML mock.*
-
 - PrePay (iDEAL / card) via Mollie; current runtime uses **`Mollie:UseMock`**
+- Blazor mock checkout: `/checkout/mollie-mock` (no real charge)
+- Payment confirmation uses real order lines, VAT and ERP freight price (missing price → €0)
 - Go-live checklist: [SPEC_MOLLIE_PAYMENTS_open.md](docs/SPEC_MOLLIE_PAYMENTS_open.md)
 - Cart / confirmation UX: [SPEC_WEB_STORE.md](docs/SPEC_WEB_STORE.md)
-
-![Payments Received](docs/images/payments%20received.png)
-
-*Illustrative confirmation mock — live confirmation is simpler (`OrderConfirmation.razor`).*
 
 ---
 
