@@ -37,7 +37,7 @@ Do **not** load `docs/archive/` unless the user asks for history.
 ## Default engineering rules
 
 - **Database first:** The live ERP database (`abmatic_test` on Azure SQL) is the **source of truth**. Physical schema is **mostly Dutch**; C# uses **English** names with DE-PARA in `WebShopABMATICModelBuilder` / entity comments ([`docs/DATA_DUTCH_ENGLISH_MODEL.md`](docs/DATA_DUTCH_ENGLISH_MODEL.md)). ERP labels/product names stay as stored (often Dutch).
-  - **Never invent** columns, tables, EF migrations, `Migrate()` / `EnsureCreated()`, or schema scripts for the ERP — in **code or docs**, for **any** feature (store, admin, frete, Mollie, stock, …).
+  - **Never invent** columns, tables, EF migrations, `Migrate()` / `EnsureCreated()`, or schema scripts for the ERP — in **code or docs**, for **any** feature (store, admin, freight, Mollie, stock, …).
   - Map and encode behaviour onto **existing** Dutch tables/columns. If a real schema change is unavoidable, it is an explicit **DBA/ERP** change on the database — not from this app.
 - **Freight:** no hardcoded delivery fee. Resolve from `OrderDeliveryTypeProduct` + `ProductPrices` for the customer’s `DeliveryTypeId`; **€0** when no usable row/price. See [`docs/DATA_FREIGHT_DELIVERY.md`](docs/DATA_FREIGHT_DELIVERY.md).
 - **Hexagonal:** UI → Application (use cases/ports) → Infrastructure. No DbContext in Razor pages.
@@ -65,4 +65,5 @@ Code **and** matching docs updated. Saying “user didn’t ask for docs” is n
 - Docs index: [`docs/README.md`](docs/README.md)  
 - Claude: [`CLAUDE.md`](CLAUDE.md) → [`.claude/CLAUDE.md`](.claude/CLAUDE.md)  
 - Path rules: [`.claude/rules/`](.claude/rules/) (`store-ui`, `admin-ui`, `infrastructure`, `docs-sync`, `db-first`, `owner-only-git-publish`)
+- Docs workflow skill: [`.cursor/skills/docs-governance/SKILL.md`](.cursor/skills/docs-governance/SKILL.md)
 - Format hook (automation only): [`.claude/hooks/format-csharp.ps1`](.claude/hooks/format-csharp.ps1) — not for product/DB/UI policy

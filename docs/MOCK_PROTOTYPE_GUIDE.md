@@ -4,7 +4,8 @@
 
 This document explains the **admin HTML prototype** in `docs/mocks/`, how it maps to the **AB-MATIC reference layout**, and what each **sidebar menu / entity / screen** represents in the real Blazor admin app.
 
-> **Scope:** Admin panel only. The storefront (`/store`, cart, checkout) is implemented separately in Blazor — not covered by this mock walkthrough.
+> **Scope:** Admin panel only. The storefront (catalog, cart, checkout) is implemented in Blazor — see [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md).
+> **Static HTML ≠ live UI.** Files under `docs/mocks/` are prototypes / conceptual references unless a SPEC says otherwise.
 
 Visual reference (AB-MATIC admin shell): [adminsenceweb.azurewebsites.net](https://adminsenceweb.azurewebsites.net/)
 
@@ -14,8 +15,9 @@ Visual reference (AB-MATIC admin shell): [adminsenceweb.azurewebsites.net](https
 
 | File | Role | Open from |
 |------|------|-----------|
-| [`docs/mocks/mock-admin.html`](docs/mock-admin.html) | Staff **admin panel** (AB-MATIC layout) — **primary entry** | Browser direct |
-| [`docs/mocks/mock-payments.html`](docs/mock-payments.html) | **Mollie hosted checkout** mock (reference for payment UX) | Browser direct |
+| [`docs/mocks/mock-admin.html`](./mocks/mock-admin.html) | Staff **admin panel** (AB-MATIC layout) — **primary entry** | Browser direct |
+| [`docs/mocks/mock-payments.html`](./mocks/mock-payments.html) | Payment visual prototype. Blazor mock checkout/confirmation follow this direction with dynamic order data and ERP freight (missing price → €0; never fixed €9). | Browser direct |
+| [`docs/mocks/mock-store-filters.html`](./mocks/mock-store-filters.html) | Store layout + Coolblue-style filters **pilot** (needs `mock-store.css` + `images/`, or use standalone) | Browser direct |
 
 Legacy aliases (ignore for validation):
 
@@ -25,6 +27,7 @@ Legacy aliases (ignore for validation):
 | `docs/mocks/mock-shopcart.html` | Redirect → `mock-loja.html` |
 
 **Blazor admin entry:** `/admin/login` — staff login on `Settings.StaffUsers` (credentials from the database).
+**Blazor store payments:** `/checkout/mollie-mock` — [SPEC_MOLLIE_PAYMENTS_open.md](./SPEC_MOLLIE_PAYMENTS_open.md) (ops) + [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.4 (UX).
 
 ---
 
@@ -323,7 +326,7 @@ Same `StaffUser` table — **form only** (`formOnly: true` in mock) for the logg
 
 ## Mollie payment mock (reference only)
 
-[`docs/mocks/mock-payments.html`](docs/mock-payments.html) illustrates the **hosted checkout** and **confirmation** screens. The real flow is implemented in Blazor (`CheckoutUseCase`, `ProcessMollieWebhookUseCase`) with `Mollie:UseMock=true` for local dev.
+[`docs/mocks/mock-payments.html`](./mocks/mock-payments.html) illustrates the **hosted checkout** and **confirmation** screens. The real flow is implemented in Blazor (`CheckoutUseCase`, `ProcessMollieWebhookUseCase`) with `Mollie:UseMock=true` for local dev.
 
 ---
 

@@ -31,6 +31,11 @@
       overflow: hidden;
     }
     .store-shell--auth .store-auth-main { flex: 1; overflow: auto; }
+    .store-payment-main {
+      flex: 1;
+      overflow: auto;
+      background: #eef8ff;
+    }
     .screen { display: none; }
     .screen.active { display: block; }
 
@@ -1011,6 +1016,130 @@
       cursor: not-allowed;
       filter: grayscale(0.25);
       box-shadow: none;
+    }
+    .payment-confirmation-page {
+      align-self: stretch;
+      width: 100%;
+      min-height: calc(100vh - var(--header-height));
+      padding: 2rem 2.5rem 3rem;
+      background: #eef8ff;
+      color: #17375e;
+    }
+    .payment-confirmation-state {
+      max-width: 32rem;
+      margin: 3rem auto;
+      color: var(--muted);
+    }
+    .payment-success-hero {
+      max-width: 46rem;
+      margin-bottom: 1.75rem;
+    }
+    .payment-success-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 3.5rem;
+      height: 3.5rem;
+      margin-bottom: 1rem;
+      border-radius: 50%;
+      background: #d1fae5;
+      color: #059669;
+      font-size: 2rem;
+      font-weight: 500;
+    }
+    .payment-success-hero h1,
+    .payment-confirmation-title {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-weight: 400;
+      color: #17375e;
+    }
+    .payment-success-hero h1 {
+      margin-bottom: 0.35rem;
+      font-size: 1.75rem;
+    }
+    .payment-success-hero p {
+      max-width: 42rem;
+      color: #59708c;
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+    .payment-confirmation-title {
+      margin-bottom: 1rem;
+      font-size: 1.75rem;
+    }
+    .payment-confirmation-card {
+      width: min(100%, 32rem);
+      padding: 1.5rem;
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(30, 64, 175, 0.05);
+    }
+    .payment-order-number {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+    .payment-order-date {
+      margin: 0.15rem 0 0.85rem;
+      color: #64748b;
+      font-size: 0.85rem;
+    }
+    .payment-status-line { margin: 0; }
+    .payment-status-badge {
+      display: inline-block;
+      margin-left: 0.25rem;
+      padding: 0.25rem 0.45rem;
+      border-radius: 5px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: lowercase;
+    }
+    .payment-status-badge--paid {
+      background: #059669;
+      color: #fff;
+    }
+    .payment-status-badge--pending {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .payment-summary-lines {
+      margin-top: 1rem;
+      padding: 1rem 0;
+      border-top: 1px solid #dbeafe;
+      border-bottom: 1px solid #dbeafe;
+    }
+    .payment-summary-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.55rem;
+      color: #64748b;
+      font-size: 0.9rem;
+    }
+    .payment-summary-line:last-child { margin-bottom: 0; }
+    .payment-summary-total {
+      margin: 1rem 0 0;
+      color: #0f2747;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+    .payment-continue-button {
+      width: fit-content !important;
+      margin-top: 1.25rem !important;
+      background: #3b82f6;
+      border-color: #3b82f6;
+    }
+    .payment-continue-button:hover {
+      background: #2563eb;
+      border-color: #2563eb;
+    }
+    @media (max-width: 767.98px) {
+      .payment-confirmation-page {
+        padding: 1.5rem 1rem 2rem;
+      }
+      .payment-confirmation-card {
+        padding: 1.15rem;
+      }
     }
     .cart-checkout-blocked {
       border-color: #fecaca;
