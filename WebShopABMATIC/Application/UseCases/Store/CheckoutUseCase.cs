@@ -3,6 +3,7 @@ using WebShopABMATIC.Application.Audit;
 using WebShopABMATIC.Application.Payments;
 using WebShopABMATIC.Application.Ports;
 using WebShopABMATIC.Application.Ports.Outbound;
+using WebShopABMATIC.Application.Store;
 using WebShopABMATIC.Application.Store.Checkout;
 using WebShopABMATIC.Application.Store.Orders;
 namespace WebShopABMATIC.Application.UseCases.Store;
@@ -13,6 +14,7 @@ public sealed class CheckoutUseCase : ICheckoutPort
 
     private readonly IStoreCustomerRepository _customers;
     private readonly IStoreOrderRepository _orders;
+    private readonly IStoreCatalogPort _catalog;
     private readonly IProductPricingPort _pricing;
     private readonly IMolliePaymentPort _mollie;
     private readonly IMollieWebhookPort _webhook;
@@ -23,6 +25,7 @@ public sealed class CheckoutUseCase : ICheckoutPort
     public CheckoutUseCase(
         IStoreCustomerRepository customers,
         IStoreOrderRepository orders,
+        IStoreCatalogPort catalog,
         IProductPricingPort pricing,
         IMolliePaymentPort mollie,
         IMollieWebhookPort webhook,
@@ -32,6 +35,7 @@ public sealed class CheckoutUseCase : ICheckoutPort
     {
         _customers = customers;
         _orders = orders;
+        _catalog = catalog;
         _pricing = pricing;
         _mollie = mollie;
         _webhook = webhook;
@@ -71,6 +75,7 @@ public sealed class CheckoutUseCase : ICheckoutPort
         var names = await _orders.GetProductNamesAsync(productIds, cancellationToken);
         var options = await _orders.GetCheckoutOptionsAsync(ctx.CustomerId, cancellationToken);
         var freightOptions = options?.FreightOptions ?? [];
+        var productOptionsByProduct = await LoadProductOptionsByProductAsync(productIds, cancellationToken);
 
         var errors = new List<string>();
         var quoteLines = new List<CheckoutLineQuoteDto>();
@@ -82,16 +87,23 @@ public sealed class CheckoutUseCase : ICheckoutPort
                 continue;
             }
 
+            var productName = names.GetValueOrDefault(line.ProductId, $"Product {line.ProductId}");
+
             stock.TryGetValue(line.ProductId, out var available);
             if (line.Quantity > available)
             {
-                errors.Add($"{names.GetValueOrDefault(line.ProductId, $"Product {line.ProductId}")}: only {available} in stock.");
+                errors.Add($"{productName}: only {available} in stock.");
             }
+
+            errors.AddRange(ValidateLineOptions(
+                productName,
+                productOptionsByProduct.GetValueOrDefault(line.ProductId, []),
+                line.Options));
 
             quoteLines.Add(new CheckoutLineQuoteDto
             {
                 ProductId = line.ProductId,
-                Name = names.GetValueOrDefault(line.ProductId, $"Product {line.ProductId}"),
+                Name = productName,
                 UnitPrice = unitPrice,
                 Quantity = line.Quantity,
                 LineTotal = unitPrice * line.Quantity,
@@ -408,6 +420,66 @@ public sealed class CheckoutUseCase : ICheckoutPort
                 ValueText = o.ValueText
             })
             .ToList();
+    }
+
+    private async Task<IReadOnlyDictionary<int, IReadOnlyList<StoreProductOptionDto>>> LoadProductOptionsByProductAsync(
+        IReadOnlyList<int> productIds,
+        CancellationToken cancellationToken)
+    {
+        var map = new Dictionary<int, IReadOnlyList<StoreProductOptionDto>>();
+        foreach (var productId in productIds.Distinct())
+        {
+            map[productId] = await _catalog.GetProductOptionsAsync(productId, cancellationToken);
+        }
+
+        return map;
+    }
+
+    /// <summary>
+    /// Server-side required-option check (SPEC_WEB_STORE §8). UI also gates add-to-cart;
+    /// this blocks quote/place-order if the request omits required ERP options.
+    /// </summary>
+    private static IEnumerable<string> ValidateLineOptions(
+        string productName,
+        IReadOnlyList<StoreProductOptionDto> catalogOptions,
+        IReadOnlyList<CheckoutLineOption> submitted)
+    {
+        if (catalogOptions.Count == 0)
+        {
+            yield break;
+        }
+
+        var byOptionId = submitted
+            .GroupBy(o => o.ProductOptionId)
+            .ToDictionary(g => g.Key, g => g.First());
+
+        var allowedIds = catalogOptions.Select(o => o.Id).ToHashSet();
+        foreach (var submittedOption in submitted)
+        {
+            if (!allowedIds.Contains(submittedOption.ProductOptionId))
+            {
+                yield return $"{productName}: unknown option id {submittedOption.ProductOptionId}.";
+            }
+        }
+
+        foreach (var required in catalogOptions.Where(o => o.IsRequired))
+        {
+            if (!byOptionId.TryGetValue(required.Id, out var chosen) ||
+                string.IsNullOrWhiteSpace(chosen.ValueText))
+            {
+                yield return $"{productName}: required option \"{required.Name}\" is missing.";
+                continue;
+            }
+
+            if (required.HasValues)
+            {
+                if (chosen.ProductOptionValueId is not int valueId ||
+                    required.Values.All(v => v.Id != valueId))
+                {
+                    yield return $"{productName}: required option \"{required.Name}\" has an invalid value.";
+                }
+            }
+        }
     }
 
     private static CheckoutQuoteDto EmptyQuote(IReadOnlyList<string> errors) =>
