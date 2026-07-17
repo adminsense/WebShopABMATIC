@@ -1,5 +1,5 @@
 @page "/orders/{OrderId:int}/confirmation"
-@layout StoreLayout
+@layout StorePaymentLayout
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
 @using WebShopABMATIC.Application.Auth
@@ -12,51 +12,78 @@
 
 <PageTitle>Order confirmation</PageTitle>
 
-<div class="container">
-    <h1 class="page-title">Order confirmation</h1>
-
+<div class="payment-confirmation-page">
     @if (_loading)
     {
-        <p style="color:var(--muted)">Loading…</p>
+        <p class="payment-confirmation-state">Loading…</p>
     }
     else if (_order is null)
     {
-        <p style="color:var(--muted)">Order not found.</p>
-        <NavLink href="/orders" class="btn btn-primary">My orders</NavLink>
+        <div class="payment-confirmation-state">
+            <p>Order not found.</p>
+            <NavLink href="/orders" class="btn btn-primary">My orders</NavLink>
+        </div>
     }
     else
     {
-        <div class="summary-card" style="max-width:32rem">
-            <p><strong>Order #@(_order.OrderNumber ?? _order.OrderId)</strong></p>
-            <p class="small" style="color:var(--muted)">@_order.CreatedAt.ToLocalTime().ToString("f")</p>
+        <section class="payment-success-hero">
+            <div class="payment-success-icon" aria-hidden="true">✓</div>
+            <h1>@(_order.IsPaid ? "Payment received" : "Order received")</h1>
             <p>
-                Payment:
                 @if (_order.IsPaid)
                 {
-                    <span class="badge bg-success">@_order.PaymentStatus</span>
+                    <text>Thank you — your payment was received. Your order is confirmed and stock will be updated.</text>
                 }
                 else
                 {
-                    <span class="badge bg-warning text-dark">@_order.PaymentStatus</span>
+                    <text>Your order was received. Payment status is shown below.</text>
                 }
             </p>
-            <hr />
-            @foreach (var line in _order.Lines)
+        </section>
+
+        <h2 class="payment-confirmation-title">Order confirmation</h2>
+
+        <section class="payment-confirmation-card">
+            <p class="payment-order-number"><strong>Order #@(_order.OrderNumber ?? _order.OrderId)</strong></p>
+            <p class="payment-order-date">@_order.CreatedAt.ToLocalTime().ToString("f")</p>
+            <p class="payment-status-line">
+                Payment:
+                @if (_order.IsPaid)
+                {
+                    <span class="payment-status-badge payment-status-badge--paid">@_order.PaymentStatus</span>
+                }
+                else
+                {
+                    <span class="payment-status-badge payment-status-badge--pending">@_order.PaymentStatus</span>
+                }
+            </p>
+
+            <div class="payment-summary-lines">
+            @foreach (var line in ProductLines)
             {
-                <div class="summary-line">
+                <div class="payment-summary-line">
                     <span>@line.Name × @line.Quantity</span>
                     <span>@FormatPrice(line.LineTotal)</span>
                 </div>
             }
-            <div class="summary-line total">
+
+                <div class="payment-summary-line">
+                    <span>@DeliveryLabel</span>
+                    <span>@FormatPrice(DeliveryFee)</span>
+                </div>
+                <div class="payment-summary-line">
+                    <span>VAT</span>
+                    <span>@FormatPrice(_order.VatAmount)</span>
+                </div>
+            </div>
+
+            <div class="payment-summary-line payment-summary-total">
                 <span>Total (incl. VAT)</span>
                 <span>@FormatPrice(_order.TotalInclVat)</span>
             </div>
-            <div class="d-flex flex-wrap gap-2" style="margin-top:1rem">
-                <NavLink href="/orders" class="btn btn-outline-secondary">My orders</NavLink>
-                <NavLink href="/" class="btn btn-primary">Continue shopping</NavLink>
-            </div>
-        </div>
+
+            <NavLink href="/" class="btn btn-primary payment-continue-button">Continue shopping</NavLink>
+        </section>
     }
 </div>
 
@@ -65,6 +92,14 @@
 
     private CheckoutOrderSummaryDto? _order;
     private bool _loading = true;
+    private IEnumerable<CheckoutLineQuoteDto> ProductLines =>
+        _order?.Lines.Where(line => !line.IsDelivery) ?? [];
+    private IEnumerable<CheckoutLineQuoteDto> DeliveryLines =>
+        _order?.Lines.Where(line => line.IsDelivery) ?? [];
+    private decimal DeliveryFee => DeliveryLines.Sum(line => line.LineTotal);
+    private string DeliveryLabel =>
+        DeliveryLines.Select(line => line.Name).FirstOrDefault(name => !string.IsNullOrWhiteSpace(name))
+        ?? "Delivery";
 
     protected override async Task OnInitializedAsync()
     {
