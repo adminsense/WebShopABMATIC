@@ -50,13 +50,13 @@
 Store pages inject **inbound ports** only — same hexagonal stack as admin:
 
 ```text
-Catalog.razor
-  → IStoreCatalogPort              (Application/Ports)
-  → StoreCatalogService            (Infrastructure/Store)
-  → WebShopABMATICDbContext + IProductMediaPort
+Catalog.razor / ProductDetail.razor / Cart.razor
+  → IStoreCatalogPort / ICheckoutPort     (Application/Ports)
+  → StoreCatalogService / CheckoutUseCase (Infrastructure + Application)
+  → WebShopABMATICDbContext + IProductMediaPort + order/stock ports
 ```
 
-Future: `IOrderService` / `ICartService` as inbound ports with use cases in Application; checkout persists via outbound `IOrderRepository`.
+Cart state: `StoreCartService` (client). Checkout quote/place-order: `CheckoutUseCase` (server). No DbContext in Razor.
 
 ---
 
@@ -64,39 +64,23 @@ Future: `IOrderService` / `ICartService` as inbound ports with use cases in Appl
 
 The storefront uses a **light blue** theme (`--primary: #0ea5e9`, soft backgrounds). Product cards show image, name, price, and stock hint.
 
-### 1.1 Catalog products (prototype SKUs)
+### 1.1 Live catalog (ERP)
 
-| SKU | Image | Mock name | Category | Mock stock |
-|-----|-------|-----------|----------|------------|
-| 1 | ![Hard drive 1](docs/images/product1.png) | Hard drive 1 | storage | 24 |
-| 2 | ![Hard drive 2](docs/images/product2.png) | Hard drive 2 | storage | 18 |
-| 3 | ![Hard drive 3](docs/images/product3.png) | Hard drive 3 | ssd | 32 |
-| 4 | ![Hard drive 4](docs/images/product4.png) | Hard drive 4 | ssd | 15 |
-| 5 | ![Hard drive 5](docs/images/product5.png) | Hard drive 5 | hdd | 9 (low) |
-| 6 | ![Hard drive 6](docs/images/product6.png) | Hard drive 6 | hdd | 41 |
+Catalog rows come from live `abmatic_test` — products with `ShowOnWebshop = true`, prices from `ProductPrices`, stock from `ProductStockLocation`, images from Azure Blob / `AzureFiles` ([DATA_AZUREBLOB.md](./DATA_AZUREBLOB.md)). ERP product names stay as stored (often Dutch). Guests see **list price** (or Out of stock / Price on request) — §5.1.
 
-**Production mapping:** Each row becomes a `Product` with `ShowOnWebshop = true`, linked `ProductPrice` for `GrossSalesPrice`, and `ProductStockLocation.Quantity` for availability.
+Historical HTML UX mocks (not the live store): `docs/mocks/`.
 
-### 1.2 Screen regions (prototype)
+### 1.2 Screen regions
 
 | Region | Purpose |
 |--------|---------|
-| **Header** | Logo, search, account menu, cart badge |
-| **Category chips** | Filter by `WebshopStructure` / category id |
+| **Header** | Logo, search, account menu, cart badge (`StoreHeader`) |
+| **Category / sidebar** | `WebshopStructure` navigation (Adminsence-style layout) |
 | **Product grid** | Cards with image, price, stock line |
-| **Product detail** | Large image, description, options, quantity, add to cart |
-| **Cart drawer / page** | Line items, quantities, subtotal |
-| **Checkout** | Delivery address, delivery type, payment method, confirm |
-| **Account** | Profile, orders history, delivery addresses |
-| **Footer** | Link to admin panel (staff) |
-
-Open the prototype:
-
-```text
-docs/mock-loja.html
-```
-
-(relative to repository root; open in browser or via static file server)
+| **Product detail** | Image, description, options, quantity, add to cart |
+| **Cart / checkout** | Line items, freight select, address, payment, place order |
+| **Account** | Profile, orders history |
+| **Footer** | Staff link to `/admin/login` |
 
 ---
 
@@ -142,7 +126,7 @@ sequenceDiagram
 - Session cookie (`IsPersistent=false`) — ends when the browser is closed.
 - Sliding idle **15 minutes** (cookie + `store-session-timeout.js` → `/account/logout`).
 - Auth validity = cookie only (no server-side in-memory browser-session dictionary).
-- Interactive catalog uses `InteractiveServer` with **prerender on** so HTML (nav/links) renders before the SignalR circuit connects.
+- Interactive catalog uses `InteractiveServer` with **prerender on** so HTML (nav/links) renders before the Blazor circuit connects.
 
 ### 2.3 Logout
 
@@ -185,7 +169,7 @@ The store does not own master data; it **reads** configurations maintained in th
 | **Account created** | Admin | New `Customer` + `WebshopLogin` |
 | **Delivery address added** | Customer (profile) or Admin | `CustomerDeliveryAddress` |
 | **Order placed** | Customer | New `Order` + `OrderLine` rows |
-| **Password change** | Customer | Update Identity password (and legacy hash if synced) |
+| **Password change** | Customer | Update legacy webshop hash/salt on `Customers` (no AspNet Identity) |
 
 ---
 
@@ -197,8 +181,8 @@ The store does not own master data; it **reads** configurations maintained in th
 |---------|-------------|-------------------|
 | **Product list** | Grid of products with image, name, price | Only `ShowOnWebshop = true` |
 | **Category filter** | Chips map to `WebshopStructure` ids | Empty category shows no products |
-| **Search** | Text match on name, part number, EAN | Case-insensitive (planned server-side) |
-| **Sort** | Price, name (planned) | — |
+| **Search** | Modal / text match on catalog | `StoreSearchModal` — client filter over loaded catalog |
+| **Sort** | As offered in UI | Optional; not a separate server sort API yet |
 
 ### 4.2 Product detail
 
@@ -208,30 +192,36 @@ The store does not own master data; it **reads** configurations maintained in th
 | **Meta line** | `ProductId`, `ShowOnWebshop`, tags |
 | **Description** | `WebshopDescriptionNl` / EN / FR |
 | **Price** | Current `ProductPrice.GrossSalesPrice` (customer discounts applied) |
-| **Options** | Required/optional `ProductOption` values |
-| **Stock line** | e.g. “24 in stock” from stock location |
+| **Options** | Required/optional `ProductOption` via `StoreProductOptionsForm` (UI gates add) |
+| **Stock line** | Available qty from default stock location |
 | **Quantity** | Spinner before add to cart |
-| **Add to cart** | Creates/updates cart line with options |
+| **Add to cart** | Creates/updates cart line with options (login required) |
 
 ### 4.3 Cart
 
 | Feature | Description |
 |---------|-------------|
+| **Route** | `/cart` — requires customer sign-in for a usable cart (`IsCustomerCart`); guests see a sign-in prompt |
 | **Line items** | Product, qty, unit price, option surcharges |
 | **Update qty** | Recalculate tiers and totals |
 | **Remove line** | — |
 | **Subtotal / VAT** | Per `VatType` on lines |
-| **Persistence** | Logged-in: server cart; guest: session (TBD) |
+| **Persistence** | In-memory `StoreCartService` for the circuit; guest cannot add (buy gate → `/sign-in`) |
+| **Sidebar** | Order summary, delivery address, ERP freight selector, payment method, CTA |
 
 ### 4.4 Checkout
 
 | Step | Fields / logic |
 |------|----------------|
 | **Delivery address** | Select `CustomerDeliveryAddress` or default |
-| **Delivery type / frete** | From ERP only — see [DATA_FREIGHT_DELIVERY.md](./DATA_FREIGHT_DELIVERY.md). Customer `DeliveryTypeId` (`Klant.LeverigsType`) → `OrderDeliveryTypeProduct` products → `ProductPrices.GrossSalesPrice`. **No hardcoded fee.** Missing link/price → **€0**. User selects at most one freight product (Dutch `ProdName`). |
-| **Payment method** | `PaymentMethod` (Mollie mock until client keys) |
+| **Delivery type / freight** | From ERP only — see [DATA_FREIGHT_DELIVERY.md](./DATA_FREIGHT_DELIVERY.md). Customer `DeliveryTypeId` (`Klant.LeverigsType`) → `OrderDeliveryTypeProduct` products → `ProductPrices.GrossSalesPrice`. **No hardcoded fee.** Missing link/price → **€0**. User selects at most one freight product (Dutch `ProdName`). |
+| **Payment method** | ERP `PaymentMethods` listed on cart. **Only** a recognized online/Mollie PrePay row is **selectable** (name heuristic, or PrePay fallback labeled **iDEAL / card (Mollie)**). Cash, wire, invoice and other methods stay **visible but disabled**. PostPay path exists in application code but is **not** customer-selectable on the live storefront today. Provider details: [SPEC_MOLLIE_PAYMENTS_open.md](./SPEC_MOLLIE_PAYMENTS_open.md). |
 | **Review** | Lines, delivery fee, VAT, total |
-| **Submit** | Create `Order`, `OrderLine`; delivery line when fee &gt; 0 (`IsLeveringsTypeProduct`) |
+| **CTA** | **Place order & pay** when quote is clean; otherwise **Cannot place order — fix stock or options** |
+| **Submit** | Create `Order`, `OrderLine`; delivery line when fee &gt; 0 (`IsLeveringsTypeProduct`); PrePay → create Mollie (mock) payment + redirect |
+| **Route sequence (PrePay)** | `/cart` → payment URL (`/checkout/mollie-mock` while `Mollie:UseMock`) → `/orders/{id}/payment-return` (one-shot status refresh) → `/orders/{id}/confirmation` |
+
+**Confirmation (`OrderConfirmation.razor`):** the approved light-blue **Payment received** layout, using the real order number/date, payment status, persisted product lines, selected ERP freight line (`IsLeveringsTypeProduct`), calculated VAT and total incl. VAT. The freight label/amount comes from the selected `OrderDeliveryTypeProduct` + valid `ProductPrices`; when no usable price exists it displays **€0**. No mock €9 or demo product names.
 
 ### 4.5 Account area (logged-in customer)
 
@@ -239,7 +229,7 @@ The store does not own master data; it **reads** configurations maintained in th
 |--------|-------|---------|
 | **My orders** | `/orders` | List of this customer’s orders + payment status |
 | **Order detail** | `/orders/{id}` | Lines, totals, Mollie id when PrePay |
-| **Order confirmation** | `/orders/{id}/confirmation` | After successful pay; links back to My orders |
+| **Order confirmation** | `/orders/{id}/confirmation` | After successful pay; real order/freight/VAT summary + Continue shopping |
 | **My account** | `/my-account` | Profile + link to My orders; password change |
 | **Nav** | `StoreHeader` | **My orders** + account name when role `Customer` |
 
@@ -277,7 +267,7 @@ Stock behaviour must stay **consistent** with admin rules ([SPEC_ADMIN.md §4](S
 | **Consume on fulfilment** | Status with `AffectsStock` / sale on pay | ✅ via `IStockMovementService` |
 | **Multi-location** | Warehouse selection (future) | Pick `ProductStockLocation` with `IsDefault` or nearest |
 
-**UI:** `Cart.razor` — blocking quote errors disable **Place order** (label: “Cannot place order — fix stock”); line badge + Remove link. Server still re-checks on `PlaceOrderAsync`.
+**UI:** `Cart.razor` — blocking quote errors disable **Place order** (label: “Cannot place order — fix stock or options”); line badge + Remove link. Server re-checks stock **and** required options on quote/`PlaceOrderAsync` (§8).
 
 ### 5.3 Order status interaction
 
@@ -329,12 +319,12 @@ Store activity appears on the **admin dashboard**:
 
 | Area | Rule |
 |------|------|
-| **Login** | Valid credentials; account active; lockout after failed attempts (Identity) |
+| **Login** | Legacy cookie: `Customers.WebshopLogin` + hash/salt → role `Customer` (not AspNet Identity) |
 | **Catalog** | `ShowOnWebshop`; inactive products excluded |
 | **Cart qty** | Integer &gt; 0; max per tier if configured |
-| **Stock** | Available quantity ≥ line qty at checkout |
-| **Required options** | All `ProductOption` with `IsRequired` selected |
-| **Checkout** | Delivery address and type required; payment method required |
+| **Stock** | Available quantity ≥ line qty at quote/checkout (`CheckoutUseCase`) |
+| **Required options** | ✅ UI gates add-to-cart; **server** re-validates on quote/place-order — every `IsRequired` option must have non-empty `ValueText`; dropdown options must use a valid `ProductOptionValueId` |
+| **Checkout** | Delivery address required; freight from ERP (or €0); payment method required |
 | **VAT** | Valid `VatType` on lines |
 | **Authorization** | Customer may only see own `Order` and `CustomerId` data |
 
@@ -368,16 +358,19 @@ flowchart LR
 
 ---
 
-## 🗺️ 10. Prototype vs production roadmap
+## 🗺️ 10. Delivery status (store)
 
-| Milestone | Deliverable |
-|-----------|-------------|
-| **M1** | HTML prototype — UX sign-off (`mock-loja.html`) |
-| **M2** | Blazor storefront project, shared Application/Infrastructure |
-| **M3** | Identity Customer login bound to `Customer.WebshopLogin` |
-| **M4** | Live catalog from SQL + real images |
-| **M5** | Cart, checkout, `Order` creation, stock validation |
-| **M6** | Customer account area and order tracking |
+| Area | Status |
+|------|--------|
+| Blazor storefront + hexagonal ports | ✅ |
+| Legacy customer login (`WebshopLogin`) | ✅ |
+| Live catalog + Azure Blob images | ✅ |
+| Cart, checkout, stock + required-option validation | ✅ |
+| Freight from ERP (no hardcoded fee) | ✅ — [DATA_FREIGHT_DELIVERY.md](./DATA_FREIGHT_DELIVERY.md) |
+| Customer account + order history | ✅ |
+| Mollie PrePay | ✅ **mock** until client keys — [SPEC_MOLLIE_PAYMENTS_open.md](./SPEC_MOLLIE_PAYMENTS_open.md) |
+
+Open backlog: [SPEC_IMPLEMENTATION_ROADMAP_open.md](./SPEC_IMPLEMENTATION_ROADMAP_open.md).
 
 ---
 
@@ -385,14 +378,10 @@ flowchart LR
 
 | File | Description |
 |------|-------------|
-| `docs/mock-loja.html` | Full storefront prototype |
-| `docs/images/product*.png` | Product thumbnails |
-| `docs/mock-admin.html` | Admin prototype (linked from store footer) |
-| [MOCK_PROTOTYPE_GUIDE.md](MOCK_PROTOTYPE_GUIDE.md) | Screen-by-screen entity mapping |
-
-### Run prototype
-
-Open `docs/mock-loja.html` in a browser. No build required.
+| `WebShopABMATIC.Client/Components/Pages/Store/` | Live Blazor storefront |
+| `docs/mocks/` | Historical HTML UX mocks |
+| [DATA_FREIGHT_DELIVERY.md](./DATA_FREIGHT_DELIVERY.md) | Freight DE-PARA |
+| [DATA_AZUREBLOB.md](./DATA_AZUREBLOB.md) | Product images |
 
 ---
 

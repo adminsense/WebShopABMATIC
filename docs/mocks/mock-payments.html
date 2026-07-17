@@ -343,10 +343,8 @@
 <body>
 
   <div class="mock-banner">
-    <span>Payment flow — 2 screens only</span>
+    <span><strong>Statisch visueel voorbeeld</strong> — niet de live winkel. De Blazor-pagina gebruikt echte orderregels en de ERP-vrachtprijs; ontbrekende prijs = €0.</span>
     <span class="sep">|</span>
-    <a href="mock-loja.html">Store</a>
-    <span class="sep">·</span>
     <a href="mock-admin.html">Admin</a>
     <div class="mock-tabs">
       <button type="button" class="mock-tab active" data-screen="mollie">① Mollie checkout (card)</button>
@@ -363,8 +361,8 @@
         <div class="mollie-card">
           <div class="mollie-header">
             <p class="mollie-merchant">WebShop ABMATIC</p>
-            <p class="mollie-amount">€216,52</p>
-            <p class="mollie-order-ref">Order #2026011 · Hard drive 1 ×2, Hard drive 3 ×1</p>
+            <p class="mollie-amount">€205,66</p>
+            <p class="mollie-order-ref">Order #2026011 · DIVA3 ×2, KBIL40M ×1</p>
           </div>
           <div class="mollie-body">
             <div class="mollie-methods">
@@ -397,7 +395,7 @@
               </div>
             </div>
 
-            <button type="button" class="mollie-pay" onclick="showScreen('success')">Pay €216,52</button>
+            <button type="button" class="mollie-pay" onclick="showScreen('success')">Pay €205,66</button>
 
             <p class="mollie-secure">🔒 Secured by Mollie</p>
           </div>
@@ -438,24 +436,24 @@
         </p>
         <hr style="border:none;border-top:1px solid var(--border);margin:1rem 0">
         <div class="summary-line">
-          <span>Hard drive 1 × 2</span>
+          <span>DIVA3 × 2</span>
           <span>€99.98</span>
         </div>
         <div class="summary-line">
-          <span>Hard drive 3 × 1</span>
+          <span>KBIL40M × 1</span>
           <span>€69.99</span>
         </div>
         <div class="summary-line">
           <span>Delivery</span>
-          <span>€9.00</span>
+          <span>€0.00</span>
         </div>
         <div class="summary-line">
           <span>VAT 21%</span>
-          <span>€37.55</span>
+          <span>€35.69</span>
         </div>
         <div class="summary-line total">
           <span>Total (incl. VAT)</span>
-          <span>€216.52</span>
+          <span>€205.66</span>
         </div>
         <a href="mock-loja.html" class="btn btn-primary" style="margin-top:1rem">Continue shopping</a>
       </div>
