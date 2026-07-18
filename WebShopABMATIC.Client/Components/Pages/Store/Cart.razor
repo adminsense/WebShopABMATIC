@@ -207,7 +207,7 @@
         _placing
             ? "Processing…"
             : HasBlockingQuoteErrors
-                ? "Cannot place order — fix stock"
+                ? "Cannot place order — fix stock or options"
                 : "Place order & pay";
 
     private sealed record LineStockIssue(string Badge, string Hint, int Available);
@@ -298,7 +298,14 @@
             Lines = CartService.Lines.Select(l => new CheckoutLineRequest
             {
                 ProductId = l.ProductId,
-                Quantity = l.Quantity
+                Quantity = l.Quantity,
+                Options = l.Options.Select(o => new CheckoutLineOption
+                {
+                    ProductOptionId = o.OptionId,
+                    ProductOptionValueId = o.ValueId,
+                    OptionName = o.OptionName,
+                    ValueText = o.ValueText
+                }).ToList()
             }).ToList()
         });
     }

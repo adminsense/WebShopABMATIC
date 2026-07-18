@@ -142,7 +142,7 @@ Email queue rows exist on `abmatic_test` — see [DATA_SUMMARY.md](./DATA_SUMMAR
 | Client delivers `Mollie:ApiKey` | n/a | ⬜ **Waiting on client** |
 | `Mollie:ApiKey`, webhook, E2E checklist | n/a | ⬜ — [SPEC_MOLLIE_PAYMENTS_open.md](./SPEC_MOLLIE_PAYMENTS_open.md) |
 
-Do **not** start B.9 configuration work until keys are received.
+Do **not** start B.9 until keys are received. Storefront cart/confirmation UX: [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.4 (not duplicated here).
 
 ### M.5 — Azure Blob (production) ✅
 
