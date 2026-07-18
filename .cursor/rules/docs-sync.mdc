@@ -1,0 +1,35 @@
+﻿---
+alwaysApply: true
+---
+# Docs are part of the delivery
+
+Do **not** wait for the user to ask. After behavioural or architectural code changes, sync the markdown in `docs/`.
+
+Index: `docs/README.md`. Agent guide: `.claude/CLAUDE.md`.
+
+Naming: stable `SPEC_<Topic>.md`; in-progress specs with checklist `SPEC_<Topic>_open.md`; runtime notes `AMENDMENTS.md`.
+
+## Before implementing
+
+1. Identify which specs apply (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC_INFRASTRUCTURE.md`, `SPEC_*_open.md`, etc.).
+2. Skim the relevant sections so the change matches documented intent (or update the docs if intent changed).
+
+## After implementing
+
+| Change | Docs to touch |
+|--------|----------------|
+| Store auth / cookie / session / login routes | `SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC_INFRASTRUCTURE.md`, `AMENDMENTS.md` |
+| Admin auth / roles / staff vs customer | `SPEC_ADMIN.md`, `SPEC_INFRASTRUCTURE.md` |
+| Azure / Blazor / WebSockets / deploy | `SPEC_INFRASTRUCTURE.md` |
+| Checkout / Mollie / stock | `SPEC_WEB_STORE.md`, `SPEC_MOLLIE_PAYMENTS_open.md`, `SPEC_IMPLEMENTATION_ROADMAP_open.md` |
+| UI / nav / store chrome decisions | `AMENDMENTS.md`, `SPEC_WEB_STORE.md` |
+
+## How to update
+
+- Change the **current-state** tables/sections; mark obsolete claims clearly.
+- Prefer short factual amendments over long essays.
+- Add a dated one-liner to `AMENDMENTS.md` when runtime diverges from older notes; put bulky history in `docs/archive/`.
+- **DB-first (global):** never invent ERP columns, tables, migrations, or schema scripts in docs — any feature. Adapt to live `abmatic_test` (`AGENTS.md`, `SPEC_INFRASTRUCTURE` §4).
+- Do not document features/columns that are not in the live database.
+
+Code without matching doc updates for the areas above = incomplete.
