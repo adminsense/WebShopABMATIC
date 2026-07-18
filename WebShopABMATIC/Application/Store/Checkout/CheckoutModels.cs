@@ -82,6 +82,8 @@ public sealed class CheckoutLineQuoteDto
     public int Quantity { get; init; }
     public decimal LineTotal { get; init; }
     public int AvailableStock { get; init; }
+    /// <summary>True for the selected ERP freight product persisted on the order.</summary>
+    public bool IsDelivery { get; init; }
 }
 
 public sealed class CheckoutRequest
@@ -109,6 +111,8 @@ public sealed class CheckoutOrderSummaryDto
     public int OrderId { get; init; }
     public int? OrderNumber { get; init; }
     public DateTime CreatedAt { get; init; }
+    public decimal TotalExclVat { get; init; }
+    public decimal VatAmount { get; init; }
     public decimal TotalInclVat { get; init; }
     public string PaymentStatus { get; init; } = "";
     public bool IsPrePay { get; init; }
