@@ -12,6 +12,10 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 
 ## Amendments (newest first)
 
+> **2026-07-17 — Store screenshots + payment UI aligned:** README now uses the current Categories + Deals storefront screenshot (old Hard drive/$ image removed). Blazor Mollie mock follows the approved hosted-checkout visual; order confirmation now shows the Payment received layout with real order lines, calculated VAT and the persisted ERP freight product/price (`OrderDeliveryTypeProduct` → `ProductPrices`, missing price → €0). Static payment mock no longer contains a fixed €9 freight.
+
+> **2026-07-17 — Docs ownership realigned:** Root `README.md` slimmed (human pitch + screenshots + pointers). `SPEC_MOLLIE_PAYMENTS_open.md` = Mollie provider/ops runbook only; store cart/confirmation UX = `SPEC_WEB_STORE.md` §4.3–4.4. `mock-payments.html` labeled conceptual (not live UI). Project skill: `.cursor/skills/docs-governance/`.
+
 > **2026-07-16 — S.4 server required options:** `CheckoutUseCase.BuildQuoteAsync` loads catalog options and rejects missing/invalid required options (and unknown option ids). Cart quote now sends line `Options` (same as place-order). CTA: “Cannot place order — fix stock or options”.
 
 > **2026-07-16 — E.12 SPEC_WEB_STORE refresh:** Removed Identity leftovers and mock “Hard drive” SKUs; documented live ERP catalog, legacy login, freight, server option validation.

@@ -7,7 +7,7 @@
 <PageTitle>Pay with Mollie</PageTitle>
 
 <div class="mollie-mock-demo-banner">
-    Demo checkout — card details are pre-filled for presentation. No real charge.
+    Mollie mock checkout — card details are pre-filled for presentation. No real charge.
 </div>
 
 @if (_invalid)
@@ -35,20 +35,20 @@ else
                 <div class="mollie-mock-body">
                     <div class="mollie-mock-methods">
                         <button type="button"
-                                class="mollie-mock-method active"
+                                class="mollie-mock-method"
                                 id="mollie-method-ideal"
                                 data-method="ideal">
                             iDEAL
                         </button>
                         <button type="button"
-                                class="mollie-mock-method"
+                                class="mollie-mock-method active"
                                 id="mollie-method-card"
                                 data-method="card">
                             Card
                         </button>
                     </div>
 
-                    <div id="mollie-panel-card" class="mollie-mock-panel" hidden>
+                    <div id="mollie-panel-card" class="mollie-mock-panel">
                         <div class="mollie-mock-cards-icons">
                             <span>VISA</span>
                             <span>MC</span>
@@ -75,7 +75,7 @@ else
                         </div>
                     </div>
 
-                    <div id="mollie-panel-ideal" class="mollie-mock-panel">
+                    <div id="mollie-panel-ideal" class="mollie-mock-panel" hidden>
                         <p class="mollie-mock-ideal-hint">
                             You will authorise this payment in your banking app. For this demo, the bank is pre-selected.
                         </p>
@@ -95,7 +95,7 @@ else
                         Pay @FormattedAmount
                     </button>
 
-                    <p class="mollie-mock-secure">Secured by Mollie</p>
+                    <p class="mollie-mock-secure"><span aria-hidden="true">🔒</span> Secured by Mollie</p>
                 </div>
             </div>
 
@@ -132,7 +132,7 @@ else
             if (decimal.TryParse(Amount, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var value))
             {
                 var symbol = string.Equals(Currency, "EUR", StringComparison.OrdinalIgnoreCase) ? "€" : $"{Currency} ";
-                return $"{symbol}{value:N2}";
+                return $"{symbol}{value.ToString("N2", System.Globalization.CultureInfo.GetCultureInfo("nl-NL"))}";
             }
 
             return Amount ?? "—";
