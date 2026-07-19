@@ -35,7 +35,7 @@ public sealed class StoreCartService
 
     public decimal Subtotal => IsCustomerCart ? _lines.Sum(l => l.LineTotal) : 0m;
 
-    public decimal DeliveryFee => IsCustomerCart && _lines.Count > 0 ? 9.00m : 0m;
+    public decimal DeliveryFee => 0m;
 
     public decimal VatAmount => Math.Round((Subtotal + DeliveryFee) * 0.21m, 2);
 
