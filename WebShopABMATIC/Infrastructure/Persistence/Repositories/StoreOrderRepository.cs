@@ -449,18 +449,24 @@ public sealed class StoreOrderRepository : IStoreOrderRepository
                 LineName = l.DocumentDisplayName,
                 l.UnitPrice,
                 Quantity = (int)l.Quantity,
-                LineTotal = l.TotalExclVat
+                LineTotal = l.TotalExclVat,
+                IsDelivery = l.IsLeveringsTypeProduct == true
             }).ToListAsync(cancellationToken);
 
         var lines = lineRows
             .Select(l => new CheckoutLineQuoteDto
             {
                 ProductId = l.ProductId,
-                Name = !string.IsNullOrWhiteSpace(l.ProductName) ? l.ProductName! : (l.LineName ?? $"Product #{l.ProductId}"),
+                Name = l.IsDelivery && !string.IsNullOrWhiteSpace(l.LineName)
+                    ? l.LineName!
+                    : !string.IsNullOrWhiteSpace(l.ProductName)
+                        ? l.ProductName!
+                        : (l.LineName ?? $"Product #{l.ProductId}"),
                 UnitPrice = l.UnitPrice,
                 Quantity = l.Quantity,
                 LineTotal = l.LineTotal,
-                AvailableStock = 0
+                AvailableStock = 0,
+                IsDelivery = l.IsDelivery
             })
             .ToList();
 
@@ -469,9 +475,18 @@ public sealed class StoreOrderRepository : IStoreOrderRepository
             .OrderBy(a => a.SortOrder)
             .FirstOrDefaultAsync(cancellationToken);
 
-        var totalIncl = await _db.OrderLines.AsNoTracking()
+        var totals = await _db.OrderLines.AsNoTracking()
             .Where(l => l.OrderId == orderId)
-            .SumAsync(l => l.TotalInclVat, cancellationToken);
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                ExclVat = g.Sum(l => l.TotalExclVat),
+                InclVat = g.Sum(l => l.TotalInclVat)
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var totalExcl = totals?.ExclVat ?? 0m;
+        var totalIncl = totals?.InclVat ?? 0m;
 
         var isPrePay = advance is not null;
         var molliePaymentId = StoreAdvancePaymentEncoding.ExtractMolliePaymentId(advance?.Name);
@@ -484,6 +499,8 @@ public sealed class StoreOrderRepository : IStoreOrderRepository
             OrderId = order.Id,
             OrderNumber = order.OrderNumber,
             CreatedAt = order.CreatedAt,
+            TotalExclVat = totalExcl,
+            VatAmount = totalIncl - totalExcl,
             TotalInclVat = totalIncl,
             PaymentStatus = paymentStatus,
             IsPrePay = isPrePay,
