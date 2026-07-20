@@ -180,8 +180,9 @@ The store does not own master data; it **reads** configurations maintained in th
 | Feature | Description | Validation / rules |
 |---------|-------------|-------------------|
 | **Product list** | Grid of products with image, name, price | Only `ShowOnWebshop = true` |
-| **Category filter** | Chips map to `WebshopStructure` ids | Empty category shows no products |
-| **Search** | Modal / text match on catalog | `StoreSearchModal` — client filter over loaded catalog |
+| **Category tree** | Left sidebar (`ProductStructure` / optional `WebshopStructure`) | Leaf nodes show product grid; parents show child tiles (CD4) |
+| **Facet filters (pilot)** | Coolblue-style sidebar on **whitelisted leaf** categories only | `StoreCatalogFilters:EnabledCategoryIds` (default **54** Handzenders). Merk (`Manufacturer`), Voorraad, Prijs; `ProductProperty` groups when ERP rows exist. See [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md). **Not** `ProductOption`. |
+| **Search** | Header modal | Server `SearchProductsAsync` (name prefix) |
 | **Sort** | As offered in UI | Optional; not a separate server sort API yet |
 
 ### 4.2 Product detail
@@ -195,19 +196,19 @@ The store does not own master data; it **reads** configurations maintained in th
 | **Options** | Required/optional `ProductOption` via `StoreProductOptionsForm` (UI gates add) |
 | **Stock line** | Available qty from default stock location |
 | **Quantity** | Spinner before add to cart |
-| **Add to cart** | Creates/updates cart line with options (login required) |
+| **Add to cart** | Creates/updates cart line with options. **Guests allowed**. UI stays on product/catalog (header cart badge updates); open `/cart` when ready. Login/register required only to **place order & pay** |
 
 ### 4.3 Cart
 
 | Feature | Description |
 |---------|-------------|
-| **Route** | `/cart` — requires customer sign-in for a usable cart (`IsCustomerCart`); guests see a sign-in prompt |
-| **Line items** | Product, qty, unit price, option surcharges |
+| **Route** | `/cart` — guests and customers see lines; checkout (quote / place order) requires customer sign-in |
+| **Line items** | Product, qty, unit price, option surcharges; guest or customer may change qty / remove before pay |
 | **Update qty** | Recalculate tiers and totals |
-| **Remove line** | — |
-| **Subtotal / VAT** | Per `VatType` on lines |
-| **Persistence** | In-memory `StoreCartService` for the circuit; guest cannot add (buy gate → `/sign-in`) |
-| **Sidebar** | Order summary, delivery address, ERP freight selector, payment method, CTA |
+| **Remove line** | Allowed before place-order (guest or logged-in) |
+| **Subtotal / VAT** | List-price estimate for guests; customer quote (discounts + freight) when signed in |
+| **Persistence** | **Guest:** `ProtectedSessionStorage` (cleared when the browser session ends — nothing finalized in ERP). **Customer:** `ProtectedLocalStorage` per customer id. On sign-in, guest lines **merge** into the customer cart. |
+| **Sidebar** | Guest: sign-in / create-account CTA. Customer: delivery, ERP freight, payment method, **Place order & pay** |
 
 ### 4.4 Checkout
 
@@ -219,7 +220,7 @@ The store does not own master data; it **reads** configurations maintained in th
 | **Review** | Lines, delivery fee, VAT, total |
 | **CTA** | **Place order & pay** when quote is clean; otherwise **Cannot place order — fix stock or options** |
 | **Submit** | Create `Order`, `OrderLine`; delivery line when fee &gt; 0 (`IsLeveringsTypeProduct`); PrePay → create Mollie (mock) payment + redirect |
-| **Route sequence (PrePay)** | `/cart` → payment URL (`/checkout/mollie-mock` while `Mollie:UseMock`) → `/orders/{id}/payment-return` (one-shot status refresh) → `/orders/{id}/confirmation` |
+| **Route sequence (PrePay)** | `/cart` → payment URL (`/checkout/mollie-mock` while `Mollie:UseMock`) → `/orders/{id}/payment-return` (status check; auto-redirect after first interactive render via `forceLoad`) → `/orders/{id}/confirmation` |
 
 **Confirmation (`OrderConfirmation.razor`):** the approved light-blue **Payment received** layout, using the real order number/date, payment status, persisted product lines, selected ERP freight line (`IsLeveringsTypeProduct`), calculated VAT and total incl. VAT. The freight label/amount comes from the selected `OrderDeliveryTypeProduct` + valid `ProductPrices`; when no usable price exists it displays **€0**. No mock €9 or demo product names.
 
@@ -253,7 +254,7 @@ Stock behaviour must stay **consistent** with admin rules ([SPEC_ADMIN.md §4](S
 | `available = 0` | **Out of stock** (card label + cart button disabled) | `IsOutOfStock` — do **not** use “Unavailable” |
 | Product not on webshop | Hidden | `ShowOnWebshop != true` |
 
-**Login:** required when **buying** (add to cart / checkout), not to browse or view list price (§9.1).
+**Login:** required to **place order & pay** (and to see customer discounts / delivery options), **not** to browse, view list price, or add to cart (§9.1–9.2).
 
 **Implemented** in `StoreCatalogService`, `StoreProductCard.razor`, `ProductCartButton.razor`, `StoreSearchModal.razor`, `ProductDetail.razor`, `StorePriceFormatter.FormatListPrice`.
 
@@ -261,9 +262,13 @@ Stock behaviour must stay **consistent** with admin rules ([SPEC_ADMIN.md §4](S
 
 | Rule | When | Action |
 |------|------|--------|
-| **Reserve on pay** | PrePay after order create | ✅ `ApplyReservationFromOrderAsync` (release if pay fails) |
+| **Soft cart hold** | Add to cart (guest or customer) | Browser cart only — **does not** increment ERP `ReservedQuantity` |
+| **Reserve on pay** | PrePay after order create | ✅ `ApplyReservationFromOrderAsync` (release if pay fails / expires / cancel) |
+| **Abandon guest cart** | Browser/session closed without place-order | Guest session cart cleared — **no ERP order**, no reservation to release |
+| **Abandon unpaid PrePay** | Payment not completed | ✅ `ReleaseReservationAsync` + `ReservationExpirationService` (~30 min) |
 | **Sufficient stock** | Quote + place order | ✅ Reject if `requestedQty > available` (`CheckoutUseCase.BuildQuoteAsync`) |
 | **Stale cart (stock hit 0 later)** | Cart still has the line | ✅ Keep line; show **blocking** UI (danger alert, Out of stock / “only N left”, disabled checkout). Do **not** auto-remove. |
+| **Remove before pay** | Cart UI | ✅ Guest and customer may remove lines / change qty before place-order |
 | **Consume on fulfilment** | Status with `AffectsStock` / sale on pay | ✅ via `IStockMovementService` |
 | **Multi-location** | Warehouse selection (future) | Pick `ProductStockLocation` with `IsDefault` or nearest |
 
@@ -350,12 +355,38 @@ flowchart LR
 |------------|-------|-------------------|
 | Browse catalog | ✅ | ✅ |
 | View prices | **List price** (or Price on request / Out of stock) | List + customer discounts |
-| Add to cart | ❌ → redirect `/sign-in` (buy gate) | ✅ (persisted cart) |
-| Checkout | ❌ | ✅ |
+| Add to cart | ✅ soft hold (session storage) | ✅ persisted cart (local storage) |
+| Change qty / remove lines | ✅ | ✅ |
+| Place order & pay | ❌ → `/sign-in` or `/sign-up` (returnUrl `/cart`) | ✅ |
 | Order history | ❌ | ✅ |
 
-> Guest UI must **not** show “Meld u aan om uw prijs te zien” / “login to see price” on product cards. Login is only for purchasing.
+> Guest UI must **not** show “Meld u aan om uw prijs te zien” / “login to see price” on product cards. Login is for **checkout**, not for browsing or adding to cart.
 
+### 9.2 Business rule — guest cart → login → pay (or abandon)
+
+Canonical store rule (client-facing):
+
+1. **Browse & buy into cart without login** — guest clicks Add to cart; lines stay in the cart (session soft hold).
+2. **Keep shopping** — guest may add more, change quantities, or remove lines without signing in.
+3. **Checkout gate** — to place the order and pay, the user must **sign in** or **create an account**. Guest cart lines merge into the customer cart on login.
+4. **Edit before pay** — after login (and before payment completes), the customer may still remove or adjust lines on `/cart`, then **Place order & pay**.
+5. **Abandon without purchase** — if the guest never logs in / never places an order and **closes the browser** (session ends), the guest cart is cleared. **No ERP order** is created and **no ERP stock reservation** existed for that cart.
+6. **ERP reservation** — stock is reserved in ERP only when a **PrePay order** is placed (`ApplyReservationFromOrderAsync`). Unpaid / canceled / expired payments release via webhook + `ReservationExpirationService`.
+
+Implementation: `StoreCartService` (guest session + customer local + merge), `Cart.razor`, `ProductDetail` / `ProductCartButton`, `CheckoutUseCase`.
+
+```mermaid
+flowchart LR
+  Browse[Browse catalog] --> Add[Add to cart]
+  Add --> GuestCart[Guest session cart]
+  GuestCart --> More[Keep shopping / edit lines]
+  More --> Gate{Sign in or register?}
+  Gate -->|No / close browser| Clear[Session cart cleared — nothing finalized]
+  Gate -->|Yes| Merge[Merge into customer cart]
+  Merge --> Edit[Edit lines on /cart]
+  Edit --> Pay[Place order and pay]
+  Pay --> Reserve[ERP reserve PrePay]
+```
 ---
 
 ## 🗺️ 10. Delivery status (store)
