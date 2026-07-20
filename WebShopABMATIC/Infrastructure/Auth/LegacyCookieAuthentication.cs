@@ -12,14 +12,14 @@ public static class LegacyCookieAuthentication
     public const string CookieName = ".WebShopABMATIC.Auth.Session";
     private const string LegacyCookieName = ".WebShopABMATIC.Auth";
 
-    /// <summary>Idle session length aligned with cookie ExpireTimeSpan.</summary>
+    /// <summary>Idle ticket lifetime (sliding) inside the auth cookie.</summary>
     public static readonly TimeSpan SessionIdleTimeout = TimeSpan.FromMinutes(15);
 
-    public static Task SignInAsync(HttpContext httpContext, ClaimsPrincipal principal, bool isPersistent)
+    public static async Task SignInAsync(HttpContext httpContext, ClaimsPrincipal principal, bool isPersistent)
     {
-        // Store customers: IsPersistent=false → browser session cookie (cleared when browser closes).
-        // Do not set ExpiresUtc on the cookie properties when non-persistent — that can make the
-        // cookie survive Sign out / browser restart incorrectly.
+        // Drop any legacy persistent cookie so store customers never inherit an old session.
+        DeleteAuthCookies(httpContext);
+
         var properties = new AuthenticationProperties
         {
             IsPersistent = isPersistent,
@@ -27,19 +27,26 @@ public static class LegacyCookieAuthentication
             IssuedUtc = DateTimeOffset.UtcNow
         };
 
+        // Only staff "remember me" gets an explicit expiry. Store customers = session cookie (no Expires).
         if (isPersistent)
         {
             properties.ExpiresUtc = DateTimeOffset.UtcNow.Add(SessionIdleTimeout);
         }
 
-        return httpContext.SignInAsync(Scheme, principal, properties);
+        await httpContext.SignInAsync(Scheme, principal, properties);
     }
 
     public static async Task SignOutAsync(HttpContext httpContext)
     {
         await httpContext.SignOutAsync(Scheme);
+        DeleteAuthCookies(httpContext);
 
-        // Delete must match cookie options used at sign-in (path / SameSite / Secure).
+        httpContext.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate";
+        httpContext.Response.Headers.Pragma = "no-cache";
+    }
+
+    private static void DeleteAuthCookies(HttpContext httpContext)
+    {
         var cookieOptions = new CookieOptions
         {
             Path = "/",
@@ -55,8 +62,5 @@ public static class LegacyCookieAuthentication
         httpContext.Response.Cookies.Delete(LegacyCookieName, cookieOptions);
         httpContext.Response.Cookies.Append(CookieName, string.Empty, cookieOptions);
         httpContext.Response.Cookies.Append(LegacyCookieName, string.Empty, cookieOptions);
-
-        httpContext.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate";
-        httpContext.Response.Headers.Pragma = "no-cache";
     }
 }

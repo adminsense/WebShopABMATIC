@@ -246,14 +246,14 @@
 
         try
         {
-            await Cart.BindToCustomerAsync(null);
+            await Cart.SignOutClearAsync();
         }
         catch
         {
             // Ignore — logout navigation is authoritative.
         }
 
-        // Full page load so the cookie is cleared before any response body starts.
+        // Full page GET so the server clears the auth cookie before any Blazor circuit starts.
         Navigation.NavigateTo("/account/logout?returnUrl=/", forceLoad: true);
     }
 
