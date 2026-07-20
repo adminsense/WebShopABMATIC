@@ -9,7 +9,20 @@ public interface IStoreCatalogPort
     Task<IReadOnlyList<StoreProductDto>> GetNewProductsAsync(int take, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<StoreProductDto>> GetDealsAsync(int take, CancellationToken cancellationToken = default);
     /// <summary>Visible webshop products; when <paramref name="categoryId"/> is set, returns direct products on that leaf node only (CD4).</summary>
-    Task<IReadOnlyList<StoreProductDto>> GetCatalogAsync(int? take = null, int? categoryId = null, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<StoreProductDto>> GetCatalogAsync(
+        int? take = null,
+        int? categoryId = null,
+        StoreCatalogFilterState? filters = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Facet sidebar for a leaf category when enabled in <c>StoreCatalogFilters</c>.
+    /// Returns <see cref="StoreCategoryFacetsDto.Enabled"/> false when the category is not whitelisted or not a leaf.
+    /// </summary>
+    Task<StoreCategoryFacetsDto> GetCategoryFacetsAsync(
+        int categoryId,
+        StoreCatalogFilterState? filters = null,
+        CancellationToken cancellationToken = default);
     /// <summary>Server-side name search — does not load the full catalog.</summary>
     Task<IReadOnlyList<StoreProductDto>> SearchProductsAsync(string term, int take = 24, CancellationToken cancellationToken = default);
     Task<StoreProductDto?> GetByIdAsync(int productId, CancellationToken cancellationToken = default);

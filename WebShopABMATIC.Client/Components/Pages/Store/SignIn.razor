@@ -9,7 +9,7 @@
 <div class="auth-wrap">
     <div class="auth-card">
         <h1>Sign in</h1>
-        <p>Sign in with your webshop account to place orders and view order history.</p>
+        <p>Sign in with your webshop account to place orders and view order history (My orders).</p>
 
         <StatusMessage Message="@_errorMessage" />
 
@@ -21,12 +21,19 @@
             </div>
             <div class="form-group">
                 <label for="store-password">Password</label>
-                <input id="store-password" name="password" type="password" class="form-control" autocomplete="current-password" required />
+                <div class="password-field">
+                    <input id="store-password" name="password" type="password" class="form-control" autocomplete="current-password" required />
+                    <button type="button"
+                            class="password-toggle"
+                            aria-label="Show password"
+                            aria-pressed="false"
+                            aria-controls="store-password"
+                            onclick="storePasswordToggle('store-password', this)">
+                        <i class="bi bi-eye" aria-hidden="true"></i>
+                    </button>
+                </div>
             </div>
-            <div class="form-check mb-3">
-                <input class="form-check-input" type="checkbox" name="rememberMe" value="true" id="store-remember" />
-                <label class="form-check-label" for="store-remember">Remember me</label>
-            </div>
+            <p class="text-muted small mb-3">For security, your session ends after 15 minutes of inactivity or when you close the browser.</p>
             <button type="submit" class="btn btn-primary">Sign in</button>
         </form>
 
