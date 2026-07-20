@@ -12,6 +12,16 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 
 ## Amendments (newest first)
 
+> **2026-07-20 — Auth/cart must not survive logout or browser close:** Removed prerender `PersistentComponentState` auth revival (root cause of “still logged in” on Blazor circuits). Cart is **session storage only** (no localStorage). Sign out clears session cart keys + auth cookie. Store login deletes legacy `.WebShopABMATIC.Auth` cookie on sign-in. See [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.3 / §9.2, [SPEC_ADMIN.md](./SPEC_ADMIN.md) §2.1.
+
+> **2026-07-20 — Checkout DB race + add-to-cart UX + logout cookie:** Fixed `InvalidOperationException` (“connection is closed”) on checkout options by serializing remaining `StoreOrderRepository` calls through `StoreDbGate`, removing `ConfigureAwait(false)`, and retrying closed-connection once. Add to cart **stays on the product/catalog** (badge updates; no empty-cart flash). Store **Sign out** maps `/account/logout` **before** Blazor. See [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §3.1 / §9.2, [SPEC_ADMIN.md](./SPEC_ADMIN.md) §2.1.
+
+> **2026-07-20 — Guest cart → checkout login (rule §9.2):** Guests may add/edit/remove cart lines (session soft hold). Login or register required only to place order & pay; guest lines merge into the customer cart. Closing the browser clears the guest cart (no ERP order / no ERP reservation). ERP `ReservedQuantity` still only on PrePay place-order. See [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.3, §5.2, §9.1–9.2. *(Supersedes the same-day “pending add / buy gate at Add to cart” note below.)*
+
+> **2026-07-20 — Payment-return redirect + cart add reliability:** `OrderPaymentReturn` redirects after first interactive render with `forceLoad` (avoids Blazor `NavigationException` during prerender). `AddProductAsync` returns success/failure and retries browser storage.
+
+> **2026-07-20 — S.7 catalog facet filters (pilot):** Leaf categories in `StoreCatalogFilters:EnabledCategoryIds` (default **54** Handzenders) show Coolblue-style sidebar: Merk (`Manufacturer`), Voorraad, Prijs; `ProductProperty` groups when ERP data exists (placeholder when empty). Not used: `ProductOption`. API: `GetCategoryFacetsAsync` + filtered `GetCatalogAsync`. UI: `StoreFacetSidebar` on `Catalog.razor`. See [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md), [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.1.
+
 > **2026-07-17 — Store screenshots + payment UI aligned:** README now uses the current Categories + Deals storefront screenshot (old Hard drive/$ image removed). Blazor Mollie mock follows the approved hosted-checkout visual; order confirmation now shows the Payment received layout with real order lines, calculated VAT and the persisted ERP freight product/price (`OrderDeliveryTypeProduct` → `ProductPrices`, missing price → €0). Static payment mock no longer contains a fixed €9 freight.
 
 > **2026-07-17 — Docs ownership realigned:** Root `README.md` slimmed (human pitch + screenshots + pointers). `SPEC_MOLLIE_PAYMENTS_open.md` = Mollie provider/ops runbook only; store cart/confirmation UX = `SPEC_WEB_STORE.md` §4.3–4.4. `mock-payments.html` labeled conceptual (not live UI). Project skill: `.cursor/skills/docs-governance/`.
