@@ -1,10 +1,10 @@
 # Provisional analysis — Coolblue-style catalog filters (faceted search)
 
-![Status](https://img.shields.io/badge/Status-Decision%20draft-f59e0b?style=flat-square) ![Scope](https://img.shields.io/badge/Scope-Store%20catalog-0ea5e9?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Pilot%20implemented-28a745?style=flat-square) ![Scope](https://img.shields.io/badge/Scope-Store%20catalog-0ea5e9?style=flat-square)
 
-> **Purpose:** Working note for a **large product decision** requested by the client.  
-> **Reference:** [Coolblue — Windows all-in-one PCs (sale)](https://www.coolblue.be/nl/desktops/windows/all-in-one-pcs/solden) (sidebar filters in the screenshot).  
-> **Not stable spec** — when approved, fold outcomes into `SPEC_WEB_STORE.md` and the roadmap; then archive or delete this file.
+> **Purpose:** Working note for Coolblue-style catalog filters.  
+> **Reference:** [Coolblue — Windows all-in-one PCs (sale)](https://www.coolblue.be/nl/desktops/windows/all-in-one-pcs/solden).  
+> **Runtime (2026-07-20):** Pilot **S.7** shipped — Merk + Voorraad + Prijs on whitelisted leaf categories (`StoreCatalogFilters`, default id **54**). `ProductProperty` facets appear when ERP rows exist; otherwise a muted placeholder. Promote lasting behaviour into `SPEC_WEB_STORE.md` §4.1 (done); keep this file for decision history until client expands the IT whitelist / admin property CRUD.
 
 **Process followed:** [AGENTS.md](../AGENTS.md) → `SPEC_WEB_STORE.md`, `DATA_*`, live code (`StoreCatalogService`, `Catalog.razor`).
 
@@ -33,10 +33,10 @@ This is **faceted navigation** (e-commerce attribute filters), not the same as o
 | Category tree (sidebar) | ✅ | `ProductStructure` + optional `WebshopStructure`; leaf → product grid (`Catalog.razor`, `StoreCategorySidebar`) |
 | Text search | ✅ | `StoreSearchModal` — loads catalog slice, filters client-side |
 | Sort | 🔶 | Limited; no dedicated server sort API |
-| **Attribute / spec filters** | ❌ | Not implemented |
-| Manufacturer on product | ✅ DB | `Product.ManufacturerId` → `Crm.Manufacturer` (admin `/admin/manufacturers`) |
+| **Attribute / spec filters** | ✅ Pilot | Whitelisted leaves only — `StoreFacetSidebar` + `StoreCatalogFilters` (default category **54**) |
+| Manufacturer on product | ✅ | DB + store facet **Merk**; `Product.ManufacturerId` → `Crm.Manufacturer` |
 | Per-product **order options** | ✅ | `ProductOption` + `ProductOptionValue` — **checkout configurator**, not catalog filters |
-| Product **spec properties** | 🔶 DB only | `Products.ProductProperty` + `Products.ProductPropertyItems` — **mapped in EF, no admin UI, no demo rows** |
+| Product **spec properties** | 🔶 | EF mapped; store facets when `ProductPropertyItem` rows exist; no admin CRUD yet |
 
 **DB-first rule:** we must not invent new ERP tables. Any filter dimension must map to **existing** columns/tables (`AGENTS.md`, `SPEC_INFRASTRUCTURE` §4).
 
@@ -158,14 +158,14 @@ Elasticsearch, dedicated attribute tables, PIM integration.
 
 ## 7. Recommended delivery plan
 
-| Phase | Deliverable | Depends on |
-|-------|-------------|------------|
-| **0 — Decision** | Client signs IT subtree + pilot category (e.g. one AIO leaf) | This document |
-| **1 — Data** | Populate `ProductProperty` + items for pilot SKUs; document value vocabulary (“16 GB” not “16GB”) | Client / staff + new admin screens |
-| **2 — Admin** | `/admin/product-properties` + edit items on product (or bulk import) | Phase 1 model |
-| **3 — API** | `IStoreCatalogPort.GetCategoryFacetsAsync(categoryId, activeFilters)` + filtered `GetCatalogAsync` | `StoreCatalogService` |
-| **4 — Store UI** | `StoreFacetSidebar.razor` on leaf IT categories; URL query `?cpu=…&ram=…` for shareable state | Phase 3 |
-| **5 — Polish** | Sort, mobile filter drawer, optional spec chips on `StoreProductCard` | UX review |
+| Phase | Deliverable | Status |
+|-------|-------------|--------|
+| **0 — Decision** | IT subtree / pilot leaf | ✅ Pilot leaf **54** (Handzenders); expand whitelist via config |
+| **1 — Data** | Populate `ProductProperty` + items | ⬜ Client/staff — sidebar shows muted placeholder until data exists |
+| **2 — Admin** | `/admin/product-properties` | ⬜ Later |
+| **3 — API** | `GetCategoryFacetsAsync` + filtered `GetCatalogAsync` | ✅ |
+| **4 — Store UI** | `StoreFacetSidebar` + query `?merk=&voorraad=&prijs=` | ✅ |
+| **5 — Polish** | Sort, mobile drawer, card spec chips | ⬜ |
 
 **Architecture (hexagonal):**
 
