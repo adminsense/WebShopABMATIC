@@ -119,6 +119,7 @@ builder.Services.AddSession(options =>
     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 });
 builder.Services.AddScoped<Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedLocalStorage>();
+builder.Services.AddScoped<Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedSessionStorage>();
 builder.Services.AddScoped<StoreCartService>();
 builder.Services.AddScoped<IGridExportService, GridExportService>();
 
@@ -153,16 +154,19 @@ app.UseAntiforgery();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Auth endpoints before Blazor so /account/logout always clears the cookie (not swallowed by the circuit).
+app.MapLoginEndpoints();
+app.MapGet("/account/logout", LogoutHandler).DisableAntiforgery();
+app.MapPost("/account/logout", LogoutHandler).DisableAntiforgery();
+app.MapGet("/login", () => Results.Redirect("/sign-in"));
+
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-app.MapLoginEndpoints();
 app.MapStockAdjustmentApi();
 app.MapStoreMediaEndpoints();
 app.MapMollieWebhook();
-
-app.MapGet("/login", () => Results.Redirect("/sign-in"));
 
 app.MapGet("/api/store/category-icon/{id:int}", async (int id, IStoreCatalogPort catalog, CancellationToken ct) =>
 {
@@ -205,9 +209,6 @@ async Task<IResult> LogoutHandler(HttpContext context)
     await WebShopABMATIC.Infrastructure.Auth.LegacyCookieAuthentication.SignOutAsync(context);
     return ResolveLogoutReturnUrl(context);
 }
-
-app.MapGet("/account/logout", LogoutHandler).DisableAntiforgery();
-app.MapPost("/account/logout", LogoutHandler).DisableAntiforgery();
 
 app.Run();
 
