@@ -155,10 +155,11 @@ The admin UI is defined by **three screen types**. These match the legacy AB-MAT
 | **Admin login page** | `/admin/login` → `POST /account/admin-login` |
 | **Store login page** | `/sign-in` → `POST /account/store-login` |
 | **Post-login redirect** | Admin/Manager → `/admin` (or `returnUrl`); Customer → store `returnUrl` or `/` |
-| **Store session** | Customer: `IsPersistent=false` (browser session cookie) + sliding **15 min** idle; client idle logout via `store-session-timeout.js` |
+| **Store session** | Customer: `IsPersistent=false` (true **session** cookie — ends when the browser closes) + sliding **15 min** idle ticket; client idle logout via `store-session-timeout.js` |
 | **Staff “remember me”** | Admin login may set `IsPersistent=true` when checked |
 | **Server session store** | **None** — cookie alone is authoritative (no in-memory `StoreBrowserSession` gate) |
-| **Blazor bridge** | `LegacyAuthenticationStateProvider` flows the cookie into Interactive Server circuits |
+| **Blazor bridge** | `LegacyAuthenticationStateProvider` — **cookie only**; never revives identity from prerender persisted state |
+| **Logout route order** | `GET/POST /account/logout` mapped **before** `MapRazorComponents` so Sign out always clears `.WebShopABMATIC.Auth.Session` |
 
 ### 2.2 Roles and policies
 
