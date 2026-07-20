@@ -77,7 +77,7 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 
 ---
 
-## Docs layout (2026-07-14)
+## Docs layout (2026-07-01)
 
 | Path | Role |
 |------|------|
