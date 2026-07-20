@@ -64,6 +64,7 @@ Layout loja ✅. Options / category detail mostly shipped; checklist synced to c
 | **S.4** Cart/checkout line options | ✅ | Persist + cart display; **server** validates required options on quote/`PlaceOrderAsync` (`CheckoutUseCase`) |
 | **S.5** Delivery / freight from ERP | ✅ | No mock €9 — fee from `OrderDeliveryTypeProduct` + `ProductPrices`; default €0; cart freight select. [DATA_FREIGHT_DELIVERY.md](./DATA_FREIGHT_DELIVERY.md) |
 | **S.6** Cart stock blocking UX | ✅ | Stale OOS lines kept; checkout CTA blocked — [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §5.2 |
+| **S.7** Catalog facet filters (pilot) | ✅ | Whitelisted leaf (default Handzenders **54**): Merk + Voorraad + Prijs; ProductProperty when data exists. [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md) · [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.1 |
 
 ### Auth — legacy database ✅
 
