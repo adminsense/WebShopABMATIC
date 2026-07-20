@@ -125,7 +125,7 @@ sequenceDiagram
 **Session rules (store):**
 - Session cookie (`IsPersistent=false`) — ends when the browser is closed.
 - Sliding idle **15 minutes** (cookie + `store-session-timeout.js` → `/account/logout`).
-- Auth validity = cookie only (no server-side in-memory browser-session dictionary).
+- Auth validity = **cookie only** — Blazor never revives identity from prerender persisted state.
 - Interactive catalog uses `InteractiveServer` with **prerender on** so HTML (nav/links) renders before the Blazor circuit connects.
 
 ### 2.3 Logout
@@ -207,7 +207,7 @@ The store does not own master data; it **reads** configurations maintained in th
 | **Update qty** | Recalculate tiers and totals |
 | **Remove line** | Allowed before place-order (guest or logged-in) |
 | **Subtotal / VAT** | List-price estimate for guests; customer quote (discounts + freight) when signed in |
-| **Persistence** | **Guest:** `ProtectedSessionStorage` (cleared when the browser session ends — nothing finalized in ERP). **Customer:** `ProtectedLocalStorage` per customer id. On sign-in, guest lines **merge** into the customer cart. |
+| **Persistence** | **Session storage only** (guest + customer keys). Cleared on **Sign out** or when the browser session ends — no localStorage cart |
 | **Sidebar** | Guest: sign-in / create-account CTA. Customer: delivery, ERP freight, payment method, **Place order & pay** |
 
 ### 4.4 Checkout
@@ -355,7 +355,7 @@ flowchart LR
 |------------|-------|-------------------|
 | Browse catalog | ✅ | ✅ |
 | View prices | **List price** (or Price on request / Out of stock) | List + customer discounts |
-| Add to cart | ✅ soft hold (session storage) | ✅ persisted cart (local storage) |
+| Add to cart | ✅ session storage (browser session) | ✅ same session storage while logged in |
 | Change qty / remove lines | ✅ | ✅ |
 | Place order & pay | ❌ → `/sign-in` or `/sign-up` (returnUrl `/cart`) | ✅ |
 | Order history | ❌ | ✅ |
