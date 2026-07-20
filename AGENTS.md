@@ -43,7 +43,7 @@ Do **not** load `docs/archive/` unless the user asks for history.
 - **Hexagonal:** UI → Application (use cases/ports) → Infrastructure. No DbContext in Razor pages.
 - **Auth:** legacy cookies (`LegacySignInService`), **not** ASP.NET Identity at runtime. Staff ≠ customer identities.
 - **ERP:** do not invent columns/tables in code or docs that are not in the database.
-- **Store UX:** guests see list price (or Out of stock / Price on request). Login required when **buying**, not to view price.
+- **Store UX:** guests see list price (or Out of stock / Price on request). Guests may **add to cart**; **login/register** is required to **place order & pay** (not to browse or view list price). See `SPEC_WEB_STORE.md` §9.1–9.2.
 - **Payments:** **`Mollie:UseMock = true`** until the **client delivers API keys**. Do not switch to real Mollie, invent keys, or prioritize B.9 go-live before that. See `docs/SPEC_MOLLIE_PAYMENTS_open.md`.
 - **Azure Blazor:** WebSockets On in App Service; sticky ARR affinity assumed.
 - Prefer matching existing components/CSS over new visual systems.
