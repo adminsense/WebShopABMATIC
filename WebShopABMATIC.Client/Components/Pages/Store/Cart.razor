@@ -16,10 +16,9 @@
 <div class="container">
     <h1 class="page-title">Your cart</h1>
 
-    @if (!CartService.IsCustomerCart)
+    @if (!_cartReady)
     {
-        <p style="color:var(--muted);margin-bottom:1.5rem">Sign in to view and manage your cart. Each account has its own cart.</p>
-        <NavLink href="/sign-in?returnUrl=/cart" class="btn btn-primary" data-enhance-nav="false">Sign in to view cart</NavLink>
+        <p style="color:var(--muted);margin-bottom:1.5rem">Loading cart…</p>
     }
     else if (CartService.Lines.Count == 0)
     {
@@ -28,6 +27,18 @@
     }
     else
     {
+        @if (!CartService.IsCustomerCart)
+        {
+            <div class="alert alert-info mb-3" role="status">
+                <strong>Your cart is ready.</strong>
+                Sign in or create an account to place the order and pay.
+                You can keep shopping, change quantities, or remove lines first.
+                <div class="mt-2 d-flex flex-wrap gap-2">
+                    <NavLink href="/sign-in?returnUrl=/cart" class="btn btn-primary" data-enhance-nav="false">Sign in to checkout</NavLink>
+                    <NavLink href="/sign-up?returnUrl=/cart" class="btn btn-outline" data-enhance-nav="false">Create account</NavLink>
+                </div>
+            </div>
+        }
         <div class="cart-layout">
             <div class="cart-table">
                 @foreach (var line in CartService.Lines)
@@ -80,6 +91,13 @@
                     <div class="summary-line total"><span>Total</span><span>@FormatPrice(CartService.Total)</span></div>
                 }
 
+                @if (!CartService.IsCustomerCart)
+                {
+                    <p class="store-field-hint mt-2 mb-0">Guest cart is held in this browser session only. Closing the browser clears it — no order is created and no ERP stock is reserved until you place and pay.</p>
+                    <NavLink href="/sign-in?returnUrl=/cart" class="btn btn-primary mt-3" data-enhance-nav="false">Sign in to place order</NavLink>
+                }
+                else
+                {
                 @if (!string.IsNullOrEmpty(_checkoutError))
                 {
                     <div class="alert alert-danger mt-2 mb-0 small">@_checkoutError</div>
@@ -171,6 +189,7 @@
                         @onclick="PlaceOrderAsync">
                     @CheckoutButtonLabel
                 </button>
+                }
             </aside>
         </div>
     }
@@ -184,6 +203,7 @@
     private int? _deliveryProductId;
     private string? _checkoutError;
     private bool _placing;
+    private bool _cartReady;
     private string? _userEmail;
     private int? _customerId;
 
@@ -220,12 +240,16 @@
         _userEmail = auth.User.Identity?.Name
             ?? auth.User.FindFirstValue(ClaimTypes.Email)
             ?? auth.User.FindFirstValue(LegacyAuthClaims.Login);
-        if (int.TryParse(auth.User.FindFirstValue(LegacyAuthClaims.CustomerId), out var customerId) && customerId > 0)
+        if (auth.User.Identity?.IsAuthenticated == true
+            && auth.User.IsInRole(AppRoles.Customer)
+            && int.TryParse(auth.User.FindFirstValue(LegacyAuthClaims.CustomerId), out var customerId)
+            && customerId > 0)
         {
             _customerId = customerId;
         }
 
         await CartService.BindToCustomerAsync(_customerId);
+        _cartReady = true;
 
         if (!CartService.IsCustomerCart)
         {
