@@ -1,0 +1,40 @@
+@using WebShopABMATIC.Application.Store
+
+<aside class="store-facet-panel" aria-label="Filters">
+    <h2>Filters</h2>
+
+    @if (Facets.MatchCount >= 0)
+    {
+        <p class="facet-results"><strong>@Facets.MatchCount</strong> producten</p>
+    }
+
+    @foreach (var group in Facets.Groups)
+    {
+        <div class="facet-group @(group.IsMuted ? "facet-group--muted" : null)" data-facet="@group.Key">
+            <h3>@group.Title</h3>
+            @if (!string.IsNullOrWhiteSpace(group.Note))
+            {
+                <p class="facet-note">@group.Note</p>
+            }
+            @foreach (var value in group.Values)
+            {
+                <label class="facet-option">
+                    <input type="checkbox"
+                           checked="@value.Selected"
+                           disabled="@(value.Count == 0 && !value.Selected)"
+                           @onchange="e => OnToggleAsync(group.Key, value.Value, e.Value is bool b && b)" />
+                    <span>@value.Label</span>
+                    <span class="facet-count">(@value.Count)</span>
+                </label>
+            }
+        </div>
+    }
+</aside>
+
+@code {
+    [Parameter, EditorRequired] public StoreCategoryFacetsDto Facets { get; set; } = new();
+    [Parameter] public EventCallback<(string GroupKey, string Value, bool Selected)> OnToggle { get; set; }
+
+    private Task OnToggleAsync(string groupKey, string value, bool selected) =>
+        OnToggle.InvokeAsync((groupKey, value, selected));
+}
