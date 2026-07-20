@@ -43,7 +43,7 @@ dotnet run --project WebShopABMATIC/WebShopABMATIC.csproj --launch-profile WebSh
 There is **no** dedicated test project in the solution yet. Until one exists:
 
 - Smoke = `dotnet build WebShopABMATIC.sln`
-- Manual: store guest prices / Out of stock / buy→login; admin `/admin/login` with `StaffUsers`
+- Manual: store guest cart → checkout login; guest prices / Out of stock; admin `/admin/login` with `StaffUsers`
 
 Do **not** add `dotnet ef database update` (DB-first).
 
@@ -60,7 +60,7 @@ DB-first, Adminsence/mocks, Mollie, store price/stock stay in **AGENTS.md / SPEC
 2. Sync docs after behaviour changes (`rules/docs-sync.md`, Cursor `docs-sync.mdc`). Use **PATTERNS_*** before inventing UI/code style.
 3. **Auth:** cookie `LegacySignInService` — **not** Identity `AspNetUsers`. Staff = `StaffUsers`; customers = `Customers`. Customer history = store `/orders`, never `/admin`.
 4. **Azure Blazor:** App Service **Web sockets = On**. Cookie alone authorizes (no in-memory session gate).
-5. **Catalog:** guests see **list price** (or Out of stock / Price on request). Login only when **buying**.
+5. **Catalog:** guests see **list price** (or Out of stock / Price on request). Guests may add to cart; login/register only to **place order & pay** (`SPEC_WEB_STORE` §9.2).
 6. **Mollie:** keep **`Mollie:UseMock`** until the **client sends API keys**. Real Mollie (B.9) is blocked on the client — see `docs/SPEC_MOLLIE_PAYMENTS_open.md`. Do not put keys in git.
 
 ### Specs by task
