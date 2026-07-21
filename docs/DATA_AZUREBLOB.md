@@ -50,9 +50,9 @@
 
 ---
 
-## 1. Legacy model (how ABMATIC linked products to files)
+## 🖼️ 1. Legacy Model (How ABMATIC Linked Products to Files)
 
-### 1.1 Relationship direction
+### 🔗 1.1 Relationship Direction
 
 ```text
 Products.Product (ProdId)
@@ -105,7 +105,7 @@ Bestanden.AzureFile
 
 ---
 
-## 2. Production integration (ABMATIC — verified)
+## ☁️ 2. Production Integration (ABMATIC — Verified)
 
 <table>
 <colgroup>
@@ -124,7 +124,7 @@ Bestanden.AzureFile
 </tbody>
 </table>
 
-### `BlobRef` format (verified)
+### 📝 `BlobRef` Format (Verified)
 
 <table>
 <colgroup>
@@ -147,7 +147,7 @@ Bestanden.AzureFile
 
 ---
 
-## 3. Application architecture
+## 🏛️ 3. Application Architecture
 
 ```text
 IProductMediaPort
@@ -161,7 +161,7 @@ BlobReferenceResolver
   └── ResolvePreferredBlobName(blobRef) → blobRef.Trim() (legacy rule)
 ```
 
-### Configuration
+### ⚙️ Configuration
 
 **Azure App Service** (never commit secrets):
 
@@ -174,7 +174,7 @@ BlobReferenceResolver
 }
 ```
 
-### IIS / local run
+### 💻 IIS / Local Run
 
 - `web.config` → `.\bin\Debug\net10.0\WebShopABMATIC.dll`
 - Port **5090** (`launchSettings.json`)
@@ -182,7 +182,7 @@ BlobReferenceResolver
 
 ---
 
-## 4. Storefront behaviour (implemented)
+## 🛍️ 4. Storefront Behaviour (Implemented)
 
 <table>
 <colgroup>
@@ -213,7 +213,7 @@ ORDER BY PublishToWeb DESC, Created DESC
 
 ---
 
-## 5. Implementation checklist (complete)
+## ✅ 5. Implementation Checklist (Complete)
 
 | # | Task | Status |
 |---|------|--------|
@@ -229,7 +229,7 @@ ORDER BY PublishToWeb DESC, Created DESC
 
 ---
 
-## 6. Out of scope (future)
+## 🔮 6. Out of Scope (Future)
 
 | Item | Notes |
 |------|--------|
@@ -241,7 +241,7 @@ ORDER BY PublishToWeb DESC, Created DESC
 
 ---
 
-## 7. Key source files
+## 📚 7. Key Source Files
 
 | File | Role |
 |------|------|

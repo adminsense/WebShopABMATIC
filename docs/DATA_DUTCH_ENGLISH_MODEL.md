@@ -93,7 +93,7 @@ public class Order { … }
 
 ---
 
-## 🗺️ 2. Schema mapping
+## 🗺️ 2. Schema Mapping
 
 | Dutch schema | English schema | Purpose |
 |--------------|----------------|---------|
@@ -111,7 +111,7 @@ public class Order { … }
 
 ---
 
-## 🏷️ 3. Key domain renames
+## 🏷️ 3. Key Domain Renames
 
 | Dutch (legacy UI / DB) | English (C# / EF) | Entity | Notes |
 |------------------------|-------------------|--------|-------|
@@ -127,15 +127,15 @@ public class Order { … }
 
 ---
 
-## ➕ 4. Schema extensions / integrations
+## ➕ 4. Schema Extensions / Integrations
 
 The application uses the **139 legacy business tables** on `abmatic_test`. English property names in C# map to Dutch schema/table/column names via `WebShopABMATICModelBuilder`.
 
-### Payments (Mollie)
+### 💳 Payments (Mollie)
 
 Store/checkout integrations **encode** payment state in **existing** ERP advance-payment fields (see [SPEC_MOLLIE_PAYMENTS_open.md](./SPEC_MOLLIE_PAYMENTS_open.md) and store checkout code). Do **not** add Mollie columns via EF migrations.
 
-### Webshop auth (`Klanten.Klant`)
+### 🔐 Webshop Auth (`Klanten.Klant`)
 
 | Dutch column | C# property | Purpose |
 |--------------|-------------|---------|
@@ -145,7 +145,7 @@ Store/checkout integrations **encode** payment state in **existing** ERP advance
 
 Staff admin login: **`Instellingen.User`** (`Settings.StaffUsers`) — `Login` + `Password`.
 
-### Azure database
+### ☁️ Azure Database
 
 | Aspect | Value |
 |--------|--------|
@@ -157,7 +157,7 @@ Staff admin login: **`Instellingen.User`** (`Settings.StaffUsers`) — `Login` +
 
 ---
 
-## 📋 5. Entity & table mapping (all 139 tables)
+## 📋 5. Entity & Table Mapping (All 139 Tables)
 
 Grouped by English schema. SQL table names are plural; C# entity names are singular. Expand each section to see the full table list.
 

@@ -52,7 +52,7 @@
 
 ---
 
-## 1. Master table — schema, rows, screen
+## 📊 1. Master Table — Schema, Rows, Screen
 
 | Area | Table (schema) | Rows | Screen / usage | Demo | Notes |
 |------|------------------|-----:|----------------|------|-------|
