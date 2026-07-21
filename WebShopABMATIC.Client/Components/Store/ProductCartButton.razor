@@ -49,46 +49,30 @@
             return;
         }
 
-        // No list price in ERP — open detail (same as “Price on request”), do not force login.
-        if (NeedsPrice)
+        if (NeedsPrice || NeedsOptions)
         {
             Navigation.NavigateTo($"/product/{Product.Id}");
             return;
-        }
-
-        var returnUrl = NeedsOptions ? $"/product/{Product.Id}" : "/cart";
-
-        // Buying requires a customer account (login at add-to-cart / checkout).
-        if (!await EnsureCustomerCartAsync())
-        {
-            Navigation.NavigateTo($"/sign-in?returnUrl={Uri.EscapeDataString(returnUrl)}", forceLoad: true);
-            return;
-        }
-
-        if (NeedsOptions)
-        {
-            Navigation.NavigateTo($"/product/{Product.Id}");
-            return;
-        }
-
-        await Cart.AddProductAsync(Product.Id);
-        Navigation.NavigateTo("/cart");
-    }
-
-    private async Task<bool> EnsureCustomerCartAsync()
-    {
-        if (Cart.IsCustomerCart)
-        {
-            return true;
         }
 
         var auth = await AuthStateProvider.GetAuthenticationStateAsync();
-        if (!int.TryParse(auth.User.FindFirstValue(LegacyAuthClaims.CustomerId), out var customerId) || customerId <= 0)
+        var user = auth.User;
+        int? customerId = null;
+        if (user.Identity?.IsAuthenticated == true
+            && user.IsInRole(AppRoles.Customer)
+            && int.TryParse(user.FindFirstValue(LegacyAuthClaims.CustomerId), out var id)
+            && id > 0)
         {
-            return false;
+            customerId = id;
         }
 
         await Cart.BindToCustomerAsync(customerId);
-        return Cart.IsCustomerCart;
+        var added = await Cart.AddProductAsync(Product.Id);
+        if (!added)
+        {
+            return;
+        }
+
+        // Stay on catalog — badge updates via Cart.Changed; user opens Cart when ready.
     }
 }

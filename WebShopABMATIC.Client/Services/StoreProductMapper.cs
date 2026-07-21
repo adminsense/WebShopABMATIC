@@ -22,5 +22,7 @@ public static class StoreProductMapper
             dto.CategoryName,
             dto.ReferenceCode,
             dto.Tag,
-            dto.HasOptions);
+            dto.HasOptions,
+            dto.ManufacturerId,
+            dto.ManufacturerName);
 }
