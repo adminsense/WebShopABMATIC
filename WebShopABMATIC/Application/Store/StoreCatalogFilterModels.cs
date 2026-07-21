@@ -30,10 +30,6 @@ public sealed class StoreCatalogFilterState
 public sealed class StoreCategoryFacetsDto
 {
     public bool Enabled { get; init; }
-
-    /// <summary>Guest hit a facet-enabled leaf category — UI must redirect to customer sign-in.</summary>
-    public bool RequiresCustomerLogin { get; init; }
-
     public int MatchCount { get; init; }
     public IReadOnlyList<StoreFacetGroupDto> Groups { get; init; } = [];
 }
