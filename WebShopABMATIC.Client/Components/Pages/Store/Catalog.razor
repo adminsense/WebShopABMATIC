@@ -97,6 +97,27 @@
             {
                 <p class="text-muted">Loading catalog…</p>
             }
+            else if (_facets?.Enabled == true)
+            {
+                <div class="store-catalog-with-filters">
+                    <StoreFacetSidebar Facets="_facets" OnToggle="OnFacetToggleAsync" />
+                    <div class="store-catalog-filtered-products">
+                        @if (_products.Count == 0)
+                        {
+                            <p class="text-muted">@_noProductsMessage</p>
+                        }
+                        else
+                        {
+                            <div class="catalog-products-row">
+                                @foreach (var p in _products)
+                                {
+                                    <StoreProductCard Product="p" OnSelect="GoToProduct" />
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
             else if (_products.Count == 0)
             {
                 <p class="text-muted">@_noProductsMessage</p>
@@ -135,12 +156,23 @@
     private IReadOnlyList<StoreCategoryTreeNodeDto> _browseCategories = [];
     private IReadOnlyList<StoreProduct> _deals = [];
     private IReadOnlyList<StoreProduct> _products = [];
+    private StoreCategoryFacetsDto? _facets;
+    private StoreCatalogFilterState _filterState = new();
 
     [SupplyParameterFromQuery(Name = "categoryId")]
     public int? CategoryId { get; set; }
 
     [SupplyParameterFromQuery(Name = "q")]
     public string? SearchQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "merk")]
+    public string? MerkQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "voorraad")]
+    public string? VoorraadQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "prijs")]
+    public string? PrijsQuery { get; set; }
 
     protected override async Task OnParametersSetAsync() => await LoadAsync();
 
@@ -149,6 +181,8 @@
         _loading = true;
         _selectedCategoryId = CategoryId;
         _search = SearchQuery?.Trim();
+        _filterState = ParseFiltersFromQuery();
+        _facets = null;
         _isHomepage = _selectedCategoryId is null && string.IsNullOrWhiteSpace(_search);
         _isCategoryBrowse = false;
         _selectedCategoryName = null;
@@ -183,7 +217,8 @@
                 _selectedCategoryName = string.IsNullOrWhiteSpace(_search)
                     ? selectedNode?.Name
                     : null;
-                if (string.IsNullOrWhiteSpace(_search) && _selectedCategoryId is int detailCategoryId && detailCategoryId > 0)
+                if (string.IsNullOrWhiteSpace(_search) && _selectedCategoryId is int detailCategoryId && detailCategoryId > 0
+                    && selectedNode?.Children.Count > 0)
                 {
                     _categoryDetail = await CatalogPort.GetCategoryDetailAsync(detailCategoryId);
                 }
@@ -202,10 +237,30 @@
                     {
                         _isCategoryBrowse = false;
                         _browseCategories = [];
-
-                        var items = await CatalogPort.GetCatalogAsync(take: null, _selectedCategoryId);
-                        _products = items.Select(StoreProductMapper.ToModel).ToList();
                         _productsTitle = selectedNode.Name;
+
+                        var categoryId = _selectedCategoryId.Value;
+                        // Local copy: concurrent LoadAsync resets _facets = null and would NRE mid-await.
+                        var facets = await CatalogPort.GetCategoryFacetsAsync(categoryId, _filterState)
+                            ?? new StoreCategoryFacetsDto { Enabled = false };
+                        if (facets.RequiresCustomerLogin)
+                        {
+                            var returnUrl = Uri.EscapeDataString(Navigation.Uri);
+                            Navigation.NavigateTo($"/sign-in?returnUrl={returnUrl}", forceLoad: true);
+                            return;
+                        }
+
+                        _facets = facets;
+                        _categoryDetail = await CatalogPort.GetCategoryDetailAsync(categoryId);
+                        var items = await CatalogPort.GetCatalogAsync(
+                            take: null,
+                            categoryId,
+                            facets.Enabled ? _filterState : null);
+                        _products = items.Select(StoreProductMapper.ToModel).ToList();
+                        if (facets.Enabled && _products.Count == 0 && _filterState.HasAny)
+                        {
+                            _noProductsMessage = "No products match the selected filters.";
+                        }
                     }
                 }
                 else
@@ -232,6 +287,194 @@
         {
             _loading = false;
         }
+    }
+
+    private StoreCatalogFilterState ParseFiltersFromQuery()
+    {
+        var manufacturerIds = new List<int>();
+        var includeUnknown = false;
+        foreach (var part in SplitCsv(MerkQuery))
+        {
+            if (string.Equals(part, "none", StringComparison.OrdinalIgnoreCase))
+            {
+                includeUnknown = true;
+            }
+            else if (int.TryParse(part, out var id) && id > 0)
+            {
+                manufacturerIds.Add(id);
+            }
+        }
+
+        return new StoreCatalogFilterState
+        {
+            ManufacturerIds = manufacturerIds,
+            IncludeUnknownManufacturer = includeUnknown,
+            StockKeys = SplitCsv(VoorraadQuery),
+            PriceKeys = SplitCsv(PrijsQuery)
+        };
+    }
+
+    private static IReadOnlyList<string> SplitCsv(string? raw) =>
+        string.IsNullOrWhiteSpace(raw)
+            ? []
+            : raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    private Task OnFacetToggleAsync((string GroupKey, string Value, bool Selected) change)
+    {
+        var next = ToggleFilter(_filterState, change.GroupKey, change.Value, change.Selected);
+        NavigateWithFilters(next);
+        return Task.CompletedTask;
+    }
+
+    private static StoreCatalogFilterState ToggleFilter(
+        StoreCatalogFilterState current,
+        string groupKey,
+        string value,
+        bool selected)
+    {
+        if (string.Equals(groupKey, "manufacturer", StringComparison.OrdinalIgnoreCase))
+        {
+            var ids = current.ManufacturerIds.ToList();
+            var includeUnknown = current.IncludeUnknownManufacturer;
+            if (string.Equals(value, "none", StringComparison.OrdinalIgnoreCase))
+            {
+                includeUnknown = selected;
+            }
+            else if (int.TryParse(value, out var id))
+            {
+                if (selected)
+                {
+                    if (!ids.Contains(id))
+                    {
+                        ids.Add(id);
+                    }
+                }
+                else
+                {
+                    ids.Remove(id);
+                }
+            }
+
+            return new StoreCatalogFilterState
+            {
+                ManufacturerIds = ids,
+                IncludeUnknownManufacturer = includeUnknown,
+                StockKeys = current.StockKeys,
+                PriceKeys = current.PriceKeys,
+                PropertyValues = current.PropertyValues
+            };
+        }
+
+        if (string.Equals(groupKey, "stock", StringComparison.OrdinalIgnoreCase))
+        {
+            return new StoreCatalogFilterState
+            {
+                ManufacturerIds = current.ManufacturerIds,
+                IncludeUnknownManufacturer = current.IncludeUnknownManufacturer,
+                StockKeys = ToggleKey(current.StockKeys, value, selected),
+                PriceKeys = current.PriceKeys,
+                PropertyValues = current.PropertyValues
+            };
+        }
+
+        if (string.Equals(groupKey, "price", StringComparison.OrdinalIgnoreCase))
+        {
+            return new StoreCatalogFilterState
+            {
+                ManufacturerIds = current.ManufacturerIds,
+                IncludeUnknownManufacturer = current.IncludeUnknownManufacturer,
+                StockKeys = current.StockKeys,
+                PriceKeys = ToggleKey(current.PriceKeys, value, selected),
+                PropertyValues = current.PropertyValues
+            };
+        }
+
+        if (groupKey.StartsWith("property:", StringComparison.OrdinalIgnoreCase)
+            && int.TryParse(groupKey["property:".Length..], out var propertyId))
+        {
+            var map = current.PropertyValues.ToDictionary(kv => kv.Key, kv => kv.Value.ToList());
+            if (!map.TryGetValue(propertyId, out var list))
+            {
+                list = [];
+                map[propertyId] = list;
+            }
+
+            if (selected)
+            {
+                if (!list.Contains(value, StringComparer.OrdinalIgnoreCase))
+                {
+                    list.Add(value);
+                }
+            }
+            else
+            {
+                list.RemoveAll(v => string.Equals(v, value, StringComparison.OrdinalIgnoreCase));
+            }
+
+            return new StoreCatalogFilterState
+            {
+                ManufacturerIds = current.ManufacturerIds,
+                IncludeUnknownManufacturer = current.IncludeUnknownManufacturer,
+                StockKeys = current.StockKeys,
+                PriceKeys = current.PriceKeys,
+                PropertyValues = map.ToDictionary(
+                    kv => kv.Key,
+                    IReadOnlyList<string> (kv) => kv.Value)
+            };
+        }
+
+        return current;
+    }
+
+    private static IReadOnlyList<string> ToggleKey(IReadOnlyList<string> keys, string value, bool selected)
+    {
+        var list = keys.ToList();
+        if (selected)
+        {
+            if (!list.Contains(value, StringComparer.OrdinalIgnoreCase))
+            {
+                list.Add(value);
+            }
+        }
+        else
+        {
+            list.RemoveAll(k => string.Equals(k, value, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return list;
+    }
+
+    private void NavigateWithFilters(StoreCatalogFilterState state)
+    {
+        if (_selectedCategoryId is not int categoryId)
+        {
+            return;
+        }
+
+        var qs = new List<string> { $"categoryId={categoryId}" };
+        var merk = new List<string>();
+        if (state.IncludeUnknownManufacturer)
+        {
+            merk.Add("none");
+        }
+
+        merk.AddRange(state.ManufacturerIds.Select(id => id.ToString()));
+        if (merk.Count > 0)
+        {
+            qs.Add($"merk={Uri.EscapeDataString(string.Join(',', merk))}");
+        }
+
+        if (state.StockKeys.Count > 0)
+        {
+            qs.Add($"voorraad={Uri.EscapeDataString(string.Join(',', state.StockKeys))}");
+        }
+
+        if (state.PriceKeys.Count > 0)
+        {
+            qs.Add($"prijs={Uri.EscapeDataString(string.Join(',', state.PriceKeys))}");
+        }
+
+        Navigation.NavigateTo("/?" + string.Join('&', qs));
     }
 
     private static StoreCategoryTreeNodeDto? FindNodeById(

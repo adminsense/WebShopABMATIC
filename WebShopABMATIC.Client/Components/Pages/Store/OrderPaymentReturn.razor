@@ -26,7 +26,7 @@
     }
     else if (_order.IsPaid)
     {
-        <p>Thank you — your payment was received.</p>
+        <p>Thank you — your payment was received. Redirecting…</p>
         <button type="button" class="btn btn-primary" @onclick="GoToConfirmation">View order</button>
     }
     else
@@ -41,6 +41,7 @@
 
     private CheckoutOrderSummaryDto? _order;
     private bool _loading = true;
+    private bool _redirectStarted;
 
     protected override async Task OnInitializedAsync()
     {
@@ -51,12 +52,20 @@
             CustomerId = int.TryParse(auth.User.FindFirstValue(LegacyAuthClaims.CustomerId), out var cid) ? cid : null
         });
         _loading = false;
-
-        if (_order?.IsPaid == true)
-        {
-            Navigation.NavigateTo($"/orders/{OrderId}/confirmation", replace: true);
-        }
+        // Do not NavigateTo here — during prerender it throws NavigationException (debugger "user-unhandled").
     }
 
-    private void GoToConfirmation() => Navigation.NavigateTo($"/orders/{OrderId}/confirmation");
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender || _redirectStarted || _order?.IsPaid != true)
+        {
+            return;
+        }
+
+        _redirectStarted = true;
+        Navigation.NavigateTo($"/orders/{OrderId}/confirmation", forceLoad: true);
+    }
+
+    private void GoToConfirmation() =>
+        Navigation.NavigateTo($"/orders/{OrderId}/confirmation", forceLoad: true);
 }

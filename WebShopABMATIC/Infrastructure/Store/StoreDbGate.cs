@@ -15,14 +15,15 @@ public sealed class StoreDbGate
         var acquired = false;
         if (_depth.Value == 0)
         {
-            await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+            // Stay on the Blazor sync context — ConfigureAwait(false) caused closed-connection races on the scoped DbContext.
+            await _gate.WaitAsync(cancellationToken);
             acquired = true;
         }
 
         _depth.Value++;
         try
         {
-            return await operation().ConfigureAwait(false);
+            return await operation();
         }
         finally
         {
@@ -39,14 +40,14 @@ public sealed class StoreDbGate
         var acquired = false;
         if (_depth.Value == 0)
         {
-            await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await _gate.WaitAsync(cancellationToken);
             acquired = true;
         }
 
         _depth.Value++;
         try
         {
-            await operation().ConfigureAwait(false);
+            await operation();
         }
         finally
         {

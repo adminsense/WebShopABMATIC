@@ -12,6 +12,10 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 
 ## Amendments (newest first)
 
+> **2026-07-21 — Facet pilot categories require customer login:** Leaf categories in `StoreCatalogFilters:EnabledCategoryIds` (default **54** Handzenders) redirect guests to `/sign-in?returnUrl=…`. Server withholds facet data and product grid for unauthenticated requests. See [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.1 / §9.1.
+
+> **2026-07-21 — Order confirmation uses StoreLayout:** `/orders/{id}/confirmation` no longer uses header-only `StorePaymentLayout`. Same chrome as catalog/cart/orders (header + category sidebar + main). Removed `StorePaymentLayout`. See [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.4–4.5.
+
 > **2026-07-20 — Auth/cart must not survive logout or browser close:** Removed prerender `PersistentComponentState` auth revival (root cause of “still logged in” on Blazor circuits). Cart is **session storage only** (no localStorage). Sign out clears session cart keys + auth cookie. Store login deletes legacy `.WebShopABMATIC.Auth` cookie on sign-in. See [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.3 / §9.2, [SPEC_ADMIN.md](./SPEC_ADMIN.md) §2.1.
 
 > **2026-07-19 — Checkout DB race + add-to-cart UX + logout cookie:** Fixed `InvalidOperationException` (“connection is closed”) on checkout options by serializing remaining `StoreOrderRepository` calls through `StoreDbGate`, removing `ConfigureAwait(false)`, and retrying closed-connection once. Add to cart **stays on the product/catalog** (badge updates; no empty-cart flash). Store **Sign out** maps `/account/logout` **before** Blazor. See [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §3.1 / §9.2, [SPEC_ADMIN.md](./SPEC_ADMIN.md) §2.1.

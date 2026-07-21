@@ -31,11 +31,6 @@
       overflow: hidden;
     }
     .store-shell--auth .store-auth-main { flex: 1; overflow: auto; }
-    .store-payment-main {
-      flex: 1;
-      overflow: auto;
-      background: #eef8ff;
-    }
     .screen { display: none; }
     .screen.active { display: block; }
 
@@ -1073,11 +1068,12 @@
       box-shadow: none;
     }
     .payment-confirmation-page {
-      align-self: stretch;
+      /* Lives inside StoreLayout main (sidebar + chrome) — not a full-bleed payment shell */
       width: 100%;
-      min-height: calc(100vh - var(--header-height));
-      padding: 2rem 2.5rem 3rem;
-      background: #eef8ff;
+      max-width: 46rem;
+      margin: 0;
+      padding: 0.5rem 0 2rem;
+      background: transparent;
       color: #17375e;
     }
     .payment-confirmation-state {
@@ -1190,7 +1186,7 @@
     }
     @media (max-width: 767.98px) {
       .payment-confirmation-page {
-        padding: 1.5rem 1rem 2rem;
+        padding: 0.25rem 0 1.5rem;
       }
       .payment-confirmation-card {
         padding: 1.15rem;

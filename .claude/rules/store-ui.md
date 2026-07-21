@@ -12,8 +12,9 @@ paths:
 
 # Store UI rules
 
-- Spec first: `docs/SPEC_WEB_STORE.md` (price/stock §5.1, guest vs login §9.1).
+- Spec first: `docs/SPEC_WEB_STORE.md` (price/stock §5.1, guest vs login §9.1–9.2).
 - Patterns: `docs/PATTERNS_UI_QUICK_START.md` — match existing store components (`StoreProductCard`, `StoreHeader`, `ProductCartButton`).
+- **Store chrome:** shopping pages (catalog, product, cart, orders, **order confirmation**) use `@layout StoreLayout` (header + category sidebar + main). Do not invent header-only shells for post-checkout confirmation.
 - Guests see **list price** or **Out of stock** / **Price on request**. Never “login to see price” on cards.
 - Price/stock labels: use `StorePriceFormatter.FormatListPrice` / `OutOfStockLabel` / `OnRequestLabel` (do not hardcode strings in cards/search/detail/cart button).
 - Login only when **buying** (add to cart / checkout), not to browse.

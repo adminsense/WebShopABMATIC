@@ -1,5 +1,5 @@
 @page "/orders/{OrderId:int}/confirmation"
-@layout StorePaymentLayout
+@layout StoreLayout
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
 @using WebShopABMATIC.Application.Auth
@@ -12,7 +12,8 @@
 
 <PageTitle>Order confirmation</PageTitle>
 
-<div class="payment-confirmation-page">
+@* Same chrome as catalog/cart/orders: StoreLayout = header + category sidebar + main *@
+<div class="container payment-confirmation-page">
     @if (_loading)
     {
         <p class="payment-confirmation-state">Loading…</p>
@@ -28,7 +29,7 @@
     {
         <section class="payment-success-hero">
             <div class="payment-success-icon" aria-hidden="true">✓</div>
-            <h1>@(_order.IsPaid ? "Payment received" : "Order received")</h1>
+            <h1 class="page-title">@(_order.IsPaid ? "Payment received" : "Order received")</h1>
             <p>
                 @if (_order.IsPaid)
                 {

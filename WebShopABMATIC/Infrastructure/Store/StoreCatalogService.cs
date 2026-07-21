@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using WebShopABMATIC.Application.Auth;
 using WebShopABMATIC.Application.Ports;
 using WebShopABMATIC.Application.Ports.Outbound;
 using WebShopABMATIC.Application.Store;
@@ -25,6 +26,7 @@ public sealed class StoreCatalogService : IStoreCatalogPort
     private readonly ILogger<StoreCatalogService> _logger;
     private readonly StoreDbGate _dbGate;
     private readonly StoreCatalogFilterOptions _filterOptions;
+    private readonly ICurrentUserContext _currentUser;
 
     private Task<T> RunSerializedAsync<T>(Func<Task<T>> operation, CancellationToken cancellationToken) =>
         _dbGate.RunAsync(operation, cancellationToken);
@@ -36,7 +38,8 @@ public sealed class StoreCatalogService : IStoreCatalogPort
         IMemoryCache cache,
         ILogger<StoreCatalogService> logger,
         StoreDbGate dbGate,
-        IOptions<StoreCatalogFilterOptions> filterOptions)
+        IOptions<StoreCatalogFilterOptions> filterOptions,
+        ICurrentUserContext currentUser)
     {
         _db = db;
         _media = media;
@@ -45,6 +48,7 @@ public sealed class StoreCatalogService : IStoreCatalogPort
         _logger = logger;
         _dbGate = dbGate;
         _filterOptions = filterOptions.Value;
+        _currentUser = currentUser;
     }
 
     public async Task<IReadOnlyList<StoreCatalogCategoryDto>> GetCategoriesAsync(CancellationToken cancellationToken = default)
@@ -179,6 +183,13 @@ public sealed class StoreCatalogService : IStoreCatalogPort
             if (categoryId is > 0)
             {
                 var category = categoryId.Value;
+                if (_filterOptions.IsEnabledForCategory(category)
+                    && !CatalogCategoryTree.HasStructuralChildren(category, structures)
+                    && !await IsAuthenticatedCustomerAsync(cancellationToken))
+                {
+                    return [];
+                }
+
                 if (CatalogCategoryTree.HasStructuralChildren(category, structures))
                 {
                     // CD4: products only on leaf nodes; browse UI shows child tiles instead.
@@ -237,6 +248,11 @@ public sealed class StoreCatalogService : IStoreCatalogPort
             return new StoreCategoryFacetsDto { Enabled = false };
         }
 
+        if (!await IsAuthenticatedCustomerAsync(cancellationToken))
+        {
+            return new StoreCategoryFacetsDto { Enabled = false, RequiresCustomerLogin = true };
+        }
+
         try
         {
             var structures = await LoadProductStructuresAsync(cancellationToken);
@@ -269,6 +285,12 @@ public sealed class StoreCatalogService : IStoreCatalogPort
             _logger.LogError(ex, "Failed to load category facets (categoryId={CategoryId}).", categoryId);
             return new StoreCategoryFacetsDto { Enabled = false };
         }
+    }
+
+    private async Task<bool> IsAuthenticatedCustomerAsync(CancellationToken cancellationToken)
+    {
+        var user = await _currentUser.GetCurrentUserAsync(cancellationToken);
+        return user.CustomerId is > 0;
     }
 
     public Task<IReadOnlyList<StoreProductDto>> SearchProductsAsync(

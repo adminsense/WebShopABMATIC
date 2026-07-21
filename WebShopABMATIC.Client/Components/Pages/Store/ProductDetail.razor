@@ -61,6 +61,17 @@ else
                 {
                     <p class="product-option-hint">Please choose the required options above.</p>
                 }
+                @if (!string.IsNullOrEmpty(_addError))
+                {
+                    <p class="product-option-hint" style="color:#b42318">@_addError</p>
+                }
+                @if (!string.IsNullOrEmpty(_addSuccess))
+                {
+                    <p class="product-option-hint" style="color:#027a48">
+                        @_addSuccess
+                        <NavLink href="/cart">View cart</NavLink>
+                    </p>
+                }
                 <p class="stock @(_product.IsOutOfStock ? "out" : _product.IsLowStock ? "low" : "")" style="font-size:0.85rem">@StockStatusLabel(_product)</p>
             </div>
         </div>
@@ -77,11 +88,16 @@ else
     private IReadOnlyList<CartLineOption> _selectedOptions = [];
     private bool _optionsValid = true;
 
+    private string? _addError;
+    private string? _addSuccess;
+
     protected override async Task OnParametersSetAsync() => await LoadAsync();
 
     private async Task LoadAsync()
     {
         _loading = true;
+        _addError = null;
+        _addSuccess = null;
         try
         {
             var dto = await CatalogPort.GetByIdAsync(ProductId);
@@ -116,26 +132,31 @@ else
     private async Task AddToCartAsync()
     {
         if (_product is null || !_product.HasPrice || !_optionsValid) return;
+        _addError = null;
+        _addSuccess = null;
 
-        if (!Cart.IsCustomerCart)
+        var auth = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = auth.User;
+        int? customerId = null;
+        if (user.Identity?.IsAuthenticated == true
+            && user.IsInRole(AppRoles.Customer)
+            && int.TryParse(user.FindFirstValue(LegacyAuthClaims.CustomerId), out var id)
+            && id > 0)
         {
-            var auth = await AuthStateProvider.GetAuthenticationStateAsync();
-            int? customerId = null;
-            if (int.TryParse(auth.User.FindFirstValue(LegacyAuthClaims.CustomerId), out var id) && id > 0)
-            {
-                customerId = id;
-            }
-
-            await Cart.BindToCustomerAsync(customerId);
-            if (!Cart.IsCustomerCart)
-            {
-                Navigation.NavigateTo($"/sign-in?returnUrl={Uri.EscapeDataString($"/product/{ProductId}")}", forceLoad: true);
-                return;
-            }
+            customerId = id;
         }
 
-        await Cart.AddProductAsync(_product.Id, _quantity, _selectedOptions);
-        Navigation.NavigateTo("/cart");
+        await Cart.BindToCustomerAsync(customerId);
+        var added = await Cart.AddProductAsync(_product.Id, _quantity, _selectedOptions);
+        if (!added)
+        {
+            _addError = "Could not add this product to your cart. Please try again.";
+            return;
+        }
+
+        // Stay on the product page so the shopper can keep adding — no empty-cart flash.
+        _addSuccess = $"Added to cart ({Cart.ItemCount} item{(Cart.ItemCount == 1 ? "" : "s")}).";
+        _quantity = 1;
     }
 
     private static string StockStatusLabel(StoreProduct product) =>

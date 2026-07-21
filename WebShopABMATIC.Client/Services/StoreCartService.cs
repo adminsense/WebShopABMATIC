@@ -3,37 +3,43 @@ using WebShopABMATIC.Application.Ports;
 
 namespace WebShopABMATIC.Web.Services;
 
+/// <summary>
+/// Store cart lives in browser <strong>session</strong> storage only (guest + customer keys).
+/// Closing the browser or Sign out clears it — nothing survives a new browser session.
+/// ERP stock is not reserved until PrePay place-order.
+/// </summary>
 public sealed class StoreCartService
 {
-    private const string LegacyStorageKey = "store-cart-v1";
-    private const string GuestOwnerKey = "guest";
+    private const string GuestSessionKey = "store-cart-v1:guest-session";
 
     private readonly IStoreCatalogPort _catalog;
-    private readonly ProtectedLocalStorage _storage;
+    private readonly ProtectedSessionStorage _session;
     private readonly List<CartLine> _lines = [];
     private readonly SemaphoreSlim _loadGate = new(1, 1);
 
-    private string _ownerKey = GuestOwnerKey;
+    private string _ownerKey = "guest";
     private bool _loaded;
     private int? _customerId;
 
-    public StoreCartService(IStoreCatalogPort catalog, ProtectedLocalStorage storage)
+    public StoreCartService(IStoreCatalogPort catalog, ProtectedSessionStorage session)
     {
         _catalog = catalog;
-        _storage = storage;
+        _session = session;
     }
 
     public event Action? Changed;
 
     public IReadOnlyList<CartLine> Lines => _lines;
 
-    public int ItemCount => IsCustomerCart ? _lines.Sum(l => l.Quantity) : 0;
+    public int ItemCount => _lines.Sum(l => l.Quantity);
 
     public bool IsCustomerCart => _customerId is > 0;
 
+    public bool HasLines => _lines.Count > 0;
+
     public int? CustomerId => _customerId;
 
-    public decimal Subtotal => IsCustomerCart ? _lines.Sum(l => l.LineTotal) : 0m;
+    public decimal Subtotal => _lines.Sum(l => l.LineTotal);
 
     public decimal DeliveryFee => 0m;
 
@@ -43,18 +49,23 @@ public sealed class StoreCartService
 
     public static string ProductImageUrl(int productId) => $"/api/store/products/{productId}/image";
 
-    private string StorageKey => $"store-cart-v1:{_ownerKey}";
+    private string SessionKey => _customerId is > 0 ? $"store-cart-v1:c{_customerId}" : GuestSessionKey;
 
     /// <summary>
-    /// Bind the cart to the authenticated customer (or clear it for guests).
-    /// Only that customer's stored lines are visible — never another user's cart.
+    /// Bind to authenticated customer (merge guest session lines) or guest session cart.
     /// </summary>
     public async Task BindToCustomerAsync(int? customerId, CancellationToken cancellationToken = default)
     {
-        var nextOwner = customerId is > 0 ? $"c{customerId.Value}" : GuestOwnerKey;
-        if (_loaded && _ownerKey == nextOwner && _customerId == customerId)
+        var nextOwner = customerId is > 0 ? $"c{customerId.Value}" : "guest";
+        if (_loaded && _ownerKey == nextOwner && _customerId == (customerId is > 0 ? customerId : null))
         {
             return;
+        }
+
+        List<CartLine>? guestLinesToMerge = null;
+        if (customerId is > 0)
+        {
+            guestLinesToMerge = await ReadSessionLinesAsync(GuestSessionKey);
         }
 
         await _loadGate.WaitAsync(cancellationToken);
@@ -70,35 +81,45 @@ public sealed class StoreCartService
             _loadGate.Release();
         }
 
-        if (_customerId is > 0)
+        await EnsureLoadedAsync(cancellationToken);
+
+        if (_customerId is > 0 && guestLinesToMerge is { Count: > 0 })
         {
-            await EnsureLoadedAsync(cancellationToken);
+            await MergeLinesAsync(guestLinesToMerge, cancellationToken);
+            await DeleteSessionKeyAsync(GuestSessionKey);
         }
-        else
+    }
+
+    /// <summary>Clears in-memory cart and all session keys (Sign out).</summary>
+    public async Task SignOutClearAsync(CancellationToken cancellationToken = default)
+    {
+        var customerKey = _customerId is > 0 ? SessionKey : null;
+
+        await _loadGate.WaitAsync(cancellationToken);
+        try
         {
-            Changed?.Invoke();
+            _customerId = null;
+            _ownerKey = "guest";
+            _lines.Clear();
+            _loaded = true;
         }
+        finally
+        {
+            _loadGate.Release();
+        }
+
+        await DeleteSessionKeyAsync(GuestSessionKey);
+        if (customerKey is not null)
+        {
+            await DeleteSessionKeyAsync(customerKey);
+        }
+
+        // Legacy local keys from earlier builds — wipe so old carts never reappear.
+        Changed?.Invoke();
     }
 
     public async Task EnsureLoadedAsync(CancellationToken cancellationToken = default)
     {
-        // Guests never load another user's (or shared legacy) cart into memory.
-        if (_customerId is null or <= 0)
-        {
-            if (_lines.Count > 0 || _loaded)
-            {
-                _lines.Clear();
-                _loaded = true;
-                Changed?.Invoke();
-            }
-            else
-            {
-                _loaded = true;
-            }
-
-            return;
-        }
-
         if (_loaded)
         {
             return;
@@ -114,21 +135,10 @@ public sealed class StoreCartService
 
             try
             {
-                var result = await _storage.GetAsync<List<CartLine>>(StorageKey);
-                if (result.Success && result.Value is { Count: > 0 })
+                var lines = await ReadSessionLinesAsync(SessionKey);
+                if (lines is { Count: > 0 })
                 {
-                    ApplyLines(result.Value);
-                }
-                else
-                {
-                    // One-time migrate from the old shared key into this customer's cart only.
-                    var legacy = await _storage.GetAsync<List<CartLine>>(LegacyStorageKey);
-                    if (legacy.Success && legacy.Value is { Count: > 0 })
-                    {
-                        ApplyLines(legacy.Value);
-                        await _storage.SetAsync(StorageKey, _lines.ToList());
-                        await _storage.DeleteAsync(LegacyStorageKey);
-                    }
+                    ApplyLines(lines);
                 }
 
                 _loaded = true;
@@ -145,33 +155,27 @@ public sealed class StoreCartService
         }
     }
 
-    public async Task AddProductAsync(
+    public async Task<bool> AddProductAsync(
         int productId,
         int quantity = 1,
         IReadOnlyList<CartLineOption>? options = null,
         CancellationToken cancellationToken = default)
     {
-        if (_customerId is null or <= 0)
+        if (!await EnsureLoadedReadyAsync(cancellationToken))
         {
-            return;
-        }
-
-        await EnsureLoadedAsync(cancellationToken);
-        if (!_loaded)
-        {
-            return;
+            return false;
         }
 
         var dto = await _catalog.GetByIdAsync(productId, cancellationToken);
         if (dto is null)
         {
-            return;
+            return false;
         }
 
         var product = StoreProductMapper.ToModel(dto);
-        if (!product.HasPrice)
+        if (!product.HasPrice || product.IsOutOfStock)
         {
-            return;
+            return false;
         }
 
         var selected = (options ?? []).ToList();
@@ -198,17 +202,12 @@ public sealed class StoreCartService
 
         await PersistAsync(cancellationToken);
         Changed?.Invoke();
+        return true;
     }
 
     public async Task SetQuantityAsync(string lineId, int quantity, CancellationToken cancellationToken = default)
     {
-        if (_customerId is null or <= 0)
-        {
-            return;
-        }
-
-        await EnsureLoadedAsync(cancellationToken);
-        if (!_loaded)
+        if (!await EnsureLoadedReadyAsync(cancellationToken))
         {
             return;
         }
@@ -234,13 +233,7 @@ public sealed class StoreCartService
 
     public async Task RemoveAsync(string lineId, CancellationToken cancellationToken = default)
     {
-        if (_customerId is null or <= 0)
-        {
-            return;
-        }
-
-        await EnsureLoadedAsync(cancellationToken);
-        if (!_loaded)
+        if (!await EnsureLoadedReadyAsync(cancellationToken))
         {
             return;
         }
@@ -252,22 +245,93 @@ public sealed class StoreCartService
 
     public async Task ClearAsync(CancellationToken cancellationToken = default)
     {
-        if (_customerId is null or <= 0)
+        if (!await EnsureLoadedReadyAsync(cancellationToken))
         {
             _lines.Clear();
             Changed?.Invoke();
             return;
         }
 
-        await EnsureLoadedAsync(cancellationToken);
-        if (!_loaded)
+        _lines.Clear();
+        await PersistAsync(cancellationToken);
+        Changed?.Invoke();
+    }
+
+    private async Task MergeLinesAsync(IReadOnlyList<CartLine> incoming, CancellationToken cancellationToken)
+    {
+        if (!await EnsureLoadedReadyAsync(cancellationToken))
         {
             return;
         }
 
-        _lines.Clear();
+        foreach (var add in incoming)
+        {
+            var existing = _lines.FirstOrDefault(l => l.Signature == add.Signature);
+            if (existing is null)
+            {
+                add.ImageUrl = ProductImageUrl(add.ProductId);
+                if (string.IsNullOrWhiteSpace(add.Id))
+                {
+                    add.Id = Guid.NewGuid().ToString("N");
+                }
+
+                add.Options ??= [];
+                _lines.Add(add);
+            }
+            else
+            {
+                existing.Quantity += add.Quantity;
+            }
+        }
+
         await PersistAsync(cancellationToken);
         Changed?.Invoke();
+    }
+
+    private async Task<List<CartLine>?> ReadSessionLinesAsync(string key)
+    {
+        try
+        {
+            var result = await _session.GetAsync<List<CartLine>>(key);
+            if (result.Success && result.Value is { Count: > 0 })
+            {
+                return result.Value;
+            }
+        }
+        catch (InvalidOperationException)
+        {
+            // Storage not ready.
+        }
+
+        return null;
+    }
+
+    private async Task DeleteSessionKeyAsync(string key)
+    {
+        try
+        {
+            await _session.DeleteAsync(key);
+        }
+        catch (InvalidOperationException)
+        {
+            // Ignore.
+        }
+    }
+
+    private async Task<bool> EnsureLoadedReadyAsync(CancellationToken cancellationToken)
+    {
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            if (_loaded)
+            {
+                return true;
+            }
+
+            await Task.Delay(40 * (attempt + 1), cancellationToken);
+        }
+
+        return _loaded;
     }
 
     private void ApplyLines(IEnumerable<CartLine> source)
@@ -288,20 +352,15 @@ public sealed class StoreCartService
 
     private async Task PersistAsync(CancellationToken cancellationToken)
     {
-        if (_customerId is null or <= 0)
-        {
-            return;
-        }
-
         try
         {
             if (_lines.Count == 0)
             {
-                await _storage.DeleteAsync(StorageKey);
+                await _session.DeleteAsync(SessionKey);
             }
             else
             {
-                await _storage.SetAsync(StorageKey, _lines.ToList());
+                await _session.SetAsync(SessionKey, _lines.ToList());
             }
         }
         catch (InvalidOperationException)
