@@ -12,7 +12,9 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 
 ## Amendments (newest first)
 
-> **2026-07-21 — Facet pilot categories require customer login:** Leaf categories in `StoreCatalogFilters:EnabledCategoryIds` (default **54** Handzenders) redirect guests to `/sign-in?returnUrl=…`. Server withholds facet data and product grid for unauthenticated requests. See [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.1 / §9.1.
+> **2026-07-21 — Product description cascade:** Product detail uses `WebshopDescriptionNl` → `DescriptionNl` → `DescriptionEn` → `DescriptionFr`. When empty, UI shows muted **No description**. Same resolve for catalog rows. See [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.2.
+
+> **2026-07-21 — Facet pilot stays public (gate reverted):** Whitelisted filter leaves (default **54** Handzenders) do **not** require login. Guest may browse/filter/add to cart; login remains only for place-order, payment, orders, and account (§9.1–9.2). Earlier same-day “facet = login” note was incorrect and reverted.
 
 > **2026-07-21 — Order confirmation uses StoreLayout:** `/orders/{id}/confirmation` no longer uses header-only `StorePaymentLayout`. Same chrome as catalog/cart/orders (header + category sidebar + main). Removed `StorePaymentLayout`. See [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.4–4.5.
 
