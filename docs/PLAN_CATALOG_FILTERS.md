@@ -1,7 +1,12 @@
-# Provisional analysis — Coolblue-style catalog filters (faceted search)
+# 🔍 Provisional Analysis — Coolblue-style Catalog Filters (Faceted Search)
 
-![Status](https://img.shields.io/badge/Status-Pilot%20implemented-28a745?style=flat-square) ![Scope](https://img.shields.io/badge/Scope-Store%20catalog-0ea5e9?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Pilot%20implemented-28a745?style=flat-square) ![Scope](https://img.shields.io/badge/Scope-Store%20catalog-0ea5e9?style=flat-square) ![Feature](https://img.shields.io/badge/Feature-Faceted%20Navigation-512BD4?style=flat-square)
 
+**Working note for Coolblue-style catalog filters implementation**
+
+---
+
+> [!NOTE]
 > **Purpose:** Working note for Coolblue-style catalog filters.  
 > **Reference:** [Coolblue — Windows all-in-one PCs (sale)](https://www.coolblue.be/nl/desktops/windows/all-in-one-pcs/solden).  
 > **Runtime (2026-07-20):** Pilot **S.7** shipped — Merk + Voorraad + Prijs on whitelisted leaf categories (`StoreCatalogFilters`, default id **54**). `ProductProperty` facets appear when ERP rows exist; otherwise a muted placeholder. Promote lasting behaviour into `SPEC_WEB_STORE.md` §4.1 (done); keep this file for decision history until client expands the IT whitelist / admin property CRUD.
@@ -10,7 +15,7 @@
 
 ---
 
-## 1. What the client is asking for
+## 🎯 1. What the Client is Asking For
 
 On Coolblue, a **category product list** has:
 
@@ -26,7 +31,7 @@ This is **faceted navigation** (e-commerce attribute filters), not the same as o
 
 ---
 
-## 2. What WebShopABMATIC has today
+## 🔧 2. What WebShopABMATIC Has Today
 
 | Capability | Status | Implementation |
 |------------|--------|----------------|
@@ -42,7 +47,7 @@ This is **faceted navigation** (e-commerce attribute filters), not the same as o
 
 ---
 
-## 3. ERP building blocks (relevant)
+## 📦 3. ERP Building Blocks (Relevant)
 
 | Dutch / table | C# entity | Role for filters |
 |---------------|-----------|------------------|
@@ -67,7 +72,7 @@ There is **no** ERP column linking `ProductProperty` to a `ProductStructure` nod
 
 ---
 
-## 4. Why “all categories” is not viable
+## ⚠️ 4. Why "All Categories" is Not Viable
 
 The client’s reference is **informatics** (desktops / all-in-one PCs) with a **stable, comparable attribute set**:
 
@@ -249,4 +254,4 @@ Product card subtitle chips can mirror Coolblue by reading the same `ProductProp
 
 ---
 
-**© 2026 — provisional; not product truth until promoted to SPEC.**
+**© 2026 AdminSense. All rights reserved.**
