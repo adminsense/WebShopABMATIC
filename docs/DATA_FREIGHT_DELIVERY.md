@@ -1,14 +1,16 @@
-# Freight / delivery — ERP mapping (Dutch DB → English code)
+# 🚚 Freight / Delivery — ERP Mapping (Dutch DB → English Code)
 
-![Status](https://img.shields.io/badge/Status-Analysed%20from%20abmatic__test-0ea5e9?style=flat-square) ![Rule](https://img.shields.io/badge/Default%20fee-%E2%82%AC0-64748b?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Analysed%20from%20abmatic__test-0ea5e9?style=flat-square) ![Rule](https://img.shields.io/badge/Default%20fee-%E2%82%AC0-64748b?style=flat-square) ![Type](https://img.shields.io/badge/Type-Data%20Reference-512BD4?style=flat-square)
 
-> **Source of truth:** live Azure SQL `abmatic_test` (queried 2026-07-14).  
+**Freight and delivery fee mapping from live ERP database**
+
+---> **Source of truth:** live Azure SQL `abmatic_test` (queried 2026-07-14).  
 > Product/UI labels stay **Dutch** as stored in ERP; **code identifiers stay English**.  
 > Schema rules: `AGENTS.md` / `db-first` (not restated here).
 
 ---
 
-## Language / mapping conventions (repo-wide)
+## 🌍 Language / Mapping Conventions (Repo-Wide)
 
 | Layer | Language | Rule |
 |-------|----------|------|
@@ -25,7 +27,7 @@ Full table map: [DATA_DUTCH_ENGLISH_MODEL.md](./DATA_DUTCH_ENGLISH_MODEL.md).
 
 ---
 
-## How freight actually works in AB-MATIC
+## 🔧 How Freight Actually Works in AB-MATIC
 
 `DeliveryType` (**NL** `LeveringType`) has **no price column**.  
 Freight = **product(s)** linked to a delivery type, priced via **product prices**.
@@ -46,7 +48,7 @@ Product + ProductPrice           (NL Products.Product + Products.ProductPrijzen.
 Store checkout DeliveryFee       (English code) — €0 if no usable link/price
 ```
 
-### Mapping (freight)
+### 🗺️ Mapping (Freight)
 
 | English (code) | Dutch (DB) | Role |
 |----------------|------------|------|
@@ -66,7 +68,7 @@ Store checkout DeliveryFee       (English code) — €0 if no usable link/price
 
 ---
 
-## What we saw on `abmatic_test` (counts)
+## 📊 What We Saw on `abmatic_test` (Counts)
 
 | `DeliveryType` Id | Dutch name | Mapped products | Typical price pattern |
 |-------------------|------------|-----------------|------------------------|
