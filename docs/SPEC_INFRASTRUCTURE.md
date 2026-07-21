@@ -282,6 +282,9 @@ Single **Azure SQL** database (`abmatic_test`) is used for local dev and deploye
 | `Mollie:ApiKey` | Real Mollie payments | User Secrets / Azure | ⬜ **After client keys** — keep mock until then |
 | `Mollie:UseMock` | Mock checkout without API key | **`true` (required until client keys)** | `false` only after keys |
 | `Notifications:LowStock:UseMock` | In-app mock vs SMTP queue | `true` (dev) | `false` (prod) |
+| `StoreCatalogFilters:EnabledCategoryIds` | Leaf `ProductStructure` ids that show facet sidebar | `[54]` (Handzenders pilot) | Same or extend whitelist |
+| `StoreCatalogFilters:EnableOnAllLeafCategories` | Facets on every leaf (not recommended) | `false` | `false` |
+| `StoreCatalogFilters:CategoryPropertyGroups` | Optional map categoryId → ordered `ProductProperty` ids | `{}` | Optional |
 
 Example **Azure App Service** block (placeholders — never commit real values):
 

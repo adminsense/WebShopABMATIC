@@ -181,7 +181,7 @@ The store does not own master data; it **reads** configurations maintained in th
 |---------|-------------|-------------------|
 | **Product list** | Grid of products with image, name, price | Only `ShowOnWebshop = true` |
 | **Category tree** | Left sidebar (`ProductStructure` / optional `WebshopStructure`) | Leaf nodes show product grid; parents show child tiles (CD4) |
-| **Facet filters (pilot)** | Coolblue-style sidebar on **whitelisted leaf** categories only | `StoreCatalogFilters:EnabledCategoryIds` (default **54** Handzenders). Merk (`Manufacturer`), Voorraad, Prijs; `ProductProperty` groups when ERP rows exist. **Customer sign-in required** — guests are redirected to `/sign-in` (server also withholds products/facets). See [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md). **Not** `ProductOption`. |
+| **Facet filters (pilot)** | Coolblue-style sidebar on **whitelisted leaf** categories only | `StoreCatalogFilters:EnabledCategoryIds` (default **54** Handzenders). Merk (`Manufacturer`), Voorraad, Prijs; `ProductProperty` groups when ERP rows exist. Guests may browse and filter (no login). See [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md). **Not** `ProductOption`. |
 | **Search** | Header modal | Server `SearchProductsAsync` (name prefix) |
 | **Sort** | As offered in UI | Optional; not a separate server sort API yet |
 
@@ -191,7 +191,7 @@ The store does not own master data; it **reads** configurations maintained in th
 |---------|-------------|
 | **Hero image** | From product media or default asset |
 | **Meta line** | `ProductId`, `ShowOnWebshop`, tags |
-| **Description** | `WebshopDescriptionNl` / EN / FR |
+| **Description** | Cascade: `WebshopDescriptionNl` → `DescriptionNl` → `DescriptionEn` → `DescriptionFr` (first non-empty). When ERP has none, UI shows **No description** (muted). Staff fill webshop/ERP description fields to show real text. |
 | **Price** | Current `ProductPrice.GrossSalesPrice` (customer discounts applied) |
 | **Options** | Required/optional `ProductOption` via `StoreProductOptionsForm` (UI gates add) |
 | **Stock line** | Available qty from default stock location |
@@ -353,7 +353,7 @@ flowchart LR
 
 | Capability | Guest | Logged-in customer |
 |------------|-------|-------------------|
-| Browse catalog | ✅ (except **facet pilot** leaf categories — login required) | ✅ |
+| Browse catalog | ✅ (including facet pilot leaves) | ✅ |
 | View prices | **List price** (or Price on request / Out of stock) | List + customer discounts |
 | Add to cart | ✅ session storage (browser session) | ✅ same session storage while logged in |
 | Change qty / remove lines | ✅ | ✅ |
