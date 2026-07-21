@@ -163,7 +163,7 @@ Elasticsearch, dedicated attribute tables, PIM integration.
 | **0 — Decision** | IT subtree / pilot leaf | ✅ Pilot leaf **54** (Handzenders); expand whitelist via config |
 | **1 — Data** | Populate `ProductProperty` + items | ⬜ Client/staff — sidebar shows muted placeholder until data exists |
 | **2 — Admin** | `/admin/product-properties` | ⬜ Later |
-| **3 — API** | `GetCategoryFacetsAsync` + filtered `GetCatalogAsync` | ✅ Customer login enforced for whitelisted leaf categories (guest → empty data + `RequiresCustomerLogin`) |
+| **3 — API** | `GetCategoryFacetsAsync` + filtered `GetCatalogAsync` | ✅ Public for guests (login only at checkout) |
 | **4 — Store UI** | `StoreFacetSidebar` + query `?merk=&voorraad=&prijs=` | ✅ |
 | **5 — Polish** | Sort, mobile drawer, card spec chips | ⬜ |
 
@@ -172,7 +172,7 @@ Elasticsearch, dedicated attribute tables, PIM integration.
 ```text
 Catalog.razor
   → IStoreCatalogPort.GetCategoryFacetsAsync / GetCatalogAsync(filters)
-  → StoreCatalogService (guest blocked on whitelisted facet leaves)
+  → StoreCatalogService
   → ProductPropertyItems + Product + Manufacturer + ProductPrices
 ```
 
