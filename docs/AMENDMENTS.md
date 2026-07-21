@@ -1,16 +1,22 @@
-﻿# Runtime amendments & open UI notes
+﻿# 📝 Runtime Amendments & Open UI Notes
 
-![Status](https://img.shields.io/badge/Status-Living%20changelog-0ea5e9?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Living%20Changelog-0ea5e9?style=flat-square) ![Updates](https://img.shields.io/badge/Updates-Continuous-22c55e?style=flat-square) ![Type](https://img.shields.io/badge/Type-Runtime%20Notes-512BD4?style=flat-square)
 
-Short **current-runtime** notes. Historical store-layout migration dump (phases A–D, unified login study, long checklists):
+**Short current-runtime notes and dated changelog**
 
-→ [`archive/AMENDMENTS_store_layout_migration.md`](./archive/AMENDMENTS_store_layout_migration.md)
+---
+
+> [!NOTE]
+> **Historical Archive:** Store layout migration dump (phases A–D, unified login study, long checklists) moved to:  
+> → [`archive/AMENDMENTS_store_layout_migration.md`](./archive/AMENDMENTS_store_layout_migration.md)
 
 Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC_INFRASTRUCTURE.md`). Prefer updating those; use this file only for dated “runtime diverged / interim decision” lines.
 
 ---
 
-## Amendments (newest first)
+## 📅 Amendments (newest first)
+
+> **2026-07-21 — Catalog filters development planning:** Scheduled planning session to plan the development for advanced catalog filters documented in [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md). Current pilot (S.7) covers whitelisted categories only; expansion scope and ERP property admin CRUD to be assessed.
 
 > **2026-07-21 — Product description cascade:** Product detail uses `WebshopDescriptionNl` → `DescriptionNl` → `DescriptionEn` → `DescriptionFr`. When empty, UI shows muted **No description**. Same resolve for catalog rows. See [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.2.
 
@@ -72,7 +78,7 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 
 ---
 
-## Still open (pointers only)
+## ⏳ Still Open (pointers only)
 
 | Topic | Where |
 |-------|--------|
