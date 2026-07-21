@@ -1,16 +1,25 @@
-# AGENTS.md — how to work in this repo
+# 🤖 AGENTS.md — How to Work in This Repo
 
-This file is the **default contract** for Cursor, Claude Code, and any coding agent.  
-Do **not** wait for the user to restate process, docs, or patterns.
+![Type](https://img.shields.io/badge/Type-Agent%20Contract-0ea5e9?style=flat-square) ![Scope](https://img.shields.io/badge/Scope-Process%20%26%20Workflow-512BD4?style=flat-square) ![Status](https://img.shields.io/badge/Status-Mandatory-dc3545?style=flat-square)
 
-## Start every non-trivial task here
+**Default contract for Cursor, Claude Code, and any coding agent**
+
+---
+
+> [!IMPORTANT]
+> This file is the **default contract** for Cursor, Claude Code, and any coding agent.  
+> Do **not** wait for the user to restate process, docs, or patterns.
+
+---
+
+## 🚀 Start Every Non-Trivial Task Here
 
 1. Open **[`docs/README.md`](docs/README.md)** — pick the right SPEC for the task.
 2. Follow **[`.claude/CLAUDE.md`](.claude/CLAUDE.md)** — hard product/auth/Azure constraints.
 3. For UI/code style, open **[`docs/PATTERNS_UI_QUICK_START.md`](docs/PATTERNS_UI_QUICK_START.md)** and/or **[`docs/PATTERNS_CODE_AND_INFRASTRUCTURE.md`](docs/PATTERNS_CODE_AND_INFRASTRUCTURE.md)** *before* inventing a new pattern.
 4. After behaviour changes: update the matching `docs/SPEC_*` (or checklist on `SPEC_*_open.md`) and add a line to **[`docs/AMENDMENTS.md`](docs/AMENDMENTS.md)** when runtime notes matter. Rule: [`.cursor/rules/docs-sync.mdc`](.cursor/rules/docs-sync.mdc).
 
-## What to read (quick map)
+## 🗺️ What to Read (Quick Map)
 
 | If the task touches… | Read first |
 |----------------------|------------|
@@ -24,7 +33,7 @@ Do **not** wait for the user to restate process, docs, or patterns.
 
 Do **not** load `docs/archive/` unless the user asks for history.
 
-## Doc naming (do not invent new schemes)
+## 📝 Doc Naming (Do Not Invent New Schemes)
 
 | Pattern | Meaning |
 |---------|---------|
@@ -34,7 +43,7 @@ Do **not** load `docs/archive/` unless the user asks for history.
 | `PATTERNS_*` | How we implement (copy existing patterns) |
 | `AMENDMENTS.md` | Short dated runtime changelog |
 
-## Default engineering rules
+## ⚙️ Default Engineering Rules
 
 - **Database first:** The live ERP database (`abmatic_test` on Azure SQL) is the **source of truth**. Physical schema is **mostly Dutch**; C# uses **English** names with DE-PARA in `WebShopABMATICModelBuilder` / entity comments ([`docs/DATA_DUTCH_ENGLISH_MODEL.md`](docs/DATA_DUTCH_ENGLISH_MODEL.md)). ERP labels/product names stay as stored (often Dutch).
   - **Never invent** columns, tables, EF migrations, `Migrate()` / `EnsureCreated()`, or schema scripts for the ERP — in **code or docs**, for **any** feature (store, admin, freight, Mollie, stock, …).
@@ -48,18 +57,18 @@ Do **not** load `docs/archive/` unless the user asks for history.
 - **Azure Blazor:** WebSockets On in App Service; sticky ARR affinity assumed.
 - Prefer matching existing components/CSS over new visual systems.
 
-## Done means
+## ✅ Done Means
 
 Code **and** matching docs updated. Saying “user didn’t ask for docs” is not a reason to skip `docs-sync`.
 
-## Git & publish (owner only)
+## 🔒 Git & Publish (Owner Only)
 
 - **Never** create git commits, amend, push, force-push, or open PRs unless Marco **explicitly** asks in that message.
 - **Never** publish/deploy to Azure (Web Deploy, `dotnet publish` for release, Portal deploy) unless Marco **explicitly** asks.
 - Staging/local `dotnet build` / `dotnet run` is fine. Preparing files for commit is fine; **running** `git commit` / `git push` / publish is not.
 - Default when work is ready: summarize what changed and wait — Marco commits and publishes.
 
-## Pointers
+## 🔗 Pointers
 
 - Product overview (humans): [`README.md`](README.md)  
 - Docs index: [`docs/README.md`](docs/README.md)  
