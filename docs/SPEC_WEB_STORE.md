@@ -181,7 +181,7 @@ The store does not own master data; it **reads** configurations maintained in th
 |---------|-------------|-------------------|
 | **Product list** | Grid of products with image, name, price | Only `ShowOnWebshop = true` |
 | **Category tree** | Left sidebar (`ProductStructure` / optional `WebshopStructure`) | Leaf nodes show product grid; parents show child tiles (CD4) |
-| **Facet filters (pilot)** | Coolblue-style sidebar on **whitelisted leaf** categories only | `StoreCatalogFilters:EnabledCategoryIds` (default **54** Handzenders). Merk (`Manufacturer`), Voorraad, Prijs; `ProductProperty` groups when ERP rows exist. See [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md). **Not** `ProductOption`. |
+| **Facet filters (pilot)** | Coolblue-style sidebar on **whitelisted leaf** categories only | `StoreCatalogFilters:EnabledCategoryIds` (default **54** Handzenders). Merk (`Manufacturer`), Voorraad, Prijs; `ProductProperty` groups when ERP rows exist. **Customer sign-in required** — guests are redirected to `/sign-in` (server also withholds products/facets). See [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md). **Not** `ProductOption`. |
 | **Search** | Header modal | Server `SearchProductsAsync` (name prefix) |
 | **Sort** | As offered in UI | Optional; not a separate server sort API yet |
 
@@ -222,7 +222,7 @@ The store does not own master data; it **reads** configurations maintained in th
 | **Submit** | Create `Order`, `OrderLine`; delivery line when fee &gt; 0 (`IsLeveringsTypeProduct`); PrePay → create Mollie (mock) payment + redirect |
 | **Route sequence (PrePay)** | `/cart` → payment URL (`/checkout/mollie-mock` while `Mollie:UseMock`) → `/orders/{id}/payment-return` (status check; auto-redirect after first interactive render via `forceLoad`) → `/orders/{id}/confirmation` |
 
-**Confirmation (`OrderConfirmation.razor`):** the approved light-blue **Payment received** layout, using the real order number/date, payment status, persisted product lines, selected ERP freight line (`IsLeveringsTypeProduct`), calculated VAT and total incl. VAT. The freight label/amount comes from the selected `OrderDeliveryTypeProduct` + valid `ProductPrices`; when no usable price exists it displays **€0**. No mock €9 or demo product names.
+**Confirmation (`OrderConfirmation.razor`):** uses the same store chrome as cart/catalog — **`StoreLayout`** (header + category sidebar + main). Content is the approved **Payment received** summary (order number/date, payment status, real lines, ERP freight, VAT, total). Freight from `OrderDeliveryTypeProduct` + `ProductPrices` (missing → **€0**). Not a header-only / full-bleed payment shell.
 
 ### 4.5 Account area (logged-in customer)
 
@@ -230,7 +230,7 @@ The store does not own master data; it **reads** configurations maintained in th
 |--------|-------|---------|
 | **My orders** | `/orders` | List of this customer’s orders + payment status |
 | **Order detail** | `/orders/{id}` | Lines, totals, Mollie id when PrePay |
-| **Order confirmation** | `/orders/{id}/confirmation` | After successful pay; real order/freight/VAT summary + Continue shopping |
+| **Order confirmation** | `/orders/{id}/confirmation` | Same `StoreLayout` as shopping (sidebar); Payment received card + Continue shopping |
 | **My account** | `/my-account` | Profile + link to My orders; password change |
 | **Nav** | `StoreHeader` | **My orders** + account name when role `Customer` |
 
@@ -353,7 +353,7 @@ flowchart LR
 
 | Capability | Guest | Logged-in customer |
 |------------|-------|-------------------|
-| Browse catalog | ✅ | ✅ |
+| Browse catalog | ✅ (except **facet pilot** leaf categories — login required) | ✅ |
 | View prices | **List price** (or Price on request / Out of stock) | List + customer discounts |
 | Add to cart | ✅ session storage (browser session) | ✅ same session storage while logged in |
 | Change qty / remove lines | ✅ | ✅ |
