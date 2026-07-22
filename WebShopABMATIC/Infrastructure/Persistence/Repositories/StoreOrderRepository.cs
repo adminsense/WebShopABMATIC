@@ -26,6 +26,32 @@ public sealed class StoreOrderRepository : IStoreOrderRepository
 
     private async Task<CheckoutOptionsDto?> GetCheckoutOptionsCoreAsync(int customerId, CancellationToken cancellationToken)
     {
+        // One shot + one retry: concurrent circuit work used to close the shared connection mid-query.
+        try
+        {
+            return await GetCheckoutOptionsCoreOnceAsync(customerId, cancellationToken);
+        }
+        catch (InvalidOperationException ex) when (IsClosedConnection(ex))
+        {
+            await _db.Database.CloseConnectionAsync();
+            return await GetCheckoutOptionsCoreOnceAsync(customerId, cancellationToken);
+        }
+    }
+
+    private static bool IsClosedConnection(Exception ex)
+    {
+        var text = ex.Message ?? "";
+        return text.Contains("closed", StringComparison.OrdinalIgnoreCase)
+               || text.Contains("fechada", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task<CheckoutOptionsDto?> GetCheckoutOptionsCoreOnceAsync(int customerId, CancellationToken cancellationToken)
+    {
+        var customerDelivery = await _db.Customers.AsNoTracking()
+            .Where(c => c.CustomerId == customerId)
+            .Select(c => new { c.DeliveryTypeId })
+            .FirstOrDefaultAsync(cancellationToken);
+
         var addressRows = await (
             from a in _db.CustomerDeliveryAddresses.AsNoTracking()
             join c in _db.Cities.AsNoTracking() on a.CityId equals c.CityId into cityJoin
@@ -102,11 +128,6 @@ public sealed class StoreOrderRepository : IStoreOrderRepository
         {
             return null;
         }
-
-        var customerDelivery = await _db.Customers.AsNoTracking()
-            .Where(c => c.CustomerId == customerId)
-            .Select(c => new { c.DeliveryTypeId })
-            .FirstOrDefaultAsync(cancellationToken);
 
         var deliveryTypeId = customerDelivery?.DeliveryTypeId ?? 0;
         var deliveryTypeName = "";
@@ -342,7 +363,10 @@ public sealed class StoreOrderRepository : IStoreOrderRepository
         };
     }
 
-    public async Task<StoreAdvancePaymentInfo?> GetAdvancePaymentByMollieIdAsync(string molliePaymentId, CancellationToken cancellationToken = default)
+    public Task<StoreAdvancePaymentInfo?> GetAdvancePaymentByMollieIdAsync(string molliePaymentId, CancellationToken cancellationToken = default) =>
+        _dbGate.RunAsync(() => GetAdvancePaymentByMollieIdCoreAsync(molliePaymentId, cancellationToken), cancellationToken);
+
+    private async Task<StoreAdvancePaymentInfo?> GetAdvancePaymentByMollieIdCoreAsync(string molliePaymentId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(molliePaymentId))
         {
@@ -368,7 +392,10 @@ public sealed class StoreOrderRepository : IStoreOrderRepository
         };
     }
 
-    public async Task MarkAdvancePaymentPaidAsync(int advancePaymentId, string mollieStatus, DateTime paidAt, CancellationToken cancellationToken = default)
+    public Task MarkAdvancePaymentPaidAsync(int advancePaymentId, string mollieStatus, DateTime paidAt, CancellationToken cancellationToken = default) =>
+        _dbGate.RunAsync(() => MarkAdvancePaymentPaidCoreAsync(advancePaymentId, mollieStatus, paidAt, cancellationToken), cancellationToken);
+
+    private async Task MarkAdvancePaymentPaidCoreAsync(int advancePaymentId, string mollieStatus, DateTime paidAt, CancellationToken cancellationToken)
     {
         var entity = await _db.OrderAdvancePayments.FirstAsync(a => a.Id == advancePaymentId, cancellationToken);
         entity.AdvancePaymentVisibility = mollieStatus;
@@ -376,14 +403,20 @@ public sealed class StoreOrderRepository : IStoreOrderRepository
         await _db.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAdvancePaymentStatusAsync(int advancePaymentId, string mollieStatus, CancellationToken cancellationToken = default)
+    public Task UpdateAdvancePaymentStatusAsync(int advancePaymentId, string mollieStatus, CancellationToken cancellationToken = default) =>
+        _dbGate.RunAsync(() => UpdateAdvancePaymentStatusCoreAsync(advancePaymentId, mollieStatus, cancellationToken), cancellationToken);
+
+    private async Task UpdateAdvancePaymentStatusCoreAsync(int advancePaymentId, string mollieStatus, CancellationToken cancellationToken)
     {
         var entity = await _db.OrderAdvancePayments.FirstAsync(a => a.Id == advancePaymentId, cancellationToken);
         entity.AdvancePaymentVisibility = mollieStatus;
         await _db.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<ExpiredReservationInfo>> GetExpiredPrePayOrdersAsync(TimeSpan olderThan, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<ExpiredReservationInfo>> GetExpiredPrePayOrdersAsync(TimeSpan olderThan, CancellationToken cancellationToken = default) =>
+        _dbGate.RunAsync(() => GetExpiredPrePayOrdersCoreAsync(olderThan, cancellationToken), cancellationToken);
+
+    private async Task<IReadOnlyList<ExpiredReservationInfo>> GetExpiredPrePayOrdersCoreAsync(TimeSpan olderThan, CancellationToken cancellationToken)
     {
         var cutoff = DateTime.UtcNow - olderThan;
         var terminalStatuses = new[] { "paid", "expired", "canceled", "failed" };
@@ -420,7 +453,10 @@ public sealed class StoreOrderRepository : IStoreOrderRepository
             .ToList();
     }
 
-    public async Task<CheckoutOrderSummaryDto?> GetOrderSummaryForCustomerAsync(int orderId, int customerId, CancellationToken cancellationToken = default)
+    public Task<CheckoutOrderSummaryDto?> GetOrderSummaryForCustomerAsync(int orderId, int customerId, CancellationToken cancellationToken = default) =>
+        _dbGate.RunAsync(() => GetOrderSummaryForCustomerCoreAsync(orderId, customerId, cancellationToken), cancellationToken);
+
+    private async Task<CheckoutOrderSummaryDto?> GetOrderSummaryForCustomerCoreAsync(int orderId, int customerId, CancellationToken cancellationToken)
     {
         var order = await (
             from o in _db.Orders.AsNoTracking()
@@ -708,7 +744,10 @@ public sealed class StoreOrderRepository : IStoreOrderRepository
             .ToDictionaryAsync(p => p.ProductId, p => p.NameEn, cancellationToken);
     }
 
-    public async Task UpdateAdvancePaymentMollieAsync(int orderId, string paymentId, string status, string checkoutUrl, CancellationToken cancellationToken = default)
+    public Task UpdateAdvancePaymentMollieAsync(int orderId, string paymentId, string status, string checkoutUrl, CancellationToken cancellationToken = default) =>
+        _dbGate.RunAsync(() => UpdateAdvancePaymentMollieCoreAsync(orderId, paymentId, status, checkoutUrl, cancellationToken), cancellationToken);
+
+    private async Task UpdateAdvancePaymentMollieCoreAsync(int orderId, string paymentId, string status, string checkoutUrl, CancellationToken cancellationToken)
     {
         var advance = await _db.OrderAdvancePayments.FirstOrDefaultAsync(a => a.OrderId == orderId, cancellationToken);
         if (advance is null)
@@ -723,9 +762,14 @@ public sealed class StoreOrderRepository : IStoreOrderRepository
         await _db.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<StoreOrderListItemDto>> GetOrdersForCustomerAsync(
+    public Task<IReadOnlyList<StoreOrderListItemDto>> GetOrdersForCustomerAsync(
         int customerId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        _dbGate.RunAsync(() => GetOrdersForCustomerCoreAsync(customerId, cancellationToken), cancellationToken);
+
+    private async Task<IReadOnlyList<StoreOrderListItemDto>> GetOrdersForCustomerCoreAsync(
+        int customerId,
+        CancellationToken cancellationToken)
     {
         var orders = await (
             from o in _db.Orders.AsNoTracking()

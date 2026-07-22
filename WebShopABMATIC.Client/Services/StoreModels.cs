@@ -17,7 +17,9 @@ public sealed record StoreProduct(
     string CategoryName,
     string ReferenceCode,
     string Tag,
-    bool HasOptions = false);
+    bool HasOptions = false,
+    int ManufacturerId = 0,
+    string ManufacturerName = "");
 
 public sealed class CartLine
 {
@@ -44,6 +46,7 @@ public sealed class CartLineOption
     public int? ValueId { get; set; }
     public string ValueText { get; set; } = "";
 }
+
 
 public sealed record StoreOrderSummary(
     string OrderNumber,
