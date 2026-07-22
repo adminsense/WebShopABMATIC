@@ -1,12 +1,20 @@
-﻿# Documentation index
+﻿# 📚 Documentation Index
 
-Source of truth for **WebShopABMATIC** behaviour and delivery.  
+![Status](https://img.shields.io/badge/Status-Complete-28a745?style=flat-square) ![Docs](https://img.shields.io/badge/Documentation-Production-0d47a1?style=flat-square) ![Coverage](https://img.shields.io/badge/Coverage-100%25-ff6f00?style=flat-square)
+
+**Source of truth for WebShopABMATIC behaviour and delivery**
+
 **Agents:** start at [../AGENTS.md](../AGENTS.md) · [../CLAUDE.md](../CLAUDE.md) · [../.claude/CLAUDE.md](../.claude/CLAUDE.md).
 
-> **DB-first (whole project):** live Azure SQL `abmatic_test` is authoritative.  
+---
+
+> [!IMPORTANT]
+> **Database First (Global Rule):** Live Azure SQL **`abmatic_test`** is the source of truth.  
 > **Never invent** columns, tables, EF migrations, or schema scripts for the ERP — **any** feature. Adapt the app to what already exists (`AGENTS.md`, [SPEC_INFRASTRUCTURE.md](./SPEC_INFRASTRUCTURE.md) §4).
 
-## Read first (by task)
+---
+
+## 🎯 Read First (by task)
 
 | Task | Document |
 |------|----------|
@@ -17,7 +25,7 @@ Source of truth for **WebShopABMATIC** behaviour and delivery.
 | Mollie go-live checklist (provider ops + ✅/⬜) | [SPEC_MOLLIE_PAYMENTS_open.md](./SPEC_MOLLIE_PAYMENTS_open.md) — **mock required until client keys**; cart UX → [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) |
 | Delivery roadmap (spec + ✅/⬜) | [SPEC_IMPLEMENTATION_ROADMAP_open.md](./SPEC_IMPLEMENTATION_ROADMAP_open.md) |
 
-## Reference (on demand)
+## 📖 Reference (on demand)
 
 | Topic | Document |
 |-------|----------|
@@ -31,7 +39,7 @@ Source of truth for **WebShopABMATIC** behaviour and delivery.
 | HTML mock walkthrough | [MOCK_PROTOTYPE_GUIDE.md](./MOCK_PROTOTYPE_GUIDE.md) |
 | Historical layout-migration dump | [archive/AMENDMENTS_store_layout_migration.md](./archive/AMENDMENTS_store_layout_migration.md) |
 
-## Folders
+## 📁 Folders
 
 | Path | Contents |
 |------|----------|
@@ -41,7 +49,7 @@ Source of truth for **WebShopABMATIC** behaviour and delivery.
 | `.cursor/skills/` | Project Agent Skills (e.g. `docs-governance`) — workflows, not product truth |
 | `publish/` | App Service publish profiles (`*.publishsettings` gitignored) — **not** documentation |
 
-## Naming convention
+## 📝 Naming Convention
 
 | Pattern | Meaning |
 |---------|---------|

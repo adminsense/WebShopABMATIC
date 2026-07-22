@@ -16,6 +16,8 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 
 ## 📅 Amendments (newest first)
 
+> **2026-07-22 — Test project phases 0–3:** Added `WebShopABMATIC.Tests` (xUnit). Unit coverage for checkout, Mollie webhook, registration/profile, description cascade, LegacySignIn, product/order/stock/dashboard use cases. API integration via `WebApplicationFactory` for store/admin login, Mollie webhook, stock adjustment. Run: `dotnet test`. See `.claude/CLAUDE.md` Testing.
+
 > **2026-07-21 — Catalog filters development planning:** Scheduled planning session to plan the development for advanced catalog filters documented in [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md). Current pilot (S.7) covers whitelisted categories only; expansion scope and ERP property admin CRUD to be assessed.
 
 > **2026-07-21 — Product description cascade:** Product detail uses `WebshopDescriptionNl` → `DescriptionNl` → `DescriptionEn` → `DescriptionFr`. When empty, UI shows muted **No description**. Same resolve for catalog rows. See [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.2.

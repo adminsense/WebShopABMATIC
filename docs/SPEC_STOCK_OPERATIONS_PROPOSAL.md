@@ -1,19 +1,21 @@
-﻿# Stock operations & storefront payments — proposal
+﻿# 📦 Stock Operations & Storefront Payments — Proposal
 
 ![Status](https://img.shields.io/badge/Status-Partially%20implemented-22c55e?style=flat-square) ![Schema](https://img.shields.io/badge/Schema-Products%20%2B%20Orders-512BD4?style=flat-square) ![Architecture](https://img.shields.io/badge/Fit-Hexagonal-28a745?style=flat-square) ![Payments](https://img.shields.io/badge/Payments-Mollie.Api-0a0a0a?style=flat-square) ![Tracker](https://img.shields.io/badge/Live-IMPLEMENTATION__ROADMAP__open.md-informational?style=flat-square)
 
-> [!IMPORTANT] 
+**Stock operations analysis and implementation proposal**
+
+---> [!IMPORTANT] 
 > **Executive summary:** Originally an analysis proposal — **core stock writes, checkout, Mollie (dev mock), manual adjustment, and low-stock alerts are now implemented** (see **§0** and [SPEC_IMPLEMENTATION_ROADMAP_open.md](./SPEC_IMPLEMENTATION_ROADMAP_open.md)). **Dev priority:** Phase E stock ops. **Prod go-live (last):** 3b SMTP, B.9 Mollie E2E, M.5 Azure Blob.
 
 > **Live tracker:** [SPEC_IMPLEMENTATION_ROADMAP_open.md](./SPEC_IMPLEMENTATION_ROADMAP_open.md)
 
 ---
 
-## 0. Implementation log (delivered)
+## 📋 0. Implementation Log (Delivered)
 
 _Last updated: May 2026 — see [SPEC_IMPLEMENTATION_ROADMAP_open.md](./SPEC_IMPLEMENTATION_ROADMAP_open.md) for current phase status._
 
-### 0.1 Stock movement service (sale + manual)
+### 🔄 0.1 Stock Movement Service (Sale + Manual)
 
 | Item | Status | Implementation |
 |------|--------|----------------|
@@ -25,7 +27,7 @@ _Last updated: May 2026 — see [SPEC_IMPLEMENTATION_ROADMAP_open.md](./SPEC_IMP
 | Negative stock on write | ✅ Blocked | All-or-nothing; no negative `Quantity` on sales/adjustments |
 | Manual adjustment | ✅ | `ApplyManualAdjustmentAsync` — signed qty + required reason |
 
-### 0.2 Manual adjustment UI + API
+### ⚙️ 0.2 Manual Adjustment UI + API
 
 | Item | Route / API | Status |
 |------|-------------|--------|
@@ -37,7 +39,7 @@ _Last updated: May 2026 — see [SPEC_IMPLEMENTATION_ROADMAP_open.md](./SPEC_IMP
 
 **Rule:** Business stock corrections use the adjustment screen — not direct quantity edits on the product-stock grid (grid remains master-data CRUD).
 
-### 0.3 Low stock: `MinQuantity`, alerts, dashboard, storefront
+### 🔔 0.3 Low Stock: `MinQuantity`, Alerts, Dashboard, Storefront
 
 | Item | Status | Notes |
 |------|--------|-------|
@@ -53,7 +55,7 @@ _Last updated: May 2026 — see [SPEC_IMPLEMENTATION_ROADMAP_open.md](./SPEC_IMP
 
 **Alert rule:** `Quantity <= MinQuantity`. Notification fires when stock **crosses** below minimum or while low with no unread alert for that `ProductStockLocationId`.
 
-### 0.4 Mollie & checkout (Part II — code complete, ops pending)
+### 💳 0.4 Mollie & Checkout (Part II — Code Complete, Ops Pending)
 
 | Item | Status |
 |------|--------|
@@ -61,7 +63,7 @@ _Last updated: May 2026 — see [SPEC_IMPLEMENTATION_ROADMAP_open.md](./SPEC_IMP
 | `CheckoutUseCase`, stock validation, audit `CheckoutStarted` / `PaymentPaid` | ✅ |
 | `Mollie:ApiKey` + public webhook URL + E2E test | ⬜ See roadmap **B.9** — configure after Mollie dev account |
 
-### 0.5 Still pending (from original proposal)
+### ⏳ 0.5 Still Pending (From Original Proposal)
 
 | Feature | Phase | Reference |
 |---------|-------|-----------|
@@ -69,7 +71,7 @@ _Last updated: May 2026 — see [SPEC_IMPLEMENTATION_ROADMAP_open.md](./SPEC_IMP
 | Audit `StockAdjust` badge | 6 | [AUDITS_open.md](./AUDITS_open.md) |
 | Sample data: movements + PO on `abmatic_test` | 1 | §5 |
 
-### 0.6 Stock hub extension — transfer, PO, GRN (Jun/2026)
+### 📦 0.6 Stock Hub Extension — Transfer, PO, GRN (Jun/2026)
 
 | Item | Route / API | Status |
 |------|-------------|--------|

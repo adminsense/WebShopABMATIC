@@ -40,12 +40,17 @@ dotnet run --project WebShopABMATIC/WebShopABMATIC.csproj --launch-profile WebSh
 
 ### Testing
 
-There is **no** dedicated test project in the solution yet. Until one exists:
+Project: **`WebShopABMATIC.Tests`** (xUnit + NSubstitute + FluentAssertions + WebApplicationFactory).
 
-- Smoke = `dotnet build WebShopABMATIC.sln`
-- Manual: store guest cart → checkout login; guest prices / Out of stock; admin `/admin/login` with `StaffUsers`
+```powershell
+dotnet test WebShopABMATIC.sln
+```
 
-Do **not** add `dotnet ef database update` (DB-first).
+- **Unit:** Application use cases (store checkout/webhook/profile, admin product/order/stock/dashboard) + `LegacySignInService` (EF InMemory) + `StoreProductDescription`.
+- **API integration:** login endpoints, Mollie webhook, stock adjustment auth (no live SQL — ports/DbContext replaced in test host).
+- Still useful: manual store guest cart → checkout login; admin `/admin/login` with `StaffUsers`.
+
+Do **not** add `dotnet ef database update` (DB-first). SQL opt-in / bUnit / Playwright = later phases.
 
 ### Hooks (automation — not product rules)
 

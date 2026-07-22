@@ -1,13 +1,15 @@
-﻿# Implementation roadmap — stock, checkout, Mollie & open backlog
+﻿# 🛣️ Implementation Roadmap — Stock, Checkout, Mollie & Open Backlog
 
-![Status](https://img.shields.io/badge/Status-Core%20done%20%2B%20open%20backlog-22c55e?style=flat-square) ![Scope](https://img.shields.io/badge/Scope-0–E%20%2B%20media%20%2B%20alerts-512BD4?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Core%20done%20%2B%20open%20backlog-22c55e?style=flat-square) ![Scope](https://img.shields.io/badge/Scope-0–E%20%2B%20media%20%2B%20alerts-512BD4?style=flat-square) ![Tracker](https://img.shields.io/badge/Type-Delivery%20Tracker-0ea5e9?style=flat-square)
 
-> **Purpose:** Single delivery tracker for WebShopABMATIC — phased checkboxes, open backlog, and **dev-first** priority.  
+**Single delivery tracker for WebShopABMATIC — phased checkboxes and open backlog**
+
+---> **Purpose:** Single delivery tracker for WebShopABMATIC — phased checkboxes, open backlog, and **dev-first** priority.  
 > **Mark ✅ when done · ⬜ when pending · 🔶 partial.**  
 > **Analysis:** [SPEC_STOCK_OPERATIONS_PROPOSAL.md](./SPEC_STOCK_OPERATIONS_PROPOSAL.md)  
 > **Related:** [SPEC_MOLLIE_PAYMENTS_open.md](./SPEC_MOLLIE_PAYMENTS_open.md) · [AMENDMENTS.md](./AMENDMENTS.md) §0 (layout loja) · [DATA_AZUREBLOB.md](./DATA_AZUREBLOB.md)
 
-### Delivery model (owner rule)
+### 🎯 Delivery Model (Owner Rule)
 
 | Track | Goal | When |
 |-------|------|------|
@@ -16,7 +18,7 @@
 
 **Mocks count as ✅ for dev.** **Mollie stays on mock** until the client sends API keys — see [SPEC_MOLLIE_PAYMENTS_open.md](./SPEC_MOLLIE_PAYMENTS_open.md). Agents must not treat real Mollie as current work.
 
-### Master phase map
+### 📊 Master Phase Map
 
 | Phase | Focus | Dev status | Prod go-live |
 |-------|--------|------------|--------------|
@@ -34,7 +36,7 @@
 
 **Historical build order:** **0 → A ∥ B → C → D → …**
 
-### Dev priority — next work (Jul/2026)
+### 🚀 Dev Priority — Next Work (Jul/2026)
 
 1. ~~**S.4**~~ ✅ — server-side required product options on checkout
 2. ~~**E.12**~~ ✅ — [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) refreshed (legacy auth, live catalog, no mock SKUs)
@@ -43,16 +45,16 @@
 **Done recently:** **S.5** freight from ERP; **S.4** server option validation; **E.12** store SPEC sync.  
 **Not in sprint:** real Mollie (**B.9**) until client keys.
 
-### Prod go-live — last (after keys + remaining prod items)
+### 🏭 Prod Go-Live — Last (After Keys + Remaining Prod Items)
 
 1. **B.9** — Mollie real E2E — **waiting on client keys** — [SPEC_MOLLIE_PAYMENTS_open.md](./SPEC_MOLLIE_PAYMENTS_open.md)
 2. **3b** — SMTP / background worker for low-stock queue
 
 ---
 
-## ⬜ Open backlog — dev (finish 100% first)
+## ⏳ Open Backlog — Dev (Finish 100% First)
 
-### Storefront — ERP forms
+### 🛍️ Storefront — ERP Forms
 
 Layout loja ✅. Options / category detail mostly shipped; checklist synced to code (Jul/2026):
 
@@ -66,7 +68,7 @@ Layout loja ✅. Options / category detail mostly shipped; checklist synced to c
 | **S.6** Cart stock blocking UX | ✅ | Stale OOS lines kept; checkout CTA blocked — [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §5.2 |
 | **S.7** Catalog facet filters (pilot) | ✅ | Whitelisted leaf (default Handzenders **54**): Merk + Voorraad + Prijs; ProductProperty when data exists. [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md) · [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.1 |
 
-### Auth — legacy database ✅
+### 🔐 Auth — Legacy Database ✅
 
 | Item | Status | Notes |
 |------|--------|-------|
@@ -75,7 +77,7 @@ Layout loja ✅. Options / category detail mostly shipped; checklist synced to c
 | **A.3** Customer → store | ✅ | `Customers.WebshopLogin` + hash/salt |
 | **A.4** No AspNet Identity | ✅ | Cookie legacy; policies `AdminOrManager` / `CustomerOnly` |
 
-### G — Legacy audit logging ✅
+### 📝 G — Legacy Audit Logging ✅
 
 | Item | Status | Legacy table |
 |------|--------|--------------|
@@ -106,12 +108,12 @@ Optional for minimal webshop; needed for ERP-style inbound stock.
 | **E.10 Admin cancel order** | ✅ | `POST /api/admin/stock/orders/{id}/cancel` + button on `/admin/orders` |
 | **E.11 Status workflow service** | ✅ | `OrderStockWorkflowService` — evaluates `OrderStatus.ReserveStock/AffectsStock` flags |
 
-### Quality
+### ✅ Quality
 
-- ✅ Smoke: `dotnet build WebShopABMATIC.sln` (no dedicated test project yet — `.claude/CLAUDE.md`)
-- ⬜ Automated store/admin regression suite — when a test project is added
+- ✅ Smoke: `dotnet build WebShopABMATIC.sln`
+- ✅ Automated suite: `WebShopABMATIC.Tests` — `dotnet test` (unit store/admin/auth + API WebApplicationFactory). bUnit/Playwright/SQL opt-in later.
 
-### Later (E extras — not MVP)
+### 🔮 Later (E Extras — Not MVP)
 
 - ⬜ **E.4** `AccountingDocument` on payment  
 - ⬜ **E.5** Mollie refunds in admin  
@@ -121,9 +123,9 @@ Optional for minimal webshop; needed for ERP-style inbound stock.
 
 ---
 
-## ⬜ Prod go-live — last (after dev 100%)
+## ⏳ Prod Go-Live — Last (After Dev 100%)
 
-### 3b — Low stock email send (production)
+### 📧 3b — Low Stock Email Send (Production)
 
 | Item | Dev | Prod |
 |------|-----|------|
@@ -135,7 +137,7 @@ Optional for minimal webshop; needed for ERP-style inbound stock.
 
 Email queue rows exist on `abmatic_test` — see [DATA_SUMMARY.md](./DATA_SUMMARY.md).
 
-### B.9 — Mollie E2E
+### 💳 B.9 — Mollie E2E
 
 | Item | Dev | Prod |
 |------|-----|------|
@@ -145,13 +147,13 @@ Email queue rows exist on `abmatic_test` — see [DATA_SUMMARY.md](./DATA_SUMMAR
 
 Do **not** start B.9 until keys are received. Storefront cart/confirmation UX: [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.4 (not duplicated here).
 
-### M.5 — Azure Blob (production) ✅
+### 🖼️ M.5 — Azure Blob (Production) ✅
 
 - ✅ Real Azure Blob storage adapter — [DATA_AZUREBLOB.md](./DATA_AZUREBLOB.md) (container `files`, SAS URLs)
 
 ---
 
-## ✅ Done (summary)
+## ✅ Done (Summary)
 
 | Area | Status |
 |------|--------|
@@ -171,7 +173,7 @@ Do **not** start B.9 until keys are received. Storefront cart/confirmation UX: [
 
 ---
 
-## Phase 0 — Foundation ✅
+## 🏗️ Phase 0 — Foundation ✅
 
 - ✅ **0.1** `ProductPrices` demo rows on `abmatic_test`
 - ✅ **0.2** `PaymentMethods` + `PaymentTerms` on `abmatic_test`
@@ -185,7 +187,7 @@ Do **not** start B.9 until keys are received. Storefront cart/confirmation UX: [
 
 ---
 
-## Phase A — Stock admin (read-only) ✅
+## 📦 Phase A — Stock Admin (Read-Only) ✅
 
 - ✅ **A.1** Hub cards: overview + movement journal
 - ✅ **A.2** `IStockOverviewPort` + `/admin/stock/overview`
@@ -196,7 +198,7 @@ Do **not** start B.9 until keys are received. Storefront cart/confirmation UX: [
 
 ---
 
-## Phase B — Checkout + Mollie
+## 💳 Phase B — Checkout + Mollie
 
 - ✅ **B.1** `ICheckoutPort` + `CheckoutUseCase` + `IStoreOrderRepository`
 - ✅ **B.2** Persist `Order` + `OrderLine` + `OrderAdvancePayment`
