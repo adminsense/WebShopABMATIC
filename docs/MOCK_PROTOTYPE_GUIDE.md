@@ -1,8 +1,10 @@
-﻿# WebShopABMATIC — Admin mock prototype guide
+﻿# 🎨 WebShopABMATIC — Admin Mock Prototype Guide
 
-![Status](https://img.shields.io/badge/Status-Validation%20ready-28a745?style=flat-square) ![Layout](https://img.shields.io/badge/Layout-AB-MATIC%20style-512BD4?style=flat-square) ![Scope](https://img.shields.io/badge/Scope-Admin%20only-0d47a1?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Validation%20ready-28a745?style=flat-square) ![Layout](https://img.shields.io/badge/Layout-AB--MATIC%20style-512BD4?style=flat-square) ![Scope](https://img.shields.io/badge/Scope-Admin%20only-0d47a1?style=flat-square) ![Type](https://img.shields.io/badge/Type-HTML%20Prototype-0ea5e9?style=flat-square)
 
-This document explains the **admin HTML prototype** in `docs/mocks/`, how it maps to the **AB-MATIC reference layout**, and what each **sidebar menu / entity / screen** represents in the real Blazor admin app.
+**Admin HTML prototype guide - how it maps to AB-MATIC reference layout**
+
+---This document explains the **admin HTML prototype** in `docs/mocks/`, how it maps to the **AB-MATIC reference layout**, and what each **sidebar menu / entity / screen** represents in the real Blazor admin app.
 
 > **Scope:** Admin panel only. The storefront (catalog, cart, checkout) is implemented in Blazor — see [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md).
 > **Static HTML ≠ live UI.** Files under `docs/mocks/` are prototypes / conceptual references unless a SPEC says otherwise.
@@ -11,7 +13,7 @@ Visual reference (AB-MATIC admin shell): [adminsenceweb.azurewebsites.net](https
 
 ---
 
-## Prototype files
+## 📁 Prototype Files
 
 | File | Role | Open from |
 |------|------|-----------|
@@ -31,11 +33,11 @@ Legacy aliases (ignore for validation):
 
 ---
 
-## Reference layout — three screen types
+## 🖼️ Reference Layout — Three Screen Types
 
 The admin mock follows the same three-level pattern as the AB-MATIC reference app. Screenshots live in `docs/images/`.
 
-### 1. Main dashboard — `main_screen.png`
+### 🏗️ 1. Main Dashboard — `main_screen.png`
 
 ![Main dashboard](images/main_screen.png)
 
@@ -56,7 +58,7 @@ The admin mock follows the same three-level pattern as the AB-MATIC reference ap
 
 ---
 
-### 2. Sub-menu hub — `menu_screen.png`
+### 📋 2. Sub-menu Hub — `menu_screen.png`
 
 ![Sub-menu hub](images/menu_screen.png)
 
@@ -77,7 +79,7 @@ The admin mock follows the same three-level pattern as the AB-MATIC reference ap
 
 ---
 
-### 3. Internal list & filters — `forms_screen.png`
+### 🗂️ 3. Internal List & Filters — `forms_screen.png`
 
 ![List and filters](images/forms_screen.png)
 
@@ -99,7 +101,7 @@ The admin mock follows the same three-level pattern as the AB-MATIC reference ap
 
 ---
 
-## Navigation flow (admin only)
+## 🧭 Navigation Flow (Admin Only)
 
 ```mermaid
 flowchart TD
@@ -116,7 +118,7 @@ flowchart TD
 
 ---
 
-## Admin shell (shared by all screens)
+## 👥 Admin Shell (Shared by All Screens)
 
 | UI part | Behaviour |
 |---------|-----------|
@@ -133,7 +135,7 @@ Logged-in user in the mock: **Anna Rodriguez** (`StaffUser`, `Admin = true`, `Pr
 
 ---
 
-## Sidebar menus — summary
+## 📊 Sidebar Menus — Summary
 
 | Menu | What it manages | Hub entities |
 |------|-----------------|--------------|
@@ -148,13 +150,13 @@ Logged-in user in the mock: **Anna Rodriguez** (`StaffUser`, `Admin = true`, `Pr
 
 ---
 
-## Entity screens — menu, table, list, form
+## 📦 Entity Screens — Menu, Table, List, Form
 
 Below: one section per entity exposed in the admin mock. **Table** = SQL/EF entity purpose (short). **List** = columns in the mock grid. **Form** = fields shown in the prototype (full forms grow in Blazor).
 
 ---
 
-### Start (dashboard)
+### 🏗️ Start (Dashboard)
 
 **Mock view:** `#view-dashboard` in `mock-admin.html`  
 **Blazor:** `/admin`
@@ -170,7 +172,7 @@ Below: one section per entity exposed in the admin mock. **Table** = SQL/EF enti
 
 ---
 
-### Webshop menu
+### 🛍️ Webshop Menu
 
 #### WebshopStructure
 
@@ -196,7 +198,7 @@ Below: one section per entity exposed in the admin mock. **Table** = SQL/EF enti
 
 ---
 
-### Catalog menu
+### 📚 Catalog Menu
 
 #### Product
 
