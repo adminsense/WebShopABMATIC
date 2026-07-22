@@ -6,7 +6,7 @@
 
 ---
 
-## Mock prototype layout (WebShopABMATIC)
+## 🖼️ Mock Prototype Layout (WebShopABMATIC)
 
 The HTML admin mock in `docs/mock-admin.html` follows the **AB-MATIC** admin shell. Three screen types map to the reference images in `images/`:
 
@@ -364,7 +364,7 @@ What's special:
 
 Before submitting a page, verify:
 
-### Buttons
+### 🔘 Buttons
 - [ ] Back button: `oi-arrow-left` (OpenIconic, NOT `bi-`)
 - [ ] Back button: `btn-outline-secondary btn-sm` (outlined, small)
 - [ ] Grid buttons: `btn-sm btn-primary` and `btn-sm btn-danger` (small)
@@ -372,7 +372,7 @@ Before submitting a page, verify:
 - [ ] All buttons have `title` attribute
 - [ ] Icons use `me-1` or `me-2` spacing
 
-### Forms
+### 📋 Forms
 - [ ] Required fields have `*` in label
 - [ ] Required fields have `@onblur` validation
 - [ ] Required fields have `ValidationFeedbackMessage` component
@@ -381,7 +381,7 @@ Before submitting a page, verify:
 - [ ] Validation errors have specific messages
 - [ ] Buttons disabled during save: `disabled="@IsSaving"`
 
-### Grids
+### 🗂️ Grids
 - [ ] Header: `class="table-dark"`
 - [ ] Rows: `@key="item.Id"` on `<tr>`
 - [ ] Table: `table-responsive` wrapper
@@ -391,7 +391,7 @@ Before submitting a page, verify:
 - [ ] Form header: `<AdminEntityFormHeader>` with EXPORT (CSV/PDF)
 - [ ] `@inject IGridExportService GridExport` + `BuildExportRequest()` on list pages
 
-### Modals
+### 🔲 Modals
 - [ ] Classes: `modal fade show d-block`
 - [ ] Style: `style="background-color: rgba(0,0,0,0.5);" ` (NOT display: block)
 - [ ] Dialog: `modal-dialog-centered`

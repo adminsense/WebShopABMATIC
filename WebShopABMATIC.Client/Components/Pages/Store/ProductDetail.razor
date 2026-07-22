@@ -40,7 +40,9 @@ else
                 <p class="detail-price @(_product.IsOutOfStock || !_product.HasPrice ? "price-on-request text-muted" : "")">
                     @StorePriceFormatter.FormatListPrice(_product.IsOutOfStock, _product.Price)
                 </p>
-                <p class="detail-desc">@_product.Description</p>
+                <p class="detail-desc @(string.IsNullOrWhiteSpace(_product.Description) ? "text-muted" : null)">
+                    @(string.IsNullOrWhiteSpace(_product.Description) ? "No description" : _product.Description)
+                </p>
                 @if (_options.Count > 0)
                 {
                     <StoreProductOptionsForm Options="_options" OnChanged="OnOptionsChanged" />
