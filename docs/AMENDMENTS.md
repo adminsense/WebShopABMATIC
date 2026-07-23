@@ -16,6 +16,8 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 
 ## 📅 Amendments (newest first)
 
+> **2026-07-23 — Test suite phases 4–5 (no Playwright):** Remaining admin use-case units + `StoreCartService` (session store abstraction). SQL opt-in read-only smoke (`Category=SqlIntegration`, env `TEST_SQL_CONNECTION`). bUnit critical pages + smoke render for Store/Admin Razor. Default `dotnet test` green without SQL. E2E browser = manual by owner — Playwright not added. See `.claude/CLAUDE.md` Testing.
+
 > **2026-07-22 — Test project phases 0–3:** Added `WebShopABMATIC.Tests` (xUnit). Unit coverage for checkout, Mollie webhook, registration/profile, description cascade, LegacySignIn, product/order/stock/dashboard use cases. API integration via `WebApplicationFactory` for store/admin login, Mollie webhook, stock adjustment. Run: `dotnet test`. See `.claude/CLAUDE.md` Testing.
 
 > **2026-07-21 — Catalog filters development planning:** Scheduled planning session to plan the development for advanced catalog filters documented in [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md). Current pilot (S.7) covers whitelisted categories only; expansion scope and ERP property admin CRUD to be assessed.
