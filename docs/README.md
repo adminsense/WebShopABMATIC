@@ -10,7 +10,7 @@
 
 > [!IMPORTANT]
 > **Database First (Global Rule):** Live Azure SQL **`abmatic_test`** is the source of truth.  
-> **Never invent** columns, tables, EF migrations, or schema scripts for the ERP — **any** feature. Adapt the app to what already exists (`AGENTS.md`, [SPEC_INFRASTRUCTURE.md](./SPEC_INFRASTRUCTURE.md) §4).
+> **Never invent** columns, tables, EF migrations, or schema scripts for the ERP — **any** feature — **except** when the client explicitly orders a new table and Marco/DBA applies a SQL script (current case: catalog filters → [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md) `ProductAttribuut` / `ProductAttribuutItem`). Still **no** `Migrate()` / `EnsureCreated()` from the app (`AGENTS.md`, [SPEC_INFRASTRUCTURE.md](./SPEC_INFRASTRUCTURE.md) §4).
 
 ---
 
@@ -24,6 +24,7 @@
 | Dated runtime / UI amendments | [AMENDMENTS.md](./AMENDMENTS.md) |
 | Mollie go-live checklist (provider ops + ✅/⬜) | [SPEC_MOLLIE_PAYMENTS_open.md](./SPEC_MOLLIE_PAYMENTS_open.md) — **mock required until client keys**; cart UX → [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) |
 | Delivery roadmap (spec + ✅/⬜) | [SPEC_IMPLEMENTATION_ROADMAP_open.md](./SPEC_IMPLEMENTATION_ROADMAP_open.md) |
+| Catalog attribute filters (ProductAttribuut) | [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md) · PT notes [PROVISORIO_ptb.md](./PROVISORIO_ptb.md) |
 
 ## 📖 Reference (on demand)
 
@@ -43,7 +44,7 @@
 
 | Path | Contents |
 |------|----------|
-| `docs/mocks/` | Static HTML prototypes — **not** live UI unless a SPEC says so. Includes `mock-admin.html`, `mock-payments.html` (conceptual Mollie), `mock-store-filters.html` (+ `mock-store.css` / standalone) |
+| `docs/mocks/` | Static HTML prototypes — **not** live UI unless a SPEC says so. Includes `mock-admin.html`, `mock-payments.html` (conceptual Mollie). `mock-store-filters*.html` = **obsolete Handzenders/Coolblue pilot** — illustrative only; target filters = [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md) |
 | `docs/images/` | Screenshots (some illustrative / from mocks) |
 | `docs/archive/` | Bulky / closed notes (keep SPECs lean) |
 | `.cursor/skills/` | Project Agent Skills (e.g. `docs-governance`) — workflows, not product truth |

@@ -16,6 +16,10 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 
 ## 📅 Amendments (newest first)
 
+> **2026-07-23 — Catalog filters spec reset (docs only):** Client model replaces S.7 pilot. Target: Dutch tables `ProductAttribuut` + `ProductAttribuutItem`, admin values per product, store leaf facets from distinct `Waarde`, **layout unchanged**. Obsolete: whitelist 54, Merk/Voorraad/Prijs, `ProductProperty` facets, Coolblue analysis. Code cutover later. See [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md), [PROVISORIO_ptb.md](./PROVISORIO_ptb.md).
+
+> **2026-07-23 — Test layout: one file per SUT:** Reorganized `WebShopABMATIC.Tests` so each test file mirrors the type under test (`ProductDetailTests` ↔ `ProductDetail.razor`, `CheckoutUseCaseTests` ↔ `CheckoutUseCase`, etc.). bUnit under `Bunit/Store|Admin|Components`; unit under `Unit/...`. Shared bases/doubles only — no mega `PageSmoke`/`RemainingAdmin` bags. See `.claude/CLAUDE.md` Testing.
+
 > **2026-07-23 — Test suite phases 4–5 (no Playwright):** Remaining admin use-case units + `StoreCartService` (session store abstraction). SQL opt-in read-only smoke (`Category=SqlIntegration`, env `TEST_SQL_CONNECTION`). bUnit critical pages + smoke render for Store/Admin Razor. Default `dotnet test` green without SQL. E2E browser = manual by owner — Playwright not added. See `.claude/CLAUDE.md` Testing.
 
 > **2026-07-22 — Test project phases 0–3:** Added `WebShopABMATIC.Tests` (xUnit). Unit coverage for checkout, Mollie webhook, registration/profile, description cascade, LegacySignIn, product/order/stock/dashboard use cases. API integration via `WebApplicationFactory` for store/admin login, Mollie webhook, stock adjustment. Run: `dotnet test`. See `.claude/CLAUDE.md` Testing.

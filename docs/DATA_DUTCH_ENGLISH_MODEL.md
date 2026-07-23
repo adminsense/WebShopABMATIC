@@ -312,8 +312,10 @@ Grouped by English schema. SQL table names are plural; C# entity names are singu
 | `ProductPrijzenVerkoopKorting` | `ProductPriceSalesDiscounts` | `ProductPriceSalesDiscount` |
 | `ProductProductionGroup` | `ProductProductionGroup` | `ProductProductionGroup` |
 | `ProductProductionsGroepen` | `ProductProductionGroupLinks` | `ProductProductionGroupLink` |
-| `ProductPropertieItem` | `ProductPropertyItems` | `ProductPropertyItem` |
-| `ProductProperty` | `ProductProperty` | `ProductProperty` |
+| `ProductAttribuut` | `ProductAttributes` | `ProductAttribute` | **New (catalog filters)** — dictionary; see [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md) |
+| `ProductAttribuutItem` | `ProductAttributeValues` | `ProductAttributeValue` | **New (catalog filters)** — per-product `Waarde`; `ProductProdId` → `ProductId` |
+| `ProductPropertieItem` | `ProductPropertyItems` | `ProductPropertyItem` | Legacy ERP property sheet — **not** used for store catalog filters |
+| `ProductProperty` | `ProductProperty` | `ProductProperty` | Legacy — **not** used for store catalog filters |
 | `ProductStaffel` | `ProductQuantityTiers` | `ProductQuantityTier` |
 | `ProductStockLocatie` | `ProductStockLocations` | `ProductStockLocation` |
 | `ProductStructuur` | `ProductStructures` | `ProductStructure` |
@@ -409,6 +411,8 @@ Grouped by English schema. SQL table names are plural; C# entity names are singu
 | `AangemaaktDoor` | `CreatedBy` | |
 | `AangepastOp` | `ModifiedAt` | |
 | `Volgorde` | `SortOrder` | |
+| `Waarde` | `Value` | e.g. `ProductAttribuutItem.Waarde` |
+| `NaamEn` / `NaamNl` / `NaamFr` | `NameEn` / `NameNl` / `NameFr` | Attribute dictionary labels |
 | `Bus` | `Box` | Address box number |
 | `Huisnr` | `HouseNumber` | |
 | `Btwnr` / `Btw` | `VatNumber` / `Vat` | |

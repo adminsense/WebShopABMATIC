@@ -40,17 +40,23 @@ dotnet run --project WebShopABMATIC/WebShopABMATIC.csproj --launch-profile WebSh
 
 ### Testing
 
-Project: **`WebShopABMATIC.Tests`** (xUnit + NSubstitute + FluentAssertions + WebApplicationFactory).
+Project: **`WebShopABMATIC.Tests`** (xUnit + NSubstitute + FluentAssertions + WebApplicationFactory + **bUnit**).
 
 ```powershell
 dotnet test WebShopABMATIC.sln
+# Optional read-only SQL smoke (skipped unless set):
+$env:TEST_SQL_CONNECTION = "<Azure SQL connection string to abmatic_test>"
+dotnet test WebShopABMATIC.sln --filter "Category=SqlIntegration"
 ```
 
-- **Unit:** Application use cases (store checkout/webhook/profile, admin product/order/stock/dashboard) + `LegacySignInService` (EF InMemory) + `StoreProductDescription`.
+- **Unit:** Application use cases (store checkout/webhook/profile/cart, admin CRUD + stock ops) + `LegacySignInService` (EF InMemory) + `StoreProductDescription` + `StoreCartService` (in-memory session store).
 - **API integration:** login endpoints, Mollie webhook, stock adjustment auth (no live SQL — ports/DbContext replaced in test host).
-- Still useful: manual store guest cart → checkout login; admin `/admin/login` with `StaffUsers`.
+- **SQL opt-in:** trait `Category=SqlIntegration` — **SELECT-only** smoke (`Products`, `StaffUsers`, `PaymentMethods`). No-ops (pass) when `TEST_SQL_CONNECTION` / `ConnectionStrings__connWebShopABMATIC` is unset. Never `EnsureCreated` / migrations / writes.
+- **bUnit:** one test class per `.razor` / component under `Bunit/Store`, `Bunit/Admin`, `Bunit/Components` (name mirrors the SUT, e.g. `ProductDetailTests` ↔ `ProductDetail.razor`). Shared fakes: `BunitStoreTestBase` / `AdminPageTestBase`.
+- **Naming rule:** one test file per SUT — match the production type name (`CheckoutUseCaseTests`, `StoreCartServiceTests`, `CartTests`, …). Do not pile unrelated pages/use cases into a single file.
+- Still useful: **manual** browser checks (guest cart → checkout login; admin `/admin/login`). **No Playwright** — E2E browser is owner manual validation.
 
-Do **not** add `dotnet ef database update` (DB-first). SQL opt-in / bUnit / Playwright = later phases.
+Do **not** add `dotnet ef database update` (DB-first).
 
 ### Hooks (automation — not product rules)
 

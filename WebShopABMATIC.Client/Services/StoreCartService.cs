@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using WebShopABMATIC.Application.Ports;
 
 namespace WebShopABMATIC.Web.Services;
@@ -13,7 +12,7 @@ public sealed class StoreCartService
     private const string GuestSessionKey = "store-cart-v1:guest-session";
 
     private readonly IStoreCatalogPort _catalog;
-    private readonly ProtectedSessionStorage _session;
+    private readonly IStoreCartSessionStore _session;
     private readonly List<CartLine> _lines = [];
     private readonly SemaphoreSlim _loadGate = new(1, 1);
 
@@ -21,7 +20,7 @@ public sealed class StoreCartService
     private bool _loaded;
     private int? _customerId;
 
-    public StoreCartService(IStoreCatalogPort catalog, ProtectedSessionStorage session)
+    public StoreCartService(IStoreCatalogPort catalog, IStoreCartSessionStore session)
     {
         _catalog = catalog;
         _session = session;
@@ -292,10 +291,10 @@ public sealed class StoreCartService
     {
         try
         {
-            var result = await _session.GetAsync<List<CartLine>>(key);
-            if (result.Success && result.Value is { Count: > 0 })
+            var lines = await _session.GetAsync<List<CartLine>>(key);
+            if (lines is { Count: > 0 })
             {
-                return result.Value;
+                return lines;
             }
         }
         catch (InvalidOperationException)

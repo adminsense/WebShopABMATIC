@@ -181,7 +181,7 @@ The store does not own master data; it **reads** configurations maintained in th
 |---------|-------------|-------------------|
 | **Product list** | Grid of products with image, name, price | Only `ShowOnWebshop = true` |
 | **Category tree** | Left sidebar (`ProductStructure` / optional `WebshopStructure`) | Leaf nodes show product grid; parents show child tiles (CD4) |
-| **Facet filters (pilot)** | Coolblue-style sidebar on **whitelisted leaf** categories only | `StoreCatalogFilters:EnabledCategoryIds` (default **54** Handzenders). Merk (`Manufacturer`), Voorraad, Prijs; `ProductProperty` groups when ERP rows exist. Guests may browse and filter (no login). See [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md). **Not** `ProductOption`. |
+| **Facet filters (target)** | Checkbox sidebar on **leaf** categories from product attributes | Data: `[Products].[ProductAttribuut]` + `[Products].[ProductAttribuutItem]` (`Waarde` per product). Distinct values + counts for products in the leaf. **Layout unchanged** (`Catalog.razor` + facet sidebar). Guests may browse/filter. See [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md). **Not** `ProductOption`. **Not** legacy `ProductProperty` facets. *Runtime may still run obsolete S.7 pilot until D2 code cutover.* |
 | **Search** | Header modal | Server `SearchProductsAsync` (name prefix) |
 | **Sort** | As offered in UI | Optional; not a separate server sort API yet |
 
@@ -353,7 +353,7 @@ flowchart LR
 
 | Capability | Guest | Logged-in customer |
 |------------|-------|-------------------|
-| Browse catalog | ✅ (including facet pilot leaves) | ✅ |
+| Browse catalog | ✅ (including attribute facets when data exists — target model) | ✅ |
 | View prices | **List price** (or Price on request / Out of stock) | List + customer discounts |
 | Add to cart | ✅ session storage (browser session) | ✅ same session storage while logged in |
 | Change qty / remove lines | ✅ | ✅ |
