@@ -47,8 +47,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-        // Store login uses IsPersistent=false → session cookie; idle = sliding 15 minutes.
-        options.ExpireTimeSpan = TimeSpan.FromMinutes(15);
+        options.Cookie.IsEssential = true;
+        // Store login uses IsPersistent=false → session cookie (no Max-Age); ticket idle = sliding 15 minutes.
+        options.ExpireTimeSpan = WebShopABMATIC.Infrastructure.Auth.LegacyCookieAuthentication.SessionIdleTimeout;
         options.SlidingExpiration = true;
         options.Events = new CookieAuthenticationEvents
         {
@@ -118,8 +119,8 @@ builder.Services.AddSession(options =>
     options.Cookie.SameSite = SameSiteMode.Lax;
     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 });
-builder.Services.AddScoped<Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedLocalStorage>();
 builder.Services.AddScoped<Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedSessionStorage>();
+builder.Services.AddScoped<IStoreCartSessionStore, ProtectedStoreCartSessionStore>();
 builder.Services.AddScoped<StoreCartService>();
 builder.Services.AddScoped<IGridExportService, GridExportService>();
 
@@ -236,3 +237,6 @@ static string ImageContentType(byte[] bytes)
     }
     return "application/octet-stream";
 }
+
+public partial class Program;
+
