@@ -47,6 +47,26 @@ public abstract class AdminPageTestBase : BunitStoreTestBase
         Services.AddSingleton(Substitute.For<ICustomerProductDiscountAdminPort>());
         Services.AddSingleton(Substitute.For<IDeliveryTypeAdminPort>());
         Services.AddSingleton(Substitute.For<IPaymentMethodAdminPort>());
+        var productAttributeAdmin = Substitute.For<IProductAttributeAdminPort>();
+        productAttributeAdmin.GetAttributesAsync(Arg.Any<Application.Admin.ProductAttributes.ProductAttributeListFilter>(), Arg.Any<CancellationToken>())
+            .Returns(new PagedResult<Application.Admin.ProductAttributes.ProductAttributeDto>
+            {
+                Items = [],
+                TotalCount = 0,
+                Page = 1,
+                PageSize = 20
+            });
+        Services.AddSingleton(productAttributeAdmin);
+        var productAttributeAssignment = Substitute.For<IProductAttributeAssignmentAdminPort>();
+        productAttributeAssignment.SearchProductsAsync(Arg.Any<string?>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+            .Returns(new PagedResult<Application.Admin.ProductAttributes.ProductAttributeAssignmentProductDto>
+            {
+                Items = [],
+                TotalCount = 0,
+                Page = 1,
+                PageSize = 20
+            });
+        Services.AddSingleton(productAttributeAssignment);
         Services.AddSingleton(Substitute.For<IOrderStatusAdminPort>());
         Services.AddSingleton(Substitute.For<IVatTypeAdminPort>());
         Services.AddSingleton(Substitute.For<IUserGroupAdminPort>());
