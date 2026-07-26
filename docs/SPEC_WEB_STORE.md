@@ -181,7 +181,7 @@ The store does not own master data; it **reads** configurations maintained in th
 |---------|-------------|-------------------|
 | **Product list** | Grid of products with image, name, price | Only `ShowOnWebshop = true` |
 | **Category tree** | Left sidebar (`ProductStructure` / optional `WebshopStructure`) | Leaf nodes show product grid; parents show child tiles (CD4) |
-| **Facet filters (target)** | Checkbox sidebar on **leaf** categories from product attributes | Data: `[Products].[ProductAttribuut]` + `[Products].[ProductAttribuutItem]` (`Waarde` per product). Distinct values + counts for products in the leaf. **Layout unchanged** (`Catalog.razor` + facet sidebar). Guests may browse/filter. See [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md). **Not** `ProductOption`. **Not** legacy `ProductProperty` facets. *Runtime may still run obsolete S.7 pilot until D2 code cutover.* |
+| **Facet filters** | Checkbox sidebar on **leaf** categories from product attributes | Data: `[Products].[ProductAttribuut]` + `[Products].[ProductAttribuutItem]` (`Waarde` per product). Distinct values + counts for products in the leaf. Enabled when the leaf has attribute data. **Layout unchanged** (`Catalog.razor` + `StoreFacetSidebar`). Query: `attr=id:value|…`. Guests may browse/filter. See [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md). **Not** `ProductOption`. **Not** legacy `ProductProperty`. |
 | **Search** | Header modal | Server `SearchProductsAsync` (name prefix) |
 | **Sort** | As offered in UI | Optional; not a separate server sort API yet |
 
