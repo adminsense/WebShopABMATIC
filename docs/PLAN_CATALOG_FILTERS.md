@@ -1,10 +1,10 @@
 # Catalog filters — ProductAttribuut (client model)
 
-![Status](https://img.shields.io/badge/Status-Spec%20agreed%20docs%20only-0ea5e9?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Implemented-28a745?style=flat-square)
 ![Scope](https://img.shields.io/badge/Scope-Store%20+%20Admin-512BD4?style=flat-square)
 
 **Canonical working spec for catalog attribute filters.**  
-Runtime code for the old S.7 pilot still exists until implementation; **this document is the target truth** — implement against it, then delete the pilot.
+S.7 pilot removed. Runtime uses `ProductAttribuut` / `ProductAttribuutItem` only. Apply SQL script on `abmatic_test` before first use.
 
 ---
 
@@ -20,7 +20,7 @@ Runtime code for the old S.7 pilot still exists until implementation; **this doc
 
 **Do not use** for these filters: `ProductOption` (checkout), legacy `ProductProperty` / `ProductPropertieItem` (old ERP property sheet — not this feature).
 
-**Replaces** the S.7 pilot entirely (Merk / Voorraad / Prijs / `ProductProperty` facets / `StoreCatalogFilters` whitelist). That pilot is obsolete for product intent; code removal is a later implementation step.
+**Replaces** the S.7 pilot entirely (Merk / Voorraad / Prijs / `ProductProperty` facets / `StoreCatalogFilters` whitelist). Pilot code has been deleted.
 
 ---
 
@@ -82,8 +82,8 @@ DE-PARA also in [DATA_DUTCH_ENGLISH_MODEL.md](./DATA_DUTCH_ENGLISH_MODEL.md).
 
 ### 4.1 Admin
 
-1. Attribute dictionary page — list/edit the 18 (and future) `ProductAttribuut` rows.  
-2. Per product — pick an attribute, enter `Waarde`, save; update/remove later.  
+1. **`/admin/attributes`** — dictionary CRUD for `ProductAttribuut` (seeded 18 + future rows).  
+2. **`/admin/product-attributes`** — dedicated assignment: search `[Products].[Product]` by **NameNl / NameEn / NameFr** (+ part number / EAN), select `ProdId`, then add/edit/delete `Waarde` rows. Deep-link: `/admin/product-attributes/{ProductId}`. Optional shortcut from Product list.  
 3. One product may have many attributes; values are free text (distinct facet keys = exact `Waarde` strings).
 
 ### 4.2 Store
@@ -103,8 +103,8 @@ Catalog.razor + StoreFacetSidebar (layout kept)
   → StoreCatalogService
   → ProductAttribuut / ProductAttribuutItem
 
-Admin pages
-  → IProductAttributeAdminPort (names TBD at implement)
+/admin/attributes → IProductAttributeAdminPort
+/admin/product-attributes → IProductAttributeAssignmentAdminPort
   → repositories → same tables
 ```
 
@@ -112,16 +112,16 @@ No `DbContext` in Razor.
 
 ---
 
-## 5. Delivery phases (implementation — not started in this docs-only pass)
+## 5. Delivery phases
 
 | Phase | Deliverable | Status |
 |-------|-------------|--------|
-| **D0 — Docs** | This PLAN + SPEC/AMENDMENTS/DATA sync | ✅ This pass |
-| **D1 — SQL + EF** | Script + seed 18 + ModelBuilder map | ⬜ |
-| **D2 — Delete pilot** | Remove S.7 filter code / `StoreCatalogFilters` / ProductProperty catalog facets | ⬜ |
-| **D3 — Admin** | Attribute list + per-product values | ⬜ |
-| **D4 — Store** | Wire facets to `ProductAttribuutItem` (layout unchanged) | ⬜ |
-| **D5 — Tests** | One test file per SUT | ⬜ |
+| **D0 — Docs** | This PLAN + SPEC/AMENDMENTS/DATA sync | ✅ |
+| **D1 — SQL + EF** | `scripts/ProductAttribuut_create_and_seed.sql` + ModelBuilder map | ✅ (DBA must run script on `abmatic_test`) |
+| **D2 — Delete pilot** | Removed S.7 filter code / `StoreCatalogFilters` / ProductProperty catalog facets | ✅ |
+| **D3 — Admin** | `/admin/attributes` + `/admin/product-attributes` | ✅ |
+| **D4 — Store** | Facets from `ProductAttribuutItem` (layout unchanged) | ✅ |
+| **D5 — Tests** | One test file per SUT (unit + bUnit) | ✅ |
 
 ---
 
