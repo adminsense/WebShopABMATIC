@@ -1,0 +1,12 @@
+# CLAUDE.local.md — personal only (not committed)
+
+Copy this file to `CLAUDE.local.md` in the **repo root** and adjust.  
+`CLAUDE.local.md` is gitignored.
+
+## Examples (no secrets)
+
+- Preferred local URL: `https://localhost:44357`
+- Preferred staff login name for manual tests: `(from StaffUsers — do not paste passwords here)`
+- Notes only you care about (editor, temp flags)
+
+Do not put connection strings, API keys, or passwords in this file either — use User Secrets / Azure Configuration.
