@@ -165,14 +165,9 @@
     [SupplyParameterFromQuery(Name = "q")]
     public string? SearchQuery { get; set; }
 
-    [SupplyParameterFromQuery(Name = "merk")]
-    public string? MerkQuery { get; set; }
-
-    [SupplyParameterFromQuery(Name = "voorraad")]
-    public string? VoorraadQuery { get; set; }
-
-    [SupplyParameterFromQuery(Name = "prijs")]
-    public string? PrijsQuery { get; set; }
+    /// <summary>Encoded attribute filters: <c>id:value|id:value</c> (values URI-decoded).</summary>
+    [SupplyParameterFromQuery(Name = "attr")]
+    public string? AttrQuery { get; set; }
 
     protected override async Task OnParametersSetAsync() => await LoadAsync();
 
@@ -282,33 +277,49 @@
 
     private StoreCatalogFilterState ParseFiltersFromQuery()
     {
-        var manufacturerIds = new List<int>();
-        var includeUnknown = false;
-        foreach (var part in SplitCsv(MerkQuery))
+        var map = new Dictionary<int, List<string>>();
+        if (!string.IsNullOrWhiteSpace(AttrQuery))
         {
-            if (string.Equals(part, "none", StringComparison.OrdinalIgnoreCase))
+            foreach (var pair in AttrQuery.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
-                includeUnknown = true;
-            }
-            else if (int.TryParse(part, out var id) && id > 0)
-            {
-                manufacturerIds.Add(id);
+                var sep = pair.IndexOf(':');
+                if (sep <= 0)
+                {
+                    continue;
+                }
+
+                if (!int.TryParse(pair[..sep], out var attributeId) || attributeId <= 0)
+                {
+                    continue;
+                }
+
+                var rawValue = pair[(sep + 1)..];
+                if (string.IsNullOrWhiteSpace(rawValue))
+                {
+                    continue;
+                }
+
+                var value = Uri.UnescapeDataString(rawValue);
+                if (!map.TryGetValue(attributeId, out var list))
+                {
+                    list = [];
+                    map[attributeId] = list;
+                }
+
+                if (!list.Contains(value, StringComparer.OrdinalIgnoreCase))
+                {
+                    list.Add(value);
+                }
             }
         }
 
         return new StoreCatalogFilterState
         {
-            ManufacturerIds = manufacturerIds,
-            IncludeUnknownManufacturer = includeUnknown,
-            StockKeys = SplitCsv(VoorraadQuery),
-            PriceKeys = SplitCsv(PrijsQuery)
+            AttributeValues = map.ToDictionary(
+                kv => kv.Key,
+                IReadOnlyList<string> (kv) => kv.Value)
         };
     }
-
-    private static IReadOnlyList<string> SplitCsv(string? raw) =>
-        string.IsNullOrWhiteSpace(raw)
-            ? []
-            : raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
     private Task OnFacetToggleAsync((string GroupKey, string Value, bool Selected) change)
     {
@@ -323,103 +334,20 @@
         string value,
         bool selected)
     {
-        if (string.Equals(groupKey, "manufacturer", StringComparison.OrdinalIgnoreCase))
+        if (!groupKey.StartsWith("attr:", StringComparison.OrdinalIgnoreCase)
+            || !int.TryParse(groupKey["attr:".Length..], out var attributeId)
+            || attributeId <= 0)
         {
-            var ids = current.ManufacturerIds.ToList();
-            var includeUnknown = current.IncludeUnknownManufacturer;
-            if (string.Equals(value, "none", StringComparison.OrdinalIgnoreCase))
-            {
-                includeUnknown = selected;
-            }
-            else if (int.TryParse(value, out var id))
-            {
-                if (selected)
-                {
-                    if (!ids.Contains(id))
-                    {
-                        ids.Add(id);
-                    }
-                }
-                else
-                {
-                    ids.Remove(id);
-                }
-            }
-
-            return new StoreCatalogFilterState
-            {
-                ManufacturerIds = ids,
-                IncludeUnknownManufacturer = includeUnknown,
-                StockKeys = current.StockKeys,
-                PriceKeys = current.PriceKeys,
-                PropertyValues = current.PropertyValues
-            };
+            return current;
         }
 
-        if (string.Equals(groupKey, "stock", StringComparison.OrdinalIgnoreCase))
+        var map = current.AttributeValues.ToDictionary(kv => kv.Key, kv => kv.Value.ToList());
+        if (!map.TryGetValue(attributeId, out var list))
         {
-            return new StoreCatalogFilterState
-            {
-                ManufacturerIds = current.ManufacturerIds,
-                IncludeUnknownManufacturer = current.IncludeUnknownManufacturer,
-                StockKeys = ToggleKey(current.StockKeys, value, selected),
-                PriceKeys = current.PriceKeys,
-                PropertyValues = current.PropertyValues
-            };
+            list = [];
+            map[attributeId] = list;
         }
 
-        if (string.Equals(groupKey, "price", StringComparison.OrdinalIgnoreCase))
-        {
-            return new StoreCatalogFilterState
-            {
-                ManufacturerIds = current.ManufacturerIds,
-                IncludeUnknownManufacturer = current.IncludeUnknownManufacturer,
-                StockKeys = current.StockKeys,
-                PriceKeys = ToggleKey(current.PriceKeys, value, selected),
-                PropertyValues = current.PropertyValues
-            };
-        }
-
-        if (groupKey.StartsWith("property:", StringComparison.OrdinalIgnoreCase)
-            && int.TryParse(groupKey["property:".Length..], out var propertyId))
-        {
-            var map = current.PropertyValues.ToDictionary(kv => kv.Key, kv => kv.Value.ToList());
-            if (!map.TryGetValue(propertyId, out var list))
-            {
-                list = [];
-                map[propertyId] = list;
-            }
-
-            if (selected)
-            {
-                if (!list.Contains(value, StringComparer.OrdinalIgnoreCase))
-                {
-                    list.Add(value);
-                }
-            }
-            else
-            {
-                list.RemoveAll(v => string.Equals(v, value, StringComparison.OrdinalIgnoreCase));
-            }
-
-            return new StoreCatalogFilterState
-            {
-                ManufacturerIds = current.ManufacturerIds,
-                IncludeUnknownManufacturer = current.IncludeUnknownManufacturer,
-                StockKeys = current.StockKeys,
-                PriceKeys = current.PriceKeys,
-                PropertyValues = map.ToDictionary(
-                    kv => kv.Key,
-                    IReadOnlyList<string> (kv) => kv.Value)
-            };
-        }
-
-        return current;
-    }
-
-    private static IReadOnlyList<string> ToggleKey(IReadOnlyList<string> keys, string value, bool selected)
-    {
-        var list = keys.ToList();
         if (selected)
         {
             if (!list.Contains(value, StringComparer.OrdinalIgnoreCase))
@@ -429,10 +357,20 @@
         }
         else
         {
-            list.RemoveAll(k => string.Equals(k, value, StringComparison.OrdinalIgnoreCase));
+            list.RemoveAll(v => string.Equals(v, value, StringComparison.OrdinalIgnoreCase));
         }
 
-        return list;
+        if (list.Count == 0)
+        {
+            map.Remove(attributeId);
+        }
+
+        return new StoreCatalogFilterState
+        {
+            AttributeValues = map.ToDictionary(
+                kv => kv.Key,
+                IReadOnlyList<string> (kv) => kv.Value)
+        };
     }
 
     private void NavigateWithFilters(StoreCatalogFilterState state)
@@ -443,26 +381,12 @@
         }
 
         var qs = new List<string> { $"categoryId={categoryId}" };
-        var merk = new List<string>();
-        if (state.IncludeUnknownManufacturer)
+        var pairs = state.AttributeValues
+            .SelectMany(kv => kv.Value.Select(v => $"{kv.Key}:{Uri.EscapeDataString(v)}"))
+            .ToList();
+        if (pairs.Count > 0)
         {
-            merk.Add("none");
-        }
-
-        merk.AddRange(state.ManufacturerIds.Select(id => id.ToString()));
-        if (merk.Count > 0)
-        {
-            qs.Add($"merk={Uri.EscapeDataString(string.Join(',', merk))}");
-        }
-
-        if (state.StockKeys.Count > 0)
-        {
-            qs.Add($"voorraad={Uri.EscapeDataString(string.Join(',', state.StockKeys))}");
-        }
-
-        if (state.PriceKeys.Count > 0)
-        {
-            qs.Add($"prijs={Uri.EscapeDataString(string.Join(',', state.PriceKeys))}");
+            qs.Add($"attr={string.Join('|', pairs)}");
         }
 
         Navigation.NavigateTo("/?" + string.Join('&', qs));

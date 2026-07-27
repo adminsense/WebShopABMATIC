@@ -451,6 +451,8 @@ Column mappings are maintained in `WebShopABMATICModelBuilder` (fluent EF). Hist
 
 Staff bit flags (`Admin`, `Bestellingen`, `Productie`, …) map to cookie **roles**: `Admin`, `Manager`, `Customer` (store only).
 
+Staff ↔ group: `Instellingen.User.UsrGroepId` → `StaffUser.UserGroupId` → `[Instellingen].[UsrGroep]` (`UserGroup`). Admin UI: `/admin/staff-users` (password + group + Admin/Manager) and `/admin/user-groups`. Self-service profile does not edit group/flags.
+
 ---
 
 
