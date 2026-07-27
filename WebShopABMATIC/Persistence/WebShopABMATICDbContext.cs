@@ -106,6 +106,9 @@ public class WebShopABMATICDbContext : DbContext
     public DbSet<ProductProductionGroupLink> ProductProductionGroupLinks { get; set; } = null!;
     public DbSet<ProductProperty> ProductProperties { get; set; } = null!;
     public DbSet<ProductPropertyItem> ProductPropertyItems { get; set; } = null!;
+    public DbSet<ProductAttribute> ProductAttributes { get; set; } = null!;
+    public DbSet<ProductAttributeValue> ProductAttributeValues { get; set; } = null!;
+
     public DbSet<ProductPurchaseDiscount> ProductPurchaseDiscounts { get; set; } = null!;
     public DbSet<ProductQuantityTier> ProductQuantityTiers { get; set; } = null!;
     public DbSet<ProductStockLocation> ProductStockLocations { get; set; } = null!;
