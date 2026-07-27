@@ -1,8 +1,8 @@
-﻿> [!NOTE]
+> [!NOTE]
 > **Archived 2026-07-14.** Historical store-layout migration notes. Living amendments: [../AMENDMENTS.md](../AMENDMENTS.md). Docs root: [../README.md](../README.md).
 # WebShop — Migração de layout da loja
 
-![Status](https://img.shields.io/badge/Status-Fases%20B–D%20implementadas-28a745?style=flat-square) ![Referência](https://img.shields.io/badge/Referência-adminsenceweb-512BD4?style=flat-square) ![Idioma](https://img.shields.io/badge/Loja-English-0dcaf0?style=flat-square)
+<p style="display:flex;flex-wrap:nowrap;gap:0.35rem;align-items:center;overflow-x:auto;margin:0.5rem 0 0;"><img alt="Status" src="https://img.shields.io/badge/Status-Fases%20B–D%20implementadas-28a745?style=flat-square" /><img alt="Refer&#234;ncia" src="https://img.shields.io/badge/Referência-adminsenceweb-512BD4?style=flat-square" /><img alt="Idioma" src="https://img.shields.io/badge/Loja-English-0dcaf0?style=flat-square" /></p>
 
 > [!IMPORTANT]
 > **Resumo:** Migrar o **layout da loja** para ficar igual à referência que o cliente aprovou: **[https://adminsenceweb.azurewebsites.net/](https://adminsenceweb.azurewebsites.net/)**. Mantém-se a arquitectura hexagonal (`Application` → ports → `Infrastructure`); mudam UI/CSS da webstore e contratos de catálogo.
