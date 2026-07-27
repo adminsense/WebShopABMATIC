@@ -602,7 +602,7 @@ All implementations support:
 | Element | Component | Location |
 |---------|-----------|----------|
 | EXPORT button | `<AdminEntityFormHeader>` → `<AdminExportDropdown>` | Top-right of **form** card header |
-| Grid search | `<AdminGridSearch>` | Grid card toolbar, full width |
+| Grid search | `<AdminGridSearch>` | Toolbar full width; type ≥3 chars (debounce) or lupa/Enter; 0 matches = empty grid |
 
 **Registration:** `Program.cs` → `services.AddScoped<IGridExportService, GridExportService>();`  
 **Script:** `App.razor` → `<script src="js/admin-export.js"></script>`
@@ -1773,7 +1773,8 @@ All implementations support:
   □ IGridExportService injected; BuildExportRequest matches grid columns
   □ Export disabled when grid loading or empty
   □ Grid toolbar: AdminGridSearch full width (not small input)
-  □ Enter key applies search; _searchDraft → _filter.Search
+  □ Type ≥3 chars auto-searches (debounce); clear (0) reloads all; lupa clickable; Enter works
+  □ ApplySearch: _searchDraft → _filter.Search; 0 matches shows empty grid
 
 □ FORM BUTTONS
   □ Submit: primary color, check icon

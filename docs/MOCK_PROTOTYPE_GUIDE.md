@@ -64,7 +64,7 @@ The admin mock follows the same three-level pattern as the AB-MATIC reference ap
 
 **What it shows (reference):** **Back to start**, page title + subtitle, and a **grid of entity cards**. Each card has a coloured icon, title, short description, and a full-width **“X form”** button.
 
-**WebShop mock equivalent:** `docs/mocks/mock-admin.html` → view `#view-hub` (sidebar items **Webshop**, **Catalog**, **Customers**, **Sales**, **Stock**, **Settings**, **My profile**).
+**WebShop mock equivalent:** `docs/mocks/mock-admin.html` → view `#view-hub` (sidebar items **Webshop**, **Catalog**, **Customers**, **Sales**, **Stock**, **Settings**).
 
 | Reference element | Mock implementation |
 |-------------------|---------------------|
@@ -125,7 +125,6 @@ flowchart TD
 | **Sidebar** | Fixed 240px; Open Iconic icons; active item highlighted |
 | **Start** | Dashboard portfolios |
 | **Webshop … Settings** | Hub pages with entity cards |
-| **My profile** | Staff profile shortcut |
 | **Top bar** | Logged-in staff name + **Logout** |
 | **Footer** | Today’s date + version string |
 
@@ -146,7 +145,6 @@ Logged-in user in the mock: **Anna Rodriguez** (`StaffUser`, `Admin = true`, `Pr
 | **Sales** | Orders and fulfilment setup | `Order` (+ `OrderLine`), `OrderStatus`, `DeliveryType` |
 | **Stock** | Warehouses and per-location quantities | `ProductStockLocation`, `StockLocation` |
 | **Settings** | Payments, staff, VAT | `PaymentMethod`, `StaffUser`, `UserGroup`, `VatType` |
-| **My profile** | Current staff user | `StaffUser` (form only) |
 
 ---
 
@@ -315,14 +313,6 @@ Below: one section per entity exposed in the admin mock. **Table** = SQL/EF enti
 **Blazor:** `/admin/payment-methods`, `/admin/staff-users`, `/admin/user-groups`, `/admin/vat-types`
 
 **Staff login:** `Settings.StaffUsers` — plaintext `Password` in legacy DB; Blazor form at `/admin/login` posts to `/account/admin-login`.
-
----
-
-### My profile menu
-
-Same `StaffUser` table — **form only** (`formOnly: true` in mock) for the logged-in user.
-
-**Blazor:** `/admin/profile`
 
 ---
 

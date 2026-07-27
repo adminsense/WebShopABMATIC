@@ -1,6 +1,6 @@
 ---
 name: Staff password and group
-overview: Extend Staff user admin create/edit with password, ERP UserGroup (UsrGroepId), and Admin/Manager access flags so new staff can log in. Keep My profile as self-service; both write Instellingen.User without merging screens.
+overview: Extend Staff user admin create/edit with password, ERP UserGroup (UsrGroepId), and Admin/Manager access flags so new staff can log in. My profile removed — single screen `/admin/staff-users`.
 todos:
   - id: staff-dto-repo
     content: Extend StaffUser DTOs/validator/repository — password write rules, UserGroupId, Admin/Bestellingen flags, Tel; group lookup
@@ -49,21 +49,13 @@ erDiagram
 
 No join table. Group CRUD already exists at `/admin/user-groups`.
 
-## Profile vs Staff user — analysis and decision
+## Staff registration (single screen)
 
-| Screen | Who | Same table | Fields today | Password |
-|--------|-----|------------|--------------|----------|
-| `/admin/staff-users` | Admin managing others | `Instellingen.User` | Login, names, job | Missing (create defaults `ChangeMe!`) |
-| `/admin/profile` | Logged-in staff self | same row | First/Last/Phone; Login/Email read-only | Change own password (requires current) via [`LegacyStaffProfileService`](../WebShopABMATIC/Infrastructure/Auth/LegacyStaffProfileService.cs) |
+| Screen | Who | Table | Fields |
+|--------|-----|-------|--------|
+| `/admin/staff-users` | Admin managing staff | `Instellingen.User` | Login, names, job, Tel, password, group, Admin/Manager |
 
-**Decision:** do **not** merge Profile into Staff user. Keep two responsibilities:
-
-1. **Staff user (admin ops)** — create/edit account: password set/reset, `UsrGroep`, access flags, identity fields.
-2. **My profile (self-service)** — leave as-is: edit own name/phone; change own password with current-password check. Do **not** expose group or Admin/Manager flags on Profile (no self-escalation).
-
-Both write the same columns (`FirstName` / `LastName` / `Tel` / `Password`). No shared port refactor in this pass — document the split in `SPEC_ADMIN`. Unifying screens later is out of scope.
-
-Also surface **Tel** on the Staff user form (already on DTO/repository; Profile maps it as Phone) so contact data stays consistent.
+**Decision (updated):** **My profile** (`/admin/profile`) was **removed** as duplicate of Staff user. All staff registration data is maintained only on `/admin/staff-users`.
 
 ## Scope (this delivery)
 

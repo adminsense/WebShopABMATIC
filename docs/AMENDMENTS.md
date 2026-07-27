@@ -10,13 +10,13 @@
 > **Historical Archive:** Store layout migration dump (phases A–D, unified login study, long checklists) moved to:  
 > → [`archive/AMENDMENTS_store_layout_migration.md`](./archive/AMENDMENTS_store_layout_migration.md)
 
-Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC_INFRASTRUCTURE.md`). Prefer updating those; use this file only for dated “runtime diverged / interim decision” lines.
+Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC_INFRASTRUCTURE.md`). Prefer updating those; use this file for **one short dated line per day** (update the same day’s line instead of stacking entries).
 
 ---
 
 ## 📅 Amendments (newest first)
 
-> **2026-07-27 — Staff user password + group + access flags:** `/admin/staff-users` create/edit now sets password (create required; edit optional keep), `UsrGroepId` dropdown, Tel, and Admin/`Bestellingen` (Manager) flags required for panel login. My profile remains self-service only. See [PLAN_STAFF_USER_PASSWORD_GROUP.md](./PLAN_STAFF_USER_PASSWORD_GROUP.md), [SPEC_ADMIN.md](./SPEC_ADMIN.md) §3.7.
+> **2026-07-27:** Staff user (password/group/flags); removed My profile; AdminGridSearch type-to-search; StoreStaffRedirect after render; auth always session cookie (no Remember me — browser close = re-login).
 
 > **2026-07-26 — Catalog filters cutover (ProductAttribuut):** Implemented `[Products].[ProductAttribuut]` + `[Products].[ProductAttribuutItem]` (SQL script `scripts/ProductAttribuut_create_and_seed.sql`, EF map). Deleted S.7 pilot (`StoreCatalogFilterOptions`, Merk/Voorraad/Prijs, `ProductProperty` store facets). Admin: `/admin/attributes` + dedicated `/admin/product-attributes` (search product NL/EN/FR → assign values). Store leaf facets from attribute values only; query `attr=id:value|…`. Apply SQL on `abmatic_test` before runtime. See [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md).
 

@@ -10,7 +10,7 @@
 | Category | Count | Status | Notes |
 |----------|-------|--------|-------|
 | **Layout screenshots** | 3 | ✅ Documented | `main_screen`, `menu_screen`, `forms_screen` |
-| **Sidebar menus** | 8 | ✅ Documented | Start through My profile |
+| **Sidebar menus** | 7 | ✅ Documented | Start through Settings |
 | **Hub entities** | 22 | ✅ Documented | Full registration map |
 | **Blazor routes** | 22+ | ✅ Complete | Dedicated `*List.razor` per hub entity (form + grid) |
 | **Stock rules** | 6 | ✅ Documented | Min/max, reserve, low-stock KPI |
@@ -116,7 +116,7 @@ The admin UI is defined by **three screen types**. These match the legacy AB-MAT
 | **Title + subtitle** | Menu name and one-line scope description |
 | **Entity cards** | Icon circle, entity tag, title, description, full-width **"{Entity} form"** button |
 
-**Blazor route:** `/admin/hub/{webshop|catalog|customers|sales|stock|settings|profile}`  
+**Blazor route:** `/admin/hub/{webshop|catalog|customers|sales|stock|settings}`  
 **Purpose:** Second navigation level — staff choose which **registration (master data)** to maintain before opening list or form screens.
 
 ---
@@ -155,8 +155,7 @@ The admin UI is defined by **three screen types**. These match the legacy AB-MAT
 | **Admin login page** | `/admin/login` → `POST /account/admin-login` |
 | **Store login page** | `/sign-in` → `POST /account/store-login` |
 | **Post-login redirect** | Admin/Manager → `/admin` (or `returnUrl`); Customer → store `returnUrl` or `/` |
-| **Store session** | Customer: `IsPersistent=false` (true **session** cookie — ends when the browser closes) + sliding **15 min** idle ticket; client idle logout via `store-session-timeout.js` |
-| **Staff “remember me”** | Admin login may set `IsPersistent=true` when checked |
+| **Store / admin session** | Always `IsPersistent=false` (**session** cookie — ends when the browser closes) + sliding **15 min** idle ticket; store idle logout via `store-session-timeout.js`. No “Remember me”. |
 | **Server session store** | **None** — cookie alone is authoritative (no in-memory `StoreBrowserSession` gate) |
 | **Blazor bridge** | `LegacyAuthenticationStateProvider` — **cookie only**; never revives identity from prerender persisted state |
 | **Logout route order** | `GET/POST /account/logout` mapped **before** `MapRazorComponents` so Sign out always clears `.WebShopABMATIC.Auth.Session` |
@@ -232,12 +231,11 @@ Each sidebar item opens a **hub** of entity cards. Below: what staff **register 
 |---|------|---------|--------------|
 | 1 | **Start** | Dashboard only | — |
 | 2 | **Webshop** | Storefront navigation and product grouping | `WebshopStructure`, `WebshopProductStructure` |
-| 3 | **Catalog** | Products, pricing, options, suppliers | `Product`, `ProductPrice`, `ProductQuantityTier`, `ProductOption`, `PriceListCategory`, `Manufacturer`, `Supplier` |
+| 3 | **Catalog** | Products, pricing, options, filter attributes, suppliers | `Product`, `ProductAttribute`, `ProductAttributeValue`, `ProductPrice`, `ProductQuantityTier`, `ProductOption`, `PriceListCategory`, `Manufacturer`, `Supplier` |
 | 4 | **Customers** | B2B accounts, addresses, discounts | `Customer`, `CustomerDeliveryAddress`, `CustomerProductDiscount`, `CustomerType` |
 | 5 | **Sales** | Orders and fulfilment configuration | `Order`, `OrderStatus`, `DeliveryType` |
 | 6 | **Stock** | Warehouses and quantities | `ProductStockLocation`, `StockLocation` |
-| 7 | **Settings** | Payments, system users, VAT | `PaymentMethod`, `SystemUser` (Identity), `VatType` |
-| 8 | **My profile** | Logged-in staff user | `StaffUser` (profile form) |
+| 7 | **Settings** | Payments, staff users, VAT | `PaymentMethod`, `StaffUser`, `UserGroup`, `VatType`, `SystemUser` (Identity legacy) |
 
 ---
 
@@ -257,6 +255,8 @@ Each sidebar item opens a **hub** of entity cards. Below: what staff **register 
 | Entity | Table | What staff registers |
 |--------|-------|----------------------|
 | **Product** | `Product` | Master product: names, part numbers, supplier/manufacturer, **`ShowOnWebshop`**, `WebshopDescriptionNl`, EAN |
+| **Product attributes** | `ProductAttribuut` | Filter attribute dictionary (`NaamEn`/`Nl`/`Fr`, `Volgorde`) — `/admin/attributes` |
+| **Product attribute values** | `ProductAttribuutItem` | Per-product `Waarde` for webstore facets — `/admin/product-attributes` (search product NL/EN/FR, then assign) |
 | **Product price** | `ProductPrice` | Price rows: gross/net sales and purchase, validity dates, assembly/installation |
 | **Product quantity tier** | `ProductQuantityTier` | Volume discounts (`MinimumQuantity`, `Discount`) |
 | **Product option** | `ProductOption` | Configurable options (required flag, sort order, price formulas) |
@@ -330,16 +330,20 @@ Each sidebar item opens a **hub** of entity cards. Below: what staff **register 
 
 | Entity | Table | What staff registers |
 |--------|-------|----------------------|
-| **System user** | `AspNetUsers` | Admin/Manager login accounts (email, roles, lockout) — `/admin/system-users` |
+| **Staff user** | `Instellingen.User` | Login, password, names, Tel, **user group** (`UsrGroepId`), **Admin** / **Manager** (`Bestellingen`) access flags — `/admin/staff-users` (live admin auth) |
+| **User group** | `Instellingen.UsrGroep` | ERP group dictionary (`Naam`, team flags) — `/admin/user-groups` |
 | **Payment method** | `PaymentMethod` | Pre-pay / post-pay methods (NL/FR/EN names) |
 | **VAT type** | `VatType` | VAT rates and invoice text |
+| **System user** | `AspNetUsers` | Legacy Identity path — **not** the current admin login source |
 
-> Legacy **User group** and **Staff user** pages remain at `/admin/user-groups` and `/admin/staff-users` but are hidden from the Settings hub (MVP).
+> Staff user and User group cards are on the **Settings** hub.
 
 > [!WARNING]
-> **System user** management is **Admin-only** (`AppPolicies.AdminOnly`). Managers cannot create admin accounts.
+> **Staff user password** is stored **plaintext** (ERP legacy), same as `SignInStaffAsync`. Create requires password; edit leaves blank to keep. Never returned to the form on load.
 
-> Legacy **Staff user** (`[Settings].[StaffUsers]`) is the **current** admin login source (`SignInStaffAsync`). System-users / AspNetUsers Identity path is not the active storefront/admin runtime.
+> **Access flags:** `Admin` → cookie Admin; `Bestellingen` (Manager checkbox) or `Productie` or `Admin` → Manager. At least one of Admin/Manager is required on save so the user can sign in. Self-service **My profile** was removed — staff registration is only `/admin/staff-users`.
+
+> Legacy **Staff user** (`[Instellingen].[User]`) is the **current** admin login source (`SignInStaffAsync`). System-users / AspNetUsers Identity path is not the active storefront/admin runtime.
 
 ---
 

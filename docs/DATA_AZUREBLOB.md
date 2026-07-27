@@ -225,7 +225,7 @@ ORDER BY PublishToWeb DESC, Created DESC
 | 6 | Azure SDK adapter + `AzureStorage` config | ✅ |
 | 7 | Container `files` + `BlobRef` naming verified | ✅ |
 | 8 | SAS URLs + existence check | ✅ |
-| 9 | HTTP smoke test (11/12 sample SKUs) | ✅ |
+| 9 | HTTP check (11/12 sample SKUs) | ✅ |
 
 ---
 

@@ -341,9 +341,13 @@ private async Task ApplySearchAsync()
 
 What's special:
 - `.entity-grid-search` uses `flex: 1` so the field fills the toolbar (title left, search grows to the right)
-- Input group: `[Search label][text field…][magnifying glass icon]`
-- Enter key triggers `OnSearch`; binding uses `_searchDraft` → `_filter.Search` on apply
-- CSS: `Web/wwwroot/css/admin.css` (`.entity-grid-toolbar`, `.entity-grid-search`)
+- Input group: `[Search label][text field…][magnifying glass button]`
+- **Type-to-search:** trimmed length ≥ 3 chars auto-invokes `OnSearch` (debounced ~300 ms); clearing to 0 chars reloads the unfiltered list
+- Length 1–2 does not auto-query (wait for ≥3, Enter, or lupa click)
+- **Lupa is always a clickable button** (`cursor: pointer`) — never decorative; click always applies the current draft (including &lt;3 chars)
+- Enter also triggers `OnSearch`
+- `ApplySearchAsync` sets `_searchDraft` → `_filter.Search` and reloads the grid; **0 matches = empty grid** (do not keep previous rows)
+- CSS: `WebShopABMATIC.Client/wwwroot/css/admin.css` (`.entity-grid-toolbar`, `.entity-grid-search`, `.entity-grid-search-icon`)
 
 ---
 

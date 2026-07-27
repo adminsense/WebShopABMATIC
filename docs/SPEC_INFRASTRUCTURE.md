@@ -346,7 +346,6 @@ Matches `docs/mocks/mock-admin.html` and [PATTERNS_UI_QUICK_START.md](PATTERNS_U
 | `/admin/hub/{id}` | Hub — entity cards (Webshop, Catalog, …) | ✅ |
 | `/admin/products` | Product — form card + list grid + image upload | ✅ |
 | `/admin/customers`, `/admin/orders`, … | All hub entities (21 routes) | ✅ Form + grid per entity (`*List.razor`) |
-| `/admin/profile` | Staff profile | ✅ |
 
 Each entity page follows the **Product pattern**: back link → header → create/edit form → searchable list with edit/delete (Orders: edit only).
 

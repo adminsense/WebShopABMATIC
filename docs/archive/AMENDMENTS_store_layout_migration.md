@@ -364,7 +364,7 @@ Clique: Child 2 (sem filhos OU folha na BD)
 - Checklist:
   - ✅ Filtrar `Children` onde `ProductCount > 0` (aplicado no browse do `Catalog.razor`)
   - ✅ Confirmado com cliente: categorias vazias aparecem com o texto “No products”
-  - ✅ Teste funcional: nó só com filhos vazios → mensagem “No products” na main
+  - ✅ Validação funcional: nó só com filhos vazios → mensagem “No products” na main
 
 **CD4 — Produtos no mesmo nó que tem filhos**
 - ✅ **Regra fechada:** mostrar só tiles/submenus quando houver filhos; produtos apenas na folha.
@@ -416,7 +416,7 @@ Clique: Child 2 (sem filhos OU folha na BD)
 
 **Checklist implementação global (C.5 + D.5):**
 
-- [ ] Port `GetCategoryBrowseAsync` + testes unitários (opcional — lógica já em `Catalog.razor` + `GetCatalogAsync`)
+- [ ] Port `GetCategoryBrowseAsync` (opcional — lógica já em `Catalog.razor` + `GetCatalogAsync`)
 - ✅ Homepage `/` não chama modo Products por defeito
 - ✅ `?categoryId=raiz` → tiles filhos (se tiver filhos)
 - ✅ `?categoryId=folha` → grelha produtos (directos)
@@ -431,7 +431,7 @@ Clique: Child 2 (sem filhos OU folha na BD)
 |----------|---------------|-----|
 | `StoreLayout.razor` | Header + `@Body` sem sidebar | Precisa grid **sidebar + main** |
 | `StoreHeader.razor` | Logo, search, nav pills azuis | Reescrever §2.1.1: Back·Home·Cart·Contact·Search·Login |
-| `Catalog.razor` | Homepage com Categories + Deals; `?categoryId=` com drill-down (tiles até folha; produtos directos na folha — CD4) | Testes E + regressão pesquisa/deals |
+| `Catalog.razor` | Homepage com Categories + Deals; `?categoryId=` com drill-down (tiles até folha; produtos directos na folha — CD4) | Validação E + regressão pesquisa/deals |
 | `store.css` | Tema azul claro, sem `.sidebar` | Novo tema laranja/branco + componentes sidebar + `.store-auth-*` |
 | `StoreCatalogService` | Lista plana de raízes; fallback `WebshopStructures` | Árvore completa só `ProductStructuur` |
 | `SignIn.razor` / `SignUp.razor` | Card azul, serif, `StoreLayout` | `StoreAuthLayout`, card branco/laranja, copy EN (§2.2.1) |
@@ -542,7 +542,7 @@ flowchart LR
 - Checklist:
   - [ ] Listar colisões reais em `abmatic_test`
   - [ ] Documentar prioridade (staff primeiro vs cliente primeiro)
-  - [ ] Teste de integração para ambos os cenários
+  - [ ] Validação para ambos os cenários
 
 **U2 — Um endpoint ou dois**
 - ❓ **Dúvida:** Unificar POST num só endpoint simplifica Azure SSR ou preferimos página única com dois forms ocultos?
@@ -560,7 +560,7 @@ flowchart LR
 
 ### 2.3 Validação de dados (`abmatic_test`)
 
-Consulta em 2026-06-25 à BD de teste:
+Consulta em 2026-06-25 à BD `abmatic_test`:
 
 | Métrica | Valor | Implicação |
 |---------|-------|------------|
@@ -709,7 +709,7 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 | **Product detail** | 🟡 Sem breadcrumb (fase 2) |
 | **Formulários produto/categoria** | ✅ Opções de produto + textos intro/outro de categoria expostos (2026-07-10) | Ver §3.5 |
 | **Login unificado admin** | ❌ `/sign-in` e `/admin/login` separados | Ver §2.2.2 |
-| **Testes catálogo** | 🟡 164 testes passam; sem testes unitários novos da árvore |
+| **Catálogo** | 🟡 Validação manual; árvore coberta em runtime |
 
 ---
 
@@ -736,22 +736,22 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 - ✅ `GetNewProductsAsync`: `IsNew == true` + regras de visibilidade
 - ✅ Remover fallback `WebshopStructures` em `GetCategoriesAsync`
 - ✅ Labels em `NameEn` (`CatalogCategoryTree.PickDisplayName`)
-- ⬜ Testes dedicados: árvore, filtro intermédio, exclusões `ProdNonActive` / `Webshop=false`
+- ⬜ Validação dedicada: árvore, filtro intermédio, exclusões `ProdNonActive` / `Webshop=false`
 
 **Fase C.4 — Homepage referência (planeado ⬜)** — ver §2.1.2
 
 - ⬜ `GetRootCategoryTilesAsync()` — raízes `ProductStructuur` + `NameEn` + URL ícone (`Icon` blob ou SAS)
 - ⬜ `GetDealsAsync(take)` — produtos destaque/promo (critério HP4 a confirmar)
 - ⬜ DTOs: `StoreCategoryTileDto`, `StoreDealProductDto` (quick-add: id, nome, imagem, descrição curta, preço)
-- ⬜ Testes: contagens tiles, deals só `Webshop` + `!ProdNonActive`
+- ⬜ Validação: contagens tiles, deals só `Webshop` + `!ProdNonActive`
 
 **Fase C.5 — Navegação por níveis ✅** — ver §2.1.3
 
 - ⬜ `StoreCategoryBrowseDto` + `CategoryBrowseMode` (Home / Subcategories / Products / Search) — opcional; lógica já em `Catalog.razor`
 - ✅ Modo CD2/CD3 em `Catalog.razor` + `GetCatalogAsync` (filhos directos **ou** produtos na folha)
 - ✅ `GetCategoryDetailAsync` — nome + intro (`IntroPriceListTextId`) para H1 (entregue em C.2/D.2)
-- ✅ Regra CD4 implementada e testada em `abmatic_test` (4 nós / 16 produtos directos ocultos no intermédio)
-- ⬜ Testes automatizados: raiz → tiles; folha → produtos; contagem `ProductCount` por filho
+- ✅ Regra CD4 implementada e validada em `abmatic_test` (4 nós / 16 produtos directos ocultos no intermédio)
+- ⬜ Validação: raiz → tiles; folha → produtos; contagem `ProductCount` por filho
 
 **Fase C.2 — Formulários produto/categoria (✅ 2026-07-10)** — ver §3.5
 
@@ -767,7 +767,7 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 
 - ⬜ Endpoint ou orquestração única: staff → `/admin`, customer → loja (`LegacySignInService`)
 - ⬜ Política de resolução quando o mesmo email existe em staff e cliente (decisão U3)
-- ⬜ Testes: redirect Admin/Manager vs Customer após POST login
+- ⬜ Validação: redirect Admin/Manager vs Customer após POST login
 
 ### Fase D — UI loja (espelhar referência) ✅
 
@@ -823,14 +823,14 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 
 ### Fase E — Qualidade ⬜
 
-- ⬜ Testes Razor com mock `IStoreCatalogPort`
+- ⬜ Validação Razor com mock `IStoreCatalogPort`
 - ⬜ Regressão: preços, imagens blob, carrinho, sign-in
 - ⬜ Performance: evitar N+1 (árvore + produtos)
 - ⬜ Actualizar [SPEC_WEB_STORE.md](SPEC_WEB_STORE.md)
 
 ### Fase F — Validação ⬜
 
-- ⬜ Teste local
+- ⬜ Validação local
 - ⬜ Deploy `abmaticwebshop.azurewebsites.net`
 - ⬜ Validação com cliente lado a lado com a referência
 
@@ -858,7 +858,6 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 | `Client/Components/Pages/Store/Catalog.razor` | ✅ |
 | `Client/wwwroot/css/store.css` | ✅ Tema referência |
 | `WebShopABMATIC/Program.cs` | ✅ `/login` redirect |
-| `WebShopABMATIC.Tests/...` | 🟡 Testes árvore catálogo por adicionar |
 
 ---
 
@@ -923,7 +922,7 @@ WebShopABMATIC/Infrastructure  → StoreCatalogService, media, preços
 1. ~~**A** — análise~~ ✅  
 2. ~~**B + C** — backend (árvore + `IsNew` + filtros)~~ ✅  
 3. ~~**D** — UI base (header, sidebar, tema)~~ ✅ — homepage completa em **C.4 + D.4**  
-4. **E + F** — testes dedicados catálogo, `SPEC_WEB_STORE.md`, validação e deploy com cliente  
+4. **E + F** — validação dedicada catálogo, `SPEC_WEB_STORE.md`, e deploy com cliente  
 5. ~~**C.2 + D.2** — formulários produto/categoria (opções, intro categoria, carrinho)~~ ✅  
 6. **C.3 + D.3** — login unificado navbar → admin + loja  
 7. ~~**C.4 + D.4** — homepage: **Categories** (tiles) + **Deals**~~ ✅  

@@ -40,7 +40,7 @@
 
 1. ~~**S.4**~~ ✅ — server-side required product options on checkout
 2. ~~**E.12**~~ ✅ — [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) refreshed (legacy auth, live catalog, no mock SKUs)
-3. **Quality** — `dotnet test` (unit + API + bUnit); optional SQL smoke via `TEST_SQL_CONNECTION` (see `.claude/CLAUDE.md`)
+3. **Quality** — `dotnet build`; owner validates critical flows in the browser
 
 **Done recently:** **S.5** freight from ERP; **S.4** server option validation; **E.12** store SPEC sync.  
 **Not in sprint:** real Mollie (**B.9**) until client keys.
@@ -66,7 +66,7 @@ Layout loja ✅. Options / category detail mostly shipped; checklist synced to c
 | **S.4** Cart/checkout line options | ✅ | Persist + cart display; **server** validates required options on quote/`PlaceOrderAsync` (`CheckoutUseCase`) |
 | **S.5** Delivery / freight from ERP | ✅ | No mock €9 — fee from `OrderDeliveryTypeProduct` + `ProductPrices`; default €0; cart freight select. [DATA_FREIGHT_DELIVERY.md](./DATA_FREIGHT_DELIVERY.md) |
 | **S.6** Cart stock blocking UX | ✅ | Stale OOS lines kept; checkout CTA blocked — [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §5.2 |
-| **S.7** Catalog facet filters | 🔄 Spec reset | **New model:** `ProductAttribuut` + `ProductAttribuutItem` (Dutch SQL); admin values per product; store checkboxes from distinct values on leaf categories; **layout kept**. Old S.7 pilot obsolete — delete in code after SQL/EF. Docs: [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md) · [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.1 |
+| **S.7** Catalog facet filters | ✅ Done (pending DBA SQL) | `ProductAttribuut` + `ProductAttribuutItem`; admin `/admin/attributes` + `/admin/product-attributes`; store leaf checkboxes from distinct `Waarde`; layout kept. SQL: `scripts/ProductAttribuut_create_and_seed.sql`. Docs: [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md) · [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.1 |
 
 ### 🔐 Auth — Legacy Database ✅
 
@@ -111,9 +111,7 @@ Optional for minimal webshop; needed for ERP-style inbound stock.
 ### ✅ Quality
 
 - ✅ Smoke: `dotnet build WebShopABMATIC.sln`
-- ✅ Automated suite: `WebShopABMATIC.Tests` — `dotnet test` (unit store/admin/auth/cart + API WebApplicationFactory + bUnit critical/smoke Razor).
-- ✅ SQL opt-in read-only: `Category=SqlIntegration` when `TEST_SQL_CONNECTION` is set (default CI skips / no-ops).
-- ❌ Playwright / browser E2E — **out of scope**; owner validates flows manually in the browser.
+- Owner validates store/admin flows manually in the browser.
 
 ### 🔮 Later (E Extras — Not MVP)
 
@@ -292,7 +290,7 @@ Detail: [DATA_AZUREBLOB.md](./DATA_AZUREBLOB.md)
 | Criterion | Applies to |
 |-----------|------------|
 | Builds with 0 errors | All |
-| Manual test documented in PR / commit message | B, D, E |
+| Manual validation noted when shipping the phase | B, D, E |
 | Hexagonal ports + use cases (no logic only in Razor) | A–E |
 | Demo data on Azure updated when features need new rows | 0, A, C, M |
 

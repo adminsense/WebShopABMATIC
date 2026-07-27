@@ -121,7 +121,7 @@ No `DbContext` in Razor.
 | **D2 — Delete pilot** | Removed S.7 filter code / `StoreCatalogFilters` / ProductProperty catalog facets | ✅ |
 | **D3 — Admin** | `/admin/attributes` + `/admin/product-attributes` | ✅ |
 | **D4 — Store** | Facets from `ProductAttribuutItem` (layout unchanged) | ✅ |
-| **D5 — Tests** | One test file per SUT (unit + bUnit) | ✅ |
+| **D5 — Docs** | PLAN / SPEC / AMENDMENTS sync | ✅ |
 
 ---
 
