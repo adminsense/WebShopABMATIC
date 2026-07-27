@@ -10,7 +10,7 @@
 
 > [!IMPORTANT]
 > **Database First (Global Rule):** Live Azure SQL **`abmatic_test`** is the source of truth.  
-> **Never invent** columns, tables, EF migrations, or schema scripts for the ERP — **any** feature — **except** when the client explicitly orders a new table and Marco/DBA applies a SQL script (current case: catalog filters → [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md) `ProductAttribuut` / `ProductAttribuutItem`). Still **no** `Migrate()` / `EnsureCreated()` from the app (`AGENTS.md`, [SPEC_INFRASTRUCTURE.md](./SPEC_INFRASTRUCTURE.md) §4).
+> **Never invent** columns, tables, EF migrations, or schema scripts for the ERP — **any** feature — **except** when the client explicitly orders a new table and Marco/DBA applies a SQL script (catalog filters: [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md) — script [`scripts/ProductAttribuut_create_and_seed.sql`](../scripts/ProductAttribuut_create_and_seed.sql)). Still **no** `Migrate()` / `EnsureCreated()` from the app (`AGENTS.md`, [SPEC_INFRASTRUCTURE.md](./SPEC_INFRASTRUCTURE.md) §4).
 
 ---
 

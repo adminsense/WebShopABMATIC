@@ -171,6 +171,12 @@
                                        data-enhance-nav="false">
                                         <i class="bi bi-pencil"></i>
                                     </a>
+                                    <a class="btn btn-sm btn-outline-primary"
+                                       href="@($"/admin/product-attributes/{item.ProductId}")"
+                                       title="Product attributes"
+                                       data-enhance-nav="false">
+                                        <i class="bi bi-tags"></i>
+                                    </a>
                                         <button type="button" class="btn btn-sm btn-danger"
                                                 @onclick="() => PromptDelete(item)"
                                                 title="Delete Product">
