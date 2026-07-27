@@ -1716,9 +1716,9 @@ All implementations support:
 
 ---
 
-## 🧪 Testing & Validation
+## ✅ Form validation checklist
 
-### Form Validation Testing Checklist
+### Form validation checklist
 
 ```
 □ REQUIRED FIELDS
@@ -1750,7 +1750,7 @@ All implementations support:
   □ Keyboard navigation works
 ```
 
-### Button Testing Checklist
+### Button checklist
 
 ```
 □ HEADER BUTTONS

@@ -16,6 +16,8 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 
 ## 📅 Amendments (newest first)
 
+> **2026-07-27 — Staff user password + group + access flags:** `/admin/staff-users` create/edit now sets password (create required; edit optional keep), `UsrGroepId` dropdown, Tel, and Admin/`Bestellingen` (Manager) flags required for panel login. My profile remains self-service only. See [PLAN_STAFF_USER_PASSWORD_GROUP.md](./PLAN_STAFF_USER_PASSWORD_GROUP.md), [SPEC_ADMIN.md](./SPEC_ADMIN.md) §3.7.
+
 > **2026-07-26 — Catalog filters cutover (ProductAttribuut):** Implemented `[Products].[ProductAttribuut]` + `[Products].[ProductAttribuutItem]` (SQL script `scripts/ProductAttribuut_create_and_seed.sql`, EF map). Deleted S.7 pilot (`StoreCatalogFilterOptions`, Merk/Voorraad/Prijs, `ProductProperty` store facets). Admin: `/admin/attributes` + dedicated `/admin/product-attributes` (search product NL/EN/FR → assign values). Store leaf facets from attribute values only; query `attr=id:value|…`. Apply SQL on `abmatic_test` before runtime. See [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md).
 
 > **2026-07-25 — Test suite comprehensive coverage:** Unit tests and integration tests expanded covering store checkout flows, Mollie webhook processing, customer auth (register/login/profile), admin use cases (stock, orders, dashboard), `LegacySignInService`, `StoreCartService`, product description cascade, and bUnit component tests for critical Store/Admin Razor pages. Default `dotnet test` runs without SQL; opt-in read-only smoke via `TEST_SQL_CONNECTION`. See `.claude/CLAUDE.md` Testing section.

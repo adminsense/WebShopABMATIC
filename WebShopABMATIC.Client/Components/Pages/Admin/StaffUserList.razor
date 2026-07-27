@@ -6,7 +6,7 @@
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
 @using WebShopABMATIC.Web.Services
-@inject IStaffUserAdminPort AdminPort
+@inject IStaffUserAdminPort AdminPort
 @inject IGridExportService GridExport
 @implements IAsyncDisposable
 
@@ -16,10 +16,10 @@
     <a class="btn btn-secondary btn-back mb-3" href="/admin/hub/settings" data-enhance-nav="false"><span class="oi oi-arrow-left"></span> Back to list</a>
     <div class="entity-page-header page-header">
         <h1 class="h3 mb-1"><i class="bi bi-person-workspace text-primary"></i> Staff user</h1>
-        <p class="mb-0">Internal staff accounts.</p>
+        <p class="mb-0">Internal staff accounts (<code>Instellingen.User</code>). Password, user group, and Admin/Manager access for panel login. Self-service name/phone/password stays on My profile.</p>
     </div>
     <div class="card shadow-sm border entity-form-card admin-form-card">
-                <AdminEntityFormHeader ExportDisabled="@ExportDisabled" OnExport="ExportGridAsync">
+        <AdminEntityFormHeader ExportDisabled="@ExportDisabled" OnExport="ExportGridAsync">
             <Title>@(_isEditing ? "Edit staff user" : "Create staff user")</Title>
         </AdminEntityFormHeader>
         <div class="card-body">
@@ -44,6 +44,47 @@
                             <label class="form-label" for="f-jobtitle">Job title</label>
                             <InputText id="f-jobtitle" class="form-control form-control-sm" @bind-Value="_model.JobTitle" />
                         </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="f-tel">Phone (Tel)</label>
+                            <InputText id="f-tel" class="form-control form-control-sm" @bind-Value="_model.Tel" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="f-group">User group</label>
+                            <select id="f-group" class="form-select form-select-sm" value="@(_model.UserGroupId?.ToString() ?? "")" @onchange="OnGroupChanged">
+                                <option value="">— None —</option>
+                                @foreach (var g in _groups)
+                                {
+                                    <option value="@g.Id">@g.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="f-password">@(_isEditing ? "New password" : "Password *")</label>
+                            <InputText id="f-password" type="password" class="form-control form-control-sm" @bind-Value="_model.Password" autocomplete="new-password" />
+                            @if (_isEditing)
+                            {
+                                <div class="form-text">Leave blank to keep the current password.</div>
+                            }
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="f-confirm">Confirm password</label>
+                            <InputText id="f-confirm" type="password" class="form-control form-control-sm" @bind-Value="_model.ConfirmPassword" autocomplete="new-password" />
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <div class="form-check mb-1">
+                                <InputCheckbox class="form-check-input" @bind-Value="_model.IsAdmin" id="f-admin" />
+                                <label class="form-check-label" for="f-admin">Admin</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <div class="form-check mb-1">
+                                <InputCheckbox class="form-check-input" @bind-Value="_model.IsManager" id="f-manager" />
+                                <label class="form-check-label" for="f-manager">Manager</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <p class="form-text mb-0">At least one of Admin or Manager is required for admin-panel login. Manager maps to ERP <code>Bestellingen</code>.</p>
+                        </div>
                         <div class="col-12 d-flex gap-2 pt-1">
                             <button type="submit" class="btn btn-primary" disabled="@_saving">@(_isEditing ? "Update" : "Create")</button>
                             <button type="button" class="btn btn-secondary" @onclick="CancelFormAsync" disabled="@_saving"><i class="bi bi-x me-1"></i>Cancel</button>
@@ -61,26 +102,34 @@
         </div>
         <div class="table-responsive">
             <table class="table table-striped table-hover mb-0">
-                <thead class="table-dark"><tr><th>Id</th>
-                        <th>Login</th>
-                        <th>FirstName</th>
-                        <th>LastName</th>
-                    <th class="text-center">Actions</th></tr></thead>
+                <thead class="table-dark"><tr>
+                    <th>Id</th>
+                    <th>Login</th>
+                    <th>FirstName</th>
+                    <th>LastName</th>
+                    <th>Group</th>
+                    <th>Admin</th>
+                    <th>Manager</th>
+                    <th class="text-center">Actions</th>
+                </tr></thead>
                 <tbody>
-                    @if (_loading) { <tr><td colspan="5" class="text-center text-muted py-4">Loading…</td></tr> }
-                    else if (!string.IsNullOrEmpty(_gridError)) { <tr><td colspan="5" class="text-center text-danger py-4">@_gridError</td></tr> }
-                    else if (_result is null || _result.Items.Count == 0) { <tr><td colspan="5" class="text-center text-muted py-4">No records found.</td></tr> }
+                    @if (_loading) { <tr><td colspan="8" class="text-center text-muted py-4">Loading…</td></tr> }
+                    else if (!string.IsNullOrEmpty(_gridError)) { <tr><td colspan="8" class="text-center text-danger py-4">@_gridError</td></tr> }
+                    else if (_result is null || _result.Items.Count == 0) { <tr><td colspan="8" class="text-center text-muted py-4">No records found.</td></tr> }
                     else { @foreach (var item in _result.Items) {
                         <tr @key="item.Id" class="@(_model.Id == item.Id ? "table-active" : null)">
                             <td>@item.Id</td>
-                                <td>@item.Login</td>
-                                <td>@item.FirstName</td>
-                                <td>@item.LastName</td>
+                            <td>@item.Login</td>
+                            <td>@item.FirstName</td>
+                            <td>@item.LastName</td>
+                            <td>@(item.UserGroupName ?? "—")</td>
+                            <td>@(item.IsAdmin ? "Yes" : "No")</td>
+                            <td>@(item.IsManager ? "Yes" : "No")</td>
                             <td class="text-center"><div class="btn-group btn-group-sm">
                                 <a class="btn btn-sm btn-primary" href="@($"/admin/staff-users?edit={item.Id}")" data-enhance-nav="false"><i class="bi bi-pencil"></i></a>
-                                        <button type="button" class="btn btn-sm btn-danger" @onclick="() => PromptDelete(item)" title="Delete">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
+                                <button type="button" class="btn btn-sm btn-danger" @onclick="() => PromptDelete(item)" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
                             </div></td>
                         </tr> } }
                 </tbody>
@@ -110,7 +159,8 @@
     [SupplyParameterFromQuery(Name = "edit")] public int? EditId { get; set; }
     private CancellationTokenSource? _cts;
     private StaffUserListFilter _filter = new();
-    private StaffUserEditDto _model = new StaffUserEditDto();
+    private StaffUserEditDto _model = NewModel();
+    private IReadOnlyList<StaffUserGroupLookupDto> _groups = [];
     private string _searchDraft = string.Empty;
     private bool _loading = true, _formLoading, _saving, _deleting, _showDeleteConfirm, _disposed, _initialized;
     private string? _formError, _gridError;
@@ -118,8 +168,12 @@
     private StaffUserDto? _itemToDelete;
     private bool _isEditing => _model.Id > 0;
 
+    private static StaffUserEditDto NewModel() => new() { IsAdmin = true };
+
     protected override async Task OnInitializedAsync() {
         _cts = new CancellationTokenSource();
+        try { _groups = await AdminPort.GetGroupLookupsAsync(_cts.Token); }
+        catch { _groups = []; }
         await LoadGridAsync(_cts.Token);
         if (EditId is > 0) await EditAsync(EditId.Value);
         _initialized = true;
@@ -135,12 +189,20 @@
         catch (Exception ex) { _result = null; _gridError = ex.Message; }
         finally { _loading = false; await InvokeAsync(StateHasChanged); }
     }
+    private void OnGroupChanged(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString();
+        _model.UserGroupId = int.TryParse(raw, out var id) && id > 0 ? id : null;
+    }
+
     private async Task ApplySearchAsync() { _filter.Search = _searchDraft; _filter.Page = 1; _cts?.Cancel(); _cts = new CancellationTokenSource(); await LoadGridAsync(_cts.Token); }
-private async Task EditAsync(int id) {
+    private async Task EditAsync(int id) {
         _formLoading = true; _formError = null;
         try {
             var item = await AdminPort.GetForEditAsync(id, _cts?.Token ?? CancellationToken.None);
             if (item is null) { _formError = "Record not found."; return; }
+            item.Password = null;
+            item.ConfirmPassword = null;
             _model = item;
         } finally { _formLoading = false; }
     }
@@ -153,7 +215,7 @@ private async Task EditAsync(int id) {
         } catch (Exception ex) { _formError = ex.Message; }
         finally { _saving = false; }
     }
-    private Task CancelFormAsync() { _formError = null; _model = new StaffUserEditDto(); return Task.CompletedTask; }
+    private Task CancelFormAsync() { _formError = null; _model = NewModel(); return Task.CompletedTask; }
     private void PromptDelete(StaffUserDto item) { _itemToDelete = item; _showDeleteConfirm = true; }
     private void CancelDelete() { _showDeleteConfirm = false; _itemToDelete = null; }
     private async Task ConfirmDeleteAsync() {
@@ -171,26 +233,25 @@ private async Task EditAsync(int id) {
     private async Task ExportGridAsync(string format)
     {
         var request = BuildExportRequest();
-        if (request is not null)
-        {
-            await GridExport.ExportAsync(format, request);
-        }
+        if (request is not null) await GridExport.ExportAsync(format, request);
     }
 
-    private GridExportRequest? BuildExportRequest()
-    {
-        return GridExportBuilder.FromRows(
+    private GridExportRequest? BuildExportRequest() =>
+        GridExportBuilder.FromRows(
             "staff-users",
             "Staff user list",
-            new[] { "Id", "Login", "FirstName", "LastName" },
+            new[] { "Id", "Login", "FirstName", "LastName", "Group", "Admin", "Manager" },
             _result?.Items.Select(item => (IReadOnlyList<string>)new[]
             {
                 GridExportBuilder.Cell(item.Id),
                 GridExportBuilder.Cell(item.Login),
                 GridExportBuilder.Cell(item.FirstName),
-                GridExportBuilder.Cell(item.LastName)
+                GridExportBuilder.Cell(item.LastName),
+                GridExportBuilder.Cell(item.UserGroupName),
+                GridExportBuilder.Cell(item.IsAdmin ? "Yes" : "No"),
+                GridExportBuilder.Cell(item.IsManager ? "Yes" : "No")
             }));
-    }
+
     private async Task ChangePageAsync(int page)
     {
         if (page < 1) return;
@@ -201,7 +262,3 @@ private async Task EditAsync(int id) {
     }
     public async ValueTask DisposeAsync() { _disposed = true; if (_cts is not null) { await _cts.CancelAsync(); _cts.Dispose(); } }
 }
-
-
-
-

@@ -134,9 +134,8 @@ WebShopABMATIC/                 ← repo root (solution parent)
 ├── WebShopABMATIC.sln
 ├── WebShopABMATIC/               ← host + Application, Domain, Infrastructure, …
 ├── WebShopABMATIC.Client/        ← Blazor UI (Components, wwwroot)
-├── WebShopABMATIC.Tests/
 ├── docs/                       ← documentation (SPEC_*, SPEC_*_open, AMENDMENTS, mocks/, archive/)
-│   └── docs/                     ← HTML mocks
+│   └── mocks/                    ← HTML mocks
 ```
 
 - `docs/mocks/` — static HTML prototypes  
@@ -282,7 +281,7 @@ Single **Azure SQL** database (`abmatic_test`) is used for local dev and deploye
 | `Mollie:ApiKey` | Real Mollie payments | User Secrets / Azure | ⬜ **After client keys** — keep mock until then |
 | `Mollie:UseMock` | Mock checkout without API key | **`true` (required until client keys)** | `false` only after keys |
 | `Notifications:LowStock:UseMock` | In-app mock vs SMTP queue | `true` (dev) | `false` (prod) |
-| ~~`StoreCatalogFilters:*`~~ | **Obsolete (S.7 pilot).** Target filters use `ProductAttribuut` / `ProductAttribuutItem` with no category whitelist — [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md). Remove these keys when pilot code is deleted. | — | — |
+| ~~`StoreCatalogFilters:*`~~ | **Removed.** Catalog filters use `ProductAttribuut` / `ProductAttribuutItem` with no category whitelist — [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md). | — | — |
 
 Example **Azure App Service** block (placeholders — never commit real values):
 
@@ -436,8 +435,6 @@ dotnet run
 
 - restore + build  
   ⏳
-- run tests  
-  ⏳
 - build + smoke of store/admin pages (no DB migration step)
   ⏳
 
@@ -575,7 +572,7 @@ Publish output to App Service (Visual Studio Publish, ZIP deploy, or CI). Ensure
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| App on unexpected port | Old test profile | Use **5090** per `launchSettings.json` — not 5091 or 44350 |
+| App on unexpected port | Old launch profile | Use **5090** per `launchSettings.json` — not 5091 or 44350 |
 
 ---
 

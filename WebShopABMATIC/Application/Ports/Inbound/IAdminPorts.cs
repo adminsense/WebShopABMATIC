@@ -11,6 +11,7 @@ using WebShopABMATIC.Application.Admin.OrderStatuses;
 using WebShopABMATIC.Application.Admin.Orders;
 using WebShopABMATIC.Application.Admin.PaymentMethods;
 using WebShopABMATIC.Application.Admin.PriceListCategories;
+using WebShopABMATIC.Application.Admin.ProductAttributes;
 using WebShopABMATIC.Application.Admin.ProductOptions;
 using WebShopABMATIC.Application.Admin.ProductPrices;
 using WebShopABMATIC.Application.Admin.ProductQuantityTiers;
@@ -204,10 +205,34 @@ public interface IPaymentMethodAdminPort
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
 }
 
+public interface IProductAttributeAdminPort
+{
+    Task<PagedResult<ProductAttributeDto>> GetAttributesAsync(ProductAttributeListFilter filter, CancellationToken cancellationToken = default);
+    Task<ProductAttributeEditDto?> GetForEditAsync(int id, CancellationToken cancellationToken = default);
+    Task<int> SaveAsync(ProductAttributeEditDto dto, CancellationToken cancellationToken = default);
+    Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
+}
+
+public interface IProductAttributeAssignmentAdminPort
+{
+    Task<PagedResult<ProductAttributeAssignmentProductDto>> SearchProductsAsync(
+        string? search,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
+    Task<ProductAttributeAssignmentDto?> GetAssignmentAsync(int productId, CancellationToken cancellationToken = default);
+
+    Task<int> SaveValueAsync(ProductAttributeValueEditDto dto, CancellationToken cancellationToken = default);
+
+    Task<bool> DeleteValueAsync(int id, CancellationToken cancellationToken = default);
+}
+
 public interface IStaffUserAdminPort
 {
     Task<PagedResult<StaffUserDto>> GetStaffUsersAsync(StaffUserListFilter filter, CancellationToken cancellationToken = default);
     Task<StaffUserEditDto?> GetForEditAsync(int id, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<StaffUserGroupLookupDto>> GetGroupLookupsAsync(CancellationToken cancellationToken = default);
     Task<int> SaveAsync(StaffUserEditDto dto, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
 }

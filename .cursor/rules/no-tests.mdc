@@ -1,0 +1,16 @@
+---
+description: No automated tests in this solution — do not add or restore a test project
+alwaysApply: true
+---
+
+# No tests (project policy)
+
+Marco's decision (2026-07-27): **this solution has no automated tests of any kind.**
+
+- **Do not** create, restore, or reference `WebShopABMATIC.Tests` (or any other test project).
+- **Do not** add unit, integration, bUnit, SQL, API, Playwright, or snapshot tests.
+- **Do not** add xUnit / NUnit / MSTest / bUnit / FluentAssertions / NSubstitute / coverlet packages for testing.
+- **Do not** run `dotnet test` as part of delivery, or invent a test plan in SPECs.
+- Verification = `dotnet build` / manual checks by the owner.
+
+If older docs mention a test suite, treat them as **obsolete** and prefer this rule + `AGENTS.md`.

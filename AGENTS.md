@@ -56,6 +56,7 @@ Do **not** load `docs/archive/` unless the user asks for history.
 - **Payments:** **`Mollie:UseMock = true`** until the **client delivers API keys**. Do not switch to real Mollie, invent keys, or prioritize B.9 go-live before that. See `docs/SPEC_MOLLIE_PAYMENTS_open.md`.
 - **Azure Blazor:** WebSockets On in App Service; sticky ARR affinity assumed.
 - Prefer matching existing components/CSS over new visual systems.
+- **No automated tests:** Do **not** add, restore, or run a test project (`WebShopABMATIC.Tests` or any unit/integration/bUnit/Playwright suite). Verification = `dotnet build` + owner manual checks. Rule: [`.cursor/rules/no-tests.mdc`](.cursor/rules/no-tests.mdc).
 
 ## ✅ Done Means
 
