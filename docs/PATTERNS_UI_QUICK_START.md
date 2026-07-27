@@ -1,20 +1,20 @@
-# 🎨 UI Patterns - Quick Start Guide for Developers
+# ðŸŽ¨ UI Patterns - Quick Start Guide for Developers
 
-![Status](https://img.shields.io/badge/Status-Quick%20Reference-28a745?style=flat-square) ![Copy-Paste](https://img.shields.io/badge/Copy--Paste-Ready-0dcaf0?style=flat-square) ![UI%20Patterns](https://img.shields.io/badge/UI%20Patterns-Complete-512BD4?style=flat-square)
+<p style="display:flex;flex-wrap:nowrap;gap:0.35rem;align-items:center;overflow-x:auto;margin:0.5rem 0 0;"><img alt="Status" src="https://img.shields.io/badge/Status-Quick%20Reference-28a745?style=flat-square" /><img alt="Copy-Paste" src="https://img.shields.io/badge/Copy--Paste-Ready-0dcaf0?style=flat-square" /><img alt="UI%20Patterns" src="https://img.shields.io/badge/UI%20Patterns-Complete-512BD4?style=flat-square" /></p>
 
 **Visual Quick Reference | Copy-Paste Ready | No Reading Required**
 
 ---
 
-## 🖼️ Mock Prototype Layout (WebShopABMATIC)
+## ðŸ–¼ï¸ Mock Prototype Layout (WebShopABMATIC)
 
 The HTML admin mock in `docs/mock-admin.html` follows the **AB-MATIC** admin shell. Three screen types map to the reference images in `images/`:
 
 | Screen | Image | Mock file / view |
 |--------|-------|------------------|
-| **Dashboard** — sidebar, top bar, portfolio cards, logout, version | ![Main](images/main_screen.png) | `docs/mock-admin.html` → **Start** |
-| **Hub** — back link, entity cards, “X form” buttons | ![Menu](images/menu_screen.png) | `docs/mock-admin.html` → sidebar menus (Webshop, Catalog, …) |
-| **List + form** — filters, Apply/Clear, `table-dark` grid, edit form | ![Forms](images/forms_screen.png) | `docs/mock-admin.html` → entity list / form views |
+| **Dashboard** â€” sidebar, top bar, portfolio cards, logout, version | ![Main](images/main_screen.png) | `docs/mock-admin.html` â†’ **Start** |
+| **Hub** â€” back link, entity cards, â€œX formâ€ buttons | ![Menu](images/menu_screen.png) | `docs/mock-admin.html` â†’ sidebar menus (Webshop, Catalog, â€¦) |
+| **List + form** â€” filters, Apply/Clear, `table-dark` grid, edit form | ![Forms](images/forms_screen.png) | `docs/mock-admin.html` â†’ entity list / form views |
 
 Storefront + admin entry: `docs/mock-loja.html` (**Admin Panel** after `StaffUser.Admin` login).
 
@@ -24,43 +24,43 @@ The button, grid, and form patterns below are what the mock (and future Blazor p
 
 ---
 
-## 🚦 Icon System Cheat Sheet
+## ðŸš¦ Icon System Cheat Sheet
 
-### 🎯 Where to Use Each Icon Set
+### ðŸŽ¯ Where to Use Each Icon Set
 
 | Icon Set | System | Used For | Example | Import |
 |----------|--------|----------|---------|--------|
 | `oi oi-*` | **OpenIconic** | Navigation/UI | Back, Menu, Settings | HTML: `<span class="oi oi-X"></span>` |
 | `bi bi-*` | **Bootstrap Icons** | Actions/Content | Edit, Delete, Save | HTML: `<i class="bi bi-X"></i>` |
 
-**⚠️ CRITICAL:** Never mix them! OpenIconic for nav, Bootstrap for actions.
+**âš ï¸ CRITICAL:** Never mix them! OpenIconic for nav, Bootstrap for actions.
 
 ---
 
-## 🔘 Button Size & Style Quick Reference
+## ðŸ”˜ Button Size & Style Quick Reference
 
 ```
-┌─────────────────────────────────────────────────┐
-│ CONTEXT                    │ CLASS               │
-├─────────────────────────────────────────────────┤
-│ Header (Back)              │ btn outline-secondary btn-sm │
-│ Header (Refresh)           │ btn btn-success btn-sm       │
-│ Filter Apply/Clear         │ btn btn-primary              │
-│         (NO btn-sm)        │ btn btn-danger               │
-│ Grid Actions (Edit/Delete) │ btn btn-sm btn-primary       │
-│         (NO btn-sm)        │ btn btn-sm btn-danger        │
-│ Form Save/Cancel           │ btn btn-primary              │
-│         (NO btn-sm)        │ btn btn-secondary            │
-└─────────────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚ CONTEXT                    â”‚ CLASS               â”‚
+â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+â”‚ Header (Back)              â”‚ btn outline-secondary btn-sm â”‚
+â”‚ Header (Refresh)           â”‚ btn btn-success btn-sm       â”‚
+â”‚ Filter Apply/Clear         â”‚ btn btn-primary              â”‚
+â”‚         (NO btn-sm)        â”‚ btn btn-danger               â”‚
+â”‚ Grid Actions (Edit/Delete) â”‚ btn btn-sm btn-primary       â”‚
+â”‚         (NO btn-sm)        â”‚ btn btn-sm btn-danger        â”‚
+â”‚ Form Save/Cancel           â”‚ btn btn-primary              â”‚
+â”‚         (NO btn-sm)        â”‚ btn btn-secondary            â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
-**Rule:** If button in GRID → add `btn-sm` | If button in FORM/HEADER → NO `btn-sm` (except **EXPORT** on form card header → `btn-sm`)
+**Rule:** If button in GRID â†’ add `btn-sm` | If button in FORM/HEADER â†’ NO `btn-sm` (except **EXPORT** on form card header â†’ `btn-sm`)
 
 ---
 
-## 📋 Copy-Paste Snippets
+## ðŸ“‹ Copy-Paste Snippets
 
-### 1️⃣ BACK BUTTON - Always use this exactly
+### 1ï¸âƒ£ BACK BUTTON - Always use this exactly
 
 ```html
 <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="NavigateBack" title="Go back">
@@ -68,14 +68,14 @@ The button, grid, and form patterns below are what the mock (and future Blazor p
 </button>
 ```
 
-✅ What's special:
+âœ… What's special:
 - OpenIconic `oi-arrow-left` (NOT `bi-arrow-left`)
 - `btn-outline-secondary` (NOT solid `btn-secondary`)
 - ALWAYS `btn-sm`
 
 ---
 
-### 2️⃣ GRID ACTION BUTTONS - Edit & Delete
+### 2ï¸âƒ£ GRID ACTION BUTTONS - Edit & Delete
 
 ```html
 <td class="text-center">
@@ -90,7 +90,7 @@ The button, grid, and form patterns below are what the mock (and future Blazor p
 </td>
 ```
 
-✅ What's special:
+âœ… What's special:
 - ICON ONLY (no text in grids)
 - Always `btn-sm btn-primary` and `btn-sm btn-danger`
 - Wrapped in `btn-group btn-group-sm`
@@ -98,7 +98,7 @@ The button, grid, and form patterns below are what the mock (and future Blazor p
 
 ---
 
-### 3️⃣ FORM BUTTONS - Save & Cancel
+### 3ï¸âƒ£ FORM BUTTONS - Save & Cancel
 
 ```html
 <div class="d-flex gap-2">
@@ -119,7 +119,7 @@ The button, grid, and form patterns below are what the mock (and future Blazor p
 </div>
 ```
 
-✅ What's special:
+âœ… What's special:
 - Spinner replaces icon when saving
 - Icon `me-2` (margin before text)
 - NO `btn-sm` (full size buttons)
@@ -127,7 +127,7 @@ The button, grid, and form patterns below are what the mock (and future Blazor p
 
 ---
 
-### 4️⃣ FILTER BUTTONS - Apply & Clear
+### 4ï¸âƒ£ FILTER BUTTONS - Apply & Clear
 
 ```html
 <div class="d-flex gap-2">
@@ -140,7 +140,7 @@ The button, grid, and form patterns below are what the mock (and future Blazor p
 </div>
 ```
 
-✅ What's special:
+âœ… What's special:
 - NO `btn-sm` (full size)
 - Icon `me-1` (margin before text)
 - `bi-funnel-fill` with `-fill` suffix
@@ -148,7 +148,7 @@ The button, grid, and form patterns below are what the mock (and future Blazor p
 
 ---
 
-### 5️⃣ TEXT INPUT - With Validation
+### 5ï¸âƒ£ TEXT INPUT - With Validation
 
 ```html
 <div class="mb-3">
@@ -163,7 +163,7 @@ The button, grid, and form patterns below are what the mock (and future Blazor p
 </div>
 ```
 
-✅ What's special:
+âœ… What's special:
 - `*` in label for required fields
 - Use `FieldValidationCss.FormControl()` helper
 - `@onblur` (not on keyup)
@@ -184,7 +184,7 @@ private void ValidateFieldOnBlur(string fieldId, string value, string fieldName 
 
 ---
 
-### 6️⃣ DELETE CONFIRMATION MODAL
+### 6ï¸âƒ£ DELETE CONFIRMATION MODAL
 
 ```html
 @if (ShowDeleteConfirm && ItemToDelete != null)
@@ -218,7 +218,7 @@ private void ValidateFieldOnBlur(string fieldId, string value, string fieldName 
 }
 ```
 
-✅ What's special:
+âœ… What's special:
 - BOTH `modal` and `d-block` classes required
 - `style="background-color: rgba(0,0,0,0.5);"` (NOT `display: block`)
 - `border-0` on header AND footer
@@ -228,7 +228,7 @@ private void ValidateFieldOnBlur(string fieldId, string value, string fieldName 
 
 ---
 
-### 7️⃣ DATA GRID / TABLE
+### 7ï¸âƒ£ DATA GRID / TABLE
 
 ```html
 <div class="table-responsive">
@@ -254,7 +254,7 @@ private void ValidateFieldOnBlur(string fieldId, string value, string fieldName 
 </div>
 ```
 
-✅ What's special:
+âœ… What's special:
 - ALWAYS `table-dark` (black header)
 - ALWAYS `table-striped table-hover`
 - ALWAYS `@key="item.Id"` (performance)
@@ -262,7 +262,7 @@ private void ValidateFieldOnBlur(string fieldId, string value, string fieldName 
 
 ---
 
-### 8️⃣ EXPORT BUTTON — Form card header (green dropdown)
+### 8ï¸âƒ£ EXPORT BUTTON â€” Form card header (green dropdown)
 
 **Placement:** top-right of the **create/edit form** card header (same row as the form title). Matches the AB-MATIC admin mock.
 
@@ -276,7 +276,7 @@ private void ValidateFieldOnBlur(string fieldId, string value, string fieldName 
         <Title>@(_isEditing ? "Edit product price" : "Create product price")</Title>
     </AdminEntityFormHeader>
     <div class="card-body">
-        @* EditForm … *@
+        @* EditForm â€¦ *@
     </div>
 </div>
 ```
@@ -306,7 +306,7 @@ private GridExportRequest? BuildExportRequest() =>
 
 What's special:
 - Green **`btn btn-success btn-sm`** label **EXPORT** with chevron (not full-size)
-- Dropdown options are **only CSV and PDF** — no other formats
+- Dropdown options are **only CSV and PDF** â€” no other formats
 - Exports the **current grid rows** (respect filters/search), not the form draft
 - Disabled when grid is loading or empty
 - Read-only pages without a form card: put `<AdminExportDropdown>` on the grid toolbar instead (`StockOverview`, `StockMovementList`)
@@ -315,11 +315,11 @@ What's special:
 
 ---
 
-### 9️⃣ GRID SEARCH — Full-width toolbar search
+### 9ï¸âƒ£ GRID SEARCH â€” Full-width toolbar search
 
 **Placement:** right side of the grid card header (`entity-grid-toolbar`), stretching from the **Search** label to the magnifying-glass icon.
 
-**Component:** `<AdminGridSearch>` — do **not** use a small standalone `<input type="search">`.
+**Component:** `<AdminGridSearch>` â€” do **not** use a small standalone `<input type="search">`.
 
 ```razor
 <div class="card-header bg-white entity-grid-toolbar">
@@ -341,34 +341,34 @@ private async Task ApplySearchAsync()
 
 What's special:
 - `.entity-grid-search` uses `flex: 1` so the field fills the toolbar (title left, search grows to the right)
-- Input group: `[Search label][text field…][magnifying glass button]`
-- **Type-to-search:** trimmed length ≥ 3 chars auto-invokes `OnSearch` (debounced ~300 ms); clearing to 0 chars reloads the unfiltered list
-- Length 1–2 does not auto-query (wait for ≥3, Enter, or lupa click)
-- **Lupa is always a clickable button** (`cursor: pointer`) — never decorative; click always applies the current draft (including &lt;3 chars)
+- Input group: `[Search label][text fieldâ€¦][magnifying glass button]`
+- **Type-to-search:** trimmed length â‰¥ 3 chars auto-invokes `OnSearch` (debounced ~300 ms); clearing to 0 chars reloads the unfiltered list
+- Length 1â€“2 does not auto-query (wait for â‰¥3, Enter, or lupa click)
+- **Lupa is always a clickable button** (`cursor: pointer`) â€” never decorative; click always applies the current draft (including &lt;3 chars)
 - Enter also triggers `OnSearch`
-- `ApplySearchAsync` sets `_searchDraft` → `_filter.Search` and reloads the grid; **0 matches = empty grid** (do not keep previous rows)
+- `ApplySearchAsync` sets `_searchDraft` â†’ `_filter.Search` and reloads the grid; **0 matches = empty grid** (do not keep previous rows)
 - CSS: `WebShopABMATIC.Client/wwwroot/css/admin.css` (`.entity-grid-toolbar`, `.entity-grid-search`, `.entity-grid-search-icon`)
 
 ---
 
-## 🎨 Color Code Reference
+## ðŸŽ¨ Color Code Reference
 
 | Color | Hex | Button Class | When to Use |
 |-------|-----|--------------|------------|
-| 🔵 Blue | `#0d6efd` | `btn-primary` | Create, Edit, Save |
-| 🟩 Green | `#198754` | `btn-success` | Refresh, Approve, **EXPORT** dropdown |
-| 🔴 Red | `#dc3545` | `btn-danger` | Delete, Clear, Reject |
-| 🟦 Gray Fill | `#6c757d` | `btn-secondary` | Cancel |
-| ⚪ Gray Outline | `#6c757d` | `btn-outline-secondary` | Back navigation |
-| 🔷 Light Blue | `#0dcaf0` | `btn-info` | View, Download |
+| ðŸ”µ Blue | `#0d6efd` | `btn-primary` | Create, Edit, Save |
+| ðŸŸ© Green | `#198754` | `btn-success` | Refresh, Approve, **EXPORT** dropdown |
+| ðŸ”´ Red | `#dc3545` | `btn-danger` | Delete, Clear, Reject |
+| ðŸŸ¦ Gray Fill | `#6c757d` | `btn-secondary` | Cancel |
+| âšª Gray Outline | `#6c757d` | `btn-outline-secondary` | Back navigation |
+| ðŸ”· Light Blue | `#0dcaf0` | `btn-info` | View, Download |
 
 ---
 
-## ✅ Pre-Flight Checklist
+## âœ… Pre-Flight Checklist
 
 Before submitting a page, verify:
 
-### 🔘 Buttons
+### ðŸ”˜ Buttons
 - [ ] Back button: `oi-arrow-left` (OpenIconic, NOT `bi-`)
 - [ ] Back button: `btn-outline-secondary btn-sm` (outlined, small)
 - [ ] Grid buttons: `btn-sm btn-primary` and `btn-sm btn-danger` (small)
@@ -376,7 +376,7 @@ Before submitting a page, verify:
 - [ ] All buttons have `title` attribute
 - [ ] Icons use `me-1` or `me-2` spacing
 
-### 📋 Forms
+### ðŸ“‹ Forms
 - [ ] Required fields have `*` in label
 - [ ] Required fields have `@onblur` validation
 - [ ] Required fields have `ValidationFeedbackMessage` component
@@ -385,7 +385,7 @@ Before submitting a page, verify:
 - [ ] Validation errors have specific messages
 - [ ] Buttons disabled during save: `disabled="@IsSaving"`
 
-### 🗂️ Grids
+### ðŸ—‚ï¸ Grids
 - [ ] Header: `class="table-dark"`
 - [ ] Rows: `@key="item.Id"` on `<tr>`
 - [ ] Table: `table-responsive` wrapper
@@ -395,7 +395,7 @@ Before submitting a page, verify:
 - [ ] Form header: `<AdminEntityFormHeader>` with EXPORT (CSV/PDF)
 - [ ] `@inject IGridExportService GridExport` + `BuildExportRequest()` on list pages
 
-### 🔲 Modals
+### ðŸ”² Modals
 - [ ] Classes: `modal fade show d-block`
 - [ ] Style: `style="background-color: rgba(0,0,0,0.5);" ` (NOT display: block)
 - [ ] Dialog: `modal-dialog-centered`
@@ -406,43 +406,43 @@ Before submitting a page, verify:
 
 ---
 
-## 🔥 Common Mistakes (Don't Do These!)
+## ðŸ”¥ Common Mistakes (Don't Do These!)
 
 ```
-❌ Use bi-arrow-left for back button
-✅ Use oi-arrow-left instead
+âŒ Use bi-arrow-left for back button
+âœ… Use oi-arrow-left instead
 
-❌ Back button with btn-secondary (solid)
-✅ Back button with btn-outline-secondary (outlined)
+âŒ Back button with btn-secondary (solid)
+âœ… Back button with btn-outline-secondary (outlined)
 
-❌ Grid buttons without btn-sm
-✅ Grid buttons with btn-sm btn-primary
+âŒ Grid buttons without btn-sm
+âœ… Grid buttons with btn-sm btn-primary
 
-❌ Form buttons with btn-sm
-✅ Form buttons without btn-sm (full size)
+âŒ Form buttons with btn-sm
+âœ… Form buttons without btn-sm (full size)
 
-❌ Modal style="display: block;"
-✅ Modal style="background-color: rgba(0,0,0,0.5);"
+âŒ Modal style="display: block;"
+âœ… Modal style="background-color: rgba(0,0,0,0.5);"
 
-❌ Delete modal missing d-block class
-✅ Delete modal with "modal fade show d-block"
+âŒ Delete modal missing d-block class
+âœ… Delete modal with "modal fade show d-block"
 
-❌ Validation errors in permanent state
-✅ Validation errors clear: _fieldErrors.Remove(fieldId)
+âŒ Validation errors in permanent state
+âœ… Validation errors clear: _fieldErrors.Remove(fieldId)
 
-❌ Grid buttons with text like "Edit Item"
-✅ Grid buttons icon-only: just <i class="bi bi-pencil"></i>
+âŒ Grid buttons with text like "Edit Item"
+âœ… Grid buttons icon-only: just <i class="bi bi-pencil"></i>
 
-❌ Form without specific error messages
-✅ Form with messages like "Name is required."
+âŒ Form without specific error messages
+âœ… Form with messages like "Name is required."
 
-❌ Input field without required attribute
-✅ Input field with required attribute AND @onblur
+âŒ Input field without required attribute
+âœ… Input field with required attribute AND @onblur
 ```
 
 ---
 
-## 🚀 Lightning Speed Lookup
+## ðŸš€ Lightning Speed Lookup
 
 **Q: How do I style the back button?**
 A: Copy snippet #1 above. Use `oi-arrow-left` and `btn-outline-secondary btn-sm`.
@@ -464,7 +464,7 @@ A: See Color Code Reference above. Primary (blue) for main actions, danger (red)
 
 ---
 
-## 📞 Still Confused?
+## ðŸ“ž Still Confused?
 
 1. Find your page in `Web/Components/Pages/Admin/`
 2. Look at `CustomerList.razor` - it has EVERYTHING!
@@ -477,8 +477,8 @@ A: See Color Code Reference above. Primary (blue) for main actions, danger (red)
 
 ## Documentation
 
-- 🏠 [Main Documentation](../README.md) — Project overview and requirements
+- ðŸ  [Main Documentation](../README.md) â€” Project overview and requirements
 
 ---
 
-**© 2026 AdminSense. All rights reserved.**
+**Â© 2026 AdminSense. All rights reserved.**

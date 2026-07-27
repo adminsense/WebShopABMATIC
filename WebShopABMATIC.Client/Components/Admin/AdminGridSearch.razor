@@ -7,26 +7,100 @@
                value="@Value"
                @oninput="OnInput"
                @onkeydown="OnKeyDown" />
-        <span class="input-group-text entity-grid-search-icon"><i class="bi bi-search"></i></span>
+        <button type="button"
+                class="input-group-text entity-grid-search-icon"
+                title="Search"
+                @onclick="TriggerSearchAsync">
+            <i class="bi bi-search" aria-hidden="true"></i>
+        </button>
     </div>
 </div>
 
+@implements IAsyncDisposable
 @code {
+    private const int MinAutoSearchLength = 3;
+    private const int DebounceMs = 300;
+
     [Parameter] public string Value { get; set; } = "";
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
     [Parameter] public EventCallback OnSearch { get; set; }
+
+    private CancellationTokenSource? _debounceCts;
+    private int _debounceVersion;
 
     private async Task OnInput(ChangeEventArgs e)
     {
         Value = e.Value?.ToString() ?? "";
         await ValueChanged.InvokeAsync(Value);
+
+        var trimmed = Value.Trim();
+        if (trimmed.Length == 0)
+        {
+            CancelDebounce();
+            await TriggerSearchAsync();
+            return;
+        }
+
+        if (trimmed.Length < MinAutoSearchLength)
+        {
+            CancelDebounce();
+            return;
+        }
+
+        await DebounceSearchAsync();
     }
 
     private async Task OnKeyDown(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter" && OnSearch.HasDelegate)
+        if (e.Key == "Enter")
         {
-            await OnSearch.InvokeAsync();
+            CancelDebounce();
+            await TriggerSearchAsync();
         }
+    }
+
+    private async Task TriggerSearchAsync()
+    {
+        CancelDebounce();
+        if (OnSearch.HasDelegate)
+            await OnSearch.InvokeAsync();
+    }
+
+    private async Task DebounceSearchAsync()
+    {
+        CancelDebounce();
+        var cts = new CancellationTokenSource();
+        _debounceCts = cts;
+        var version = ++_debounceVersion;
+
+        try
+        {
+            await Task.Delay(DebounceMs, cts.Token);
+            if (version != _debounceVersion || cts.IsCancellationRequested)
+                return;
+            if (OnSearch.HasDelegate)
+                await OnSearch.InvokeAsync();
+        }
+        catch (OperationCanceledException)
+        {
+            // superseded by newer input or dispose
+        }
+    }
+
+    private void CancelDebounce()
+    {
+        _debounceVersion++;
+        if (_debounceCts is null)
+            return;
+        try { _debounceCts.Cancel(); }
+        catch (ObjectDisposedException) { /* ignore */ }
+        _debounceCts.Dispose();
+        _debounceCts = null;
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        CancelDebounce();
+        return ValueTask.CompletedTask;
     }
 }

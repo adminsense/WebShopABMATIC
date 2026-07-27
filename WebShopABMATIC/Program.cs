@@ -48,11 +48,20 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         options.Cookie.IsEssential = true;
-        // Store login uses IsPersistent=false → session cookie (no Max-Age); ticket idle = sliding 15 minutes.
+        // Always session cookie (browser close = logged out). Ticket idle = sliding 15 minutes.
         options.ExpireTimeSpan = WebShopABMATIC.Infrastructure.Auth.LegacyCookieAuthentication.SessionIdleTimeout;
         options.SlidingExpiration = true;
         options.Events = new CookieAuthenticationEvents
         {
+            OnValidatePrincipal = async context =>
+            {
+                // Kill any leftover "remember me" / persistent tickets from older builds.
+                if (context.Properties.IsPersistent)
+                {
+                    context.RejectPrincipal();
+                    await WebShopABMATIC.Infrastructure.Auth.LegacyCookieAuthentication.SignOutAsync(context.HttpContext);
+                }
+            },
             OnRedirectToLogin = context =>
             {
                 if (context.Request.Path.StartsWithSegments("/admin"))
