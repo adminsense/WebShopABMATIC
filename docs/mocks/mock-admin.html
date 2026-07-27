@@ -241,7 +241,6 @@
         <button type="button" class="nav-link-item" data-view="hub" data-hub="sales"><span class="oi oi-cart"></span> Sales</button>
         <button type="button" class="nav-link-item" data-view="hub" data-hub="stock"><span class="oi oi-box"></span> Stock</button>
         <button type="button" class="nav-link-item" data-view="hub" data-hub="settings"><span class="oi oi-wrench"></span> Settings</button>
-        <button type="button" class="nav-link-item" data-view="hub" data-hub="profile"><span class="oi oi-person"></span> My profile</button>
       </nav>
       <div class="sidebar-footer">
         <div id="sidebar-date">30/05/2026</div>
@@ -449,14 +448,6 @@
           { entity: 'StaffUser', color: '#5b8def', icon: 'bi-person-gear', title: 'Staff user', desc: 'Admin, ProductBeheer, Bestellingen flags', list: 'staff-user' },
           { entity: 'UserGroup', color: '#6f42c1', icon: 'bi-people', title: 'User group', desc: 'Staff user groups and teams', list: 'user-group' },
           { entity: 'VatType', color: '#e8a838', icon: 'bi-receipt-cutoff', title: 'VAT type', desc: 'VAT percentages and invoice text', list: 'vat-type' }
-        ]
-      },
-      profile: {
-        title: 'My profile',
-        subtitle: 'StaffUser profile and preferences',
-        icon: 'oi-person',
-        cards: [
-          { entity: 'StaffUser', color: '#5b8def', icon: 'bi-person-circle', title: 'Profile', desc: 'Edit your staff user profile', list: 'staff-user', formOnly: true }
         ]
       }
     };
