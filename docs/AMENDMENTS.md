@@ -1,6 +1,6 @@
-# 📝 Runtime Amendments & Open UI Notes
+﻿# 📝 Runtime Amendments & Open UI Notes
 
-<p style="display:flex;flex-wrap:nowrap;gap:0.35rem;align-items:center;overflow-x:auto;margin:0.5rem 0 0;"><img alt="Status" src="https://img.shields.io/badge/Status-Living%20Changelog-0ea5e9?style=flat-square" /><img alt="Updates" src="https://img.shields.io/badge/Updates-Continuous-22c55e?style=flat-square" /><img alt="Type" src="https://img.shields.io/badge/Type-Runtime%20Notes-512BD4?style=flat-square" /></p>
+![Status](https://img.shields.io/badge/Status-Living%20Changelog-0ea5e9?style=flat-square) ![Updates](https://img.shields.io/badge/Updates-Continuous-22c55e?style=flat-square) ![Type](https://img.shields.io/badge/Type-Runtime%20Notes-512BD4?style=flat-square)
 
 **Short current-runtime notes and dated changelog**
 
@@ -16,7 +16,7 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 
 ## 📅 Amendments (newest first)
 
-> **2026-07-28:** Staff user: filter Admin/Manager out of group dropdown (panel = checkboxes); group XOR reverted; plain password fields; admin logout enhance-nav fix.
+> **2026-07-28:** `/admin/product-attributes` assignment UI restored (Product + ProductAttribuutItem; ProductAttribuut read for labels; no `/admin/attributes`). Staff user: filter Admin/Manager out of group dropdown; group XOR reverted; plain password fields; admin logout enhance-nav fix.
 
 > **2026-07-27:** Staff user (password/group/flags) in SPEC_ADMIN §3.7; removed My profile + plan file; AdminGridSearch type-to-search; StoreStaffRedirect after render; auth always session cookie (no Remember me).
 
