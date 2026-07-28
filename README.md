@@ -1,6 +1,6 @@
-﻿# 🛒 WebShopABMATIC — B2B E-Commerce Platform
+# 🛒 WebShopABMATIC — B2B E-Commerce Platform
 
-![Blazor](https://img.shields.io/badge/Blazor-Server-512BD4?style=flat-square&logo=blazor&logoColor=white) ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white) ![C#](https://img.shields.io/badge/C%23-13.0-239120?style=flat-square&logo=csharp&logoColor=white) ![SQL Server](https://img.shields.io/badge/SQL%20Server-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white) ![Hexagonal](https://img.shields.io/badge/Architecture-Hexagonal-9b59b6?style=flat-square) ![Status](https://img.shields.io/badge/Status-Production-28a745?style=flat-square)
+<p style="display:flex;flex-wrap:nowrap;gap:0.35rem;align-items:center;overflow-x:auto;margin:0.5rem 0 0;"><img alt="Blazor" src="https://img.shields.io/badge/Blazor-Server-512BD4?style=flat-square&amp;logo=blazor&amp;logoColor=white" /><img alt=".NET" src="https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&amp;logo=dotnet&amp;logoColor=white" /><img alt="C#" src="https://img.shields.io/badge/C%23-13.0-239120?style=flat-square&amp;logo=csharp&amp;logoColor=white" /><img alt="SQL Server" src="https://img.shields.io/badge/SQL%20Server-CC2927?style=flat-square&amp;logo=microsoftsqlserver&amp;logoColor=white" /><img alt="Hexagonal" src="https://img.shields.io/badge/Architecture-Hexagonal-9b59b6?style=flat-square" /><img alt="Status" src="https://img.shields.io/badge/Status-Production-28a745?style=flat-square" /></p>
 
 **B2B e-commerce platform with Blazor Server, .NET 10, and hexagonal architecture**
 
