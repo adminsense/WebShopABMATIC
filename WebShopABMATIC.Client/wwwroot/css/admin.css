@@ -691,6 +691,26 @@ a.hub-card.hub-card-link:focus-visible {
   background: #fff;
   color: #64748b;
   border-left: none;
+  cursor: pointer;
+}
+
+button.entity-grid-search-icon {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+  line-height: 1;
+}
+
+button.entity-grid-search-icon:hover {
+  color: #0d6efd;
+  background: #f8f9fa;
+}
+
+button.entity-grid-search-icon:focus {
+  outline: none;
+  box-shadow: none;
+  border-color: #86b7fe;
+  color: #0d6efd;
 }
 
 .entity-grid-search .form-control:focus {
@@ -698,7 +718,7 @@ a.hub-card.hub-card-link:focus-visible {
   border-color: #ced4da;
 }
 
-.entity-grid-search .form-control:focus + .input-group-text.entity-grid-search-icon {
+.entity-grid-search .form-control:focus + .entity-grid-search-icon {
   border-color: #86b7fe;
 }
 
