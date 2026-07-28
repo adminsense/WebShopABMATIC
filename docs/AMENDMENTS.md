@@ -16,7 +16,7 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 
 ## 📅 Amendments (newest first)
 
-> **2026-07-28:** `/admin/product-attributes` assignment UI restored (Product + ProductAttribuutItem; ProductAttribuut read for labels; no `/admin/attributes`). Staff user: filter Admin/Manager out of group dropdown; group XOR reverted; plain password fields; admin logout enhance-nav fix.
+> **2026-07-28:** Product admin form: DescriptionNl/En/Fr + WebshopDescriptionNl; wide form layout; Attributes action uses `btn-primary` like Edit. ProductAttribuut remap + seed 18; assignment Cancel; staff user/group fixes.
 
 > **2026-07-27:** Staff user (password/group/flags) in SPEC_ADMIN §3.7; removed My profile + plan file; AdminGridSearch type-to-search; StoreStaffRedirect after render; auth always session cookie (no Remember me).
 
