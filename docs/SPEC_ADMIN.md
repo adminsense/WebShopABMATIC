@@ -1,6 +1,6 @@
-# Admin Panel — Functional Specification
+﻿# Admin Panel — Functional Specification
 
-<p style="display:flex;flex-wrap:nowrap;gap:0.35rem;align-items:center;overflow-x:auto;margin:0.5rem 0 0;"><img alt="Status" src="https://img.shields.io/badge/Status-Implemented-28a745?style=flat-square" /><img alt="Screens" src="https://img.shields.io/badge/Screens-3%20layout%20types-0d47a1?style=flat-square" /><img alt="Entities" src="https://img.shields.io/badge/Hub%20entities-22-512BD4?style=flat-square" /><img alt="UI" src="https://img.shields.io/badge/UI-AB-MATIC%20shell-0dcaf0?style=flat-square" /></p>
+![Status](https://img.shields.io/badge/Status-Implemented-28a745?style=flat-square) ![Screens](https://img.shields.io/badge/Screens-3%20layout%20types-0d47a1?style=flat-square) ![Entities](https://img.shields.io/badge/Hub%20entities-22-512BD4?style=flat-square) ![UI](https://img.shields.io/badge/UI-AB-MATIC%20shell-0dcaf0?style=flat-square)
 
 > [!IMPORTANT]
 > **Executive Summary:** The WebShopABMATIC **Admin Panel** is the staff-facing Blazor Server application for managing catalog, customers, orders, stock, and settings. It follows the AB-MATIC-style shell (sidebar, dashboard, hub cards, filter grids, forms) documented in the reference screenshots below. Access requires **Admin** or **Manager** roles via ASP.NET Core Identity.

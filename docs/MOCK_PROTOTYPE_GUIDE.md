@@ -1,6 +1,6 @@
-# 🎨 WebShopABMATIC — Admin Mock Prototype Guide
+﻿# 🎨 WebShopABMATIC — Admin Mock Prototype Guide
 
-<p style="display:flex;flex-wrap:nowrap;gap:0.35rem;align-items:center;overflow-x:auto;margin:0.5rem 0 0;"><img alt="Status" src="https://img.shields.io/badge/Status-Validation%20ready-28a745?style=flat-square" /><img alt="Layout" src="https://img.shields.io/badge/Layout-AB--MATIC%20style-512BD4?style=flat-square" /><img alt="Scope" src="https://img.shields.io/badge/Scope-Admin%20only-0d47a1?style=flat-square" /><img alt="Type" src="https://img.shields.io/badge/Type-HTML%20Prototype-0ea5e9?style=flat-square" /></p>
+![Status](https://img.shields.io/badge/Status-Validation%20ready-28a745?style=flat-square) ![Layout](https://img.shields.io/badge/Layout-AB--MATIC%20style-512BD4?style=flat-square) ![Scope](https://img.shields.io/badge/Scope-Admin%20only-0d47a1?style=flat-square) ![Type](https://img.shields.io/badge/Type-HTML%20Prototype-0ea5e9?style=flat-square)
 
 **Admin HTML prototype guide - how it maps to AB-MATIC reference layout**
 

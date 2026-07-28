@@ -1,6 +1,6 @@
-# Catalog filters â€” ProductAttribuut (client model)
+﻿# Catalog filters — ProductAttribuut (client model)
 
-<p style="display:flex;flex-wrap:nowrap;gap:0.35rem;align-items:center;overflow-x:auto;margin:0.5rem 0 0;"><img alt="Status" src="https://img.shields.io/badge/Status-Implemented-28a745?style=flat-square" /><img alt="Scope" src="https://img.shields.io/badge/Scope-Store%20+%20Admin-512BD4?style=flat-square" /></p>
+![Status](https://img.shields.io/badge/Status-Implemented-28a745?style=flat-square) ![Scope](https://img.shields.io/badge/Scope-Store%20+%20Admin-512BD4?style=flat-square)
 
 **Canonical working spec for catalog attribute filters.**  
 S.7 pilot removed. Runtime uses `ProductAttribuut` / `ProductAttribuutItem` only. Apply SQL script on `abmatic_test` before first use.
@@ -13,11 +13,11 @@ S.7 pilot removed. Runtime uses `ProductAttribuut` / `ProductAttribuutItem` only
 |------|--------|
 | Attributes on **products only** | Not on categories |
 | Admin maintains dictionary + values | Staff create/seed attributes; per product choose attribute and fill value; client can update later |
-| Store filters | User opens a **leaf** category â†’ system loads attributes present on products in that category â†’ shows **distinct** values as **checkboxes** â†’ check/uncheck filters the grid |
+| Store filters | User opens a **leaf** category → system loads attributes present on products in that category → shows **distinct** values as **checkboxes** → check/uncheck filters the grid |
 | Applies to all products/categories | No Handzenders-only whitelist; any leaf with product attribute data shows filters |
-| Layout | **Unchanged** â€” keep current `Catalog.razor` + facet checkbox sidebar chrome |
+| Layout | **Unchanged** — keep current `Catalog.razor` + facet checkbox sidebar chrome |
 
-**Do not use** for these filters: `ProductOption` (checkout), legacy `ProductProperty` / `ProductPropertieItem` (old ERP property sheet â€” not this feature).
+**Do not use** for these filters: `ProductOption` (checkout), legacy `ProductProperty` / `ProductPropertieItem` (old ERP property sheet — not this feature).
 
 **Replaces** the S.7 pilot entirely (Merk / Voorraad / Prijs / `ProductProperty` facets / `StoreCatalogFilters` whitelist). Pilot code has been deleted.
 
@@ -50,11 +50,11 @@ Store UI labels: prefer `NaamNl` when present; otherwise `NaamEn` (seed may copy
 
 ---
 
-## 3. Schema (Dutch SQL â†’ English C#)
+## 3. Schema (Dutch SQL → English C#)
 
-**Explicit exception to â€œnever invent ERP tablesâ€:** client asked for new tables for this feature. Delivery = **SQL script** applied by Marco/DBA on `abmatic_test`, then EF mapping only. **No** `Migrate()` / `EnsureCreated()`.
+**Explicit exception to “never invent ERP tables”:** client asked for new tables for this feature. Delivery = **SQL script** applied by Marco/DBA on `abmatic_test`, then EF mapping only. **No** `Migrate()` / `EnsureCreated()`.
 
-### `[Products].[ProductAttribuut]` â†’ `ProductAttribute`
+### `[Products].[ProductAttribuut]` → `ProductAttribute`
 
 | SQL (Dutch) | C# |
 |-------------|-----|
@@ -64,7 +64,7 @@ Store UI labels: prefer `NaamNl` when present; otherwise `NaamEn` (seed may copy
 | `NaamFr` | `NameFr` |
 | `Volgorde` | `SortOrder` |
 
-### `[Products].[ProductAttribuutItem]` â†’ `ProductAttributeValue`
+### `[Products].[ProductAttribuutItem]` → `ProductAttributeValue`
 
 | SQL (Dutch) | C# |
 |-------------|-----|
@@ -81,8 +81,8 @@ DE-PARA also in [DATA_DUTCH_ENGLISH_MODEL.md](./DATA_DUTCH_ENGLISH_MODEL.md).
 
 ### 4.1 Admin
 
-1. **`/admin/attributes`** â€” dictionary CRUD for `ProductAttribuut` (seeded 18 + future rows).  
-2. **`/admin/product-attributes`** â€” dedicated assignment: search `[Products].[Product]` by **NameNl / NameEn / NameFr** (+ part number / EAN), select `ProdId`, then add/edit/delete `Waarde` rows. Deep-link: `/admin/product-attributes/{ProductId}`. Optional shortcut from Product list.  
+1. **`/admin/attributes`** — dictionary CRUD for `ProductAttribuut` (seeded 18 + future rows).  
+2. **`/admin/product-attributes`** — dedicated assignment: search `[Products].[Product]` by **NameNl / NameEn / NameFr** (+ part number / EAN), select `ProdId`, then add/edit/delete `Waarde` rows. Deep-link: `/admin/product-attributes/{ProductId}`. Optional shortcut from Product list.  
 3. One product may have many attributes; values are free text (distinct facet keys = exact `Waarde` strings).
 
 ### 4.2 Store
@@ -90,21 +90,21 @@ DE-PARA also in [DATA_DUTCH_ENGLISH_MODEL.md](./DATA_DUTCH_ENGLISH_MODEL.md).
 1. User navigates to a **leaf** `ProductStructure` category (`Catalog.razor`).  
 2. Load products in that leaf (`ShowOnWebshop`).  
 3. Load `ProductAttribuutItem` for those products.  
-4. Build facet groups: each attribute that has â‰¥1 value â†’ distinct `Waarde` + counts.  
+4. Build facet groups: each attribute that has ≥1 value → distinct `Waarde` + counts.  
 5. Same checkbox sidebar layout as today; selections filter the product grid.  
-6. Guests may browse and filter; login only for place order / pay / account (unchanged Â§9.1â€“9.2).
+6. Guests may browse and filter; login only for place order / pay / account (unchanged §9.1–9.2).
 
 ### 4.3 Hexagonal (target)
 
 ```text
 Catalog.razor + StoreFacetSidebar (layout kept)
-  â†’ IStoreCatalogPort (facets + filtered catalog)
-  â†’ StoreCatalogService
-  â†’ ProductAttribuut / ProductAttribuutItem
+  → IStoreCatalogPort (facets + filtered catalog)
+  → StoreCatalogService
+  → ProductAttribuut / ProductAttribuutItem
 
-/admin/attributes â†’ IProductAttributeAdminPort
-/admin/product-attributes â†’ IProductAttributeAssignmentAdminPort
-  â†’ repositories â†’ same tables
+/admin/attributes → IProductAttributeAdminPort
+/admin/product-attributes → IProductAttributeAssignmentAdminPort
+  → repositories → same tables
 ```
 
 No `DbContext` in Razor.
@@ -115,12 +115,12 @@ No `DbContext` in Razor.
 
 | Phase | Deliverable | Status |
 |-------|-------------|--------|
-| **D0 â€” Docs** | This PLAN + SPEC/AMENDMENTS/DATA sync | âœ… |
-| **D1 â€” SQL + EF** | `scripts/ProductAttribuut_create_and_seed.sql` + ModelBuilder map | âœ… (DBA must run script on `abmatic_test`) |
-| **D2 â€” Delete pilot** | Removed S.7 filter code / `StoreCatalogFilters` / ProductProperty catalog facets | âœ… |
-| **D3 â€” Admin** | `/admin/attributes` + `/admin/product-attributes` | âœ… |
-| **D4 â€” Store** | Facets from `ProductAttribuutItem` (layout unchanged) | âœ… |
-| **D5 â€” Docs** | PLAN / SPEC / AMENDMENTS sync | âœ… |
+| **D0 — Docs** | This PLAN + SPEC/AMENDMENTS/DATA sync | ✅ |
+| **D1 — SQL + EF** | `scripts/ProductAttribuut_create_and_seed.sql` + ModelBuilder map | ✅ (DBA must run script on `abmatic_test`) |
+| **D2 — Delete pilot** | Removed S.7 filter code / `StoreCatalogFilters` / ProductProperty catalog facets | ✅ |
+| **D3 — Admin** | `/admin/attributes` + `/admin/product-attributes` | ✅ |
+| **D4 — Store** | Facets from `ProductAttribuutItem` (layout unchanged) | ✅ |
+| **D5 — Docs** | PLAN / SPEC / AMENDMENTS sync | ✅ |
 
 ---
 
@@ -128,9 +128,9 @@ No `DbContext` in Razor.
 
 | Doc | Role |
 |-----|------|
-| [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) Â§4.1 | Store facet behaviour (target) |
+| [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.1 | Store facet behaviour (target) |
 | [SPEC_ADMIN.md](./SPEC_ADMIN.md) | Admin surfaces (update when UI lands) |
-| [SPEC_INFRASTRUCTURE.md](./SPEC_INFRASTRUCTURE.md) | Config â€” old `StoreCatalogFilters` removed from target |
+| [SPEC_INFRASTRUCTURE.md](./SPEC_INFRASTRUCTURE.md) | Config — old `StoreCatalogFilters` removed from target |
 | [DATA_DUTCH_ENGLISH_MODEL.md](./DATA_DUTCH_ENGLISH_MODEL.md) | DE-PARA |
 | [SPEC_IMPLEMENTATION_ROADMAP_open.md](./SPEC_IMPLEMENTATION_ROADMAP_open.md) | S.7 status |
 | [AMENDMENTS.md](./AMENDMENTS.md) | Dated runtime notes |
@@ -139,4 +139,4 @@ Obsolete: Coolblue / Handzenders pilot analysis; `docs/mocks/mock-store-filters*
 
 ---
 
-**Â© 2026 AdminSense. All rights reserved.**
+**© 2026 AdminSense. All rights reserved.**

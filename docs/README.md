@@ -1,6 +1,6 @@
-# 📚 Documentation Index
+﻿# 📚 Documentation Index
 
-<p style="display:flex;flex-wrap:nowrap;gap:0.35rem;align-items:center;overflow-x:auto;margin:0.5rem 0 0;"><img alt="Status" src="https://img.shields.io/badge/Status-Complete-28a745?style=flat-square" /><img alt="Docs" src="https://img.shields.io/badge/Documentation-Production-0d47a1?style=flat-square" /><img alt="Coverage" src="https://img.shields.io/badge/Coverage-100%25-ff6f00?style=flat-square" /></p>
+![Status](https://img.shields.io/badge/Status-Complete-28a745?style=flat-square) ![Docs](https://img.shields.io/badge/Documentation-Production-0d47a1?style=flat-square) ![Coverage](https://img.shields.io/badge/Coverage-100%25-ff6f00?style=flat-square)
 
 **Source of truth for WebShopABMATIC behaviour and delivery**
 

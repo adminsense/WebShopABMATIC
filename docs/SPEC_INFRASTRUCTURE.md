@@ -1,6 +1,6 @@
-# 🧱 Infrastructure (WebShopABMATIC vNext)
+﻿# 🧱 Infrastructure (WebShopABMATIC vNext)
 
-<p style="display:flex;flex-wrap:nowrap;gap:0.35rem;align-items:center;overflow-x:auto;margin:0.5rem 0 0;"><img alt="Status" src="https://img.shields.io/badge/Status-Store%20%2B%20Admin%20live-28a745?style=flat-square" /><img alt="Runtime" src="https://img.shields.io/badge/Runtime-.NET%208-512BD4?style=flat-square&amp;logo=dotnet&amp;logoColor=white" /><img alt="UI" src="https://img.shields.io/badge/UI-Blazor%20Server-512BD4?style=flat-square&amp;logo=blazor&amp;logoColor=white" /><img alt="DB" src="https://img.shields.io/badge/DB-Azure%20SQL-CC2927?style=flat-square&amp;logo=microsoftsqlserver&amp;logoColor=white" /><img alt="Host" src="https://img.shields.io/badge/Host-Azure%20App%20Service-0078D4?style=flat-square&amp;logo=microsoftazure&amp;logoColor=white" /></p>
+![Status](https://img.shields.io/badge/Status-Store%20%2B%20Admin%20live-28a745?style=flat-square) ![Runtime](https://img.shields.io/badge/Runtime-.NET%208-512BD4?style=flat-square&logo=dotnet&logoColor=white) ![UI](https://img.shields.io/badge/UI-Blazor%20Server-512BD4?style=flat-square&logo=blazor&logoColor=white) ![DB](https://img.shields.io/badge/DB-Azure%20SQL-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white) ![Host](https://img.shields.io/badge/Host-Azure%20App%20Service-0078D4?style=flat-square&logo=microsoftazure&logoColor=white)
 
 This document defines the **infrastructure and platform conventions** for WebShopABMATIC vNext (Storefront + Admin).
 

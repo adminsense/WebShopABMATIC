@@ -1,6 +1,6 @@
-# Code Patterns and Infrastructure
+﻿# Code Patterns and Infrastructure
 
-<p style="display:flex;flex-wrap:nowrap;gap:0.35rem;align-items:center;overflow-x:auto;margin:0.5rem 0 0;"><img alt="Status" src="https://img.shields.io/badge/Status-Production%20Implemented-success?style=flat-square" /><img alt="Framework" src="https://img.shields.io/badge/Framework-.NET%2010.0-blue?style=flat-square" /><img alt="Blazor" src="https://img.shields.io/badge/Blazor-Server-purple?style=flat-square" /></p>
+![Status](https://img.shields.io/badge/Status-Production%20Implemented-success?style=flat-square) ![Framework](https://img.shields.io/badge/Framework-.NET%2010.0-blue?style=flat-square) ![Blazor](https://img.shields.io/badge/Blazor-Server-purple?style=flat-square)
 
 **Comprehensive implementation of Microsoft® standard best practices for Blazor Server applications.**
 
