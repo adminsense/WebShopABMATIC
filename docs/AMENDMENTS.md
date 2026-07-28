@@ -16,7 +16,7 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 
 ## 📅 Amendments (newest first)
 
-> **2026-07-28:** Product admin form: DescriptionNl/En/Fr + WebshopDescriptionNl; wide form layout; Attributes action uses `btn-primary` like Edit. ProductAttribuut remap + seed 18; assignment Cancel; staff user/group fixes.
+> **2026-07-28 — Catalog attributes (client model) + Product admin:** Remap `[Products].[ProductAttribuut]` → C# `Name`/`DataType`/`Unit` (`Naam`/`Gegevenstype`/`Eenheid`); `[Products].[ProductAttribuutItem]` FK **`ProductProdId` → `Product.ProdId`** + `Waarde`. DBA SQL + seed 18: [`scripts/ProductAttribuut_create_and_seed.sql`](../scripts/ProductAttribuut_create_and_seed.sql). Admin assignment `/admin/product-attributes/{ProdId}` = join Product ∪ Item ∪ Attribuut; UI per [`docs/images/tela_atributos.png`](./images/tela_atributos.png) (Add + **Cancel**). Docs: [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md), [DATA_DUTCH_ENGLISH_MODEL.md](./DATA_DUTCH_ENGLISH_MODEL.md). Product form: `DescriptionNl`/`En`/`Fr` + `WebshopDescriptionNl`; wide form; grid Actions = Edit `btn-primary` · Attributes `btn-info` · Delete `btn-danger`. Staff user: Admin/Manager out of group dropdown; group XOR reverted; plain passwords; admin logout enhance-nav.
 
 > **2026-07-27:** Staff user (password/group/flags) in SPEC_ADMIN §3.7; removed My profile + plan file; AdminGridSearch type-to-search; StoreStaffRedirect after render; auth always session cookie (no Remember me).
 
