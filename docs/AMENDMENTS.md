@@ -1,6 +1,6 @@
-﻿# 📝 Runtime Amendments & Open UI Notes
+# 📝 Runtime Amendments & Open UI Notes
 
-![Status](https://img.shields.io/badge/Status-Living%20Changelog-0ea5e9?style=flat-square) ![Updates](https://img.shields.io/badge/Updates-Continuous-22c55e?style=flat-square) ![Type](https://img.shields.io/badge/Type-Runtime%20Notes-512BD4?style=flat-square)
+<p style="display:flex;flex-wrap:nowrap;gap:0.35rem;align-items:center;overflow-x:auto;margin:0.5rem 0 0;"><img alt="Status" src="https://img.shields.io/badge/Status-Living%20Changelog-0ea5e9?style=flat-square" /><img alt="Updates" src="https://img.shields.io/badge/Updates-Continuous-22c55e?style=flat-square" /><img alt="Type" src="https://img.shields.io/badge/Type-Runtime%20Notes-512BD4?style=flat-square" /></p>
 
 **Short current-runtime notes and dated changelog**
 
@@ -16,7 +16,9 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 
 ## 📅 Amendments (newest first)
 
-> **2026-07-27:** Staff user (password/group/flags); removed My profile; AdminGridSearch type-to-search; StoreStaffRedirect after render; auth always session cookie (no Remember me — browser close = re-login).
+> **2026-07-28:** Staff user: filter Admin/Manager out of group dropdown (panel = checkboxes); group XOR reverted; plain password fields; admin logout enhance-nav fix.
+
+> **2026-07-27:** Staff user (password/group/flags) in SPEC_ADMIN §3.7; removed My profile + plan file; AdminGridSearch type-to-search; StoreStaffRedirect after render; auth always session cookie (no Remember me).
 
 > **2026-07-26 — Catalog filters cutover (ProductAttribuut):** Implemented `[Products].[ProductAttribuut]` + `[Products].[ProductAttribuutItem]` (SQL script `scripts/ProductAttribuut_create_and_seed.sql`, EF map). Deleted S.7 pilot (`StoreCatalogFilterOptions`, Merk/Voorraad/Prijs, `ProductProperty` store facets). Admin: `/admin/attributes` + dedicated `/admin/product-attributes` (search product NL/EN/FR → assign values). Store leaf facets from attribute values only; query `attr=id:value|…`. Apply SQL on `abmatic_test` before runtime. See [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md).
 

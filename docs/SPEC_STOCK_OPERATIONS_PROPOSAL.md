@@ -1,6 +1,6 @@
-﻿# 📦 Stock Operations & Storefront Payments — Proposal
+# 📦 Stock Operations & Storefront Payments — Proposal
 
-![Status](https://img.shields.io/badge/Status-Partially%20implemented-22c55e?style=flat-square) ![Schema](https://img.shields.io/badge/Schema-Products%20%2B%20Orders-512BD4?style=flat-square) ![Architecture](https://img.shields.io/badge/Fit-Hexagonal-28a745?style=flat-square) ![Payments](https://img.shields.io/badge/Payments-Mollie.Api-0a0a0a?style=flat-square) ![Tracker](https://img.shields.io/badge/Live-IMPLEMENTATION__ROADMAP__open.md-informational?style=flat-square)
+<p style="display:flex;flex-wrap:nowrap;gap:0.35rem;align-items:center;overflow-x:auto;margin:0.5rem 0 0;"><img alt="Status" src="https://img.shields.io/badge/Status-Partially%20implemented-22c55e?style=flat-square" /><img alt="Schema" src="https://img.shields.io/badge/Schema-Products%20%2B%20Orders-512BD4?style=flat-square" /><img alt="Architecture" src="https://img.shields.io/badge/Fit-Hexagonal-28a745?style=flat-square" /><img alt="Payments" src="https://img.shields.io/badge/Payments-Mollie.Api-0a0a0a?style=flat-square" /><img alt="Tracker" src="https://img.shields.io/badge/Live-IMPLEMENTATION__ROADMAP__open.md-informational?style=flat-square" /></p>
 
 **Stock operations analysis and implementation proposal**
 

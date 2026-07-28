@@ -343,8 +343,8 @@ Each sidebar item opens a **hub** of entity cards. Below: what staff **register 
 | Area | Behaviour |
 |------|-----------|
 | **Password** | Create: required + confirm. Edit: optional new password (+ confirm); blank keeps current. Shown as **plain text** on this form (admin is setting it). Never returned on `GetForEdit`. Stored **plaintext** (ERP legacy). |
-| **User group** | Dropdown of `UserGroup` (`Naam`) → `UsrGroepId`. **XOR** with access flags: if a group is selected, Admin/Manager are cleared and disabled. |
-| **Access flags** | **Admin** / **Manager** (`Bestellingen`). **XOR** with user group: if either flag is set, user group is cleared and disabled. Need **either** a group **or** at least one flag. |
+| **User group** | Optional ERP team (`UsrGroep`). Dropdown **excludes** groups named Admin/Manager (name collision with panel flags; ERP rows kept). Team group may coexist with access flags. |
+| **Access flags** | **Admin** / **Manager** (`Bestellingen`) — **only** control panel login (`LegacySignInService`). At least one required on save. |
 | **Tel** | Optional phone. |
 | **Grid** | Login, names, group name, Admin Yes/No, Manager Yes if `Bestellingen \|\| Productie \|\| Admin`. |
 | **Out of scope** | Password hashing; full ERP permission matrix (`Crm`, `CanAccess*`, separate `Productie` checkbox); Identity / `AspNetUsers` as admin login. |

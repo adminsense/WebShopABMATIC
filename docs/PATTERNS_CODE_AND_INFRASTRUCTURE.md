@@ -1,6 +1,6 @@
-﻿# Code Patterns and Infrastructure
+# Code Patterns and Infrastructure
 
-![Status](https://img.shields.io/badge/Status-Production%20Implemented-success?style=flat-square) ![Framework](https://img.shields.io/badge/Framework-.NET%2010.0-blue?style=flat-square) ![Blazor](https://img.shields.io/badge/Blazor-Server-purple?style=flat-square)
+<p style="display:flex;flex-wrap:nowrap;gap:0.35rem;align-items:center;overflow-x:auto;margin:0.5rem 0 0;"><img alt="Status" src="https://img.shields.io/badge/Status-Production%20Implemented-success?style=flat-square" /><img alt="Framework" src="https://img.shields.io/badge/Framework-.NET%2010.0-blue?style=flat-square" /><img alt="Blazor" src="https://img.shields.io/badge/Blazor-Server-purple?style=flat-square" /></p>
 
 **Comprehensive implementation of Microsoft® standard best practices for Blazor Server applications.**
 
@@ -1022,9 +1022,7 @@ Add status badges at the document header to provide quick visual reference:
 ```markdown
 # 📊 Document Title
 
-![Status](https://img.shields.io/badge/Status-Complete-28a745?style=flat-square) 
-![Items](https://img.shields.io/badge/Items-87%2B-0d47a1?style=flat-square) 
-![Coverage](https://img.shields.io/badge/Coverage-100%25-ff6f00?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Complete-28a745?style=flat-square) ![Items](https://img.shields.io/badge/Items-87%2B-0d47a1?style=flat-square) ![Coverage](https://img.shields.io/badge/Coverage-100%25-ff6f00?style=flat-square)
 
 Brief description line
 ```

@@ -1,6 +1,6 @@
-﻿# 💳 Mollie Payments — Mock-First + Go-Live Runbook
+# 💳 Mollie Payments — Mock-First + Go-Live Runbook
 
-![Status](https://img.shields.io/badge/Default-Mock%20until%20client%20keys-0ea5e9?style=flat-square) ![Scope](https://img.shields.io/badge/Scope-Mollie%20PrePay-512BD4?style=flat-square) ![Payment](https://img.shields.io/badge/Provider-Mollie.Api-0a0a0a?style=flat-square)
+<p style="display:flex;flex-wrap:nowrap;gap:0.35rem;align-items:center;overflow-x:auto;margin:0.5rem 0 0;"><img alt="Status" src="https://img.shields.io/badge/Default-Mock%20until%20client%20keys-0ea5e9?style=flat-square" /><img alt="Scope" src="https://img.shields.io/badge/Scope-Mollie%20PrePay-512BD4?style=flat-square" /><img alt="Payment" src="https://img.shields.io/badge/Provider-Mollie.Api-0a0a0a?style=flat-square" /></p>
 
 **Mollie integration guide - mock development + production go-live checklist**
 
