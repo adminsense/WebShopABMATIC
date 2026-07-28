@@ -1,4 +1,4 @@
-﻿# 📝 Runtime Amendments & Open UI Notes
+# 📝 Runtime Amendments & Open UI Notes
 
 ![Status](https://img.shields.io/badge/Status-Living%20Changelog-0ea5e9?style=flat-square) ![Updates](https://img.shields.io/badge/Updates-Continuous-22c55e?style=flat-square) ![Type](https://img.shields.io/badge/Type-Runtime%20Notes-512BD4?style=flat-square)
 
