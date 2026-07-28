@@ -1,6 +1,6 @@
-﻿# Admin Panel — Functional Specification
+# Admin Panel — Functional Specification
 
-![Status](https://img.shields.io/badge/Status-Implemented-28a745?style=flat-square) ![Screens](https://img.shields.io/badge/Screens-3%20layout%20types-0d47a1?style=flat-square) ![Entities](https://img.shields.io/badge/Hub%20entities-22-512BD4?style=flat-square) ![UI](https://img.shields.io/badge/UI-AB-MATIC%20shell-0dcaf0?style=flat-square)
+<p style="display:flex;flex-wrap:nowrap;gap:0.35rem;align-items:center;overflow-x:auto;margin:0.5rem 0 0;"><img alt="Status" src="https://img.shields.io/badge/Status-Implemented-28a745?style=flat-square" /><img alt="Screens" src="https://img.shields.io/badge/Screens-3%20layout%20types-0d47a1?style=flat-square" /><img alt="Entities" src="https://img.shields.io/badge/Hub%20entities-22-512BD4?style=flat-square" /><img alt="UI" src="https://img.shields.io/badge/UI-AB-MATIC%20shell-0dcaf0?style=flat-square" /></p>
 
 > [!IMPORTANT]
 > **Executive Summary:** The WebShopABMATIC **Admin Panel** is the staff-facing Blazor Server application for managing catalog, customers, orders, stock, and settings. It follows the AB-MATIC-style shell (sidebar, dashboard, hub cards, filter grids, forms) documented in the reference screenshots below. Access requires **Admin** or **Manager** roles via ASP.NET Core Identity.
@@ -336,12 +336,18 @@ Each sidebar item opens a **hub** of entity cards. Below: what staff **register 
 | **VAT type** | `VatType` | VAT rates and invoice text |
 | **System user** | `AspNetUsers` | Legacy Identity path — **not** the current admin login source |
 
-> Staff user and User group cards are on the **Settings** hub.
+> Staff user and User group cards are on the **Settings** hub. There is **no** separate My profile screen — all staff registration is `/admin/staff-users`.
 
-> [!WARNING]
-> **Staff user password** is stored **plaintext** (ERP legacy), same as `SignInStaffAsync`. Create requires password; edit leaves blank to keep. Never returned to the form on load.
+#### Staff user form & grid (`/admin/staff-users`)
 
-> **Access flags:** `Admin` → cookie Admin; `Bestellingen` (Manager checkbox) or `Productie` or `Admin` → Manager. At least one of Admin/Manager is required on save so the user can sign in. Self-service **My profile** was removed — staff registration is only `/admin/staff-users`.
+| Area | Behaviour |
+|------|-----------|
+| **Password** | Create: required + confirm. Edit: optional new password (+ confirm); blank keeps current. Shown as **plain text** on this form (admin is setting it). Never returned on `GetForEdit`. Stored **plaintext** (ERP legacy). |
+| **User group** | Dropdown of `UserGroup` (`Naam`) → `UsrGroepId`. **XOR** with access flags: if a group is selected, Admin/Manager are cleared and disabled. |
+| **Access flags** | **Admin** / **Manager** (`Bestellingen`). **XOR** with user group: if either flag is set, user group is cleared and disabled. Need **either** a group **or** at least one flag. |
+| **Tel** | Optional phone. |
+| **Grid** | Login, names, group name, Admin Yes/No, Manager Yes if `Bestellingen \|\| Productie \|\| Admin`. |
+| **Out of scope** | Password hashing; full ERP permission matrix (`Crm`, `CanAccess*`, separate `Productie` checkbox); Identity / `AspNetUsers` as admin login. |
 
 > Legacy **Staff user** (`[Instellingen].[User]`) is the **current** admin login source (`SignInStaffAsync`). System-users / AspNetUsers Identity path is not the active storefront/admin runtime.
 

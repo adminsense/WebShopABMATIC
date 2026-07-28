@@ -16,11 +16,28 @@ public sealed class ProductPriceRepository : IProductPriceRepository
 
     public async Task<PagedResult<ProductPriceDto>> GetProductPricesAsync(ProductPriceListFilter filter, CancellationToken cancellationToken = default)
     {
-        var query = _db.ProductPrices.AsNoTracking();
+        var query =
+            from price in _db.ProductPrices.AsNoTracking()
+            join product in _db.Products.AsNoTracking() on price.ProductId equals product.ProductId into productJoin
+            from product in productJoin.DefaultIfEmpty()
+            select new { price, product };
 
-        if (!string.IsNullOrWhiteSpace(filter.Search) && int.TryParse(filter.Search.Trim(), out var productId))
+        if (!string.IsNullOrWhiteSpace(filter.Search))
         {
-            query = query.Where(e => e.ProductId == productId);
+            var term = filter.Search.Trim();
+            if (int.TryParse(term, out var productId))
+            {
+                query = query.Where(x =>
+                    x.price.ProductId == productId ||
+                    (x.product != null && x.product.NameEn != null && x.product.NameEn.Contains(term)) ||
+                    (x.product != null && x.product.OrderPartNumber != null && x.product.OrderPartNumber.Contains(term)));
+            }
+            else
+            {
+                query = query.Where(x =>
+                    (x.product != null && x.product.NameEn != null && x.product.NameEn.Contains(term)) ||
+                    (x.product != null && x.product.OrderPartNumber != null && x.product.OrderPartNumber.Contains(term)));
+            }
         }
 
         var total = await query.CountAsync(cancellationToken);
@@ -28,21 +45,21 @@ public sealed class ProductPriceRepository : IProductPriceRepository
         var pageSize = Math.Clamp(filter.PageSize, 1, 100);
 
         var items = await query
-            .OrderBy(e => e.ProductId)
+            .OrderBy(x => x.price.ProductId)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(e => new ProductPriceDto
+            .Select(x => new ProductPriceDto
             {
-                Id = e.Id,
-                ProductId = e.ProductId,
-                FromAddress = e.FromAddress,
-                ValidTo = e.ValidTo,
-                GrossSalesPrice = e.GrossSalesPrice,
-                GrossPurchasePrice = e.GrossPurchasePrice,
-                NetPurchasePrice = e.NetPurchasePrice,
-                BasePrice = e.BasePrice,
-                AssemblyPrice = e.AssemblyPrice,
-                InstallationPrice = e.InstallationPrice
+                Id = x.price.Id,
+                ProductId = x.price.ProductId,
+                FromAddress = x.price.FromAddress,
+                ValidTo = x.price.ValidTo,
+                GrossSalesPrice = x.price.GrossSalesPrice,
+                GrossPurchasePrice = x.price.GrossPurchasePrice,
+                NetPurchasePrice = x.price.NetPurchasePrice,
+                BasePrice = x.price.BasePrice,
+                AssemblyPrice = x.price.AssemblyPrice,
+                InstallationPrice = x.price.InstallationPrice
             })
             .ToListAsync(cancellationToken);
 

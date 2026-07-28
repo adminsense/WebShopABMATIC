@@ -16,12 +16,22 @@ public sealed class CustomerProductDiscountRepository : ICustomerProductDiscount
 
     public async Task<PagedResult<CustomerProductDiscountDto>> GetCustomerProductDiscountsAsync(CustomerProductDiscountListFilter filter, CancellationToken cancellationToken = default)
     {
-        var query = _db.CustomerProductDiscounts.AsNoTracking();
+        var query =
+            from d in _db.CustomerProductDiscounts.AsNoTracking()
+            join c in _db.Customers.AsNoTracking() on d.CustomerId equals c.CustomerId into customerJoin
+            from c in customerJoin.DefaultIfEmpty()
+            join p in _db.Products.AsNoTracking() on d.ProductId equals p.ProductId into productJoin
+            from p in productJoin.DefaultIfEmpty()
+            select new { d, c, p };
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
             var term = filter.Search.Trim();
-            query = query.Where(e => e.Notes != null && e.Notes.Contains(term));
+            query = query.Where(x =>
+                (x.c != null && x.c.CustomerName.Contains(term)) ||
+                (x.p != null && x.p.NameEn != null && x.p.NameEn.Contains(term)) ||
+                (x.p != null && x.p.OrderPartNumber != null && x.p.OrderPartNumber.Contains(term)) ||
+                (x.d.Notes != null && x.d.Notes.Contains(term)));
         }
 
         var total = await query.CountAsync(cancellationToken);
@@ -29,18 +39,18 @@ public sealed class CustomerProductDiscountRepository : ICustomerProductDiscount
         var pageSize = Math.Clamp(filter.PageSize, 1, 100);
 
         var items = await query
-            .OrderBy(e => e.CustomerId)
+            .OrderBy(x => x.d.CustomerId)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(e => new CustomerProductDiscountDto
+            .Select(x => new CustomerProductDiscountDto
             {
-                Id = e.Id,
-                CustomerId = e.CustomerId,
-                ProductId = e.ProductId,
-                DiscountPercentage = e.DiscountPercentage,
-                FromAddress = e.FromAddress,
-                ValidTo = e.ValidTo,
-                Notes = e.Notes
+                Id = x.d.Id,
+                CustomerId = x.d.CustomerId,
+                ProductId = x.d.ProductId,
+                DiscountPercentage = x.d.DiscountPercentage,
+                FromAddress = x.d.FromAddress,
+                ValidTo = x.d.ValidTo,
+                Notes = x.d.Notes
             })
             .ToListAsync(cancellationToken);
 

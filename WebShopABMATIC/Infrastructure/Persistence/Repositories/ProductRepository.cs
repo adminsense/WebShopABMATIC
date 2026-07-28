@@ -30,7 +30,9 @@ public sealed class ProductRepository : IProductRepository
         {
             var term = filter.Search.Trim();
             query = query.Where(p =>
-                p.NameEn.Contains(term) ||
+                (p.NameNl != null && p.NameNl.Contains(term)) ||
+                (p.NameEn != null && p.NameEn.Contains(term)) ||
+                (p.NameFr != null && p.NameFr.Contains(term)) ||
                 (p.OrderPartNumber != null && p.OrderPartNumber.Contains(term)) ||
                 (p.EanCode != null && p.EanCode.Contains(term)));
         }
@@ -56,7 +58,9 @@ public sealed class ProductRepository : IProductRepository
             .Select(p => new ProductDto
             {
                 ProductId = p.ProductId,
+                NameNl = p.NameNl ?? string.Empty,
                 NameEn = p.NameEn ?? string.Empty,
+                NameFr = p.NameFr ?? string.Empty,
                 OrderPartNumber = p.OrderPartNumber,
                 SupplierId = p.SupplierId,
                 ManufacturerId = p.ManufacturerId,

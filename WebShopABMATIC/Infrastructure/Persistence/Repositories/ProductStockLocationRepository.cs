@@ -27,11 +27,24 @@ public sealed class ProductStockLocationRepository : IProductStockLocationReposi
             from psl in _db.ProductStockLocations.AsNoTracking()
             join product in _db.Products.AsNoTracking() on psl.ProductId equals product.ProductId into productJoin
             from product in productJoin.DefaultIfEmpty()
-            select new { psl, ProductName = product != null ? product.NameEn : $"Product {psl.ProductId}" };
+            select new { psl, product };
 
-        if (!string.IsNullOrWhiteSpace(filter.Search) && int.TryParse(filter.Search.Trim(), out var productId))
+        if (!string.IsNullOrWhiteSpace(filter.Search))
         {
-            query = query.Where(x => x.psl.ProductId == productId);
+            var term = filter.Search.Trim();
+            if (int.TryParse(term, out var productId))
+            {
+                query = query.Where(x =>
+                    x.psl.ProductId == productId ||
+                    (x.product != null && x.product.NameEn != null && x.product.NameEn.Contains(term)) ||
+                    (x.product != null && x.product.OrderPartNumber != null && x.product.OrderPartNumber.Contains(term)));
+            }
+            else
+            {
+                query = query.Where(x =>
+                    (x.product != null && x.product.NameEn != null && x.product.NameEn.Contains(term)) ||
+                    (x.product != null && x.product.OrderPartNumber != null && x.product.OrderPartNumber.Contains(term)));
+            }
         }
 
         if (filter.LowStockOnly)
@@ -53,7 +66,7 @@ public sealed class ProductStockLocationRepository : IProductStockLocationReposi
                 Id = x.psl.Id,
                 StockLocationId = x.psl.StockLocationId,
                 ProductId = x.psl.ProductId,
-                ProductName = x.ProductName,
+                ProductName = x.product != null ? x.product.NameEn : $"Product {x.psl.ProductId}",
                 Quantity = x.psl.Quantity,
                 ReservedQuantity = x.psl.ReservedQuantity,
                 MinQuantity = x.psl.MinQuantity,

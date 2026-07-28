@@ -19,7 +19,6 @@ public static class LoginEndpoints
     {
         var login = form["login"].ToString();
         var password = form["password"].ToString();
-        var rememberMe = form["rememberMe"].Count > 0;
         var returnUrl = form["returnUrl"].ToString();
 
         var result = await signIn.SignInStaffAsync(login, password);
@@ -30,7 +29,7 @@ public static class LoginEndpoints
             return Results.Redirect($"/admin/login?error={error}&returnUrl={safeReturn}");
         }
 
-        await LegacyCookieAuthentication.SignInAsync(httpContext, result.Principal, rememberMe);
+        await LegacyCookieAuthentication.SignInAsync(httpContext, result.Principal);
         return Results.Redirect(LoginFormHelpers.ResolveAdminReturnUrl(returnUrl));
     }
 
@@ -51,7 +50,7 @@ public static class LoginEndpoints
             return Results.Redirect($"/sign-in?error={error}&returnUrl={safeReturn}");
         }
 
-        await LegacyCookieAuthentication.SignInAsync(httpContext, result.Principal, isPersistent: false);
+        await LegacyCookieAuthentication.SignInAsync(httpContext, result.Principal);
         return Results.Redirect(LoginFormHelpers.ResolveStoreReturnUrl(returnUrl));
     }
 }

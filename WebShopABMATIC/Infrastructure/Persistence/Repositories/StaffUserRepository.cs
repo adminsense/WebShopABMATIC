@@ -139,12 +139,19 @@ public sealed class StaffUserRepository : IStaffUserRepository
         entity.JobTitle = string.IsNullOrWhiteSpace(dto.JobTitle) ? null : dto.JobTitle.Trim();
         entity.UserGroupId = dto.UserGroupId is > 0 ? dto.UserGroupId : null;
         entity.Tel = string.IsNullOrWhiteSpace(dto.Tel) ? null : dto.Tel.Trim();
-        entity.Admin = dto.IsAdmin;
-        entity.Bestellingen = dto.IsManager;
-        if (!dto.IsManager)
+        // Group XOR Admin/Manager — never persist both.
+        if (entity.UserGroupId is > 0)
         {
-            // Clear Production flag too so Manager role is fully removed when unchecked.
+            entity.Admin = false;
+            entity.Bestellingen = false;
             entity.Productie = false;
+        }
+        else
+        {
+            entity.Admin = dto.IsAdmin;
+            entity.Bestellingen = dto.IsManager;
+            if (!dto.IsManager)
+                entity.Productie = false;
         }
 
         var password = dto.Password?.Trim() ?? string.Empty;

@@ -16,11 +16,28 @@ public sealed class ProductQuantityTierRepository : IProductQuantityTierReposito
 
     public async Task<PagedResult<ProductQuantityTierDto>> GetProductQuantityTiersAsync(ProductQuantityTierListFilter filter, CancellationToken cancellationToken = default)
     {
-        var query = _db.ProductQuantityTiers.AsNoTracking();
+        var query =
+            from tier in _db.ProductQuantityTiers.AsNoTracking()
+            join product in _db.Products.AsNoTracking() on tier.ProductId equals product.ProductId into productJoin
+            from product in productJoin.DefaultIfEmpty()
+            select new { tier, product };
 
-        if (!string.IsNullOrWhiteSpace(filter.Search) && int.TryParse(filter.Search.Trim(), out var productId))
+        if (!string.IsNullOrWhiteSpace(filter.Search))
         {
-            query = query.Where(e => e.ProductId == productId);
+            var term = filter.Search.Trim();
+            if (int.TryParse(term, out var productId))
+            {
+                query = query.Where(x =>
+                    x.tier.ProductId == productId ||
+                    (x.product != null && x.product.NameEn != null && x.product.NameEn.Contains(term)) ||
+                    (x.product != null && x.product.OrderPartNumber != null && x.product.OrderPartNumber.Contains(term)));
+            }
+            else
+            {
+                query = query.Where(x =>
+                    (x.product != null && x.product.NameEn != null && x.product.NameEn.Contains(term)) ||
+                    (x.product != null && x.product.OrderPartNumber != null && x.product.OrderPartNumber.Contains(term)));
+            }
         }
 
         var total = await query.CountAsync(cancellationToken);
@@ -28,15 +45,15 @@ public sealed class ProductQuantityTierRepository : IProductQuantityTierReposito
         var pageSize = Math.Clamp(filter.PageSize, 1, 100);
 
         var items = await query
-            .OrderBy(e => e.ProductId)
+            .OrderBy(x => x.tier.ProductId)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(e => new ProductQuantityTierDto
+            .Select(x => new ProductQuantityTierDto
             {
-                Id = e.Id,
-                ProductId = e.ProductId,
-                MinimumQuantity = e.MinimumQuantity,
-                Discount = e.Discount
+                Id = x.tier.Id,
+                ProductId = x.tier.ProductId,
+                MinimumQuantity = x.tier.MinimumQuantity,
+                Discount = x.tier.Discount
             })
             .ToListAsync(cancellationToken);
 

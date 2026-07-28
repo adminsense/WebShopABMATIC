@@ -27,8 +27,8 @@ Naming: stable `SPEC_<Topic>.md`; in-progress specs with checklist `SPEC_<Topic>
 ## How to update
 
 - Change the **current-state** tables/sections; mark obsolete claims clearly.
-- Prefer short factual amendments over long essays.
-- Add a dated one-liner to `AMENDMENTS.md` when runtime diverges from older notes; put bulky history in `docs/archive/`.
+- Prefer short factual notes over long essays.
+- **`AMENDMENTS.md`:** **one entry per calendar day** — if today’s line already exists, **update/extend that same line** (short summary of the day’s work). Do **not** add a new bullet per tweak. Put bulky history in `docs/archive/`.
 - **DB-first (global):** never invent ERP columns, tables, migrations, or schema scripts in docs — any feature. Adapt to live `abmatic_test` (`AGENTS.md`, `SPEC_INFRASTRUCTURE` §4).
 - Do not document features/columns that are not in the live database.
 
