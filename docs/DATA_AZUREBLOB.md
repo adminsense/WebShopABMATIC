@@ -1,4 +1,4 @@
-﻿# Product media — Azure Blob (legacy-aligned)
+# Product media — Azure Blob (legacy-aligned)
 
 ![Status](https://img.shields.io/badge/Status-Complete-28a745?style=flat-square) ![Storage](https://img.shields.io/badge/Storage-Azure%20Blob%20%60files%60-0dcaf0?style=flat-square) ![Tables](https://img.shields.io/badge/Tables-Bestanden.AzureFile-512BD4?style=flat-square) ![Legacy](https://img.shields.io/badge/Model-ABMATIC%20aligned-28a745?style=flat-square)
 
@@ -20,7 +20,7 @@
 <tbody>
 <tr><td><strong>Legacy tables</strong></td><td>2</td><td>✅</td><td><code>AzureFiles</code>, <code>AzureFileFolders</code> (EF → <code>Bestanden</code>)</td></tr>
 <tr><td><strong>Product link</strong></td><td>1</td><td>✅</td><td><code>AzureFiles.ProductId</code> (logical, no FK)</td></tr>
-<tr><td><strong>Admin form upload</strong></td><td>1</td><td>✅</td><td><code>ProductForm</code> + <code>IProductMediaPort</code></td></tr>
+<tr><td><strong>Admin form upload</strong></td><td>1</td><td>✅</td><td><code>ProductList</code> + <code>IProductMediaPort</code></td></tr>
 <tr><td><strong>Store image source</strong></td><td>1</td><td>✅</td><td><code>StoreCatalogService</code> via SAS blob URLs</td></tr>
 <tr><td><strong>Azure Blob adapter</strong></td><td>1</td><td>✅</td><td><code>AzureBlobProductMediaService</code></td></tr>
 <tr><td><strong>HTTP verification</strong></td><td>11/12</td><td>✅</td><td>Sample catalog products on <code>abmatic_test</code> (1 SKU without <code>AzureFile</code> row)</td></tr>

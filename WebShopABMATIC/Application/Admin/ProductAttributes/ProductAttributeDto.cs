@@ -5,19 +5,17 @@ namespace WebShopABMATIC.Application.Admin.ProductAttributes;
 public sealed class ProductAttributeDto
 {
     public int Id { get; init; }
-    public string NameEn { get; init; } = string.Empty;
-    public string NameNl { get; init; } = string.Empty;
-    public string NameFr { get; init; } = string.Empty;
-    public int SortOrder { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string? DataType { get; init; }
+    public string? Unit { get; init; }
 }
 
 public sealed class ProductAttributeEditDto
 {
     public int Id { get; set; }
-    public string NameEn { get; set; } = string.Empty;
-    public string NameNl { get; set; } = string.Empty;
-    public string NameFr { get; set; } = string.Empty;
-    public int SortOrder { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? DataType { get; set; }
+    public string? Unit { get; set; }
 }
 
 public sealed class ProductAttributeListFilter
@@ -41,8 +39,7 @@ public sealed class ProductAttributeValueDto
 {
     public int Id { get; init; }
     public int ProductAttributeId { get; init; }
-    public string AttributeNameEn { get; init; } = string.Empty;
-    public string AttributeNameNl { get; init; } = string.Empty;
+    public string AttributeName { get; init; } = string.Empty;
     public string Value { get; init; } = string.Empty;
 }
 

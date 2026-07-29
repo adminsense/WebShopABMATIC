@@ -228,6 +228,36 @@ private void ValidateFieldOnBlur(string fieldId, string value, string fieldName 
 
 ---
 
+### 6️⃣.1 SECONDARY SCREEN = CONTENT MODAL (never a new route)
+
+A grid action that manages a **related entity** (attributes, prices, password reset, details) opens a modal **over the calling page**. Closing it returns to that page with grid, search and pagination intact.
+
+```html
+<!-- Calling page: row action -->
+<button type="button" class="btn btn-sm btn-info" @onclick="() => OpenAttributes(item.ProductId)" title="Product attributes">
+    <i class="bi bi-tags"></i>
+</button>
+
+<!-- Calling page: modal host (outside the grid markup) -->
+<ProductAttributeValuesModal ProductId="@_attributesProductId" OnClose="CloseAttributes" />
+```
+
+```csharp
+private int _attributesProductId;
+private void OpenAttributes(int productId) => _attributesProductId = productId;
+private void CloseAttributes() => _attributesProductId = 0;
+```
+
+✅ Rules:
+- Same shell as the delete modal (`modal fade show d-block` + `rgba(0,0,0,0.5)` backdrop); use `modal-xl` / `modal-lg` when the body holds a form + table
+- Reusable component with `ProductId` + `OnClose` — shared by every caller instead of duplicated markup
+- No `NavigateTo`, no `forceLoad`, no “Change product” style navigation buttons; X / `Cancel` / `Close` just clear the state
+- Stacked confirmation on top of a content modal: same markup plus `z-index: 1060`
+- A deep link (`/admin/product-attributes/{ProdId}`) may open the modal over its own grid; closing it replaces the URL with the grid route
+- Reference: `ProductAttributeValuesModal.razor` (callers `ProductList`, `ProductAttributeAssignment`), `CustomerList.razor` (reset password), `AuditLogList.razor` (detail)
+
+---
+
 ### 7️⃣ DATA GRID / TABLE
 
 ```html
@@ -427,6 +457,8 @@ Before submitting a page, verify:
 - [ ] Title: "Confirm Deletion"
 - [ ] Warning: Red text "This action cannot be undone."
 - [ ] All buttons: `disabled="@IsDeleting"`
+- [ ] Related-entity action opens a **content modal** on the calling page (never a new route)
+- [ ] Content modal is a reusable component with `ProductId`/`Id` + `OnClose`; closing restores the caller untouched
 
 ---
 
@@ -450,6 +482,9 @@ Before submitting a page, verify:
 
 ❌ Delete modal missing d-block class
 ✅ Delete modal with "modal fade show d-block"
+
+❌ Row action navigating to another screen to edit a related entity
+✅ Row action opening a content modal that closes back to the calling screen
 
 ❌ Validation errors in permanent state
 ✅ Validation errors clear: _fieldErrors.Remove(fieldId)

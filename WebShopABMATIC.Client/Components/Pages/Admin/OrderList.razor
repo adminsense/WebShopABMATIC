@@ -32,38 +32,52 @@
                     <div class="entity-form-fields"><div class="row g-2">
                         @if (_isEditing)
                         {
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label class="form-label" for="f-ordernum">Order #</label>
                                 <input id="f-ordernum" class="form-control form-control-sm" value="@(_model.OrderNumber?.ToString() ?? _model.Id.ToString())" disabled />
                             </div>
-                            <div class="col-md-5">
+                            <div class="col-md-4">
                                 <label class="form-label" for="f-customer">Customer</label>
                                 <input id="f-customer" class="form-control form-control-sm" value="@(_model.CustomerName)" disabled />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label" for="f-createdat">Created at *</label>
+                                <InputDate id="f-createdat" class="form-control form-control-sm" @bind-Value="_model.CreatedAt" required />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label" for="f-deliverytypeid">Delivery type *</label>
+                                <InputNumber id="f-deliverytypeid" class="form-control form-control-sm" @bind-Value="_model.DeliveryTypeId" required />
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <div class="form-check mb-1">
+                                    <InputCheckbox class="form-check-input" @bind-Value="_model.IsAccepted" id="f-isaccepted" />
+                                    <label class="form-check-label" for="f-isaccepted">Accepted</label>
+                                </div>
                             </div>
                         }
                         else
                         {
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <label class="form-label" for="f-projectid">Customer project (internal)</label>
                                 <InputNumber id="f-projectid" class="form-control form-control-sm" @bind-Value="_model.ProjectId" required />
-                                <div class="form-text">Legacy link to customer � use project 1�4 from demo seeds.</div>
+                                <div class="form-text">Legacy link to customer — use project 1–4 from demo seeds.</div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label" for="f-createdat">Created at *</label>
+                                <InputDate id="f-createdat" class="form-control form-control-sm" @bind-Value="_model.CreatedAt" required />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label" for="f-deliverytypeid">Delivery type *</label>
+                                <InputNumber id="f-deliverytypeid" class="form-control form-control-sm" @bind-Value="_model.DeliveryTypeId" required />
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <div class="form-check mb-1">
+                                    <InputCheckbox class="form-check-input" @bind-Value="_model.IsAccepted" id="f-isaccepted" />
+                                    <label class="form-check-label" for="f-isaccepted">Accepted</label>
+                                </div>
                             </div>
                         }
-                        <div class="col-md-3">
-                            <label class="form-label" for="f-createdat">Created at *</label>
-                            <InputDate id="f-createdat" class="form-control form-control-sm" @bind-Value="_model.CreatedAt" required />
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label" for="f-deliverytypeid">Delivery type *</label>
-                            <InputNumber id="f-deliverytypeid" class="form-control form-control-sm" @bind-Value="_model.DeliveryTypeId" required />
-                        </div>
-                        <div class="col-md-2 d-flex align-items-end">
-                            <div class="form-check mb-1">
-                                <InputCheckbox class="form-check-input" @bind-Value="_model.IsAccepted" id="f-isaccepted" />
-                                <label class="form-check-label" for="f-isaccepted">Accepted</label>
-                            </div>
-                        </div>
-                        <div class="col-12 d-flex gap-2 pt-1">
+                        <div class="col-12 d-flex gap-2 pt-1 flex-wrap">
                             <button type="submit" class="btn btn-primary" disabled="@_saving">@(_isEditing ? "Update" : "Create")</button>
                             <button type="button" class="btn btn-secondary" @onclick="CancelFormAsync" disabled="@_saving"><i class="bi bi-x me-1"></i>Cancel</button>
                             @if (_isEditing)

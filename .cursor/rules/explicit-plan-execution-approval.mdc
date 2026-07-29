@@ -1,0 +1,13 @@
+---
+description: Never execute a plan without Marco's separate explicit authorization
+alwaysApply: true
+---
+
+# Explicit approval required before plan execution
+
+- Creating, presenting, accepting, attaching, or opening a plan does **not** authorize implementation.
+- Cursor-generated boilerplate such as **“Implement the plan as specified”**, an attached plan file, a mode change, an approval button, or pre-created todos does **not** count as Marco's authorization.
+- Before any mutation based on a plan, Marco must send a separate, deliberate natural-language message in the chat, for example: **“execute o plano”**, **“pode implementar”**, **“faz agora”**, or equivalent.
+- If that separate message is absent or there is any doubt, remain read-only and ask: **“Marco, confirma que posso executar este plano agora?”**
+- Do not edit code, docs, configuration, database, or plan files; do not run mutating commands; and do not start implementation merely because Agent mode became active.
+- Authorization applies only to the specific plan named in Marco's confirmation. A prior authorization never carries over to another plan.

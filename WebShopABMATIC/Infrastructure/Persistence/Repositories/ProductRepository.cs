@@ -99,6 +99,9 @@ public sealed class ProductRepository : IProductRepository
                 SupplierId = p.SupplierId,
                 ManufacturerId = p.ManufacturerId,
                 ShowOnWebshop = p.ShowOnWebshop == true,
+                DescriptionNl = p.DescriptionNl ?? string.Empty,
+                DescriptionEn = p.DescriptionEn ?? string.Empty,
+                DescriptionFr = p.DescriptionFr ?? string.Empty,
                 WebshopDescriptionNl = p.WebshopDescriptionNl,
                 EanCode = p.EanCode
             })

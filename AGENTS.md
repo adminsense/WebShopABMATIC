@@ -75,5 +75,6 @@ Code **and** matching docs updated. Saying “user didn’t ask for docs” is n
 - Docs index: [`docs/README.md`](docs/README.md)  
 - Claude: [`CLAUDE.md`](CLAUDE.md) → [`.claude/CLAUDE.md`](.claude/CLAUDE.md)  
 - Path rules: [`.claude/rules/`](.claude/rules/) (`store-ui`, `admin-ui`, `infrastructure`, `docs-sync`, `db-first`, `owner-only-git-publish`)
+- UI: read `docs/PATTERNS_*` **before** coding — [`.cursor/rules/ui-patterns-first.mdc`](.cursor/rules/ui-patterns-first.mdc) (related-entity action = modal on the calling page, never a new screen)
 - Docs workflow skill: [`.cursor/skills/docs-governance/SKILL.md`](.cursor/skills/docs-governance/SKILL.md)
 - Format hook (automation only): [`.claude/hooks/format-csharp.ps1`](.claude/hooks/format-csharp.ps1) — not for product/DB/UI policy
