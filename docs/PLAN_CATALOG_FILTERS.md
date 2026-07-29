@@ -1,4 +1,4 @@
-﻿# Catalog filters — ProductAttribuut (client model)
+# Catalog filters — ProductAttribuut (client model)
 
 ![Status](https://img.shields.io/badge/Status-Implemented-28a745?style=flat-square) ![Scope](https://img.shields.io/badge/Scope-Store%20+%20Admin-512BD4?style=flat-square)
 
@@ -25,7 +25,7 @@ S.7 pilot removed. Runtime uses `ProductAttribuut` / `ProductAttribuutItem` only
 
 ## 2. Seed attribute list (18)
 
-Create these rows in `[Products].[ProductAttribuut]` (dictionary only; no product values until staff fill):
+Dictionary rows in `[Products].[ProductAttribuut]` (`Naam` only; no product values until staff fill). Seed is in [`scripts/ProductAttribuut_create_and_seed.sql`](../scripts/ProductAttribuut_create_and_seed.sql) (idempotent `NOT EXISTS` on `Naam`):
 
 1. Power Supply  
 2. Application Type  
@@ -46,7 +46,7 @@ Create these rows in `[Products].[ProductAttribuut]` (dictionary only; no produc
 17. Environment  
 18. Certifications  
 
-Store UI labels: prefer `NaamNl` when present; otherwise `NaamEn` (seed may copy EN into NL/FR until translations exist).
+Store/admin labels use `Naam` (C# `Name`). `Gegevenstype` / `Eenheid` stay NULL until client fills them.
 
 ---
 
@@ -54,15 +54,16 @@ Store UI labels: prefer `NaamNl` when present; otherwise `NaamEn` (seed may copy
 
 **Explicit exception to “never invent ERP tables”:** client asked for new tables for this feature. Delivery = **SQL script** applied by Marco/DBA on `abmatic_test`, then EF mapping only. **No** `Migrate()` / `EnsureCreated()`.
 
+Script: [`scripts/ProductAttribuut_create_and_seed.sql`](../scripts/ProductAttribuut_create_and_seed.sql)
+
 ### `[Products].[ProductAttribuut]` → `ProductAttribute`
 
 | SQL (Dutch) | C# |
 |-------------|-----|
-| `Id` | `Id` |
-| `NaamEn` | `NameEn` |
-| `NaamNl` | `NameNl` |
-| `NaamFr` | `NameFr` |
-| `Volgorde` | `SortOrder` |
+| `AttribuutId` | `Id` |
+| `Naam` | `Name` |
+| `Gegevenstype` | `DataType` |
+| `Eenheid` | `Unit` |
 
 ### `[Products].[ProductAttribuutItem]` → `ProductAttributeValue`
 
@@ -70,8 +71,19 @@ Store UI labels: prefer `NaamNl` when present; otherwise `NaamEn` (seed may copy
 |-------------|-----|
 | `Id` | `Id` |
 | `ProductAttribuutId` | `ProductAttributeId` |
-| `ProductProdId` | `ProductId` |
-| `Waarde` (nvarchar 250) | `Value` |
+| `ProductProdId` | `ProductId` (FK → **`Product.ProdId`**) |
+| `Waarde` (nvarchar 100) | `Value` |
+
+Join for assignment screen (`/admin/product-attributes/{ProdId}`):
+
+```sql
+FROM Products.Product p
+INNER JOIN Products.ProductAttribuutItem i ON i.ProductProdId = p.ProdId
+INNER JOIN Products.ProductAttribuut a ON a.AttribuutId = i.ProductAttribuutId
+WHERE p.ProdId = @ProdId
+```
+
+UI reference (do not alter PNG): [`docs/images/tela_atributos.png`](./images/tela_atributos.png)
 
 DE-PARA also in [DATA_DUTCH_ENGLISH_MODEL.md](./DATA_DUTCH_ENGLISH_MODEL.md).
 
@@ -81,10 +93,9 @@ DE-PARA also in [DATA_DUTCH_ENGLISH_MODEL.md](./DATA_DUTCH_ENGLISH_MODEL.md).
 
 ### 4.1 Admin
 
-1. **`/admin/attributes`** — dictionary CRUD for `ProductAttribuut` (seeded 18 + future rows).  
-2. **`/admin/product-attributes`** — dedicated assignment: search `[Products].[Product]` by **NameNl / NameEn / NameFr** (+ part number / EAN), select `ProdId`, then add/edit/delete `Waarde` rows. Deep-link: `/admin/product-attributes/{ProductId}`. Optional shortcut from Product list.  
-3. One product may have many attributes; values are free text (distinct facet keys = exact `Waarde` strings).
-
+1. **`/admin/attributes`** — dictionary CRUD for `ProductAttribuut` (optional; out of current UI scope if route not shipped).  
+2. **`/admin/product-attributes`** — dedicated assignment: search `[Products].[Product]` by **NameNl / NameEn / NameFr** (+ part number / EAN), select `ProdId`, then add/edit/delete `Waarde` rows. Deep-link: `/admin/product-attributes/{ProdId}`. UI = [`tela_atributos.png`](./images/tela_atributos.png).  
+3. One product may have many attributes; values are free text (distinct facet keys = exact `Waarde` strings). Dropdown labels = `Naam`.
 ### 4.2 Store
 
 1. User navigates to a **leaf** `ProductStructure` category (`Catalog.razor`).  

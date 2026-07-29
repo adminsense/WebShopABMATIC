@@ -1,4 +1,4 @@
-﻿# 🚚 Freight / Delivery — ERP Mapping (Dutch DB → English Code)
+# 🚚 Freight / Delivery — ERP Mapping (Dutch DB → English Code)
 
 ![Status](https://img.shields.io/badge/Status-Analysed%20from%20abmatic__test-0ea5e9?style=flat-square) ![Rule](https://img.shields.io/badge/Default%20fee-%E2%82%AC0-64748b?style=flat-square) ![Type](https://img.shields.io/badge/Type-Data%20Reference-512BD4?style=flat-square)
 

@@ -1,4 +1,4 @@
-﻿# 🎨 UI Patterns - Quick Start Guide for Developers
+# 🎨 UI Patterns - Quick Start Guide for Developers
 
 ![Status](https://img.shields.io/badge/Status-Quick%20Reference-28a745?style=flat-square) ![Copy-Paste](https://img.shields.io/badge/Copy--Paste-Ready-0dcaf0?style=flat-square) ![UI%20Patterns](https://img.shields.io/badge/UI%20Patterns-Complete-512BD4?style=flat-square)
 
@@ -315,7 +315,31 @@ What's special:
 
 ---
 
+### 8️⃣b FORM WIDTH — Match the grid card
+
+Admin create/edit forms use `.entity-form-fields` inside `.entity-form-card`. That wrapper is **full width** (`width: 100%; max-width: none`) so the form aligns with the list/grid card below — do **not** reintroduce a 640px cap.
+
+```html
+<div class="entity-form-fields">
+    <div class="row g-2">
+        <!-- Bootstrap cols that sum to 12 per row (e.g. col-md-4 + col-md-4 + col-md-4) -->
+    </div>
+</div>
+```
+
+✅ What's special:
+- Form card and grid card share the same horizontal span
+- Distribute fields so each row closes **12** columns at `md`/`lg`
+- Stack naturally on small screens (`col-12` / Bootstrap defaults)
+- Keep login cards and confirmation modals intentionally narrow
+- `.entity-form-fields-wide` remains a harmless alias (e.g. ProductList)
+
+CSS: `WebShopABMATIC.Client/wwwroot/css/admin.css` (and synced `WebShopABMATIC/wwwroot/css/admin.css`)
+
+---
+
 ### 9️⃣ GRID SEARCH — Full-width toolbar search
+
 
 **Placement:** right side of the grid card header (`entity-grid-toolbar`), stretching from the **Search** label to the magnifying-glass icon.
 
