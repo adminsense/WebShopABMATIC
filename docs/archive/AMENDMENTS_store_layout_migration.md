@@ -1,4 +1,4 @@
-﻿> [!NOTE]
+> [!NOTE]
 > **Archived 2026-07-14.** Historical store-layout migration notes. Living amendments: [../AMENDMENTS.md](../AMENDMENTS.md). Docs root: [../README.md](../README.md).
 # WebShop — Migração de layout da loja
 

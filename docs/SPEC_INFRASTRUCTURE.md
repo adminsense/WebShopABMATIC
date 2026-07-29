@@ -1,4 +1,4 @@
-﻿# 🧱 Infrastructure (WebShopABMATIC vNext)
+# 🧱 Infrastructure (WebShopABMATIC vNext)
 
 ![Status](https://img.shields.io/badge/Status-Store%20%2B%20Admin%20live-28a745?style=flat-square) ![Runtime](https://img.shields.io/badge/Runtime-.NET%208-512BD4?style=flat-square&logo=dotnet&logoColor=white) ![UI](https://img.shields.io/badge/UI-Blazor%20Server-512BD4?style=flat-square&logo=blazor&logoColor=white) ![DB](https://img.shields.io/badge/DB-Azure%20SQL-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white) ![Host](https://img.shields.io/badge/Host-Azure%20App%20Service-0078D4?style=flat-square&logo=microsoftazure&logoColor=white)
 

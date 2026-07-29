@@ -28,6 +28,7 @@ public sealed class AdminHubRegistry : IAdminHubPort
             Cards =
             [
                 Card("Product", "Product", "Manage products and webshop visibility", "/admin/products", "oi-box", formRoute: "/admin/products"),
+                Card("ProductAttributeValue", "Product attribute values", "Assign filter attributes and Waarde per product", "/admin/product-attributes", "oi-tags"),
                 Card("ProductPrice", "Product price", "Gross and net prices", "/admin/product-prices", "oi-dollar"),
                 Card("ProductQuantityTier", "Quantity tiers", "Volume discounts", "/admin/product-tiers", "oi-bar-chart"),
                 Card("ProductOption", "Product options", "Configurable options", "/admin/product-options", "oi-wrench"),

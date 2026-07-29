@@ -6,7 +6,7 @@
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
 @using WebShopABMATIC.Web.Services
-@inject ISupplierAdminPort AdminPort
+@inject ISupplierAdminPort AdminPort
 @inject IGridExportService GridExport
 @implements IAsyncDisposable
 
@@ -40,7 +40,7 @@
                             <label class="form-label" for="f-languageid">LanguageId *</label>
                             <InputNumber id="f-languageid" class="form-control form-control-sm" @bind-Value="_model.LanguageId" required />
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-10">
                             <label class="form-label" for="f-email">Email</label>
                             <InputText id="f-email" class="form-control form-control-sm" @bind-Value="_model.Email" />
                         </div>
