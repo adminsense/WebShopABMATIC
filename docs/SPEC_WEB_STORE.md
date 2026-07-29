@@ -1,4 +1,4 @@
-﻿# Web Store — Functional Specification
+# Web Store — Functional Specification
 
 ![Status](https://img.shields.io/badge/Status-Blazor%20storefront%20live-28a745?style=flat-square) ![Auth](https://img.shields.io/badge/Login-Legacy%20WebshopLogin-512BD4?style=flat-square) ![Orders](https://img.shields.io/badge/My%20orders-%2Forders-0dcaf0?style=flat-square)
 

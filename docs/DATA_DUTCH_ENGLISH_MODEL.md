@@ -1,4 +1,4 @@
-﻿# 🗂️ Dutch → English Data Model Mapping
+# 🗂️ Dutch → English Data Model Mapping
 
 ![Status](https://img.shields.io/badge/Status-Complete-28a745?style=flat-square) ![Tables](https://img.shields.io/badge/Tables-139-0d47a1?style=flat-square) ![Schemas](https://img.shields.io/badge/Schemas-11-512BD4?style=flat-square) ![Coverage](https://img.shields.io/badge/Coverage-100%25-ff6f00?style=flat-square)
 
@@ -312,8 +312,8 @@ Grouped by English schema. SQL table names are plural; C# entity names are singu
 | `ProductPrijzenVerkoopKorting` | `ProductPriceSalesDiscounts` | `ProductPriceSalesDiscount` |
 | `ProductProductionGroup` | `ProductProductionGroup` | `ProductProductionGroup` |
 | `ProductProductionsGroepen` | `ProductProductionGroupLinks` | `ProductProductionGroupLink` |
-| `ProductAttribuut` | `ProductAttributes` | `ProductAttribute` | **New (catalog filters)** — dictionary; see [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md) |
-| `ProductAttribuutItem` | `ProductAttributeValues` | `ProductAttributeValue` | **New (catalog filters)** — per-product `Waarde`; `ProductProdId` → `ProductId` |
+| `ProductAttribuut` | `ProductAttributes` | `ProductAttribute` | Catalog filters dictionary — `AttribuutId`/`Naam`/`Gegevenstype`/`Eenheid`; see [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md) |
+| `ProductAttribuutItem` | `ProductAttributeValues` | `ProductAttributeValue` | Per-product `Waarde`; **`ProductProdId` → `Product.ProdId`**; `ProductAttribuutId` → `AttribuutId` |
 | `ProductPropertieItem` | `ProductPropertyItems` | `ProductPropertyItem` | Legacy ERP property sheet — **not** used for store catalog filters |
 | `ProductProperty` | `ProductProperty` | `ProductProperty` | Legacy — **not** used for store catalog filters |
 | `ProductStaffel` | `ProductQuantityTiers` | `ProductQuantityTier` |
@@ -412,7 +412,11 @@ Grouped by English schema. SQL table names are plural; C# entity names are singu
 | `AangepastOp` | `ModifiedAt` | |
 | `Volgorde` | `SortOrder` | |
 | `Waarde` | `Value` | e.g. `ProductAttribuutItem.Waarde` |
-| `NaamEn` / `NaamNl` / `NaamFr` | `NameEn` / `NameNl` / `NameFr` | Attribute dictionary labels |
+| `Gegevenstype` | `DataType` | `ProductAttribuut.Gegevenstype` (Number/Text/Boolean) |
+| `Eenheid` | `Unit` | `ProductAttribuut.Eenheid` |
+| `AttribuutId` | `Id` | `ProductAttribuut` PK |
+| `ProductProdId` | `ProductId` | FK → `Product.ProdId` (child tables) |
+| `NaamEn` / `NaamNl` / `NaamFr` | `NameEn` / `NameNl` / `NameFr` | Multilingual product/structure labels (not attribute dictionary) |
 | `Bus` | `Box` | Address box number |
 | `Huisnr` | `HouseNumber` | |
 | `Btwnr` / `Btw` | `VatNumber` / `Vat` | |
