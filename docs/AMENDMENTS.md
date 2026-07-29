@@ -10,91 +10,202 @@
 > **Historical Archive:** Store layout migration dump (phases A–D, unified login study, long checklists) moved to:  
 > → [`archive/AMENDMENTS_store_layout_migration.md`](./archive/AMENDMENTS_store_layout_migration.md)
 
-Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC_INFRASTRUCTURE.md`). Prefer updating those; use this file for **one short dated line per day** (update the same day’s line instead of stacking entries).
+Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC_INFRASTRUCTURE.md`). Prefer updating those; use this file as a dated summary. Each calendar day has **one table**, with the date as its column header and one numbered change per row. Update today's existing table instead of creating another table for the same date.
 
 ---
 
 ## 📅 Amendments (newest first)
 
-> **2026-07-29 — Admin forms + attribute values modal + EF concurrency:** Removed global `max-width: 640px` on `.entity-form-fields` (both `admin.css` copies); admin CRUD/workflow forms now match grid width with redistributed Bootstrap columns. Product attribute values moved to reusable `ProductAttributeValuesModal` (Add + inline edit + stacked delete confirm), opened from `/admin/products` and `/admin/product-attributes`; **Close** preserves the calling grid, and deep links open the modal only after the selection grid loads. Documented as pattern §6.1 in [PATTERNS_UI_QUICK_START.md](./PATTERNS_UI_QUICK_START.md) + agent rule `.cursor/rules/ui-patterns-first.mdc`. 
+| 2026-07-29 |
+|---|
+| 1. Admin CRUD and workflow forms now use the full grid width; login cards and modals remain intentionally narrow. |
+| 2. Product attribute values moved to reusable `ProductAttributeValuesModal`, opened over `/admin/products` and `/admin/product-attributes`; closing preserves the calling grid. |
+| 3. Attribute deep links open the modal only after the product-selection grid finishes loading, preventing overlapping queries on the scoped `DbContext`. |
+| 4. The content-modal interaction is documented in [PATTERNS_UI_QUICK_START.md](./PATTERNS_UI_QUICK_START.md) §6.1 and enforced by `.cursor/rules/ui-patterns-first.mdc`. |
+| 5. Admin dashboard EF metrics now run sequentially instead of using `Task.WhenAll` on one scoped `DbContext`; ANCM stdout logging is disabled by default and accumulated local logs were removed. |
 
-> **2026-07-28 — Catalog attributes (client model) + Product admin:** Remap `[Products].[ProductAttribuut]` → C# `Name`/`DataType`/`Unit` (`Naam`/`Gegevenstype`/`Eenheid`); `[Products].[ProductAttribuutItem]` FK **`ProductProdId` → `Product.ProdId`** + `Waarde`. DBA SQL + seed 18: [`scripts/ProductAttribuut_create_and_seed.sql`](../scripts/ProductAttribuut_create_and_seed.sql). Admin assignment `/admin/product-attributes/{ProdId}` = join Product ∪ Item ∪ Attribuut; UI per [`docs/images/tela_atributos.png`](./images/tela_atributos.png) (Add + **Cancel**). Docs: [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md), [DATA_DUTCH_ENGLISH_MODEL.md](./DATA_DUTCH_ENGLISH_MODEL.md). Product form: `DescriptionNl`/`En`/`Fr` + `WebshopDescriptionNl`; wide form; grid Actions = Edit `btn-primary` · Attributes `btn-info` · Delete `btn-danger`. Staff user: Admin/Manager out of group dropdown; group XOR reverted; plain passwords; admin logout enhance-nav.
+| 2026-07-28 |
+|---|
+| 1. Remapped `[Products].[ProductAttribuut]` to C# `Name`/`DataType`/`Unit` (`Naam`/`Gegevenstype`/`Eenheid`). |
+| 2. Mapped `[Products].[ProductAttribuutItem]` using FK `ProductProdId` → `Product.ProdId` and value column `Waarde`. |
+| 3. Added the DBA SQL and idempotent seed for 18 attributes: [`scripts/ProductAttribuut_create_and_seed.sql`](../scripts/ProductAttribuut_create_and_seed.sql). |
+| 4. Implemented product attribute assignment based on the approved [`tela_atributos.png`](./images/tela_atributos.png). |
+| 5. Expanded the Product admin form with `DescriptionNl`/`En`/`Fr` and `WebshopDescriptionNl`; aligned the form width and action-button colours. |
+| 6. Adjusted staff-user groups/password behaviour and admin logout enhanced navigation. |
 
-> **2026-07-27:** Staff user (password/group/flags) in SPEC_ADMIN §3.7; removed My profile + plan file; AdminGridSearch type-to-search; StoreStaffRedirect after render; auth always session cookie (no Remember me). Admin dashboard EF metrics now run sequentially on the scoped `DbContext` (removed concurrent `Task.WhenAll` failures); ANCM `stdoutLogEnabled=false` by default and accumulated local stdout logs removed. Login/modals stay narrow.
+| 2026-07-27 |
+|---|
+| 1. Documented staff-user password, group and flag behaviour in `SPEC_ADMIN` §3.7. |
+| 2. Removed My profile and the obsolete plan file. |
+| 3. Added type-to-search to `AdminGridSearch` and moved `StoreStaffRedirect` to after-render navigation. |
+| 4. Authentication cookies are always session cookies; Remember me was removed. |
 
-> **2026-07-26 — Catalog filters cutover (ProductAttribuut):** Implemented `[Products].[ProductAttribuut]` + `[Products].[ProductAttribuutItem]` (SQL script `scripts/ProductAttribuut_create_and_seed.sql`, EF map). Deleted S.7 pilot (`StoreCatalogFilterOptions`, Merk/Voorraad/Prijs, `ProductProperty` store facets). Admin: `/admin/attributes` + dedicated `/admin/product-attributes` (search product NL/EN/FR → assign values). Store leaf facets from attribute values only; query `attr=id:value|…`. Apply SQL on `abmatic_test` before runtime. See [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md).
+| 2026-07-26 |
+|---|
+| 1. Implemented `ProductAttribuut` + `ProductAttribuutItem` mapping and the DBA creation/seed script. |
+| 2. Removed the S.7 pilot based on `StoreCatalogFilterOptions`, Merk/Voorraad/Prijs and `ProductProperty`. |
+| 3. Added attribute dictionary/assignment admin flows and store leaf facets from exact `Waarde` values. |
+| 4. DBA must apply the SQL to `abmatic_test` before runtime; see [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md). |
 
-> **2026-07-25 — Test suite comprehensive coverage:** Unit tests and integration tests expanded covering store checkout flows, Mollie webhook processing, customer auth (register/login/profile), admin use cases (stock, orders, dashboard), `LegacySignInService`, `StoreCartService`, product description cascade, and bUnit component tests for critical Store/Admin Razor pages. Default `dotnet test` runs without SQL; opt-in read-only smoke via `TEST_SQL_CONNECTION`. See `.claude/CLAUDE.md` Testing section.
+| 2026-07-23 |
+|---|
+| 1. Reset the catalog-filter specification: target Dutch tables are `ProductAttribuut` + `ProductAttribuutItem`, with admin values per product and store facets from distinct `Waarde`. |
+| 2. Marked whitelist 54, Merk/Voorraad/Prijs, `ProductProperty` facets and the Coolblue analysis obsolete; see [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md). |
 
-> **2026-07-24 — Test suite comprehensive coverage:** Unit tests and integration tests expanded covering store checkout flows, Mollie webhook processing, customer auth (register/login/profile), admin use cases (stock, orders, dashboard), `LegacySignInService`, `StoreCartService`, product description cascade, and bUnit component tests for critical Store/Admin Razor pages. Default `dotnet test` runs without SQL; opt-in read-only smoke via `TEST_SQL_CONNECTION`. See `.claude/CLAUDE.md` Testing section.
+| 2026-07-21 |
+|---|
+| 1. Planned the advanced catalog-filter development documented in [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md). |
+| 2. Product descriptions now resolve `WebshopDescriptionNl` → `DescriptionNl` → `DescriptionEn` → `DescriptionFr`, with **No description** fallback. |
+| 3. Reverted the facet login gate: guests may browse, filter and add to cart; login remains required for ordering, payment and account features. |
+| 4. Order confirmation now uses `StoreLayout`; the obsolete `StorePaymentLayout` was removed. |
 
-> **2026-07-23 — Catalog filters spec reset (docs only):** Client model replaces S.7 pilot. Target: Dutch tables `ProductAttribuut` + `ProductAttribuutItem`, admin values per product, store leaf facets from distinct `Waarde`, **layout unchanged**. Obsolete: whitelist 54, Merk/Voorraad/Prijs, `ProductProperty` facets, Coolblue analysis. Code cutover later. See [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md), [PROVISORIO_ptb.md](./PROVISORIO_ptb.md).
+| 2026-07-20 |
+|---|
+| 1. Removed prerender authentication revival through `PersistentComponentState`. |
+| 2. Cart storage is session-only and sign-out clears cart state plus the authentication cookie. |
+| 3. Store login deletes the legacy `.WebShopABMATIC.Auth` cookie before sign-in. |
 
-> **2026-07-23 — Test layout: one file per SUT:** Reorganized `WebShopABMATIC.Tests` so each test file mirrors the type under test (`ProductDetailTests` ↔ `ProductDetail.razor`, `CheckoutUseCaseTests` ↔ `CheckoutUseCase`, etc.). bUnit under `Bunit/Store|Admin|Components`; unit under `Unit/...`. Shared bases/doubles only — no mega `PageSmoke`/`RemainingAdmin` bags. See `.claude/CLAUDE.md` Testing.
+| 2026-07-19 |
+|---|
+| 1. Serialized remaining checkout repository calls through `StoreDbGate` and added one retry for a closed connection. |
+| 2. Add to cart remains on the product/catalog page and updates the badge without an empty-cart flash. |
+| 3. Store sign-out maps `/account/logout` before Blazor. |
 
-> **2026-07-23 — Test suite phases 4–5 (no Playwright):** Remaining admin use-case units + `StoreCartService` (session store abstraction). SQL opt-in read-only smoke (`Category=SqlIntegration`, env `TEST_SQL_CONNECTION`). bUnit critical pages + smoke render for Store/Admin Razor. Default `dotnet test` green without SQL. E2E browser = manual by owner — Playwright not added. See `.claude/CLAUDE.md` Testing.
+| 2026-07-18 |
+|---|
+| 1. Guests may add, edit and remove session cart lines; login or registration is required only to place an order and pay. |
+| 2. Guest lines merge into the customer cart after login, and closing the browser clears the guest cart. |
+| 3. ERP `ReservedQuantity` remains applied only when placing a PrePay order. |
 
-> **2026-07-22 — Test project phases 0–3:** Added `WebShopABMATIC.Tests` (xUnit). Unit coverage for checkout, Mollie webhook, registration/profile, description cascade, LegacySignIn, product/order/stock/dashboard use cases. API integration via `WebApplicationFactory` for store/admin login, Mollie webhook, stock adjustment. Run: `dotnet test`. See `.claude/CLAUDE.md` Testing.
+| 2026-07-17 |
+|---|
+| 1. `OrderPaymentReturn` redirects after the first interactive render with `forceLoad`, avoiding prerender `NavigationException`. |
+| 2. `AddProductAsync` reports success/failure and retries browser storage. |
 
-> **2026-07-21 — Catalog filters development planning:** Scheduled planning session to plan the development for advanced catalog filters documented in [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md). Current pilot (S.7) covers whitelisted categories only; expansion scope and ERP property admin CRUD to be assessed.
+| 2026-07-16 |
+|---|
+| 1. Added the S.7 pilot sidebar for whitelisted leaf categories using Merk, Voorraad and Prijs facets. |
+| 2. Added `GetCategoryFacetsAsync`, filtered catalog loading and `StoreFacetSidebar`; `ProductOption` was not used. |
+| 3. This pilot was later superseded by the `ProductAttribuut` model documented in [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md). |
 
-> **2026-07-21 — Product description cascade:** Product detail uses `WebshopDescriptionNl` → `DescriptionNl` → `DescriptionEn` → `DescriptionFr`. When empty, UI shows muted **No description**. Same resolve for catalog rows. See [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.2.
+| 2026-07-15 |
+|---|
+| 1. Updated README storefront screenshots to the current Categories + Deals interface. |
+| 2. Aligned the Blazor Mollie mock and order confirmation with real order lines, calculated VAT and ERP freight price. |
+| 3. Removed the fixed €9 freight value from the static payment mock. |
 
-> **2026-07-21 — Facet pilot stays public (gate reverted):** Whitelisted filter leaves (default **54** Handzenders) do **not** require login. Guest may browse/filter/add to cart; login remains only for place-order, payment, orders, and account (§9.1–9.2). Earlier same-day “facet = login” note was incorrect and reverted.
+| 2026-07-14 |
+|---|
+| 1. Slimmed the root README to product presentation, screenshots and documentation pointers. |
+| 2. Assigned Mollie provider operations to `SPEC_MOLLIE_PAYMENTS_open.md` and store cart/confirmation UX to `SPEC_WEB_STORE.md`. |
+| 3. Marked `mock-payments.html` conceptual and added the project docs-governance skill. |
 
-> **2026-07-21 — Order confirmation uses StoreLayout:** `/orders/{id}/confirmation` no longer uses header-only `StorePaymentLayout`. Same chrome as catalog/cart/orders (header + category sidebar + main). Removed `StorePaymentLayout`. See [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.4–4.5.
+| 2026-07-13 |
+|---|
+| 1. `CheckoutUseCase.BuildQuoteAsync` now rejects missing, invalid and unknown required options. |
+| 2. Cart quotes send line `Options`, matching place-order behaviour. |
+| 3. Blocking CTA is “Cannot place order — fix stock or options”. |
 
-> **2026-07-20 — Auth/cart must not survive logout or browser close:** Removed prerender `PersistentComponentState` auth revival (root cause of “still logged in” on Blazor circuits). Cart is **session storage only** (no localStorage). Sign out clears session cart keys + auth cookie. Store login deletes legacy `.WebShopABMATIC.Auth` cookie on sign-in. See [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.3 / §9.2, [SPEC_ADMIN.md](./SPEC_ADMIN.md) §2.1.
+| 2026-07-12 |
+|---|
+| 1. Removed Identity leftovers and obsolete mock “Hard drive” SKUs from `SPEC_WEB_STORE`. |
+| 2. Documented the live ERP catalog, legacy login, freight and server-side option validation. |
 
-> **2026-07-19 — Checkout DB race + add-to-cart UX + logout cookie:** Fixed `InvalidOperationException` (“connection is closed”) on checkout options by serializing remaining `StoreOrderRepository` calls through `StoreDbGate`, removing `ConfigureAwait(false)`, and retrying closed-connection once. Add to cart **stays on the product/catalog** (badge updates; no empty-cart flash). Store **Sign out** maps `/account/logout` **before** Blazor. See [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §3.1 / §9.2, [SPEC_ADMIN.md](./SPEC_ADMIN.md) §2.1.
+| 2026-07-11 |
+|---|
+| 1. Established DB-first as a global rule: never invent ERP columns, tables, migrations or schema scripts. |
+| 2. Reinforced the rule in `AGENTS.md`, `SPEC_INFRASTRUCTURE` §4, `docs/README` and the Cursor/Claude DB-first rules. |
 
-> **2026-07-18 — Guest cart → checkout login (rule §9.2):** Guests may add/edit/remove cart lines (session soft hold). Login or register required only to place order & pay; guest lines merge into the customer cart. Closing the browser clears the guest cart (no ERP order / no ERP reservation). ERP `ReservedQuantity` still only on PrePay place-order. See [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.3, §5.2, §9.1–9.2. *(Supersedes the same-day “pending add / buy gate at Add to cart” note below.)*
+| 2026-07-10 |
+|---|
+| 1. Removed the hardcoded €9 freight fee. |
+| 2. Freight now resolves through `OrderDeliveryTypeProduct` → `ProductPrices`, defaulting to €0 without a usable ERP price. |
+| 3. Kept Dutch ERP labels in the UI and English C# names with DE-PARA; see [DATA_FREIGHT_DELIVERY.md](./DATA_FREIGHT_DELIVERY.md). |
 
-> **2026-07-17 — Payment-return redirect + cart add reliability:** `OrderPaymentReturn` redirects after first interactive render with `forceLoad` (avoids Blazor `NavigationException` during prerender). `AddProductAsync` returns success/failure and retries browser storage.
+| 2026-07-09 |
+|---|
+| 1. Established `Mollie:UseMock=true` until the client supplies API keys. |
+| 2. Documented the go-live block in [SPEC_MOLLIE_PAYMENTS_open.md](./SPEC_MOLLIE_PAYMENTS_open.md), `AGENTS.md` and roadmap B.9. |
 
-> **2026-07-16 — S.7 catalog facet filters (pilot):** Leaf categories in `StoreCatalogFilters:EnabledCategoryIds` (default **54** Handzenders) show Coolblue-style sidebar: Merk (`Manufacturer`), Voorraad, Prijs; `ProductProperty` groups when ERP data exists (placeholder when empty). Not used: `ProductOption`. API: `GetCategoryFacetsAsync` + filtered `GetCatalogAsync`. UI: `StoreFacetSidebar` on `Catalog.razor`. See [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md), [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.1.
+| 2026-07-08 |
+|---|
+| 1. Stale cart lines with insufficient stock remain visible but clearly block checkout. |
+| 2. Added danger messaging, per-line stock status and disabled CTA “Cannot place order — fix stock”. |
 
-> **2026-07-15 — Store screenshots + payment UI aligned:** README now uses the current Categories + Deals storefront screenshot (old Hard drive/$ image removed). Blazor Mollie mock follows the approved hosted-checkout visual; order confirmation now shows the Payment received layout with real order lines, calculated VAT and the persisted ERP freight product/price (`OrderDeliveryTypeProduct` → `ProductPrices`, missing price → €0). Static payment mock no longer contains a fixed €9 freight.
+| 2026-07-07 |
+|---|
+| 1. Added `.claude/hooks/format-csharp.ps1` after-file-edit formatting for C# whitespace. |
+| 2. Kept product rules in SPECs and path rules rather than automation hooks. |
 
-> **2026-07-14 — Docs ownership realigned:** Root `README.md` slimmed (human pitch + screenshots + pointers). `SPEC_MOLLIE_PAYMENTS_open.md` = Mollie provider/ops runbook only; store cart/confirmation UX = `SPEC_WEB_STORE.md` §4.3–4.4. `mock-payments.html` labeled conceptual (not live UI). Project skill: `.cursor/skills/docs-governance/`.
+| 2026-07-06 |
+|---|
+| 1. Aligned search, product detail and cards on `StorePriceFormatter.FormatListPrice`; out-of-stock status takes precedence. |
+| 2. Azure WebSockets remains an owner-managed App Service setting. |
 
-> **2026-07-13 — S.4 server required options:** `CheckoutUseCase.BuildQuoteAsync` loads catalog options and rejects missing/invalid required options (and unknown option ids). Cart quote now sends line `Options` (same as place-order). CTA: “Cannot place order — fix stock or options”.
+| 2026-07-05 |
+|---|
+| 1. Established owner-only git: agents do not commit, amend, push or force-push without explicit authorization. |
+| 2. Established owner-only publish/deploy; see `AGENTS.md` and `.cursor/rules/owner-only-git-publish.mdc`. |
 
-> **2026-07-12 — E.12 SPEC_WEB_STORE refresh:** Removed Identity leftovers and mock “Hard drive” SKUs; documented live ERP catalog, legacy login, freight, server option validation.
+| 2026-07-04 |
+|---|
+| 1. Added the root `CLAUDE.md` pointer and expanded `.claude/CLAUDE.md`. |
+| 2. Added path rules for store UI, admin UI and infrastructure. |
+| 3. Added Claude settings, local configuration example, gitignore and `.claudeignore`. |
 
-> **2026-07-11 — DB-first = global hard rule:** Never invent columns/tables/migrations/schema scripts for **any** feature. Reinforced in `AGENTS.md`, `SPEC_INFRASTRUCTURE` §4, `docs/README`, `.cursor/rules/db-first.mdc`, `.claude/rules/db-first.md` (not freight-only).
+| 2026-07-03 |
+|---|
+| 1. Declared live `abmatic_test` the database source of truth. |
+| 2. Removed migration and schema-script workflows from SPECs and `DATA_*`. |
+| 3. Prohibited application-driven `Migrate`, `dotnet ef database update` and ERP schema scripts. |
 
-> **2026-07-10 — Freight from ERP (S.5):** Removed hardcoded €9. Fee from `OrderDeliveryTypeProduct` → `ProductPrices` (Dutch `DossierLeveringsTypeProduct` / `ProductPrijzen`); default **€0**. Dutch ERP labels in UI; English code DE-PARA. See [DATA_FREIGHT_DELIVERY.md](./DATA_FREIGHT_DELIVERY.md).
+| 2026-07-02 |
+|---|
+| 1. Established root [`AGENTS.md`](../AGENTS.md) as the default agent process contract. |
+| 2. Added the always-applied Cursor `agents.mdc` rule. |
 
-> **2026-07-09 — Mollie mock until client keys:** Hard rule — keep `Mollie:UseMock`; do not start real Mollie (B.9) until the client delivers API keys. Documented in [SPEC_MOLLIE_PAYMENTS_open.md](./SPEC_MOLLIE_PAYMENTS_open.md), `AGENTS.md`, roadmap B.9.
+| 2026-07-01 |
+|---|
+| 1. Living specs with checklists use `SPEC_<Topic>_open.md`. |
+| 2. Runtime changelog renamed to `AMENDMENTS.md`, without an `open_*` prefix. |
+| 3. Documentation index remains [README.md](./README.md). |
 
-> **2026-07-08 — Cart stock blocking UX:** Stale cart lines with insufficient stock stay in the cart but checkout is clearly blocked (danger alert, line Out of stock / “only N left”, disabled CTA “Cannot place order — fix stock”). Server quote/place-order already rejected; UI made blocking obvious. See [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §5.2.
+| 2026-06-30 |
+|---|
+| 1. Renamed `readme/` to `docs/`. |
+| 2. Moved HTML mocks to `docs/mocks/` and bulky migration notes to `docs/archive/`. |
+| 3. Moved PublishSettings to `publish/`. |
 
-> **2026-07-07 — Format hook:** `.claude/hooks/format-csharp.ps1` runs after agent edits (Claude `PostToolUse` + Cursor `afterFileEdit`) — `dotnet format whitespace` on `.cs` only. Product rules (DB / Adminsence / Mollie) stay in SPECs & path rules, not hooks.
+| 2026-06-29 |
+|---|
+| 1. Guests see list price, **Out of stock** or **Price on request**. |
+| 2. Removed “Meld u aan om uw prijs te zien” from product cards. |
+| 3. Login is required when buying, not for browsing or seeing list prices. |
 
-> **2026-07-06 — Store price/stock (AGENTS workflow):** Aligned search + detail + cards on `StorePriceFormatter.FormatListPrice` (guest list price; OOS label wins). CLAUDE.md documents build-as-smoke (no test project yet). Owner still enables Azure WebSockets manually.
+| 2026-06-28 |
+|---|
+| 1. Removed in-memory `StoreBrowserSessionStore`; the customer authentication cookie is authoritative. |
+| 2. Interactive Server uses prerender and Azure App Service requires WebSockets enabled. |
+| 3. Idle logout remains client-side after 15 minutes through `/account/logout`. |
 
-> **2026-07-05 — Owner-only git/publish:** Agents never commit, push, or publish/deploy unless Marco explicitly asks. See `AGENTS.md` § Git & publish and `.cursor/rules/owner-only-git-publish.mdc`.
+| 2026-06-27 |
+|---|
+| 1. Restored discoverable **My orders** according to [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.5. |
+| 2. Header actions differ for guests, customers and staff; staff enter through `/admin`. |
+| 3. Customer and staff authentication tables remain separate; see [SPEC_ADMIN.md](./SPEC_ADMIN.md) §2. |
+| 4. Unified login remains open in the historical archive. |
 
-> **2026-07-04 — Claude Code structure:** Root `CLAUDE.md` pointer; enriched `.claude/CLAUDE.md` (commands + constraints); path rules `store-ui` / `admin-ui` / `infrastructure`; `.claude/settings.json` (deny editing appsettings/publish); `CLAUDE.local.md.example` + gitignore; `.claudeignore`.
+| 2026-06-26 |
+|---|
+| 1. Kept `AMENDMENTS.md` as the dated runtime changelog. |
+| 2. Stable behaviour remains in the matching SPECs. |
+| 3. Older bulky notes remain under `docs/archive/`. |
 
-> **2026-07-03 — DB-first rule:** Live `abmatic_test` is the source of truth. Removed migration/script workflows from SPECs/`DATA_*`. Agents must not use EF `Migrate` / `dotnet ef database update` / schema scripts for the ERP DB. See `AGENTS.md` and [SPEC_INFRASTRUCTURE.md](./SPEC_INFRASTRUCTURE.md) §4.
-
-> **2026-07-02 — Agent workflow:** Root [`AGENTS.md`](../AGENTS.md) is the default process contract (which SPEC/PATTERNS to read, docs sync). Cursor rule `agents.mdc` always applies.
-
-> **2026-07-01 — Docs naming:** Living specs with checklists use `SPEC_<Topic>_open.md`. Runtime changelog is `AMENDMENTS.md` (no longer `open_*` prefix). Index: [README.md](./README.md).
-
-> **2026-06-30 — Docs layout:** Renamed `readme/` to `docs/`; HTML mocks to `docs/mocks/`; bulky migration notes to `docs/archive/`; PublishSettings to `publish/`. Index: [README.md](./README.md).
-
-> **2026-06-29 — Catalog price/stock UI:** Guests see **list price** (or **Out of stock** / **Price on request**). Removed “Meld u aan om uw prijs te zien” from cards. Login only when buying (add to cart). See [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §5.1 / §9.1.
-
-> **2026-06-28 — Azure Blazor + store auth:** Removed in-memory `StoreBrowserSessionStore` (cookie alone authorizes customers). Interactive Server **prerender on**. Azure App Service must set **Web sockets = On** (Immo production already has this; see [SPEC_INFRASTRUCTURE.md](./SPEC_INFRASTRUCTURE.md)). Idle logout remains client-side 15 min → `/account/logout`.
-
-> **2026-06-27 — My orders / Admin nav:** Spec visual notes that removed My orders were for matching Adminsence chrome only. Product need + [SPEC_WEB_STORE.md](./SPEC_WEB_STORE.md) §4.5 require discoverable **My orders**. Current `StoreHeader`: guest → Login + Admin (`/admin/login`); customer → **My orders** + account; staff → **Admin** (`/admin`). Auth tables remain split (Customer vs StaffUsers) — see [SPEC_ADMIN.md](./SPEC_ADMIN.md) §2. Unified login still open (see archive).
-
-> **2026-06-26 — Runtime docs stay split from specs:** `AMENDMENTS.md` remains the living runtime changelog; stable behavior continues to belong in the matching SPECs, with `docs/archive/` reserved for older bulk notes. Index remains [README.md](./README.md).
-
-> **2026-06-25 — Runtime notes stay in docs:** Keep live notes in `docs/AMENDMENTS.md`, historical bulk notes in `docs/archive/`, and publish settings in `publish/`. This file stays the short, dated runtime changelog.
+| 2026-06-25 |
+|---|
+| 1. Kept live runtime notes in `docs/AMENDMENTS.md`. |
+| 2. Kept historical bulk notes in `docs/archive/`. |
+| 3. Kept publish settings under `publish/`. |
 
 ---
 
