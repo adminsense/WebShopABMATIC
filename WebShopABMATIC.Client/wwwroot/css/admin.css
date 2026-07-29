@@ -797,6 +797,11 @@ button.entity-grid-search-icon:focus {
   max-width: 640px;
 }
 
+.admin-content .entity-form-fields.entity-form-fields-wide {
+  max-width: none;
+  width: 100%;
+}
+
 .admin-content .entity-form-fields .form-label {
   font-size: 0.8125rem;
   font-weight: 500;
