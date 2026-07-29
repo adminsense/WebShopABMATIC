@@ -1,4 +1,4 @@
-namespace WebShopABMATIC.Application.Ports.Outbound;
+﻿namespace WebShopABMATIC.Application.Ports.Outbound;
 
 public sealed class LegacyStaffProfileDto
 {

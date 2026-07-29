@@ -39,21 +39,27 @@
             {
                 <EditForm Model="_model" OnValidSubmit="SaveAsync">
                     <DataAnnotationsValidator />
-                    <div class="entity-form-fields">
-                    <div class="row g-2">
-                        <div class="col-md-8">
+                    <div class="entity-form-fields entity-form-fields-wide">
+                    <div class="row g-3">
+                        <div class="col-lg-6">
                             <label class="form-label" for="prod-name">NameEn *</label>
                             <InputText id="prod-name" class="form-control form-control-sm" @bind-Value="_model.NameEn" required />
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-lg-4">
                             <label class="form-label" for="prod-part">OrderPartNumber</label>
                             <InputText id="prod-part" class="form-control form-control-sm" @bind-Value="_model.OrderPartNumber" />
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-lg-2 d-flex align-items-end">
+                            <div class="form-check mb-1">
+                                <InputCheckbox class="form-check-input" @bind-Value="_model.ShowOnWebshop" id="showWebshop" />
+                                <label class="form-check-label" for="showWebshop">Webshop</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
                             <label class="form-label" for="prod-supplier">SupplierId *</label>
                             <InputNumber id="prod-supplier" class="form-control form-control-sm" @bind-Value="_model.SupplierId" />
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label" for="prod-manufacturer">ManufacturerId *</label>
                             <InputNumber id="prod-manufacturer" class="form-control form-control-sm" @bind-Value="_model.ManufacturerId" />
                         </div>
@@ -61,17 +67,23 @@
                             <label class="form-label" for="prod-ean">EanCode</label>
                             <InputText id="prod-ean" class="form-control form-control-sm" @bind-Value="_model.EanCode" />
                         </div>
-                        <div class="col-md-2 d-flex align-items-end">
-                            <div class="form-check mb-1">
-                                <InputCheckbox class="form-check-input" @bind-Value="_model.ShowOnWebshop" id="showWebshop" />
-                                <label class="form-check-label" for="showWebshop">Webshop</label>
-                            </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="prod-desc-nl">DescriptionNl (ProdDescription)</label>
+                            <InputTextArea id="prod-desc-nl" class="form-control form-control-sm" rows="3" @bind-Value="_model.DescriptionNl" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="prod-desc-en">DescriptionEn (ProdDescriptionEN)</label>
+                            <InputTextArea id="prod-desc-en" class="form-control form-control-sm" rows="3" @bind-Value="_model.DescriptionEn" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="prod-desc-fr">DescriptionFr (ProdDescriptionFr)</label>
+                            <InputTextArea id="prod-desc-fr" class="form-control form-control-sm" rows="3" @bind-Value="_model.DescriptionFr" />
                         </div>
                         <div class="col-12">
-                            <label class="form-label" for="prod-desc">WebshopDescriptionNl</label>
-                            <InputTextArea id="prod-desc" class="form-control form-control-sm" rows="2" @bind-Value="_model.WebshopDescriptionNl" />
+                            <label class="form-label" for="prod-desc-web">WebshopDescriptionNl</label>
+                            <InputTextArea id="prod-desc-web" class="form-control form-control-sm" rows="2" @bind-Value="_model.WebshopDescriptionNl" />
                         </div>
-                        <div class="col-12">
+                        <div class="col-lg-6">
                             <label class="form-label">Product image</label>
                             @if (!string.IsNullOrEmpty(_previewUrl))
                             {
@@ -171,7 +183,7 @@
                                        data-enhance-nav="false">
                                         <i class="bi bi-pencil"></i>
                                     </a>
-                                    <a class="btn btn-sm btn-outline-primary"
+                                    <a class="btn btn-sm btn-info"
                                        href="@($"/admin/product-attributes/{item.ProductId}")"
                                        title="Product attributes"
                                        data-enhance-nav="false">

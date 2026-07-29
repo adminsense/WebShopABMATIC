@@ -8,6 +8,9 @@ public sealed class Product
     public int SupplierId { get; private set; }
     public int ManufacturerId { get; private set; }
     public bool ShowOnWebshop { get; private set; }
+    public string? DescriptionNl { get; private set; }
+    public string? DescriptionEn { get; private set; }
+    public string? DescriptionFr { get; private set; }
     public string? WebshopDescriptionNl { get; private set; }
     public string? EanCode { get; private set; }
     public bool IsInactive { get; private set; }
@@ -18,6 +21,9 @@ public sealed class Product
         int supplierId,
         int manufacturerId,
         bool showOnWebshop,
+        string? descriptionNl,
+        string? descriptionEn,
+        string? descriptionFr,
         string? webshopDescriptionNl,
         string? eanCode)
     {
@@ -29,6 +35,9 @@ public sealed class Product
             SupplierId = supplierId,
             ManufacturerId = manufacturerId,
             ShowOnWebshop = showOnWebshop,
+            DescriptionNl = descriptionNl,
+            DescriptionEn = descriptionEn,
+            DescriptionFr = descriptionFr,
             WebshopDescriptionNl = webshopDescriptionNl,
             EanCode = eanCode,
             IsInactive = false
@@ -42,6 +51,9 @@ public sealed class Product
         int supplierId,
         int manufacturerId,
         bool showOnWebshop,
+        string? descriptionNl,
+        string? descriptionEn,
+        string? descriptionFr,
         string? webshopDescriptionNl,
         string? eanCode,
         bool isInactive)
@@ -54,6 +66,9 @@ public sealed class Product
             SupplierId = supplierId,
             ManufacturerId = manufacturerId,
             ShowOnWebshop = showOnWebshop,
+            DescriptionNl = descriptionNl,
+            DescriptionEn = descriptionEn,
+            DescriptionFr = descriptionFr,
             WebshopDescriptionNl = webshopDescriptionNl,
             EanCode = eanCode,
             IsInactive = isInactive
@@ -66,6 +81,9 @@ public sealed class Product
         int supplierId,
         int manufacturerId,
         bool showOnWebshop,
+        string? descriptionNl,
+        string? descriptionEn,
+        string? descriptionFr,
         string? webshopDescriptionNl,
         string? eanCode)
     {
@@ -74,6 +92,9 @@ public sealed class Product
         SupplierId = supplierId;
         ManufacturerId = manufacturerId;
         ShowOnWebshop = showOnWebshop;
+        DescriptionNl = descriptionNl;
+        DescriptionEn = descriptionEn;
+        DescriptionFr = descriptionFr;
         WebshopDescriptionNl = webshopDescriptionNl;
         EanCode = eanCode;
     }

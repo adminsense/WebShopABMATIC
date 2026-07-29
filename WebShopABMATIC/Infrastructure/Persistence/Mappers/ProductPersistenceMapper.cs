@@ -1,4 +1,3 @@
-using WebShopABMATIC.Application.Admin.Products;
 using WebShopABMATIC.Domain.Catalog.Products;
 using PersistenceProduct = WebShopABMATIC.Data.Entities.Product;
 
@@ -14,6 +13,9 @@ internal static class ProductPersistenceMapper
             entity.SupplierId,
             entity.ManufacturerId,
             entity.ShowOnWebshop == true,
+            entity.DescriptionNl,
+            entity.DescriptionEn,
+            entity.DescriptionFr,
             entity.WebshopDescriptionNl,
             entity.EanCode,
             entity.IsInactive);
@@ -23,15 +25,15 @@ internal static class ProductPersistenceMapper
         entity.NameEn = domain.NameEn;
         entity.NameNl = domain.NameEn;
         entity.NameFr = domain.NameEn;
-        entity.DescriptionEn = domain.WebshopDescriptionNl;
-        entity.DescriptionNl = domain.WebshopDescriptionNl;
-        entity.DescriptionFr = domain.WebshopDescriptionNl;
+        entity.DescriptionNl = domain.DescriptionNl ?? string.Empty;
+        entity.DescriptionEn = domain.DescriptionEn ?? string.Empty;
+        entity.DescriptionFr = domain.DescriptionFr ?? string.Empty;
         entity.OrderPartNumber = domain.OrderPartNumber;
         entity.StockNumber = domain.OrderPartNumber;
         entity.SupplierId = domain.SupplierId;
         entity.ManufacturerId = domain.ManufacturerId;
         entity.ShowOnWebshop = domain.ShowOnWebshop;
-        entity.WebshopDescriptionNl = domain.WebshopDescriptionNl;
+        entity.WebshopDescriptionNl = domain.WebshopDescriptionNl ?? string.Empty;
         entity.EanCode = domain.EanCode;
         entity.IsInactive = domain.IsInactive;
         entity.LastModifiedAt = DateTime.UtcNow;

@@ -1,4 +1,4 @@
-﻿# 📊 Demo data summary — Azure + admin screens
+# 📊 Demo data summary — Azure + admin screens
 
 ![Status](https://img.shields.io/badge/Status-Live%20on%20Azure%20SQL-28a745?style=flat-square) ![Tables](https://img.shields.io/badge/Demo%20tables-40%2B-512BD4?style=flat-square) ![Database](https://img.shields.io/badge/Database-abmatic__test-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white)
 

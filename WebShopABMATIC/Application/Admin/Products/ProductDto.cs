@@ -5,7 +5,9 @@ namespace WebShopABMATIC.Application.Admin.Products;
 public sealed class ProductDto
 {
     public int ProductId { get; init; }
+    public string NameNl { get; init; } = string.Empty;
     public string NameEn { get; init; } = string.Empty;
+    public string NameFr { get; init; } = string.Empty;
     public string? OrderPartNumber { get; init; }
     public int SupplierId { get; init; }
     public int ManufacturerId { get; init; }
@@ -23,6 +25,9 @@ public sealed class ProductEditDto
     public int SupplierId { get; set; }
     public int ManufacturerId { get; set; }
     public bool ShowOnWebshop { get; set; }
+    public string DescriptionNl { get; set; } = string.Empty;
+    public string DescriptionEn { get; set; } = string.Empty;
+    public string DescriptionFr { get; set; } = string.Empty;
     public string WebshopDescriptionNl { get; set; } = string.Empty;
     public string? EanCode { get; set; }
     public string? PrimaryImageUrl { get; set; }

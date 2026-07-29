@@ -1,4 +1,4 @@
-﻿# 🎨 WebShopABMATIC — Admin Mock Prototype Guide
+# 🎨 WebShopABMATIC — Admin Mock Prototype Guide
 
 ![Status](https://img.shields.io/badge/Status-Validation%20ready-28a745?style=flat-square) ![Layout](https://img.shields.io/badge/Layout-AB--MATIC%20style-512BD4?style=flat-square) ![Scope](https://img.shields.io/badge/Scope-Admin%20only-0d47a1?style=flat-square) ![Type](https://img.shields.io/badge/Type-HTML%20Prototype-0ea5e9?style=flat-square)
 
