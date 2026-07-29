@@ -6,7 +6,7 @@
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
 @using WebShopABMATIC.Web.Services
-@inject IProductPriceAdminPort AdminPort
+@inject IProductPriceAdminPort AdminPort
 @inject IGridExportService GridExport
 @implements IAsyncDisposable
 
@@ -44,15 +44,15 @@
                             <label class="form-label" for="f-grosssalesprice">Gross sales *</label>
                             <InputNumber id="f-grosssalesprice" class="form-control form-control-sm" @bind-Value="_model.GrossSalesPrice" required />
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label" for="f-grosspurchaseprice">Gross purchase *</label>
                             <InputNumber id="f-grosspurchaseprice" class="form-control form-control-sm" @bind-Value="_model.GrossPurchasePrice" required />
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label" for="f-netpurchaseprice">Net purchase</label>
                             <InputNumber id="f-netpurchaseprice" class="form-control form-control-sm" @bind-Value="_model.NetPurchasePrice" />
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label" for="f-baseprice">Base price</label>
                             <InputNumber id="f-baseprice" class="form-control form-control-sm" @bind-Value="_model.BasePrice" />
                         </div>

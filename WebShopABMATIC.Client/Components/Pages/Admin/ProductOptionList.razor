@@ -6,7 +6,7 @@
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
 @using WebShopABMATIC.Web.Services
-@inject IProductOptionAdminPort AdminPort
+@inject IProductOptionAdminPort AdminPort
 @inject IGridExportService GridExport
 @implements IAsyncDisposable
 
@@ -40,7 +40,7 @@
                             <label class="form-label" for="f-valuetype">ValueType *</label>
                             <InputText id="f-valuetype" class="form-control form-control-sm" @bind-Value="_model.ValueType" required />
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label class="form-label" for="f-tag">Tag *</label>
                             <InputText id="f-tag" class="form-control form-control-sm" @bind-Value="_model.Tag" required />
                         </div>
