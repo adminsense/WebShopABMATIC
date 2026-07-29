@@ -93,8 +93,8 @@ DE-PARA also in [DATA_DUTCH_ENGLISH_MODEL.md](./DATA_DUTCH_ENGLISH_MODEL.md).
 
 ### 4.1 Admin
 
-1. **`/admin/attributes`** — dictionary CRUD for `ProductAttribuut` (optional; out of current UI scope if route not shipped).  
-2. **`/admin/product-attributes`** — dedicated assignment: search `[Products].[Product]` by **NameNl / NameEn / NameFr** (+ part number / EAN), select `ProdId`, then add/edit/delete `Waarde` rows. Deep-link: `/admin/product-attributes/{ProdId}`. UI = [`tela_atributos.png`](./images/tela_atributos.png).  
+1. **`/admin/attributes`** — dictionary CRUD for `ProductAttribuut` (optional; out of current UI scope if route not shipped).
+2. **`/admin/product-attributes`** — product-selection grid: search `[Products].[Product]` by **NameNl / NameEn / NameFr** (+ part number / EAN), then the **Attributes** action opens `ProductAttributeValuesModal` over the grid to add/edit/delete `Waarde` rows; closing returns to the grid. Same modal is reused by the Attributes action on `/admin/products`. Deep-link `/admin/product-attributes/{ProdId}` opens the modal directly. Content per [`tela_atributos.png`](./images/tela_atributos.png) (now rendered inside the modal, without the old *Change product* button).
 3. One product may have many attributes; values are free text (distinct facet keys = exact `Waarde` strings). Dropdown labels = `Naam`.
 ### 4.2 Store
 
