@@ -1,0 +1,24 @@
+---
+description: Read PATTERNS_* and copy an existing screen before writing any admin/store UI
+alwaysApply: true
+---
+
+# Read the PATTERNS before writing UI 
+
+Before creating or changing **any** `.razor` / admin CSS, read the documented pattern and name it in the answer:
+
+1. `docs/PATTERNS_UI_QUICK_START.md` — buttons, grids, forms, modals, widths.
+2. `docs/PATTERNS_CODE_AND_INFRASTRUCTURE.md` — page skeleton, state, delete flow.
+3. Open the **reference page** for the pattern (`CustomerList.razor` for grid + modals) and copy it.
+
+Never invent a new interaction, colour, layout, or route shape when an existing screen already solves it.
+
+## Secondary actions stay on the calling screen
+
+- A row action or button that manages a **related entity** (attributes, prices, password reset, details) opens a **modal over the calling page** — never a separate route/screen.
+- Closing (X, `Cancel`, or `Close`) returns to the exact calling screen with its grid, search and page intact. No `NavigateTo`, no full page reload.
+- Reference implementations: `ProductAttributeValuesModal.razor` (content modal reused by `ProductList` and `ProductAttributeAssignment`), `CustomerList.razor` (reset password), `AuditLogList.razor` (detail).
+- Stacked modal (confirm on top of a content modal): same `modal fade show d-block` markup plus `z-index: 1060`.
+- Separate routes are only for top-level menu/hub entries.
+
+If Marco reports a UI mismatch, re-read the pattern file first and quote the rule being applied before touching code.

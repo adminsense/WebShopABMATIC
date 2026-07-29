@@ -6,7 +6,7 @@
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
 @using WebShopABMATIC.Web.Services
-@inject ICustomerAdminPort AdminPort
+@inject ICustomerAdminPort AdminPort
 @inject IGridExportService GridExport
 @implements IAsyncDisposable
 
@@ -40,7 +40,7 @@
                             <label class="form-label" for="f-customername">Name *</label>
                             <InputText id="f-customername" class="form-control form-control-sm" @bind-Value="_model.CustomerName" required />
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label class="form-label" for="f-webshoplogin">Webshop login</label>
                             <InputText id="f-webshoplogin" class="form-control form-control-sm" @bind-Value="_model.WebshopLogin" />
                         </div>
@@ -48,15 +48,15 @@
                             <label class="form-label" for="f-customeremail">Email *</label>
                             <InputText id="f-customeremail" class="form-control form-control-sm" @bind-Value="_model.CustomerEmail" required />
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label class="form-label" for="f-customerphone">Phone *</label>
                             <InputText id="f-customerphone" class="form-control form-control-sm" @bind-Value="_model.CustomerPhone" required />
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-5">
                             <label class="form-label" for="f-customertypeid">CustomerTypeId *</label>
                             <InputNumber id="f-customertypeid" class="form-control form-control-sm" @bind-Value="_model.CustomerTypeId" required />
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-5">
                             <label class="form-label" for="f-customercityid">CityId *</label>
                             <InputNumber id="f-customercityid" class="form-control form-control-sm" @bind-Value="_model.CustomerCityId" required />
                         </div>

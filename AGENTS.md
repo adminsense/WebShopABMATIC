@@ -17,7 +17,7 @@
 1. Open **[`docs/README.md`](docs/README.md)** — pick the right SPEC for the task.
 2. Follow **[`.claude/CLAUDE.md`](.claude/CLAUDE.md)** — hard product/auth/Azure constraints.
 3. For UI/code style, open **[`docs/PATTERNS_UI_QUICK_START.md`](docs/PATTERNS_UI_QUICK_START.md)** and/or **[`docs/PATTERNS_CODE_AND_INFRASTRUCTURE.md`](docs/PATTERNS_CODE_AND_INFRASTRUCTURE.md)** *before* inventing a new pattern.
-4. After behaviour changes: update the matching `docs/SPEC_*` (or checklist on `SPEC_*_open.md`) and keep **[`docs/AMENDMENTS.md`](docs/AMENDMENTS.md)** to **one short line per day** (extend today’s line; do not stack). Rule: [`.cursor/rules/docs-sync.mdc`](.cursor/rules/docs-sync.mdc).
+4. After behaviour changes: update the matching `docs/SPEC_*` (or checklist on `SPEC_*_open.md`) and update today’s table in **[`docs/AMENDMENTS.md`](docs/AMENDMENTS.md)** (date as column header; one numbered change per row; do not create a second table for the same date). Rule: [`.cursor/rules/docs-sync.mdc`](.cursor/rules/docs-sync.mdc).
 
 ## 🗺️ What to Read (Quick Map)
 
@@ -41,7 +41,7 @@ Do **not** load `docs/archive/` unless the user asks for history.
 | `SPEC_<Topic>_open.md` | Spec still in development + ✅/⬜ checklist |
 | `DATA_*` | Schema / mapping / storage reference |
 | `PATTERNS_*` | How we implement (copy existing patterns) |
-| `AMENDMENTS.md` | One short runtime summary **per day** |
+| `AMENDMENTS.md` | One dated table per day (plain Markdown, left-aligned header); one numbered runtime change per row |
 
 ## ⚙️ Default Engineering Rules
 
