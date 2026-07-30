@@ -19,12 +19,17 @@ public sealed class StoreCatalogFilterState
     public IReadOnlyDictionary<int, IReadOnlyList<string>> PropertyValues { get; init; }
         = new Dictionary<int, IReadOnlyList<string>>();
 
+    /// <summary>ProductAttributeId → selected Waarde values (catalog filters).</summary>
+    public IReadOnlyDictionary<int, IReadOnlyList<string>> AttributeValues { get; init; }
+        = new Dictionary<int, IReadOnlyList<string>>();
+
     public bool HasAny =>
         ManufacturerIds.Count > 0
         || IncludeUnknownManufacturer
         || StockKeys.Count > 0
         || PriceKeys.Count > 0
-        || PropertyValues.Values.Any(v => v.Count > 0);
+        || PropertyValues.Values.Any(v => v.Count > 0)
+        || AttributeValues.Values.Any(v => v.Count > 0);
 }
 
 public sealed class StoreCategoryFacetsDto

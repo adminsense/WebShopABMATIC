@@ -1,4 +1,4 @@
-﻿# Admin Panel — Functional Specification
+# Admin Panel — Functional Specification
 
 ![Status](https://img.shields.io/badge/Status-Implemented-28a745?style=flat-square) ![Screens](https://img.shields.io/badge/Screens-3%20layout%20types-0d47a1?style=flat-square) ![Entities](https://img.shields.io/badge/Hub%20entities-22-512BD4?style=flat-square) ![UI](https://img.shields.io/badge/UI-AB-MATIC%20shell-0dcaf0?style=flat-square)
 
@@ -254,9 +254,9 @@ Each sidebar item opens a **hub** of entity cards. Below: what staff **register 
 
 | Entity | Table | What staff registers |
 |--------|-------|----------------------|
-| **Product** | `Product` | Master product: names, part numbers, supplier/manufacturer, **`ShowOnWebshop`**, `WebshopDescriptionNl`, EAN |
-| **Product attributes** | `ProductAttribuut` | Filter attribute dictionary (`NaamEn`/`Nl`/`Fr`, `Volgorde`) — `/admin/attributes` |
-| **Product attribute values** | `ProductAttribuutItem` | Per-product `Waarde` for webstore facets — `/admin/product-attributes` (search product NL/EN/FR, then assign) |
+| **Product** | `Product` | Master product: names, part numbers, supplier/manufacturer, **`ShowOnWebshop`**, descriptions NL/EN/FR (`ProdDescription*`) + `WebshopDescriptionNl`, EAN |
+| **Product attributes** | `ProductAttribuut` | Filter attribute dictionary (`Naam`, `Gegevenstype`, `Eenheid`) — `/admin/attributes` (when shipped) |
+| **Product attribute values** | `ProductAttribuutItem` | Per-product `Waarde`; FK `ProductProdId` → `Product.ProdId`. Opened as a **modal** (`ProductAttributeValuesModal`) from the Attributes row action on `/admin/products` and on the product-selection grid `/admin/product-attributes`. **Add** saves and keeps the modal open; **Close/X** returns to the calling grid untouched. Deep link `/admin/product-attributes/{ProdId}` opens the modal over the grid. |
 | **Product price** | `ProductPrice` | Price rows: gross/net sales and purchase, validity dates, assembly/installation |
 | **Product quantity tier** | `ProductQuantityTier` | Volume discounts (`MinimumQuantity`, `Discount`) |
 | **Product option** | `ProductOption` | Configurable options (required flag, sort order, price formulas) |
@@ -456,7 +456,7 @@ flowchart TD
 | Dashboard | `mock-admin.html` `#view-dashboard` | `Components/Pages/Admin/Dashboard.razor` |
 | Hub | `#view-hub` | `Hub.razor` |
 | List | `#view-list` | `ProductList.razor`, `CustomerList.razor`, `OrderList.razor` |
-| Form | `#view-form` | `ProductForm.razor` |
+| Form | `#view-form` | `ProductList.razor` (inline create/edit; `ProductForm.razor` is redirect-only) |
 | Shell | sidebar + top bar | `AdminLayout`, `AdminSidebar`, `AdminTopBar` |
 
 ### 7.1 Run locally

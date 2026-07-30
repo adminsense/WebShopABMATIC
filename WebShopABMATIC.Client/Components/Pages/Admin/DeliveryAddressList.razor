@@ -6,7 +6,7 @@
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
 @using WebShopABMATIC.Web.Services
-@inject ICustomerDeliveryAddressAdminPort AdminPort
+@inject ICustomerDeliveryAddressAdminPort AdminPort
 @inject IGridExportService GridExport
 @implements IAsyncDisposable
 
@@ -28,15 +28,15 @@
                 <EditForm Model="_model" OnValidSubmit="SaveAsync">
                     <DataAnnotationsValidator />
                     <div class="entity-form-fields"><div class="row g-2">
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label" for="f-customerid">CustomerId</label>
                             <InputNumber id="f-customerid" class="form-control form-control-sm" @bind-Value="_model.CustomerId" />
                         </div>
-                        <div class="col-md-5">
+                        <div class="col-md-8">
                             <label class="form-label" for="f-name">Name *</label>
                             <InputText id="f-name" class="form-control form-control-sm" @bind-Value="_model.Name" required />
                         </div>
-                        <div class="col-md-5">
+                        <div class="col-md-7">
                             <label class="form-label" for="f-straat">Street *</label>
                             <InputText id="f-straat" class="form-control form-control-sm" @bind-Value="_model.Straat" required />
                         </div>
@@ -48,7 +48,7 @@
                             <label class="form-label" for="f-cityid">CityId *</label>
                             <InputNumber id="f-cityid" class="form-control form-control-sm" @bind-Value="_model.CityId" required />
                         </div>
-                        <div class="col-12 d-flex gap-2 pt-1">
+                        <div class="col-12 d-flex gap-2 pt-1 flex-wrap">
                             <button type="submit" class="btn btn-primary" disabled="@_saving">@(_isEditing ? "Update" : "Create")</button>
                             <button type="button" class="btn btn-secondary" @onclick="CancelFormAsync" disabled="@_saving"><i class="bi bi-x me-1"></i>Cancel</button>
                         </div>
