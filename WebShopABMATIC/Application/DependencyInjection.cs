@@ -31,6 +31,7 @@ public static class DependencyInjection
         services.AddScoped<IProductStockLocationAdminPort, ProductStockLocationAdminUseCase>();
         services.AddScoped<IStockLocationAdminPort, StockLocationAdminUseCase>();
         services.AddScoped<IPaymentMethodAdminPort, PaymentMethodAdminUseCase>();
+        services.AddScoped<IProductAttributeAssignmentAdminPort, ProductAttributeAssignmentAdminUseCase>();
         services.AddScoped<IStaffUserAdminPort, StaffUserAdminUseCase>();
         services.AddScoped<IUserGroupAdminPort, UserGroupAdminUseCase>();
         services.AddScoped<IVatTypeAdminPort, VatTypeAdminUseCase>();

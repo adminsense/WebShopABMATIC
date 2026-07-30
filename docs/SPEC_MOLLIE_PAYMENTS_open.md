@@ -1,4 +1,4 @@
-﻿# 💳 Mollie Payments — Mock-First + Go-Live Runbook
+# 💳 Mollie Payments — Mock-First + Go-Live Runbook
 
 ![Status](https://img.shields.io/badge/Default-Mock%20until%20client%20keys-0ea5e9?style=flat-square) ![Scope](https://img.shields.io/badge/Scope-Mollie%20PrePay-512BD4?style=flat-square) ![Payment](https://img.shields.io/badge/Provider-Mollie.Api-0a0a0a?style=flat-square)
 

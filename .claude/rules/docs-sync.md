@@ -24,7 +24,7 @@ Naming: `SPEC_<Topic>.md` (stable) · `SPEC_<Topic>_open.md` (checklist in progr
 ## How to update
 
 - Change **current-state** tables/sections; mark obsolete claims clearly.
-- Prefer short factual notes. **`AMENDMENTS.md`:** one entry per calendar day — extend today’s line; do not stack a bullet per tweak. Archive bulky history under `docs/archive/`.
+- Prefer short factual notes. **`AMENDMENTS.md`:** one table per calendar day in plain GitHub Markdown (no HTML), with the date as the single left-aligned column header (`|:---|`) and one numbered change per row. Update today’s table instead of creating another table for the same date. Archive bulky history under `docs/archive/`.
 - **DB-first (global):** never invent ERP columns, tables, migrations, or schema scripts in docs or imply they are planned app work — any feature. Adapt to the live schema (`AGENTS.md`, `SPEC_INFRASTRUCTURE` §4).
 - Do not document features/columns that are not in `abmatic_test`.
 - Freight/Mollie/etc. examples of mapping onto **existing** tables belong in `DATA_*`; they do not invent schema.
