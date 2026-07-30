@@ -16,6 +16,15 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 
 ## 📅 Amendments (newest first)
 
+| 2026-07-30 |
+|:---|
+| 1. Manual functional verification — Webstore: public catalog access, category navigation, product search and product-detail opening. |
+| 2. Manual functional verification — Webstore: list-price/stock presentation and add-to-cart flow for guest and authenticated customer. |
+| 3. Manual functional verification — Customer login: sign-in, authenticated redirect, session-cookie persistence and sign-out. |
+| 4. Manual functional verification — Staff login: admin sign-in, role-protected redirect to `/admin` and sign-out. |
+| 5. Manual functional verification — Admin product attributes: Attributes action opens the modal over the calling grid and Close/X returns without losing grid context. |
+| 6. Manual functional verification — Admin product attributes: add, inline edit and delete-confirmation flows for product attribute values. |
+
 | 2026-07-29 |
 |:---|
 | 1. Admin CRUD and workflow forms now use the full grid width; login cards and modals remain intentionally narrow. |
