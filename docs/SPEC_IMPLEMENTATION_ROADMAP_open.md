@@ -1,4 +1,4 @@
-﻿# 🛣️ Implementation Roadmap — Stock, Checkout, Mollie & Open Backlog
+# 🛣️ Implementation Roadmap — Stock, Checkout, Mollie & Open Backlog
 
 ![Status](https://img.shields.io/badge/Status-Core%20done%20%2B%20open%20backlog-22c55e?style=flat-square) ![Scope](https://img.shields.io/badge/Scope-0–E%20%2B%20media%20%2B%20alerts-512BD4?style=flat-square) ![Tracker](https://img.shields.io/badge/Type-Delivery%20Tracker-0ea5e9?style=flat-square)
 

@@ -918,7 +918,7 @@ New feature specs should be `SPEC_<Topic>.md` or `SPEC_<Topic>_open.md`. Media/t
 |----------------|--------|
 | **Spec** (stable behaviour) | `docs/SPEC_<Topic>.md` |
 | **Spec still in development + checklist** | `docs/SPEC_<Topic>_open.md` |
-| **Runtime amendment note** | One-liner in `docs/AMENDMENTS.md` |
+| **Runtime amendment note** | Numbered row in today’s dated table in `docs/AMENDMENTS.md` |
 | **Auth / identity** | Prefer updating `SPEC_ADMIN.md` §2 |
 | **Mock** (HTML prototype doc) | `docs/MOCK_<Topic>.md` + `docs/mocks/mock-<topic>.html` |
 | **Data / DB** | `docs/DATA_<Topic>.md` |
