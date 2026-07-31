@@ -42,7 +42,7 @@ Workflow for keeping docs clear. **Not** a second product spec — point to the 
 4. For **schema** claims: verify against live DB / `DATA_*` — never invent columns or migrations.
 5. Replace duplicates with a **link** to the canonical owner; do not keep two full copies.
 6. Mark obsolete mock/screenshot material as illustrative, or move bulky history to `docs/archive/`.
-7. Update `docs/README.md` if the index/ownership map changed; add a one-liner to `AMENDMENTS.md` when runtime or doc ownership changed.
+7. Update `docs/README.md` if the index/ownership map changed; add one numbered row to today’s dated table in `AMENDMENTS.md` when runtime or doc ownership changed.
 
 ## README rules
 

@@ -13,207 +13,70 @@
 <PageTitle>Product attribute values</PageTitle>
 
 <div class="entity-page">
-    <a class="btn btn-secondary btn-back mb-3" href="@(ProductId > 0 ? "/admin/product-attributes" : "/admin/hub/catalog")" data-enhance-nav="false"><span class="oi oi-arrow-left"></span> Back to list</a>
+    <a class="btn btn-secondary btn-back mb-3" href="/admin/hub/catalog" data-enhance-nav="false"><span class="oi oi-arrow-left"></span> Back to list</a>
     <div class="entity-page-header page-header">
         <h1 class="h3 mb-1"><i class="bi bi-check2-square text-primary"></i> Product attribute values</h1>
         <p class="mb-0">Select a product from <code>[Products].[Product]</code>, then assign filter attributes and values for the webstore.</p>
     </div>
 
-    @if (ProductId > 0)
-    {
-        @* Exact screen: Filters + Add attribute + Assigned *@
-        @if (_loading)
-        {
-            <p class="text-muted">Loading…</p>
-        }
-        else if (_assignment is null)
-        {
-            <div class="alert alert-danger">@(_gridError ?? $"Product #{ProductId} was not found.")</div>
-            <a class="btn btn-secondary btn-sm" href="/admin/product-attributes" data-enhance-nav="false">Change product</a>
-        }
-        else
-        {
-            var product = _assignment.Product;
-            <div class="card shadow-sm border entity-form-card admin-form-card mb-3">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <div>
-                        <h2 class="h6 mb-1 fw-bold">2. Filters for product #@product.ProductId</h2>
-                        <div class="small text-muted">
-                            <div><strong>NL:</strong> @product.NameNl</div>
-                            <div><strong>EN:</strong> @product.NameEn</div>
-                            <div><strong>FR:</strong> @product.NameFr</div>
-                            @if (!string.IsNullOrWhiteSpace(product.OrderPartNumber))
-                            {
-                                <div><strong>Part #:</strong> @product.OrderPartNumber</div>
-                            }
-                        </div>
-                    </div>
-                    <a class="btn btn-secondary btn-sm" href="/admin/product-attributes" data-enhance-nav="false">Change product</a>
-                </div>
-                <div class="card-body">
-                    <h3 class="h6">Add attribute</h3>
-                    <div class="row g-2 align-items-end">
-                        <div class="col-md-4">
-                            <label class="form-label" for="f-attr">Attribute</label>
-                            <select id="f-attr" class="form-select form-select-sm" @bind="_addAttributeId">
-                                <option value="0">— Select —</option>
-                                @foreach (var a in _assignment.AvailableAttributes)
-                                {
-                                    <option value="@a.Id">@a.Name</option>
-                                }
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label" for="f-waarde">Value (Waarde) *</label>
-                            <input id="f-waarde" class="form-control form-control-sm" @bind="_addValue" maxlength="100" />
-                        </div>
-                        <div class="col-md-4 d-flex gap-2">
-                            <button type="button" class="btn btn-primary btn-sm flex-fill" disabled="@_saving" @onclick="AddValueAsync">Add</button>
-                            <button type="button" class="btn btn-secondary btn-sm flex-fill" disabled="@_saving" @onclick="CancelAdd">
-                                <i class="bi bi-x me-1"></i>Cancel
-                            </button>
-                        </div>
-                    </div>
-                    @if (!string.IsNullOrEmpty(_formError))
-                    {
-                        <div class="alert alert-danger mt-3 mb-0">@_formError</div>
-                    }
-                </div>
-            </div>
-
-            <div class="card shadow-sm border entity-grid-card">
-                <div class="card-header bg-white">
-                    <h2 class="h6 mb-0 fw-bold">Assigned attributes</h2>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover mb-0">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Attribute</th>
-                                <th>Value</th>
-                                <th class="text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (_assignment.Values.Count == 0)
-                            {
-                                <tr><td colspan="3" class="text-center text-muted py-4">No attributes assigned yet.</td></tr>
-                            }
-                            else
-                            {
-                                @foreach (var row in _assignment.Values)
-                                {
-                                    <tr @key="row.Id">
-                                        <td>@row.AttributeName</td>
-                                        <td>
-                                            @if (_editingValueId == row.Id)
-                                            {
-                                                <input class="form-control form-control-sm" @bind="_editValueDraft" maxlength="100" />
-                                            }
-                                            else
-                                            {
-                                                @row.Value
-                                            }
-                                        </td>
-                                        <td class="text-center">
-                                            <div class="btn-group btn-group-sm">
-                                                @if (_editingValueId == row.Id)
-                                                {
-                                                    <button type="button" class="btn btn-sm btn-primary" disabled="@_saving" @onclick="() => SaveEditAsync(row)">Save</button>
-                                                    <button type="button" class="btn btn-sm btn-secondary" disabled="@_saving" @onclick="CancelEdit">Cancel</button>
-                                                }
-                                                else
-                                                {
-                                                    <button type="button" class="btn btn-sm btn-primary" @onclick="() => BeginEdit(row)" title="Edit"><i class="bi bi-pencil"></i></button>
-                                                    <button type="button" class="btn btn-sm btn-danger" @onclick="() => PromptDelete(row)" title="Delete"><i class="bi bi-trash"></i></button>
-                                                }
-                                            </div>
-                                        </td>
-                                    </tr>
-                                }
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        }
-    }
-    else
-    {
-        <div class="card shadow-sm border entity-grid-card">
-            <div class="card-header bg-white entity-grid-toolbar">
-                <h2 class="h6 mb-0 fw-bold">1. Select product</h2>
-                <AdminGridSearch @bind-Value="_searchDraft" OnSearch="ApplySearchAsync" />
-            </div>
-            <div class="table-responsive">
-                <table class="table table-striped table-hover mb-0">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>ProdId</th>
-                            <th>NameNl</th>
-                            <th>NameEn</th>
-                            <th>NameFr</th>
-                            <th>Part #</th>
-                            <th class="text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (_loading)
-                        {
-                            <tr><td colspan="6" class="text-center text-muted py-4">Loading…</td></tr>
-                        }
-                        else if (!string.IsNullOrEmpty(_gridError))
-                        {
-                            <tr><td colspan="6" class="text-center text-danger py-4">@_gridError</td></tr>
-                        }
-                        else if (_searchResult is null || _searchResult.Items.Count == 0)
-                        {
-                            <tr><td colspan="6" class="text-center text-muted py-4">No products found. Try another search term.</td></tr>
-                        }
-                        else
-                        {
-                            @foreach (var item in _searchResult.Items)
-                            {
-                                <tr @key="item.ProductId">
-                                    <td>@item.ProductId</td>
-                                    <td>@item.NameNl</td>
-                                    <td>@item.NameEn</td>
-                                    <td>@item.NameFr</td>
-                                    <td>@(item.OrderPartNumber ?? "—")</td>
-                                    <td class="text-center">
-                                        <a class="btn btn-sm btn-primary"
-                                           href="@($"/admin/product-attributes/{item.ProductId}")"
-                                           data-enhance-nav="false"
-                                           title="Assign attributes">
-                                            <i class="bi bi-tags"></i> Attributes
-                                        </a>
-                                    </td>
-                                </tr>
-                            }
-                        }
-                    </tbody>
-                </table>
-            </div>
-            <AdminGridPagination TotalCount="@(_searchResult?.TotalCount ?? 0)" Page="@_page" PageSize="@_pageSize" Loading="@_loading" OnPageChanged="ChangePageAsync" />
+    <div class="card shadow-sm border entity-grid-card">
+        <div class="card-header bg-white entity-grid-toolbar">
+            <h2 class="h6 mb-0 fw-bold">Select product</h2>
+            <AdminGridSearch @bind-Value="_searchDraft" OnSearch="ApplySearchAsync" />
         </div>
-    }
+        <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ProdId</th>
+                        <th>NameNl</th>
+                        <th>NameEn</th>
+                        <th>NameFr</th>
+                        <th>Part #</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_loading)
+                    {
+                        <tr><td colspan="6" class="text-center text-muted py-4">Loading…</td></tr>
+                    }
+                    else if (!string.IsNullOrEmpty(_gridError))
+                    {
+                        <tr><td colspan="6" class="text-center text-danger py-4">@_gridError</td></tr>
+                    }
+                    else if (_searchResult is null || _searchResult.Items.Count == 0)
+                    {
+                        <tr><td colspan="6" class="text-center text-muted py-4">No products found. Try another search term.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in _searchResult.Items)
+                        {
+                            <tr @key="item.ProductId">
+                                <td>@item.ProductId</td>
+                                <td>@item.NameNl</td>
+                                <td>@item.NameEn</td>
+                                <td>@item.NameFr</td>
+                                <td>@(item.OrderPartNumber ?? "—")</td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-sm btn-info"
+                                            @onclick="() => OpenAttributes(item.ProductId)"
+                                            title="Assign attributes">
+                                        <i class="bi bi-tags"></i> Attributes
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+        <AdminGridPagination TotalCount="@(_searchResult?.TotalCount ?? 0)" Page="@_page" PageSize="@_pageSize" Loading="@_loading" OnPageChanged="ChangePageAsync" />
+    </div>
 </div>
 
-@if (_showDeleteConfirm && _itemToDelete is not null)
-{
-    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header border-0"><h5 class="modal-title">Confirm deletion</h5><button type="button" class="btn-close" @onclick="CancelDelete" disabled="@_deleting"></button></div>
-                <div class="modal-body"><p class="mb-0">Remove attribute <strong>@_itemToDelete.AttributeName</strong> from this product?</p></div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-secondary" @onclick="CancelDelete" disabled="@_deleting">Cancel</button>
-                    <button type="button" class="btn btn-danger" @onclick="ConfirmDeleteAsync" disabled="@_deleting">Delete</button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
+<ProductAttributeValuesModal ProductId="@_modalProductId" OnClose="CloseAttributes" />
 
 @code {
     [Parameter] public int ProductId { get; set; }
@@ -223,66 +86,27 @@
     private string? _search;
     private int _page = 1;
     private readonly int _pageSize = AdminGridDefaults.PageSize;
-    private bool _loading = true, _saving, _deleting, _showDeleteConfirm, _disposed, _initialized;
-    private string? _formError, _gridError;
+    private bool _loading = true, _disposed, _initialized;
+    private string? _gridError;
     private PagedResult<ProductAttributeAssignmentProductDto>? _searchResult;
-    private ProductAttributeAssignmentDto? _assignment;
-    private int _addAttributeId;
-    private string _addValue = string.Empty;
-    private int? _editingValueId;
-    private string _editValueDraft = string.Empty;
-    private ProductAttributeValueDto? _itemToDelete;
+    private int _modalProductId;
 
     protected override async Task OnInitializedAsync()
     {
         _cts = new CancellationTokenSource();
         _initialized = true;
-        await LoadForRouteAsync();
-    }
-
-    protected override async Task OnParametersSetAsync()
-    {
-        if (!_initialized || _disposed)
-        {
-            return;
-        }
-
-        await LoadForRouteAsync();
-    }
-
-    private async Task LoadForRouteAsync()
-    {
-        _formError = null;
-        _gridError = null;
-        CancelEdit();
-
-        if (ProductId > 0)
-        {
-            _assignment = null;
-            _loading = true;
-            try
-            {
-                _assignment = await AssignmentPort.GetAssignmentAsync(ProductId, _cts?.Token ?? CancellationToken.None);
-                if (_assignment is null)
-                {
-                    _gridError = $"Product #{ProductId} was not found.";
-                }
-            }
-            catch (Exception ex)
-            {
-                _gridError = ex.Message;
-                _assignment = null;
-            }
-            finally
-            {
-                _loading = false;
-            }
-
-            return;
-        }
-
-        _assignment = null;
         await LoadSearchAsync();
+        _modalProductId = ProductId;
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (!_initialized || _disposed || ProductId <= 0)
+        {
+            return;
+        }
+
+        _modalProductId = ProductId;
     }
 
     private async Task LoadSearchAsync()
@@ -317,151 +141,15 @@
         await LoadSearchAsync();
     }
 
-    private async Task ReloadAssignmentAsync()
+    private void OpenAttributes(int productId) => _modalProductId = productId;
+
+    private void CloseAttributes()
     {
-        if (ProductId <= 0)
+        _modalProductId = 0;
+        if (ProductId > 0)
         {
-            return;
-        }
-
-        _assignment = await AssignmentPort.GetAssignmentAsync(ProductId, _cts?.Token ?? CancellationToken.None);
-        _addAttributeId = 0;
-        _addValue = string.Empty;
-        CancelEdit();
-    }
-
-    private async Task AddValueAsync()
-    {
-        if (_assignment is null || ProductId <= 0)
-        {
-            return;
-        }
-
-        _formError = null;
-        if (_addAttributeId <= 0)
-        {
-            _formError = "Select an attribute.";
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(_addValue))
-        {
-            _formError = "Value is required.";
-            return;
-        }
-
-        _saving = true;
-        try
-        {
-            await AssignmentPort.SaveValueAsync(new ProductAttributeValueEditDto
-            {
-                ProductId = ProductId,
-                ProductAttributeId = _addAttributeId,
-                Value = _addValue
-            }, _cts?.Token ?? CancellationToken.None);
-            await ReloadAssignmentAsync();
-        }
-        catch (Exception ex)
-        {
-            _formError = ex.Message;
-        }
-        finally
-        {
-            _saving = false;
-        }
-    }
-
-    private void CancelAdd()
-    {
-        _addAttributeId = 0;
-        _addValue = string.Empty;
-        _formError = null;
-        CancelEdit();
-    }
-
-    private void BeginEdit(ProductAttributeValueDto row)
-    {
-        _editingValueId = row.Id;
-        _editValueDraft = row.Value;
-        _formError = null;
-    }
-
-    private void CancelEdit()
-    {
-        _editingValueId = null;
-        _editValueDraft = string.Empty;
-    }
-
-    private async Task SaveEditAsync(ProductAttributeValueDto row)
-    {
-        if (ProductId <= 0)
-        {
-            return;
-        }
-
-        _formError = null;
-        if (string.IsNullOrWhiteSpace(_editValueDraft))
-        {
-            _formError = "Value is required.";
-            return;
-        }
-
-        _saving = true;
-        try
-        {
-            await AssignmentPort.SaveValueAsync(new ProductAttributeValueEditDto
-            {
-                Id = row.Id,
-                ProductId = ProductId,
-                ProductAttributeId = row.ProductAttributeId,
-                Value = _editValueDraft
-            }, _cts?.Token ?? CancellationToken.None);
-            await ReloadAssignmentAsync();
-        }
-        catch (Exception ex)
-        {
-            _formError = ex.Message;
-        }
-        finally
-        {
-            _saving = false;
-        }
-    }
-
-    private void PromptDelete(ProductAttributeValueDto row)
-    {
-        _itemToDelete = row;
-        _showDeleteConfirm = true;
-    }
-
-    private void CancelDelete()
-    {
-        _showDeleteConfirm = false;
-        _itemToDelete = null;
-    }
-
-    private async Task ConfirmDeleteAsync()
-    {
-        if (_itemToDelete is null)
-        {
-            return;
-        }
-
-        _deleting = true;
-        try
-        {
-            await AssignmentPort.DeleteValueAsync(_itemToDelete.Id, _cts?.Token ?? CancellationToken.None);
-            CancelDelete();
-            await ReloadAssignmentAsync();
-        }
-        catch (Exception ex)
-        {
-            _formError = ex.Message;
-            CancelDelete();
-        }
-        finally
-        {
-            _deleting = false;
+            // Deep link /admin/product-attributes/{ProdId}: drop the id so the grid stays visible.
+            Navigation.NavigateTo("/admin/product-attributes", replace: true);
         }
     }
 
