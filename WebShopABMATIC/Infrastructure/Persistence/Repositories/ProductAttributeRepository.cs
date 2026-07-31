@@ -22,9 +22,9 @@ public sealed class ProductAttributeRepository : IProductAttributeRepository
         {
             var term = filter.Search.Trim();
             query = query.Where(e =>
-                e.NameEn.Contains(term) ||
-                e.NameNl.Contains(term) ||
-                e.NameFr.Contains(term));
+                e.Name.Contains(term) ||
+                (e.DataType != null && e.DataType.Contains(term)) ||
+                (e.Unit != null && e.Unit.Contains(term)));
         }
 
         var total = await query.CountAsync(cancellationToken);
@@ -32,17 +32,16 @@ public sealed class ProductAttributeRepository : IProductAttributeRepository
         var pageSize = Math.Clamp(filter.PageSize, 1, 100);
 
         var items = await query
-            .OrderBy(e => e.SortOrder)
-            .ThenBy(e => e.NameEn)
+            .OrderBy(e => e.Name)
+            .ThenBy(e => e.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(e => new ProductAttributeDto
             {
                 Id = e.Id,
-                NameEn = e.NameEn,
-                NameNl = e.NameNl,
-                NameFr = e.NameFr,
-                SortOrder = e.SortOrder
+                Name = e.Name,
+                DataType = e.DataType,
+                Unit = e.Unit
             })
             .ToListAsync(cancellationToken);
 
@@ -55,10 +54,9 @@ public sealed class ProductAttributeRepository : IProductAttributeRepository
             .Select(e => new ProductAttributeEditDto
             {
                 Id = e.Id,
-                NameEn = e.NameEn,
-                NameNl = e.NameNl,
-                NameFr = e.NameFr,
-                SortOrder = e.SortOrder
+                Name = e.Name,
+                DataType = e.DataType,
+                Unit = e.Unit
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -75,10 +73,9 @@ public sealed class ProductAttributeRepository : IProductAttributeRepository
             entity = await _db.ProductAttributes.FirstAsync(e => e.Id == dto.Id, cancellationToken);
         }
 
-        entity.NameEn = dto.NameEn.Trim();
-        entity.NameNl = dto.NameNl.Trim();
-        entity.NameFr = dto.NameFr.Trim();
-        entity.SortOrder = dto.SortOrder;
+        entity.Name = dto.Name.Trim();
+        entity.DataType = string.IsNullOrWhiteSpace(dto.DataType) ? null : dto.DataType.Trim();
+        entity.Unit = string.IsNullOrWhiteSpace(dto.Unit) ? null : dto.Unit.Trim();
 
         await _db.SaveChangesAsync(cancellationToken);
         return entity.Id;
