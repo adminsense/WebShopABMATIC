@@ -13,6 +13,7 @@ paths:
 - Spec first: `docs/SPEC_ADMIN.md` (auth §2 — legacy `StaffUsers`, not Identity).
 - Visual model: match [Adminsence.Shop](https://adminsenceweb.azurewebsites.net/) chrome + `docs/mocks/mock-admin.html` (hub / list / form). Do not invent a parallel admin skin.
 - Patterns: `docs/PATTERNS_UI_QUICK_START.md` — OpenIconic for nav, Bootstrap Icons for actions; match hub/list/form shells.
+- Related-entity actions (attributes, prices, password reset, details) open a **content modal** on the calling page — never a new route. Closing returns to the caller untouched. Pattern §6.1 + `.cursor/rules/ui-patterns-first.mdc`; reference `ProductAttributeValuesModal.razor`.
 - Admin roles: `Admin` / `Manager` only on `/admin/*`. Customers never use admin for their own orders.
 - Login: `/admin/login` → `POST /account/admin-login`. Prefer existing `AdminLogin` / layout patterns.
 - No DbContext in Razor — use admin ports / use cases already registered in DI.
