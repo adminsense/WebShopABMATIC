@@ -62,6 +62,7 @@ public static class DependencyInjection
         services.AddScoped<IProductStockLocationRepository, ProductStockLocationRepository>();
         services.AddScoped<IStockLocationRepository, StockLocationRepository>();
         services.AddScoped<IPaymentMethodRepository, PaymentMethodRepository>();
+        services.AddScoped<IProductAttributeAssignmentRepository, ProductAttributeAssignmentRepository>();
         services.AddScoped<IStaffUserRepository, StaffUserRepository>();
         services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
         services.AddScoped<ICustomerRegistrationRepository, CustomerRegistrationRepository>();
