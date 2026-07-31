@@ -6,7 +6,7 @@
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
 @using WebShopABMATIC.Web.Services
-@inject IManufacturerAdminPort AdminPort
+@inject IManufacturerAdminPort AdminPort
 @inject IGridExportService GridExport
 @implements IAsyncDisposable
 
@@ -28,15 +28,15 @@
                 <EditForm Model="_model" OnValidSubmit="SaveAsync">
                     <DataAnnotationsValidator />
                     <div class="entity-form-fields"><div class="row g-2">
-                        <div class="col-md-6">
+                        <div class="col-md-8">
                             <label class="form-label" for="f-name">Name *</label>
                             <InputText id="f-name" class="form-control form-control-sm" @bind-Value="_model.Name" required />
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label" for="f-cityid">CityId</label>
                             <InputNumber id="f-cityid" class="form-control form-control-sm" @bind-Value="_model.CityId" />
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-8">
                             <label class="form-label" for="f-email">Email</label>
                             <InputText id="f-email" class="form-control form-control-sm" @bind-Value="_model.Email" />
                         </div>
