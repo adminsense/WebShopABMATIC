@@ -63,6 +63,7 @@ public sealed class ProductAttributeAssignmentRepository : IProductAttributeAssi
 
     public async Task<ProductAttributeAssignmentDto?> GetAssignmentAsync(int productId, CancellationToken cancellationToken = default)
     {
+        // Product.ProductId maps to Products.Product.ProdId
         var product = await _db.Products.AsNoTracking()
             .Where(p => p.ProductId == productId && !p.IsInactive)
             .Select(p => new ProductAttributeAssignmentProductDto
@@ -81,34 +82,55 @@ public sealed class ProductAttributeAssignmentRepository : IProductAttributeAssi
             return null;
         }
 
-        var values = await (
-            from item in _db.ProductAttributeValues.AsNoTracking()
-            join attr in _db.ProductAttributes.AsNoTracking() on item.ProductAttributeId equals attr.Id
-            where item.ProductId == productId
-            orderby attr.SortOrder, attr.NameEn
-            select new ProductAttributeValueDto
+        // Join: ProductAttribuutItem.ProductProdId = Product.ProdId
+        var items = await _db.ProductAttributeValues.AsNoTracking()
+            .Where(i => i.ProductId == productId)
+            .OrderBy(i => i.ProductAttributeId)
+            .ThenBy(i => i.Id)
+            .ToListAsync(cancellationToken);
+
+        var attrNames = new Dictionary<int, string>();
+        var available = new List<ProductAttributeDto>();
+        try
+        {
+            var attrs = await _db.ProductAttributes.AsNoTracking()
+                .OrderBy(a => a.Name)
+                .ThenBy(a => a.Id)
+                .ToListAsync(cancellationToken);
+
+            foreach (var a in attrs)
+            {
+                attrNames[a.Id] = a.Name;
+            }
+
+            var assignedIds = items.Select(i => i.ProductAttributeId).ToHashSet();
+            available = attrs
+                .Where(a => !assignedIds.Contains(a.Id))
+                .Select(a => new ProductAttributeDto
+                {
+                    Id = a.Id,
+                    Name = a.Name,
+                    DataType = a.DataType,
+                    Unit = a.Unit
+                })
+                .ToList();
+        }
+        catch
+        {
+            // Dictionary table missing/unavailable — screen still opens; names fall back to id.
+        }
+
+        var values = items.Select(item =>
+        {
+            attrNames.TryGetValue(item.ProductAttributeId, out var name);
+            return new ProductAttributeValueDto
             {
                 Id = item.Id,
                 ProductAttributeId = item.ProductAttributeId,
-                AttributeNameEn = attr.NameEn,
-                AttributeNameNl = attr.NameNl,
+                AttributeName = string.IsNullOrWhiteSpace(name) ? $"Attribute #{item.ProductAttributeId}" : name,
                 Value = item.Value
-            }).ToListAsync(cancellationToken);
-
-        var assignedIds = values.Select(v => v.ProductAttributeId).ToHashSet();
-        var available = await _db.ProductAttributes.AsNoTracking()
-            .Where(a => !assignedIds.Contains(a.Id))
-            .OrderBy(a => a.SortOrder)
-            .ThenBy(a => a.NameEn)
-            .Select(a => new ProductAttributeDto
-            {
-                Id = a.Id,
-                NameEn = a.NameEn,
-                NameNl = a.NameNl,
-                NameFr = a.NameFr,
-                SortOrder = a.SortOrder
-            })
-            .ToListAsync(cancellationToken);
+            };
+        }).ToList();
 
         return new ProductAttributeAssignmentDto
         {
