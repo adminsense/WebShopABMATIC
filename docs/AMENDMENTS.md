@@ -16,6 +16,15 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 
 ## 📅 Amendments (newest first)
 
+| 2026-07-31 |
+|:---|
+| 1. Corrected admin repositories, including `StaffUserRepository`, `ProductAttributeRepository` and `ProductAttributeAssignmentRepository`. |
+| 2. Analysed admin database mappings against live `abmatic_test` and aligned repository queries with existing ERP tables/columns. |
+| 3. Adjusted admin Staff pages and staff-profile behaviour (`LegacyStaffProfileService` / staff user flows). |
+| 4. Adjusted admin Payment Method list/form behaviour. |
+| 5. Adjusted admin Product list/form and related catalog admin screens. |
+| 6. Adjusted admin Stock Location list/form behaviour. |
+
 | 2026-07-30 |
 |:---|
 | 1. Manual functional verification — Webstore: public catalog access, category navigation, product search and product-detail opening. |
