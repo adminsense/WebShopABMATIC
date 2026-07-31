@@ -1,4 +1,4 @@
-﻿# 📚 Documentation Index
+# 📚 Documentation Index
 
 ![Status](https://img.shields.io/badge/Status-Complete-28a745?style=flat-square) ![Docs](https://img.shields.io/badge/Documentation-Production-0d47a1?style=flat-square) ![Coverage](https://img.shields.io/badge/Coverage-100%25-ff6f00?style=flat-square)
 
@@ -61,4 +61,4 @@
 
 When a `_open` checklist is done: rename to `SPEC_<Topic>.md` (drop `_open`) or move to `archive/`.
 
-When behaviour changes: update the matching `SPEC_*`, then add a one-liner to `AMENDMENTS.md` if needed.
+When behaviour changes: update the matching `SPEC_*`, then add one numbered row to today’s table in `AMENDMENTS.md` if needed.
