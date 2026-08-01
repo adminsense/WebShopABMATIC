@@ -87,6 +87,36 @@ UI reference (do not alter PNG): [`docs/images/tela_atributos.png`](./images/tel
 
 DE-PARA also in [DATA_DUTCH_ENGLISH_MODEL.md](./DATA_DUTCH_ENGLISH_MODEL.md).
 
+### How tables map to the store filter sidebar
+
+```text
+ProductAttribuut.Naam          → facet group title
+ProductAttribuutItem.Waarde    → checkbox label (distinct values in the leaf)
+Product.ProdId                 → product in the category grid (via ProductProdId)
+```
+
+`Gegevenstype` / `Eenheid` on `ProductAttribuut` stay NULL until the client fills them; they are **not** the checklist values.
+
+**Target sidebar UI (leaf category only):**
+
+```text
+Power Supply
+  [ ] 24 VDC
+  [ ] 12-24 VACDC
+  [ ] 230 VAC
+
+Gate Type
+  [ ] Sliding
+  [ ] Swing
+  [ ] …
+
+Safety Features
+  [ ] Photocells
+  [ ] …
+```
+
+Demo seed for those `Waarde` rows: [`scripts/ProductAttribuutItem_demo_seed.sql`](../scripts/ProductAttribuutItem_demo_seed.sql).
+
 ---
 
 ## 4. Behaviour

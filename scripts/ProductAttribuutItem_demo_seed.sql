@@ -40,7 +40,7 @@ END;
 -- Up to 6 webshop products in the leaf; always try to include 11742 first
 ;WITH Candidates AS
 (
-    -- Always include 11742 when it exists on this leaf (even if ShowOnWebshop is off — still useful for admin checks)
+    -- Always include 11742 when it exists on this leaf (even if WebShop is off — still useful for admin checks)
     SELECT p.ProdId, 0 AS SortKey
     FROM Products.Product p
     WHERE p.ProdId = 11742
@@ -51,7 +51,7 @@ END;
     SELECT p.ProdId, 1 AS SortKey
     FROM Products.Product p
     WHERE p.ProductStructuurId = @LeafId
-      AND ISNULL(p.ShowOnWebshop, 0) = 1
+      AND ISNULL(p.WebShop, 0) = 1   -- C# ShowOnWebshop → column WebShop
       AND p.ProdId <> 11742
 ),
 Numbered AS
@@ -128,7 +128,7 @@ FROM Products.ProductAttribuutItem i
 INNER JOIN Products.ProductAttribuut a ON a.AttribuutId = i.ProductAttribuutId
 INNER JOIN Products.Product p ON p.ProdId = i.ProductProdId
 WHERE p.ProductStructuurId = @LeafId
-  AND ISNULL(p.ShowOnWebshop, 0) = 1
+  AND ISNULL(p.WebShop, 0) = 1   -- C# ShowOnWebshop → column WebShop
   AND a.Naam IN (N'Power Supply', N'Gate Type', N'Safety Features')
 GROUP BY a.Naam, i.Waarde
 ORDER BY a.Naam, i.Waarde;
