@@ -88,7 +88,7 @@ The admin UI is defined by **three screen types**. These match the legacy AB-MAT
 | Element | Behaviour |
 |---------|-----------|
 | **Sidebar** | Dark navigation; brand box **WS WEBSHOP ABMATIC**; menu items with Open Iconic icons |
-| **Top bar** | Greeting **Hello, {STAFF NAME}**; red **Logout** button |
+| **Top bar** | Greeting **Hello, {STAFF NAME}**; **Open webshop** (→ `/`); red **Logout** button |
 | **Content** | 2×2 **portfolio cards** with KPIs, progress indicators, and action pills |
 | **Footer** | Current date + application version (`v1.0`) |
 
@@ -190,7 +190,7 @@ These are **two different identities** in the ABMATIC schema. A webshop customer
 
 ### 2.6 Logout
 
-- Admin top bar **Logout**; store header **Sign out** → `/account/logout`.
+- Admin top bar **Open webshop** (→ `/`) and **Logout**; store header **Admin** (staff) / **Sign out** → `/account/logout`. Staff may browse the public store while signed in (no bounce back to `/admin`).
 
 ### 2.7 Password reset (dev / admin)
 
@@ -254,7 +254,7 @@ Each sidebar item opens a **hub** of entity cards. Below: what staff **register 
 
 | Entity | Table | What staff registers |
 |--------|-------|----------------------|
-| **Product** | `Product` | Master product: names, part numbers, supplier/manufacturer, **`ShowOnWebshop`**, descriptions NL/EN/FR (`ProdDescription*`) + `WebshopDescriptionNl`, EAN |
+| **Product** | `Product` | Master product: names NL/EN/FR (`ProdName` / `ProdNameEN` / `ProdNameFr`), part numbers, supplier/manufacturer, **`ShowOnWebshop`**, descriptions NL/EN/FR (`ProdDescription*`) + `WebshopDescriptionNl`, EAN |
 | **Product attributes** | `ProductAttribuut` | Filter attribute dictionary (`Naam`, `Gegevenstype`, `Eenheid`) — `/admin/attributes` (when shipped) |
 | **Product attribute values** | `ProductAttribuutItem` | Per-product `Waarde`; FK `ProductProdId` → `Product.ProdId`. Opened as a **modal** (`ProductAttributeValuesModal`) from the Attributes row action on `/admin/products` and on the product-selection grid `/admin/product-attributes`. **Add** saves and keeps the modal open; **Close/X** returns to the calling grid untouched. Deep link `/admin/product-attributes/{ProdId}` opens the modal over the grid. |
 | **Product price** | `ProductPrice` | Price rows: gross/net sales and purchase, validity dates, assembly/installation |

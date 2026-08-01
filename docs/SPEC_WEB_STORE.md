@@ -21,7 +21,7 @@
 | **Checkout** | ✅ | `CheckoutUseCase` + **`Mollie:UseMock`** until client delivers keys; stock on pay |
 | **Customer login** | ✅ | Legacy `WebshopLogin` + hash/salt → role `Customer` |
 | **Order history** | ✅ | Header **My orders** → `/orders`; detail `/orders/{id}` |
-| **Staff entry** | ✅ | Header **Admin** → `/admin/login` (`StaffUsers`) |
+| **Staff entry** | ✅ | Header **Admin** → `/admin` when signed in (else `/admin/login`); admin top bar **Open webshop** → `/` |
 
 ---
 

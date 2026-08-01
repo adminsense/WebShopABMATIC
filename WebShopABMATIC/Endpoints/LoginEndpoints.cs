@@ -29,7 +29,7 @@ public static class LoginEndpoints
             return Results.Redirect($"/admin/login?error={error}&returnUrl={safeReturn}");
         }
 
-        await LegacyCookieAuthentication.SignInAsync(httpContext, result.Principal);
+        await LegacyCookieAuthentication.SignInAsync(httpContext, result.Principal, isPersistent: false);
         return Results.Redirect(LoginFormHelpers.ResolveAdminReturnUrl(returnUrl));
     }
 
@@ -50,7 +50,7 @@ public static class LoginEndpoints
             return Results.Redirect($"/sign-in?error={error}&returnUrl={safeReturn}");
         }
 
-        await LegacyCookieAuthentication.SignInAsync(httpContext, result.Principal);
+        await LegacyCookieAuthentication.SignInAsync(httpContext, result.Principal, isPersistent: false);
         return Results.Redirect(LoginFormHelpers.ResolveStoreReturnUrl(returnUrl));
     }
 }
