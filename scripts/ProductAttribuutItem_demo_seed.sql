@@ -9,7 +9,13 @@
 --
 -- Prerequisite: scripts/ProductAttribuut_create_and_seed.sql (18 Naam including
 --   Power Supply, Gate Type, Safety Features).
--- Anchor product: ProdId 11742 → same ProductStructuurId leaf.
+--
+-- Store CD4: facets ONLY on a TRUE leaf (ProductStructuur with no children).
+-- ProdId 11742 may sit on a PARENT (e.g. Id 17). This script walks to a
+-- descendant leaf that has WebShop products and seeds Waarde THERE.
+-- Parent nodes show child tiles only — never the filter sidebar.
+--
+-- After run, open the printed URL: /?categoryId=<LeafId>
 -- ============================================================================
 
 SET NOCOUNT ON;
@@ -24,35 +30,73 @@ BEGIN
     RETURN;
 END;
 
-DECLARE @LeafId INT =
+DECLARE @StartId INT =
 (
     SELECT ProductStructuurId
     FROM Products.Product
     WHERE ProdId = 11742
 );
 
-IF @LeafId IS NULL
+IF @StartId IS NULL
 BEGIN
     RAISERROR(N'ProdId 11742 not found or has no ProductStructuurId.', 16, 1);
     RETURN;
 END;
 
--- Up to 6 webshop products in the leaf; always try to include 11742 first
-;WITH Candidates AS
+-- True leaf under @StartId (or @StartId itself if already a leaf), preferring most WebShop products
+DECLARE @LeafId INT;
+
+;WITH Tree AS
 (
-    -- Always include 11742 when it exists on this leaf (even if WebShop is off — still useful for admin checks)
-    SELECT p.ProdId, 0 AS SortKey
-    FROM Products.Product p
-    WHERE p.ProdId = 11742
-      AND p.ProductStructuurId = @LeafId
+    SELECT s.Id
+    FROM Products.ProductStructuur s
+    WHERE s.Id = @StartId
 
     UNION ALL
 
+    SELECT c.Id
+    FROM Products.ProductStructuur c
+    INNER JOIN Tree t ON c.ParentId = t.Id
+),
+Leaves AS
+(
+    SELECT t.Id
+    FROM Tree t
+    WHERE NOT EXISTS
+    (
+        SELECT 1
+        FROM Products.ProductStructuur ch
+        WHERE ch.ParentId = t.Id
+    )
+)
+SELECT TOP (1) @LeafId = l.Id
+FROM Leaves l
+INNER JOIN Products.Product p ON p.ProductStructuurId = l.Id
+WHERE ISNULL(p.WebShop, 0) = 1   -- C# ShowOnWebshop → column WebShop
+GROUP BY l.Id
+ORDER BY COUNT(*) DESC, l.Id;
+
+IF @LeafId IS NULL
+BEGIN
+    RAISERROR(N'No true leaf with WebShop products under ProductStructuurId of ProdId 11742.', 16, 1);
+    RETURN;
+END;
+
+DECLARE @LeafNameNl NVARCHAR(250) =
+(
+    SELECT TOP (1) NaamNl FROM Products.ProductStructuur WHERE Id = @LeafId
+);
+
+PRINT N'Demo leaf Id = ' + CAST(@LeafId AS NVARCHAR(20)) + N' (' + ISNULL(@LeafNameNl, N'?') + N')';
+PRINT N'Open store: /?categoryId=' + CAST(@LeafId AS NVARCHAR(20));
+
+-- Up to 6 webshop products on the TRUE leaf only
+;WITH Candidates AS
+(
     SELECT p.ProdId, 1 AS SortKey
     FROM Products.Product p
     WHERE p.ProductStructuurId = @LeafId
-      AND ISNULL(p.WebShop, 0) = 1   -- C# ShowOnWebshop → column WebShop
-      AND p.ProdId <> 11742
+      AND ISNULL(p.WebShop, 0) = 1
 ),
 Numbered AS
 (
@@ -67,10 +111,8 @@ Leaf AS
     FROM Numbered
     ORDER BY Rn
 ),
--- One Waarde per attribute per product (admin model)
 Assignments AS
 (
-    -- Power Supply: 24 VDC (1), 12-24 VACDC (2), 230 VAC (1+)
     SELECT
         @PowerSupplyId AS ProductAttribuutId,
         l.ProdId AS ProductProdId,
@@ -83,7 +125,6 @@ Assignments AS
 
     UNION ALL
 
-    -- Gate Type: Sliding / Swing / Barrier
     SELECT
         @GateTypeId,
         l.ProdId,
@@ -96,7 +137,6 @@ Assignments AS
 
     UNION ALL
 
-    -- Safety Features: Photocells / Safety edge / Flashing light
     SELECT
         @SafetyId,
         l.ProdId,
@@ -119,7 +159,13 @@ WHERE EXISTS (SELECT 1 FROM Products.Product p WHERE p.ProdId = a.ProductProdId)
         AND i.ProductProdId = a.ProductProdId
   );
 
--- Result set for Marco (facet preview)
+-- URL reminder (result set 1)
+SELECT
+    @LeafId AS OpenCategoryId,
+    @LeafNameNl AS LeafNameNl,
+    N'/?categoryId=' + CAST(@LeafId AS NVARCHAR(20)) AS StoreUrlPath;
+
+-- Facet preview on the leaf (result set 2)
 SELECT
     a.Naam AS AttributeTitle,
     i.Waarde,
@@ -128,11 +174,12 @@ FROM Products.ProductAttribuutItem i
 INNER JOIN Products.ProductAttribuut a ON a.AttribuutId = i.ProductAttribuutId
 INNER JOIN Products.Product p ON p.ProdId = i.ProductProdId
 WHERE p.ProductStructuurId = @LeafId
-  AND ISNULL(p.WebShop, 0) = 1   -- C# ShowOnWebshop → column WebShop
+  AND ISNULL(p.WebShop, 0) = 1
   AND a.Naam IN (N'Power Supply', N'Gate Type', N'Safety Features')
 GROUP BY a.Naam, i.Waarde
 ORDER BY a.Naam, i.Waarde;
 
+-- Per-product rows (result set 3)
 SELECT
     i.ProductProdId,
     a.Naam,

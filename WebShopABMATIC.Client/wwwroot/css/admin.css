@@ -129,6 +129,26 @@
   color: #fff;
 }
 
+.btn-open-webshop {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  color: #fff;
+  padding: 0.35rem 0.85rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn-open-webshop:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-color: #fff;
+}
+
 .admin-content {
   padding: 1.25rem 1.5rem 2rem;
   flex: 1;
@@ -794,9 +814,11 @@ button.entity-grid-search-icon:focus {
 }
 
 .admin-content .entity-form-fields {
-  max-width: 640px;
+  width: 100%;
+  max-width: none;
 }
 
+/* Alias kept for pages that still opt in (e.g. ProductList). */
 .admin-content .entity-form-fields.entity-form-fields-wide {
   max-width: none;
   width: 100%;

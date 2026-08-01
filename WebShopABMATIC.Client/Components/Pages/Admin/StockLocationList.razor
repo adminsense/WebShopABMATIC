@@ -6,7 +6,7 @@
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
 @using WebShopABMATIC.Web.Services
-@inject IStockLocationAdminPort AdminPort
+@inject IStockLocationAdminPort AdminPort
 @inject IGridExportService GridExport
 @implements IAsyncDisposable
 
@@ -28,11 +28,11 @@
                 <EditForm Model="_model" OnValidSubmit="SaveAsync">
                     <DataAnnotationsValidator />
                     <div class="entity-form-fields"><div class="row g-2">
-                        <div class="col-md-8">
+                        <div class="col-md-10">
                             <label class="form-label" for="f-name">Name *</label>
                             <InputText id="f-name" class="form-control form-control-sm" @bind-Value="_model.Name" required />
                         </div>
-                        <div class="col-md-3 d-flex align-items-end">
+                        <div class="col-md-2 d-flex align-items-end">
                             <div class="form-check mb-1">
                                 <InputCheckbox class="form-check-input" @bind-Value="_model.IsWarehouse" id="f-iswarehouse" />
                                 <label class="form-check-label" for="f-iswarehouse">Warehouse</label>

@@ -20,7 +20,9 @@ public sealed class ProductDto
 public sealed class ProductEditDto
 {
     public int ProductId { get; set; }
+    public string NameNl { get; set; } = string.Empty;
     public string NameEn { get; set; } = string.Empty;
+    public string NameFr { get; set; } = string.Empty;
     public string OrderPartNumber { get; set; } = string.Empty;
     public int SupplierId { get; set; }
     public int ManufacturerId { get; set; }
