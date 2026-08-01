@@ -16,6 +16,15 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 
 ## 📅 Amendments (newest first)
 
+| 2026-08-01 |
+|:---|
+| 1. Added demo seed [`scripts/ProductAttribuutItem_demo_seed.sql`](../scripts/ProductAttribuutItem_demo_seed.sql): `ProductAttribuutItem.Waarde` for Power Supply (`24 VDC`, `12-24 VACDC`, `230 VAC`), Gate Type (`Sliding` / `Swing` / `Barrier`) and Safety Features on products in the leaf of ProdId `11742` (`Eenheid`/`Gegevenstype` left NULL). |
+| 2. Removed the earlier invented Power-Supply-only seed script with non-documented Waarde strings. |
+| 3. Store catalog facets read `ProductAttribuut.Naam` (group title) + `ProductAttribuutItem.Waarde` (checkboxes) via `StoreCatalogService` (`attr:{id}`); AND across attributes, OR within values. |
+| 4. Removed Handzenders whitelist pilot (`StoreCatalogFilterOptions` / Merk / Voorraad / Prijs / `ProductProperty` facets). Facets show on the leaf category list after the demo seed is applied on `abmatic_test`. |
+| 5. Documented in [PLAN_CATALOG_FILTERS.md](./PLAN_CATALOG_FILTERS.md) how `Naam`/`Waarde` map to the store filter sidebar UI (Power Supply checklist example). |
+| 6. Fixed demo seed SQL: physical column is `WebShop` (not C# `ShowOnWebshop`) in [`scripts/ProductAttribuutItem_demo_seed.sql`](../scripts/ProductAttribuutItem_demo_seed.sql). |
+
 | 2026-07-31 |
 |:---|
 | 1. Corrected admin repositories, including `StaffUserRepository`, `ProductAttributeRepository` and `ProductAttributeAssignmentRepository`. |

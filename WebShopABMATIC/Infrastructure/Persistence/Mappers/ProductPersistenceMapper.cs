@@ -8,7 +8,9 @@ internal static class ProductPersistenceMapper
     public static Product ToDomain(PersistenceProduct entity) =>
         Product.Rehydrate(
             entity.ProductId,
+            entity.NameNl ?? string.Empty,
             entity.NameEn ?? string.Empty,
+            entity.NameFr ?? string.Empty,
             entity.OrderPartNumber,
             entity.SupplierId,
             entity.ManufacturerId,
@@ -22,9 +24,9 @@ internal static class ProductPersistenceMapper
 
     public static void ApplyToEntity(Product domain, PersistenceProduct entity, string? modifiedBy = null)
     {
+        entity.NameNl = domain.NameNl;
         entity.NameEn = domain.NameEn;
-        entity.NameNl = domain.NameEn;
-        entity.NameFr = domain.NameEn;
+        entity.NameFr = domain.NameFr;
         entity.DescriptionNl = domain.DescriptionNl ?? string.Empty;
         entity.DescriptionEn = domain.DescriptionEn ?? string.Empty;
         entity.DescriptionFr = domain.DescriptionFr ?? string.Empty;
