@@ -37,11 +37,31 @@ public sealed class ProductAdminUseCase : IProductAdminPort
     public async Task<int> SaveAsync(ProductEditDto dto, ProductImageUpload? primaryImage, CancellationToken cancellationToken = default)
     {
         var product = dto.ProductId == 0
-            ? Product.Create(dto.NameEn, dto.OrderPartNumber, dto.SupplierId, dto.ManufacturerId, dto.ShowOnWebshop, dto.WebshopDescriptionNl, dto.EanCode)
+            ? Product.Create(
+                dto.NameEn,
+                dto.OrderPartNumber,
+                dto.SupplierId,
+                dto.ManufacturerId,
+                dto.ShowOnWebshop,
+                dto.DescriptionNl,
+                dto.DescriptionEn,
+                dto.DescriptionFr,
+                dto.WebshopDescriptionNl,
+                dto.EanCode)
             : await _repository.GetByIdAsync(dto.ProductId, cancellationToken)
               ?? throw new InvalidOperationException($"Product {dto.ProductId} was not found.");
 
-        product.Update(dto.NameEn, dto.OrderPartNumber, dto.SupplierId, dto.ManufacturerId, dto.ShowOnWebshop, dto.WebshopDescriptionNl, dto.EanCode);
+        product.Update(
+            dto.NameEn,
+            dto.OrderPartNumber,
+            dto.SupplierId,
+            dto.ManufacturerId,
+            dto.ShowOnWebshop,
+            dto.DescriptionNl,
+            dto.DescriptionEn,
+            dto.DescriptionFr,
+            dto.WebshopDescriptionNl,
+            dto.EanCode);
 
         var productId = await _repository.SaveAsync(product, cancellationToken);
 
