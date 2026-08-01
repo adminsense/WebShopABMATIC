@@ -474,7 +474,7 @@ dotnet publish Web/WebShopABMATIC.Web.csproj -c Release -o ./publish
 
 Publish output to App Service (Visual Studio Publish, ZIP deploy, or CI). Ensure `web.config` `aspNetCore` points to the published DLL (not a stale Debug path under `Web/`).
 
-**Stdout logs:** `Web/web.config` enables `stdoutLogEnabled="true"` → `.\logs\stdout` on the App Service file share (Kudu).
+**ANCM stdout logs:** `WebShopABMATIC/web.config` keeps `stdoutLogEnabled="false"` by default, so IIS Express and App Service do not accumulate unbounded `stdout_*.log` files. For startup troubleshooting only, temporarily enable it in Kudu/App Service; published Azure configuration may write to `%HOME%\LogFiles\stdout`. Disable it again after collecting the diagnostic log. Normal application diagnostics must use the configured logging providers, not permanent ANCM stdout capture.
 
 ### 9.2 Database hosting
 

@@ -28,7 +28,7 @@ Naming: stable `SPEC_<Topic>.md`; in-progress specs with checklist `SPEC_<Topic>
 
 - Change the **current-state** tables/sections; mark obsolete claims clearly.
 - Prefer short factual notes over long essays.
-- **`AMENDMENTS.md`:** **one entry per calendar day** — if today’s line already exists, **update/extend that same line** (short summary of the day’s work). Do **not** add a new bullet per tweak. Put bulky history in `docs/archive/`.
+- **`AMENDMENTS.md`:** **one table per calendar day**, in plain GitHub Markdown (never HTML/CSS) — the date is the single left-aligned column header (`|:---|`) and each completed change is a numbered row. Update today’s existing table; do not create a second table for the same date. Keep rows concise and put bulky history in `docs/archive/`.
 - **DB-first (global):** never invent ERP columns, tables, migrations, or schema scripts in docs — any feature. Adapt to live `abmatic_test` (`AGENTS.md`, `SPEC_INFRASTRUCTURE` §4).
 - Do not document features/columns that are not in the live database.
 
