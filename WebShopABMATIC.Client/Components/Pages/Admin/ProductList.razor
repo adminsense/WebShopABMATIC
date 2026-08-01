@@ -183,12 +183,11 @@
                                        data-enhance-nav="false">
                                         <i class="bi bi-pencil"></i>
                                     </a>
-                                    <a class="btn btn-sm btn-info"
-                                       href="@($"/admin/product-attributes/{item.ProductId}")"
-                                       title="Product attributes"
-                                       data-enhance-nav="false">
+                                    <button type="button" class="btn btn-sm btn-info"
+                                            @onclick="() => OpenAttributes(item.ProductId)"
+                                            title="Product attributes">
                                         <i class="bi bi-tags"></i>
-                                    </a>
+                                    </button>
                                         <button type="button" class="btn btn-sm btn-danger"
                                                 @onclick="() => PromptDelete(item)"
                                                 title="Delete Product">
@@ -205,6 +204,8 @@
         <AdminGridPagination TotalCount="@(_result?.TotalCount ?? 0)" Page="@(_filter.Page)" PageSize="@(_filter.PageSize)" Loading="@_loading" OnPageChanged="ChangePageAsync" />
     </div>
 </div>
+
+<ProductAttributeValuesModal ProductId="@_attributesProductId" OnClose="CloseAttributes" />
 
 @if (_showDeleteConfirm && _itemToDelete is not null)
 {
@@ -250,6 +251,7 @@
     private bool _deleting;
     private bool _showDeleteConfirm;
     private bool _disposed;
+    private int _attributesProductId;
     private string? _formError;
     private string? _gridError;
     private string? _imageError;
@@ -426,6 +428,10 @@
 
         _previewUrl = $"data:{file.ContentType};base64,{Convert.ToBase64String(buffer.ToArray())}";
     }
+
+    private void OpenAttributes(int productId) => _attributesProductId = productId;
+
+    private void CloseAttributes() => _attributesProductId = 0;
 
     private void PromptDelete(ProductDto item)
     {
