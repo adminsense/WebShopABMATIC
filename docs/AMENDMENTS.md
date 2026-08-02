@@ -16,6 +16,15 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 
 ## 📅 Amendments (newest first)
 
+| 2026-08-02 |
+|:---|
+| 1. Product admin form edits `NameNl` / `NameEn` / `NameFr` (`ProdName` / `ProdNameEN` / `ProdNameFr`) independently — no longer copies NameEn into NL/FR on save. |
+| 2. Product form: meta fields (`OrderPartNumber`…`EanCode`) sum to 12 cols so DescriptionNl/En/Fr stay on one row like the name fields. |
+| 3. Admin top bar **Open webshop** → `/`; removed staff bounce from store pages (`StoreStaffRedirect`) so Admin/Manager can browse the catalog after leaving admin. |
+| 4. Demo seed now targets a true leaf under ProdId `11742`’s structure (not parent `17`); store URL printed as `/?categoryId=<LeafId>`. Facets only when `Waarde` is on products of that leaf. |
+| 5. Store search uses substring `Contains` on `NameNl`/`NameEn`/`NameFr` (was `NameEn` prefix only). |
+| 6. Store leaf+filters layout: dropped centered `max-width: 1200px` gutter so Filters sit closer to the category sidebar and products get more width. |
+
 | 2026-08-01 |
 |:---|
 | 1. Added demo seed [`scripts/ProductAttribuutItem_demo_seed.sql`](../scripts/ProductAttribuutItem_demo_seed.sql): `ProductAttribuutItem.Waarde` for Power Supply (`24 VDC`, `12-24 VACDC`, `230 VAC`), Gate Type (`Sliding` / `Swing` / `Barrier`) and Safety Features on products in the leaf of ProdId `11742` (`Eenheid`/`Gegevenstype` left NULL). |
