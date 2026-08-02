@@ -38,7 +38,9 @@ public sealed class ProductAdminUseCase : IProductAdminPort
     {
         var product = dto.ProductId == 0
             ? Product.Create(
+                dto.NameNl,
                 dto.NameEn,
+                dto.NameFr,
                 dto.OrderPartNumber,
                 dto.SupplierId,
                 dto.ManufacturerId,
@@ -52,7 +54,9 @@ public sealed class ProductAdminUseCase : IProductAdminPort
               ?? throw new InvalidOperationException($"Product {dto.ProductId} was not found.");
 
         product.Update(
+            dto.NameNl,
             dto.NameEn,
+            dto.NameFr,
             dto.OrderPartNumber,
             dto.SupplierId,
             dto.ManufacturerId,
