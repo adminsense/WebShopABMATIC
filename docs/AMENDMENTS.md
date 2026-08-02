@@ -23,7 +23,6 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 | 3. Admin top bar **Open webshop** → `/`; removed staff bounce from store pages (`StoreStaffRedirect`) so Admin/Manager can browse the catalog after leaving admin. |
 | 4. Demo seed now targets a true leaf under ProdId `11742`’s structure (not parent `17`); store URL printed as `/?categoryId=<LeafId>`. Facets only when `Waarde` is on products of that leaf. |
 | 5. Store search uses substring `Contains` on `NameNl`/`NameEn`/`NameFr` (was `NameEn` prefix only). |
-| 6. Store leaf+filters layout: dropped centered `max-width: 1200px` gutter so Filters sit closer to the category sidebar and products get more width. |
 
 | 2026-08-01 |
 |:---|
@@ -41,7 +40,6 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 | 3. Adjusted admin Staff pages and staff-profile behaviour (`LegacyStaffProfileService` / staff user flows). |
 | 4. Adjusted admin Payment Method list/form behaviour. |
 | 5. Adjusted admin Product list/form and related catalog admin screens. |
-| 6. Adjusted admin Stock Location list/form behaviour. |
 
 | 2026-07-30 |
 |:---|
@@ -49,8 +47,6 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 | 2. Manual functional verification — Webstore: list-price/stock presentation and add-to-cart flow for guest and authenticated customer. |
 | 3. Manual functional verification — Customer login: sign-in, authenticated redirect, session-cookie persistence and sign-out. |
 | 4. Manual functional verification — Staff login: admin sign-in, role-protected redirect to `/admin` and sign-out. |
-| 5. Manual functional verification — Admin product attributes: Attributes action opens the modal over the calling grid and Close/X returns without losing grid context. |
-| 6. Manual functional verification — Admin product attributes: add, inline edit and delete-confirmation flows for product attribute values. |
 
 | 2026-07-29 |
 |:---|
