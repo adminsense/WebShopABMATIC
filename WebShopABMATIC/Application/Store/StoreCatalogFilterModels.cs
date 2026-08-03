@@ -1,35 +1,14 @@
 namespace WebShopABMATIC.Application.Store;
 
-/// <summary>Active facet selections for a leaf category product list (Coolblue-style).</summary>
+/// <summary>Active ProductAttribuut facet selections for a leaf category product list.</summary>
 public sealed class StoreCatalogFilterState
 {
-    /// <summary>Selected manufacturer ids. Use <see cref="IncludeUnknownManufacturer"/> for id 0 / missing.</summary>
-    public IReadOnlyList<int> ManufacturerIds { get; init; } = [];
-
-    /// <summary>Include products with no manufacturer (id 0 / missing join).</summary>
-    public bool IncludeUnknownManufacturer { get; init; }
-
-    /// <summary>Stock facet keys: <c>in</c>, <c>out</c>.</summary>
-    public IReadOnlyList<string> StockKeys { get; init; } = [];
-
-    /// <summary>Price facet keys: <c>request</c>, <c>priced</c>.</summary>
-    public IReadOnlyList<string> PriceKeys { get; init; } = [];
-
-    /// <summary>ProductPropertyId → selected free-text values.</summary>
-    public IReadOnlyDictionary<int, IReadOnlyList<string>> PropertyValues { get; init; }
-        = new Dictionary<int, IReadOnlyList<string>>();
-
     /// <summary>ProductAttributeId → selected Waarde values (catalog filters).</summary>
     public IReadOnlyDictionary<int, IReadOnlyList<string>> AttributeValues { get; init; }
         = new Dictionary<int, IReadOnlyList<string>>();
 
     public bool HasAny =>
-        ManufacturerIds.Count > 0
-        || IncludeUnknownManufacturer
-        || StockKeys.Count > 0
-        || PriceKeys.Count > 0
-        || PropertyValues.Values.Any(v => v.Count > 0)
-        || AttributeValues.Values.Any(v => v.Count > 0);
+        AttributeValues.Values.Any(v => v.Count > 0);
 }
 
 public sealed class StoreCategoryFacetsDto
@@ -41,7 +20,7 @@ public sealed class StoreCategoryFacetsDto
 
 public sealed class StoreFacetGroupDto
 {
-    /// <summary><c>manufacturer</c>, <c>stock</c>, <c>price</c>, or <c>property:{id}</c>.</summary>
+    /// <summary><c>attr:{ProductAttributeId}</c>.</summary>
     public string Key { get; init; } = "";
     public string Title { get; init; } = "";
     public bool IsMuted { get; init; }
