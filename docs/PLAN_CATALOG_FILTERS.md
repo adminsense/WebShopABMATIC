@@ -117,6 +117,8 @@ Safety Features
 
 Demo seed for those `Waarde` rows: [`scripts/ProductAttribuutItem_demo_seed.sql`](../scripts/ProductAttribuutItem_demo_seed.sql).
 
+**Important (CD4):** facets appear only on a **true leaf** (no child `ProductStructuur` rows). The seed resolves a leaf under the structure of ProdId `11742` that has `WebShop` products — **not** the parent Id itself when that Id has children (e.g. parent `17` shows tiles only). `Waarde` must be on products whose `ProductStructuurId` equals that leaf Id. After the script, open the printed `/?categoryId=<LeafId>`.
+
 ---
 
 ## 4. Behaviour
@@ -128,9 +130,9 @@ Demo seed for those `Waarde` rows: [`scripts/ProductAttribuutItem_demo_seed.sql`
 3. One product may have many attributes; values are free text (distinct facet keys = exact `Waarde` strings). Dropdown labels = `Naam`.
 ### 4.2 Store
 
-1. User navigates to a **leaf** `ProductStructure` category (`Catalog.razor`).  
-2. Load products in that leaf (`ShowOnWebshop`).  
-3. Load `ProductAttribuutItem` for those products.  
+1. User navigates to a **leaf** `ProductStructure` category (`Catalog.razor`) — last tree level; parents show child tiles only (no facet sidebar).  
+2. Load products in that leaf (`ShowOnWebshop` / column `WebShop`).  
+3. Load `ProductAttribuutItem` for those products (**same** `ProductStructuurId` as the leaf).  
 4. Build facet groups: each attribute that has ≥1 value → distinct `Waarde` + counts.  
 5. Same checkbox sidebar layout as today; selections filter the product grid.  
 6. Guests may browse and filter; login only for place order / pay / account (unchanged §9.1–9.2).
