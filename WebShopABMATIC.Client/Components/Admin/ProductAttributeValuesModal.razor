@@ -1,0 +1,354 @@
+@using WebShopABMATIC.Application.Admin.ProductAttributes
+@using WebShopABMATIC.Application.Ports
+@inject IProductAttributeAssignmentAdminPort AssignmentPort
+@implements IAsyncDisposable
+
+@if (ProductId > 0)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title"><i class="bi bi-tags me-1"></i>Product attribute values</h5>
+                    <button type="button" class="btn-close" @onclick="CloseAsync" disabled="@(_saving || _deleting)"></button>
+                </div>
+                <div class="modal-body">
+                    @if (_loading)
+                    {
+                        <p class="text-muted mb-0">Loading…</p>
+                    }
+                    else if (_assignment is null)
+                    {
+                        <div class="alert alert-danger mb-0">@(_error ?? $"Product #{ProductId} was not found.")</div>
+                    }
+                    else
+                    {
+                        var product = _assignment.Product;
+                        <div class="small text-muted mb-3">
+                            <div class="fw-bold text-body">Filters for product #@product.ProductId</div>
+                            <div><strong>NL:</strong> @product.NameNl</div>
+                            <div><strong>EN:</strong> @product.NameEn</div>
+                            <div><strong>FR:</strong> @product.NameFr</div>
+                            @if (!string.IsNullOrWhiteSpace(product.OrderPartNumber))
+                            {
+                                <div><strong>Part #:</strong> @product.OrderPartNumber</div>
+                            }
+                        </div>
+
+                        <h3 class="h6">Add attribute</h3>
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-5">
+                                <label class="form-label" for="f-attr">Attribute</label>
+                                <select id="f-attr" class="form-select form-select-sm" @bind="_addAttributeId">
+                                    <option value="0">— Select —</option>
+                                    @foreach (var a in _assignment.AvailableAttributes)
+                                    {
+                                        <option value="@a.Id">@a.Name</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label" for="f-waarde">Value (Waarde) *</label>
+                                <input id="f-waarde" class="form-control form-control-sm" @bind="_addValue" maxlength="100" />
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-primary btn-sm w-100" disabled="@_saving" @onclick="AddValueAsync">Add</button>
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(_formError))
+                        {
+                            <div class="alert alert-danger mt-3 mb-0">@_formError</div>
+                        }
+
+                        <h3 class="h6 mt-4">Assigned attributes</h3>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover mb-0">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Attribute</th>
+                                        <th>Value</th>
+                                        <th class="text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (_assignment.Values.Count == 0)
+                                    {
+                                        <tr><td colspan="3" class="text-center text-muted py-4">No attributes assigned yet.</td></tr>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var row in _assignment.Values)
+                                        {
+                                            <tr @key="row.Id">
+                                                <td>@row.AttributeName</td>
+                                                <td>
+                                                    @if (_editingValueId == row.Id)
+                                                    {
+                                                        <input class="form-control form-control-sm" @bind="_editValueDraft" maxlength="100" />
+                                                    }
+                                                    else
+                                                    {
+                                                        @row.Value
+                                                    }
+                                                </td>
+                                                <td class="text-center">
+                                                    <div class="btn-group btn-group-sm">
+                                                        @if (_editingValueId == row.Id)
+                                                        {
+                                                            <button type="button" class="btn btn-sm btn-primary" disabled="@_saving" @onclick="() => SaveEditAsync(row)">Save</button>
+                                                            <button type="button" class="btn btn-sm btn-secondary" disabled="@_saving" @onclick="CancelEdit">Cancel</button>
+                                                        }
+                                                        else
+                                                        {
+                                                            <button type="button" class="btn btn-sm btn-primary" @onclick="() => BeginEdit(row)" title="Edit"><i class="bi bi-pencil"></i></button>
+                                                            <button type="button" class="btn btn-sm btn-danger" @onclick="() => PromptDelete(row)" title="Delete"><i class="bi bi-trash"></i></button>
+                                                        }
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" disabled="@(_saving || _deleting)" @onclick="CloseAsync">
+                        <i class="bi bi-x me-1"></i>Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_showDeleteConfirm && _itemToDelete is not null)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5); z-index: 1060;">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header border-0"><h5 class="modal-title">Confirm deletion</h5><button type="button" class="btn-close" @onclick="CancelDelete" disabled="@_deleting"></button></div>
+                <div class="modal-body"><p class="mb-0">Remove attribute <strong>@_itemToDelete.AttributeName</strong> from this product?</p></div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelDelete" disabled="@_deleting">Cancel</button>
+                    <button type="button" class="btn btn-danger" @onclick="ConfirmDeleteAsync" disabled="@_deleting">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int ProductId { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private CancellationTokenSource? _cts;
+    private int _loadedProductId;
+    private bool _loading, _saving, _deleting, _showDeleteConfirm, _disposed;
+    private string? _error, _formError;
+    private ProductAttributeAssignmentDto? _assignment;
+    private int _addAttributeId;
+    private string _addValue = string.Empty;
+    private int? _editingValueId;
+    private string _editValueDraft = string.Empty;
+    private ProductAttributeValueDto? _itemToDelete;
+
+    protected override void OnInitialized() => _cts = new CancellationTokenSource();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_disposed || ProductId == _loadedProductId)
+        {
+            return;
+        }
+
+        _loadedProductId = ProductId;
+        if (ProductId <= 0)
+        {
+            _assignment = null;
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+        _formError = null;
+        CancelEdit();
+        try
+        {
+            _assignment = await AssignmentPort.GetAssignmentAsync(ProductId, _cts?.Token ?? CancellationToken.None);
+            if (_assignment is null)
+            {
+                _error = $"Product #{ProductId} was not found.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+            _assignment = null;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task ReloadAsync()
+    {
+        _assignment = await AssignmentPort.GetAssignmentAsync(ProductId, _cts?.Token ?? CancellationToken.None);
+        _addAttributeId = 0;
+        _addValue = string.Empty;
+        CancelEdit();
+    }
+
+    private async Task AddValueAsync()
+    {
+        if (_assignment is null || ProductId <= 0)
+        {
+            return;
+        }
+
+        _formError = null;
+        if (_addAttributeId <= 0)
+        {
+            _formError = "Select an attribute.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_addValue))
+        {
+            _formError = "Value is required.";
+            return;
+        }
+
+        _saving = true;
+        try
+        {
+            await AssignmentPort.SaveValueAsync(new ProductAttributeValueEditDto
+            {
+                ProductId = ProductId,
+                ProductAttributeId = _addAttributeId,
+                Value = _addValue
+            }, _cts?.Token ?? CancellationToken.None);
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            _formError = ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void BeginEdit(ProductAttributeValueDto row)
+    {
+        _editingValueId = row.Id;
+        _editValueDraft = row.Value;
+        _formError = null;
+    }
+
+    private void CancelEdit()
+    {
+        _editingValueId = null;
+        _editValueDraft = string.Empty;
+    }
+
+    private async Task SaveEditAsync(ProductAttributeValueDto row)
+    {
+        _formError = null;
+        if (string.IsNullOrWhiteSpace(_editValueDraft))
+        {
+            _formError = "Value is required.";
+            return;
+        }
+
+        _saving = true;
+        try
+        {
+            await AssignmentPort.SaveValueAsync(new ProductAttributeValueEditDto
+            {
+                Id = row.Id,
+                ProductId = ProductId,
+                ProductAttributeId = row.ProductAttributeId,
+                Value = _editValueDraft
+            }, _cts?.Token ?? CancellationToken.None);
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            _formError = ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void PromptDelete(ProductAttributeValueDto row)
+    {
+        _itemToDelete = row;
+        _showDeleteConfirm = true;
+    }
+
+    private void CancelDelete()
+    {
+        _showDeleteConfirm = false;
+        _itemToDelete = null;
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_itemToDelete is null)
+        {
+            return;
+        }
+
+        _deleting = true;
+        try
+        {
+            await AssignmentPort.DeleteValueAsync(_itemToDelete.Id, _cts?.Token ?? CancellationToken.None);
+            CancelDelete();
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            _formError = ex.Message;
+            CancelDelete();
+        }
+        finally
+        {
+            _deleting = false;
+        }
+    }
+
+    private async Task CloseAsync()
+    {
+        CancelDelete();
+        CancelEdit();
+        _assignment = null;
+        _addAttributeId = 0;
+        _addValue = string.Empty;
+        _formError = null;
+        _error = null;
+        _loadedProductId = 0;
+        await OnClose.InvokeAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _disposed = true;
+        if (_cts is not null)
+        {
+            await _cts.CancelAsync();
+            _cts.Dispose();
+            _cts = null;
+        }
+    }
+}
