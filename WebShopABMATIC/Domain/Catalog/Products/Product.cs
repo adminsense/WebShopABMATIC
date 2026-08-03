@@ -3,7 +3,9 @@ namespace WebShopABMATIC.Domain.Catalog.Products;
 public sealed class Product
 {
     public int ProductId { get; private set; }
+    public string NameNl { get; private set; } = string.Empty;
     public string NameEn { get; private set; } = string.Empty;
+    public string NameFr { get; private set; } = string.Empty;
     public string? OrderPartNumber { get; private set; }
     public int SupplierId { get; private set; }
     public int ManufacturerId { get; private set; }
@@ -16,7 +18,9 @@ public sealed class Product
     public bool IsInactive { get; private set; }
 
     public static Product Create(
+        string nameNl,
         string nameEn,
+        string nameFr,
         string? orderPartNumber,
         int supplierId,
         int manufacturerId,
@@ -30,7 +34,9 @@ public sealed class Product
         return new Product
         {
             ProductId = 0,
+            NameNl = nameNl,
             NameEn = nameEn,
+            NameFr = nameFr,
             OrderPartNumber = orderPartNumber,
             SupplierId = supplierId,
             ManufacturerId = manufacturerId,
@@ -46,7 +52,9 @@ public sealed class Product
 
     public static Product Rehydrate(
         int productId,
+        string nameNl,
         string nameEn,
+        string nameFr,
         string? orderPartNumber,
         int supplierId,
         int manufacturerId,
@@ -61,7 +69,9 @@ public sealed class Product
         return new Product
         {
             ProductId = productId,
+            NameNl = nameNl,
             NameEn = nameEn,
+            NameFr = nameFr,
             OrderPartNumber = orderPartNumber,
             SupplierId = supplierId,
             ManufacturerId = manufacturerId,
@@ -76,7 +86,9 @@ public sealed class Product
     }
 
     public void Update(
+        string nameNl,
         string nameEn,
+        string nameFr,
         string? orderPartNumber,
         int supplierId,
         int manufacturerId,
@@ -87,7 +99,9 @@ public sealed class Product
         string? webshopDescriptionNl,
         string? eanCode)
     {
+        NameNl = nameNl;
         NameEn = nameEn;
+        NameFr = nameFr;
         OrderPartNumber = orderPartNumber;
         SupplierId = supplierId;
         ManufacturerId = manufacturerId;

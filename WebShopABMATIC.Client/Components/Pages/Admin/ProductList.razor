@@ -41,29 +41,37 @@
                     <DataAnnotationsValidator />
                     <div class="entity-form-fields entity-form-fields-wide">
                     <div class="row g-3">
-                        <div class="col-lg-6">
-                            <label class="form-label" for="prod-name">NameEn *</label>
-                            <InputText id="prod-name" class="form-control form-control-sm" @bind-Value="_model.NameEn" required />
+                        <div class="col-md-4">
+                            <label class="form-label" for="prod-name-en">NameEn (ProdNameEN) *</label>
+                            <InputText id="prod-name-en" class="form-control form-control-sm" @bind-Value="_model.NameEn" required />
                         </div>
-                        <div class="col-lg-4">
+                        <div class="col-md-4">
+                            <label class="form-label" for="prod-name-nl">NameNl (ProdName) *</label>
+                            <InputText id="prod-name-nl" class="form-control form-control-sm" @bind-Value="_model.NameNl" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="prod-name-fr">NameFr (ProdNameFr) *</label>
+                            <InputText id="prod-name-fr" class="form-control form-control-sm" @bind-Value="_model.NameFr" required />
+                        </div>
+                        <div class="col-md-3">
                             <label class="form-label" for="prod-part">OrderPartNumber</label>
                             <InputText id="prod-part" class="form-control form-control-sm" @bind-Value="_model.OrderPartNumber" />
                         </div>
-                        <div class="col-lg-2 d-flex align-items-end">
+                        <div class="col-md-2 d-flex align-items-end">
                             <div class="form-check mb-1">
                                 <InputCheckbox class="form-check-input" @bind-Value="_model.ShowOnWebshop" id="showWebshop" />
                                 <label class="form-check-label" for="showWebshop">Webshop</label>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-2">
                             <label class="form-label" for="prod-supplier">SupplierId *</label>
                             <InputNumber id="prod-supplier" class="form-control form-control-sm" @bind-Value="_model.SupplierId" />
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-2">
                             <label class="form-label" for="prod-manufacturer">ManufacturerId *</label>
                             <InputNumber id="prod-manufacturer" class="form-control form-control-sm" @bind-Value="_model.ManufacturerId" />
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label" for="prod-ean">EanCode</label>
                             <InputText id="prod-ean" class="form-control form-control-sm" @bind-Value="_model.EanCode" />
                         </div>

@@ -6,7 +6,7 @@
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
 @using WebShopABMATIC.Web.Services
-@inject IPaymentMethodAdminPort AdminPort
+@inject IPaymentMethodAdminPort AdminPort
 @inject IGridExportService GridExport
 @implements IAsyncDisposable
 
@@ -40,19 +40,17 @@
                             <label class="form-label" for="f-namefr">NameFr *</label>
                             <InputText id="f-namefr" class="form-control form-control-sm" @bind-Value="_model.NameFr" required />
                         </div>
-                        <div class="col-md-2 d-flex align-items-end">
+                        <div class="col-12 d-flex gap-3 align-items-end flex-wrap">
                             <div class="form-check mb-1">
                                 <InputCheckbox class="form-check-input" @bind-Value="_model.IsPrePay" id="f-isprepay" />
                                 <label class="form-check-label" for="f-isprepay">PrePay</label>
                             </div>
-                        </div>
-                        <div class="col-md-2 d-flex align-items-end">
                             <div class="form-check mb-1">
                                 <InputCheckbox class="form-check-input" @bind-Value="_model.IsPostPay" id="f-ispostpay" />
                                 <label class="form-check-label" for="f-ispostpay">PostPay</label>
                             </div>
                         </div>
-                        <div class="col-12 d-flex gap-2 pt-1">
+                        <div class="col-12 d-flex gap-2 pt-1 flex-wrap">
                             <button type="submit" class="btn btn-primary" disabled="@_saving">@(_isEditing ? "Update" : "Create")</button>
                             <button type="button" class="btn btn-secondary" @onclick="CancelFormAsync" disabled="@_saving"><i class="bi bi-x me-1"></i>Cancel</button>
                         </div>
