@@ -94,7 +94,9 @@ public sealed class ProductRepository : IProductRepository
             .Select(p => new ProductEditDto
             {
                 ProductId = p.ProductId,
-                NameEn = p.NameEn,
+                NameNl = p.NameNl ?? string.Empty,
+                NameEn = p.NameEn ?? string.Empty,
+                NameFr = p.NameFr ?? string.Empty,
                 OrderPartNumber = p.OrderPartNumber,
                 SupplierId = p.SupplierId,
                 ManufacturerId = p.ManufacturerId,
