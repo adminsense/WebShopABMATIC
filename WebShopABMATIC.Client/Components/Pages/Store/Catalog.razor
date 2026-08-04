@@ -185,7 +185,7 @@
         _browseCategories = [];
         _noProductsMessage = string.IsNullOrWhiteSpace(_search)
             ? "No products available in this category."
-            : $"No products found starting with “{_search}”.";
+            : $"No products found matching “{_search}”.";
 
         _productsTitle = _selectedCategoryId is null && string.IsNullOrWhiteSpace(_search)
             ? "Products"

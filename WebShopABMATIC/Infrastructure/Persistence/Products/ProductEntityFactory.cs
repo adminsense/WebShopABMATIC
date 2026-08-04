@@ -7,9 +7,9 @@ internal static class ProductEntityFactory
 {
     public static PersistenceProduct CreateNew(Product product) => new()
     {
+        NameNl = product.NameNl,
         NameEn = product.NameEn,
-        NameNl = product.NameEn,
-        NameFr = product.NameEn,
+        NameFr = product.NameFr,
         DescriptionNl = product.DescriptionNl ?? string.Empty,
         DescriptionEn = product.DescriptionEn ?? string.Empty,
         DescriptionFr = product.DescriptionFr ?? string.Empty,
