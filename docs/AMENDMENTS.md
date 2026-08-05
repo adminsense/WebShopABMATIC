@@ -16,6 +16,11 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 
 ## 📅 Amendments (newest first)
 
+| 2026-08-05 |
+|:---|
+| 1. Re-enabled legacy audit: DI uses `LegacyAuditService` + `LegacyAuditLogRepository` (was Null*); staff CRUD via EF `LegacyAuditSaveChangesInterceptor` → `[Logging].[Error]`; store auth/registration/checkout via explicit `IAuditService`; `LegacyExceptionLoggingMiddleware` for unhandled exceptions. |
+| 2. Admin **Logs** menu (hub `/admin/hub/logs`) + Audit Logs screen: IMMO-style filters (date/action/module/user/status), color Action badges, Detail modal, Export CSV; Action parsed from `Exception` text for badges. |
+
 | 2026-08-02 |
 |:---|
 | 1. Product admin form edits `NameNl` / `NameEn` / `NameFr` (`ProdName` / `ProdNameEN` / `ProdNameFr`) independently — no longer copies NameEn into NL/FR on save. |
