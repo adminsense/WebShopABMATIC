@@ -102,6 +102,8 @@ public class WebShopABMATICModelBuilder
         MapProductProductionGroupLink(modelBuilder.Entity<ProductProductionGroupLink>());
         MapProductProperty(modelBuilder.Entity<ProductProperty>());
         MapProductPropertyItem(modelBuilder.Entity<ProductPropertyItem>());
+        MapProductAttribute(modelBuilder.Entity<ProductAttribute>());
+        MapProductAttributeValue(modelBuilder.Entity<ProductAttributeValue>());
         MapProductPurchaseDiscount(modelBuilder.Entity<ProductPurchaseDiscount>());
         MapProductQuantityTier(modelBuilder.Entity<ProductQuantityTier>());
         MapProductStockLocation(modelBuilder.Entity<ProductStockLocation>());
@@ -1980,6 +1982,27 @@ public class WebShopABMATICModelBuilder
         config.Property(t => t.ProductPropertyId);
         config.Property(t => t.Value).HasMaxLength(250).IsRequired();
         config.Property(t => t.ProductId).HasColumnName("ProductProdId");
+    }
+
+    private static void MapProductAttribute(EntityTypeBuilder<ProductAttribute> config)
+    {
+        config.ToTable("ProductAttribuut", "Products");
+        config.HasKey(t => t.Id);
+        config.Property(t => t.Id).ValueGeneratedOnAdd().HasColumnName("AttribuutId");
+        config.Property(t => t.Name).HasMaxLength(100).IsRequired().HasColumnName("Naam");
+        config.Property(t => t.DataType).HasMaxLength(20).HasColumnName("Gegevenstype");
+        config.Property(t => t.Unit).HasMaxLength(20).HasColumnName("Eenheid");
+    }
+
+    private static void MapProductAttributeValue(EntityTypeBuilder<ProductAttributeValue> config)
+    {
+        config.ToTable("ProductAttribuutItem", "Products");
+        config.HasKey(t => t.Id);
+        config.Property(t => t.Id).ValueGeneratedOnAdd();
+        config.Property(t => t.ProductAttributeId).HasColumnName("ProductAttribuutId");
+        // ProductProdId → Products.Product.ProdId (ERP child-FK naming)
+        config.Property(t => t.ProductId).HasColumnName("ProductProdId");
+        config.Property(t => t.Value).HasMaxLength(100).IsRequired().HasColumnName("Waarde");
     }
 
     private static void MapProductPurchaseDiscount(EntityTypeBuilder<ProductPurchaseDiscount> config)

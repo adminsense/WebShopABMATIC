@@ -136,6 +136,7 @@ internal static class AdminCrudDefaults
         },
         "stock-locations" => new StockLocation { Name = string.Empty, IsWarehouse = true },
         "payment-methods" => new PaymentMethod { NameEn = string.Empty, NameNl = string.Empty, NameFr = string.Empty, IsPrePay = true, IsPostPay = false },
+        "attributes" => new ProductAttribute { Name = string.Empty, DataType = null, Unit = null },
         "staff-users" => new StaffUser
         {
             Login = string.Empty,
