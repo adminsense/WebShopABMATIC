@@ -16,10 +16,15 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 
 ## 📅 Amendments (newest first)
 
-| 2026-08-05 |
+| 2026-08-04 |
 |:---|
-| 1. Re-enabled legacy audit: DI uses `LegacyAuditService` + `LegacyAuditLogRepository` (was Null*); staff CRUD via EF `LegacyAuditSaveChangesInterceptor` → `[Logging].[Error]`; store auth/registration/checkout via explicit `IAuditService`; `LegacyExceptionLoggingMiddleware` for unhandled exceptions. |
-| 2. Admin **Logs** menu (hub `/admin/hub/logs`) + Audit Logs screen: IMMO-style filters (date/action/module/user/status), color Action badges, Detail modal, Export CSV; Action parsed from `Exception` text for badges. |
+| 1. User functional tests on the admin app (hubs, entity CRUD forms, staff login). |
+| 2. Plan and analysis for admin/store audit logs (`[Logging].[Error]`). |
+
+| 2026-08-03 |
+|:---|
+| 1. User functional tests on the webstore (catalog browse, cart, customer login/checkout path). |
+| 2. Plan and analysis for admin/store audit logs (`[Logging].[Error]`). |
 
 | 2026-08-02 |
 |:---|
