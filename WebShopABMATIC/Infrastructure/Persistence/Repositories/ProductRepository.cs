@@ -29,12 +29,25 @@ public sealed class ProductRepository : IProductRepository
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
             var term = filter.Search.Trim();
-            query = query.Where(p =>
-                (p.NameNl != null && p.NameNl.Contains(term)) ||
-                (p.NameEn != null && p.NameEn.Contains(term)) ||
-                (p.NameFr != null && p.NameFr.Contains(term)) ||
-                (p.OrderPartNumber != null && p.OrderPartNumber.Contains(term)) ||
-                (p.EanCode != null && p.EanCode.Contains(term)));
+            if (int.TryParse(term, out var productId))
+            {
+                query = query.Where(p =>
+                    p.ProductId == productId ||
+                    (p.NameNl != null && p.NameNl.Contains(term)) ||
+                    (p.NameEn != null && p.NameEn.Contains(term)) ||
+                    (p.NameFr != null && p.NameFr.Contains(term)) ||
+                    (p.OrderPartNumber != null && p.OrderPartNumber.Contains(term)) ||
+                    (p.EanCode != null && p.EanCode.Contains(term)));
+            }
+            else
+            {
+                query = query.Where(p =>
+                    (p.NameNl != null && p.NameNl.Contains(term)) ||
+                    (p.NameEn != null && p.NameEn.Contains(term)) ||
+                    (p.NameFr != null && p.NameFr.Contains(term)) ||
+                    (p.OrderPartNumber != null && p.OrderPartNumber.Contains(term)) ||
+                    (p.EanCode != null && p.EanCode.Contains(term)));
+            }
         }
 
         if (filter.ShowOnWebshop is true)
@@ -51,11 +64,14 @@ public sealed class ProductRepository : IProductRepository
         var page = Math.Max(1, filter.Page);
         var pageSize = Math.Clamp(filter.PageSize, 1, 100);
 
-        var items = await query
-            .OrderBy(p => p.NameEn)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(p => new ProductDto
+        var items = await (
+            from p in query
+            join supplier in _db.Suppliers.AsNoTracking() on p.SupplierId equals supplier.SupplierId into supplierJoin
+            from supplier in supplierJoin.DefaultIfEmpty()
+            join manufacturer in _db.Manufacturers.AsNoTracking() on p.ManufacturerId equals manufacturer.ManufacturerId into manufacturerJoin
+            from manufacturer in manufacturerJoin.DefaultIfEmpty()
+            orderby p.NameEn
+            select new ProductDto
             {
                 ProductId = p.ProductId,
                 NameNl = p.NameNl ?? string.Empty,
@@ -63,12 +79,16 @@ public sealed class ProductRepository : IProductRepository
                 NameFr = p.NameFr ?? string.Empty,
                 OrderPartNumber = p.OrderPartNumber,
                 SupplierId = p.SupplierId,
+                SupplierName = supplier != null ? (supplier.Name ?? string.Empty) : string.Empty,
                 ManufacturerId = p.ManufacturerId,
+                ManufacturerName = manufacturer != null ? (manufacturer.Name ?? string.Empty) : string.Empty,
                 ShowOnWebshop = p.ShowOnWebshop == true,
                 WebshopDescriptionNl = p.WebshopDescriptionNl,
                 EanCode = p.EanCode,
                 IsInactive = p.IsInactive
             })
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
 
         return new PagedResult<ProductDto>

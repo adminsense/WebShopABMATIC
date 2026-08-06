@@ -52,6 +52,8 @@ public sealed class ProductQuantityTierRepository : IProductQuantityTierReposito
             {
                 Id = x.tier.Id,
                 ProductId = x.tier.ProductId,
+                ProductName = x.product != null ? (x.product.NameEn ?? string.Empty) : string.Empty,
+                OrderPartNumber = x.product != null ? x.product.OrderPartNumber : null,
                 MinimumQuantity = x.tier.MinimumQuantity,
                 Discount = x.tier.Discount
             })
@@ -74,6 +76,8 @@ public sealed class ProductQuantityTierRepository : IProductQuantityTierReposito
 
     public async Task<int> SaveAsync(ProductQuantityTierEditDto dto, CancellationToken cancellationToken = default)
     {
+        await AdminProductExists.EnsureAsync(_db, dto.ProductId, cancellationToken);
+
         ProductQuantityTier entity;
         if (dto.Id == 0)
         {

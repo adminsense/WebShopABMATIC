@@ -82,6 +82,17 @@ public sealed class AdminHubRegistry : IAdminHubPort
         },
         new()
         {
+            Id = "logs",
+            Title = "Logs",
+            Subtitle = "Auth, CRUD, and application event history",
+            IconClass = "oi-document",
+            Cards =
+            [
+                Card("AuditLog", "Audit trail", "Auth, CRUD, checkout, and application events", "/admin/audit-logs", "oi-list")
+            ]
+        },
+        new()
+        {
             Id = "settings",
             Title = "Settings",
             Subtitle = "Payment, users, groups, and VAT",

@@ -27,7 +27,9 @@ public sealed class ProductStockLocationRepository : IProductStockLocationReposi
             from psl in _db.ProductStockLocations.AsNoTracking()
             join product in _db.Products.AsNoTracking() on psl.ProductId equals product.ProductId into productJoin
             from product in productJoin.DefaultIfEmpty()
-            select new { psl, product };
+            join location in _db.StockLocations.AsNoTracking() on psl.StockLocationId equals location.Id into locationJoin
+            from location in locationJoin.DefaultIfEmpty()
+            select new { psl, product, location };
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
@@ -65,6 +67,7 @@ public sealed class ProductStockLocationRepository : IProductStockLocationReposi
             {
                 Id = x.psl.Id,
                 StockLocationId = x.psl.StockLocationId,
+                StockLocationName = x.location != null ? (x.location.Name ?? string.Empty) : string.Empty,
                 ProductId = x.psl.ProductId,
                 ProductName = x.product != null ? x.product.NameEn : $"Product {x.psl.ProductId}",
                 Quantity = x.psl.Quantity,
@@ -95,6 +98,8 @@ public sealed class ProductStockLocationRepository : IProductStockLocationReposi
 
     public async Task<int> SaveAsync(ProductStockLocationEditDto dto, CancellationToken cancellationToken = default)
     {
+        await AdminProductExists.EnsureAsync(_db, dto.ProductId, cancellationToken);
+
         ProductStockLocation entity;
         decimal previousQuantity = 0;
 
