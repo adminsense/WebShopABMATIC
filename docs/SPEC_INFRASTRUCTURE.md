@@ -207,24 +207,26 @@ Use credentials from the connected `abmatic_test` database. Inspect logins in ad
 
 | Legacy table | EF entity | Written by |
 |--------------|-----------|------------|
-| `[Projecten].[DossierLog]` | `OrderLog` | Checkout, Mollie paid/expired, cancel, stock-on-order |
+| `[Projecten].[DossierLog]` | `OrderLog` | Checkout, Mollie paid/expired, cancel, stock-on-order (via `IAuditService` when `EntityName=Order`) |
 | `[Logging].[ProjectActiviteit]` | `ProjectActivity` | Project activity codes (`LegacyProjectActivityCodes`) when order has `ProjectId` |
-| `[Logging].[Error]` | `AppError` | Auth (login/logout/fail), admin CRUD (interceptor), exports, unhandled exceptions |
+| `[Logging].[Error]` | `AppError` | Auth (login/logout/fail), staff CRUD (interceptor), store registration/checkout/payment (explicit), exports, unhandled exceptions |
+
+**DI (wired):** `IAuditService` → `LegacyAuditService`; `IAuditLogRepository` → `LegacyAuditLogRepository` (not Null*). `LegacyAuditWriter` + `LegacyAuditSaveChangesInterceptor` on `AddDbContext`; `LegacyExceptionLoggingMiddleware` after auth.
 
 **Code:**
 
-- **`IAuditService`** → `LegacyAuditService` (`Infrastructure/Audit/LegacyAuditService.cs`)
+- **`IAuditService`** → `LegacyAuditService` (`Infrastructure/Audit/LegacyAuditService.cs`) → `[Logging].[Error]` (+ `DossierLog` when logging an `Order`)
 - **`LegacyAuditWriter`** — inserts into legacy tables (no schema changes)
-- **`LegacyAuditSaveChangesInterceptor`** — EF `SaveChanges` → `[Logging].[Error]` for Create/Update/Delete
-- **`LegacyExceptionLoggingMiddleware`** — HTTP 500 → `[Logging].[Error]`
-- **Auth** — `POST /account/login`, `/account/logout`, store header sign-out → `[Logging].[Error]` (`ModuleName = Auth`)
-- **Checkout / Mollie** — `CheckoutUseCase`, `ProcessMollieWebhookUseCase` → `DossierLog` + `ProjectActiviteit`
+- **`LegacyAuditSaveChangesInterceptor`** — EF `SaveChanges` → `[Logging].[Error]` for **staff** (Admin/Manager) Create/Update/Delete only; store customer/guest `SaveChanges` are **not** auto-logged
+- **`LegacyExceptionLoggingMiddleware`** — unhandled exceptions → `[Logging].[Error]` (`Admin` or `WebShop` module)
+- **Auth** — `POST /account/admin-login`, `/account/store-login`, `/account/logout` → `[Logging].[Error]` (`ModuleName = Auth`)
+- **Store customer** — registration (`CustomerRegistrationUseCase`), checkout / Mollie (`CheckoutUseCase`, `ProcessMollieWebhookUseCase`) via explicit `IAuditService`; **guests** get technical errors only (no CRUD audit)
 - **Exports** — `GridExportService` → `ReportExport` in `[Logging].[Error]`
 - **Stock** — `StockMovementService` → `DossierLog` on order-linked stock ops; journal remains `[Products].[StockBeweging]`
 
 **Admin UI:**
 
-- `/admin/audit-logs` — reads `[Logging].[Error]` (Settings hub)
+- Sidebar **Logs** → `/admin/hub/logs` → `/admin/audit-logs` — reads `[Logging].[Error]` with filters (date, action, module, user, status), color-coded Action badges (IMMO-style), Detail modal, Export CSV
 - `/admin/orders` — **Order log (DossierLog)** when editing an order
 
 **Enums:** `LegacyAuditModules`, `LegacyProjectActivityCodes` — align `Actie` values with `SELECT DISTINCT Actie FROM Logging.ProjectActiviteit` on your DB if needed.
