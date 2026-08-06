@@ -163,6 +163,7 @@ app.UseSession();
 app.UseAntiforgery();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<WebShopABMATIC.Infrastructure.Audit.LegacyExceptionLoggingMiddleware>();
 
 // Auth endpoints before Blazor so /account/logout always clears the cookie (not swallowed by the circuit).
 app.MapLoginEndpoints();
@@ -214,9 +215,47 @@ static IResult ResolveLogoutReturnUrl(HttpContext context)
     return Results.Redirect(returnUrl);
 }
 
-async Task<IResult> LogoutHandler(HttpContext context)
+async Task<IResult> LogoutHandler(
+    HttpContext context,
+    WebShopABMATIC.Application.Ports.Outbound.ICurrentUserContext currentUser,
+    WebShopABMATIC.Application.Ports.Outbound.IAuditService audit)
 {
+    string? displayName = null;
+    string entityName = "User";
+    try
+    {
+        var snapshot = await currentUser.GetCurrentUserAsync(context.RequestAborted);
+        displayName = snapshot.AuditLabel;
+        if (context.User.IsInRole(AppRoles.Admin) || context.User.IsInRole(AppRoles.Manager))
+        {
+            entityName = "StaffUser";
+        }
+        else if (context.User.IsInRole(AppRoles.Customer))
+        {
+            entityName = "Customer";
+        }
+    }
+    catch
+    {
+        // Proceed with logout even if user snapshot fails.
+    }
+
     await WebShopABMATIC.Infrastructure.Auth.LegacyCookieAuthentication.SignOutAsync(context);
+
+    try
+    {
+        await audit.LogAsync(new WebShopABMATIC.Application.Admin.AuditLogs.AuditLogWriteRequest
+        {
+            Action = WebShopABMATIC.Application.Audit.AuditActions.Logout,
+            EntityName = entityName,
+            UserDisplayName = string.IsNullOrWhiteSpace(displayName) ? "anonymous" : displayName
+        }, context.RequestAborted);
+    }
+    catch
+    {
+        // Logout must succeed even if audit write fails.
+    }
+
     return ResolveLogoutReturnUrl(context);
 }
 

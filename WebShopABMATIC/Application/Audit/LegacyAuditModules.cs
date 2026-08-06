@@ -10,4 +10,9 @@ public static class LegacyAuditModules
     public const string Mollie = "Mollie";
     public const string Stock = "Stock";
     public const string Admin = "Admin";
+
+    public static readonly IReadOnlyList<string> All =
+    [
+        Auth, Audit, WebShop, Checkout, Mollie, Stock, Admin
+    ];
 }
