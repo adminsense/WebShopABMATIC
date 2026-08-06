@@ -1,0 +1,105 @@
+@using WebShopABMATIC.Application.Admin.Lookups
+@using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Web.Forms
+@inject IAdminLookupPort LookupPort
+
+<div class="@CssClass">
+    <label class="form-label" for="@InputId">@(Label ?? "City *")</label>
+    <div class="input-group input-group-sm">
+        <input id="@InputId" type="text" class="form-control form-control-sm" value="@DisplayText" readonly placeholder="Select a city…" />
+        <button type="button" class="btn btn-outline-primary" @onclick="OpenPicker" disabled="@Disabled" title="Search city">
+            <i class="bi bi-search"></i>
+        </button>
+        @if (CityId > 0 && AllowClear && !Disabled)
+        {
+            <button type="button" class="btn btn-outline-secondary" @onclick="ClearAsync" title="Clear city">
+                <i class="bi bi-x"></i>
+            </button>
+        }
+    </div>
+    @if (CityId <= 0 && ShowHint)
+    {
+        <div class="form-text text-danger">Select a city before saving.</div>
+    }
+</div>
+
+<CityPickerModal Show="_showPicker" OnSelected="OnCitySelectedAsync" OnClose="ClosePicker" />
+
+@code {
+    [Parameter] public int CityId { get; set; }
+    [Parameter] public EventCallback<int> CityIdChanged { get; set; }
+    [Parameter] public string? CityName { get; set; }
+    [Parameter] public EventCallback<string?> CityNameChanged { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string CssClass { get; set; } = "col-md-4";
+    [Parameter] public string InputId { get; set; } = "f-cityid";
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public bool ShowHint { get; set; } = true;
+    [Parameter] public bool AllowClear { get; set; } = true;
+    [Parameter] public bool Required { get; set; } = true;
+
+    private bool _showPicker;
+    private string? _resolvedName;
+    private string? _resolvedPostal;
+    private int _loadedForId;
+
+    private string DisplayText =>
+        CityId <= 0
+            ? string.Empty
+            : CityLookupDto.Format(CityId, !string.IsNullOrWhiteSpace(CityName) ? CityName : _resolvedName, _resolvedPostal);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (CityId <= 0)
+        {
+            _resolvedName = null;
+            _resolvedPostal = null;
+            _loadedForId = 0;
+            return;
+        }
+
+        if (_loadedForId == CityId && (!string.IsNullOrWhiteSpace(CityName) || !string.IsNullOrWhiteSpace(_resolvedName)))
+        {
+            return;
+        }
+
+        try
+        {
+            var city = await LookupPort.GetCityAsync(CityId);
+            _resolvedName = city?.CityName ?? "(not found)";
+            _resolvedPostal = city?.PostalCode;
+            _loadedForId = CityId;
+            if (city is not null && string.IsNullOrWhiteSpace(CityName))
+            {
+                await CityNameChanged.InvokeAsync(city.CityName);
+            }
+        }
+        catch
+        {
+            _resolvedName = "(unavailable)";
+            _resolvedPostal = null;
+            _loadedForId = CityId;
+        }
+    }
+
+    private void OpenPicker() => _showPicker = true;
+    private void ClosePicker() => _showPicker = false;
+
+    private async Task OnCitySelectedAsync(CityLookupDto city)
+    {
+        _resolvedName = city.CityName;
+        _resolvedPostal = city.PostalCode;
+        _loadedForId = city.CityId;
+        await CityIdChanged.InvokeAsync(city.CityId);
+        await CityNameChanged.InvokeAsync(city.CityName);
+    }
+
+    private async Task ClearAsync()
+    {
+        _resolvedName = null;
+        _resolvedPostal = null;
+        _loadedForId = 0;
+        await CityIdChanged.InvokeAsync(0);
+        await CityNameChanged.InvokeAsync(null);
+    }
+}
