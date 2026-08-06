@@ -1,0 +1,130 @@
+@using WebShopABMATIC.Application.Admin.Products
+@using WebShopABMATIC.Application.Ports
+@inject IProductAdminPort ProductPort
+
+<div class="@CssClass">
+    <label class="form-label" for="@InputId">@(Label ?? "Product *")</label>
+    <div class="input-group input-group-sm">
+        <input id="@InputId"
+               type="text"
+               class="form-control form-control-sm"
+               value="@DisplayText"
+               readonly
+               placeholder="Select a product…" />
+        <button type="button" class="btn btn-outline-primary" @onclick="OpenPicker" disabled="@Disabled" title="Search product">
+            <i class="bi bi-search"></i>
+        </button>
+        @if (ProductId > 0 && !Disabled)
+        {
+            <button type="button" class="btn btn-outline-secondary" @onclick="ClearAsync" title="Clear product">
+                <i class="bi bi-x"></i>
+            </button>
+        }
+    </div>
+    @if (ProductId <= 0 && ShowHint)
+    {
+        <div class="form-text text-danger">Select a product before saving.</div>
+    }
+</div>
+
+<ProductPickerModal Show="_showPicker" OnSelected="OnProductSelectedAsync" OnClose="ClosePicker" />
+
+@code {
+    [Parameter] public int ProductId { get; set; }
+    [Parameter] public EventCallback<int> ProductIdChanged { get; set; }
+    [Parameter] public string? ProductName { get; set; }
+    [Parameter] public EventCallback<string?> ProductNameChanged { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string CssClass { get; set; } = "col-md-6";
+    [Parameter] public string InputId { get; set; } = "f-productid";
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public bool ShowHint { get; set; } = true;
+
+    private bool _showPicker;
+    private string? _resolvedName;
+    private string? _resolvedPart;
+    private int _loadedForId;
+
+    private string DisplayText =>
+        ProductId <= 0
+            ? string.Empty
+            : ProductPickerResult.Format(
+                ProductId,
+                !string.IsNullOrWhiteSpace(ProductName) ? ProductName : _resolvedName,
+                _resolvedPart);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ProductId <= 0)
+        {
+            _resolvedName = null;
+            _resolvedPart = null;
+            _loadedForId = 0;
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(ProductName) && _loadedForId == ProductId)
+        {
+            return;
+        }
+
+        if (_loadedForId == ProductId && !string.IsNullOrWhiteSpace(_resolvedName))
+        {
+            return;
+        }
+
+        await ResolveNameAsync(ProductId);
+    }
+
+    private async Task ResolveNameAsync(int productId)
+    {
+        try
+        {
+            var edit = await ProductPort.GetForEditAsync(productId);
+            if (edit is null)
+            {
+                _resolvedName = "(not found)";
+                _resolvedPart = null;
+            }
+            else
+            {
+                _resolvedName = edit.NameEn;
+                _resolvedPart = edit.OrderPartNumber;
+                if (string.IsNullOrWhiteSpace(ProductName))
+                {
+                    await ProductNameChanged.InvokeAsync(edit.NameEn);
+                }
+            }
+
+            _loadedForId = productId;
+        }
+        catch
+        {
+            _resolvedName = "(unavailable)";
+            _resolvedPart = null;
+            _loadedForId = productId;
+        }
+    }
+
+    private void OpenPicker() => _showPicker = true;
+
+    private void ClosePicker() => _showPicker = false;
+
+    private async Task OnProductSelectedAsync(ProductPickerResult result)
+    {
+        _resolvedName = result.NameEn;
+        _resolvedPart = result.OrderPartNumber;
+        _loadedForId = result.ProductId;
+        await ProductIdChanged.InvokeAsync(result.ProductId);
+        await ProductNameChanged.InvokeAsync(result.NameEn);
+    }
+
+    private async Task ClearAsync()
+    {
+        _resolvedName = null;
+        _resolvedPart = null;
+        _loadedForId = 0;
+        await ProductIdChanged.InvokeAsync(0);
+        await ProductNameChanged.InvokeAsync(null);
+    }
+}
