@@ -179,6 +179,7 @@ public interface IAuditLogAdminPort
 {
     Task<PagedResult<AuditLogListItemDto>> GetAuditTrailAsync(AuditLogListFilter filter, CancellationToken cancellationToken = default);
     Task<AuditLogDetailDto?> GetDetailAsync(long id, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<string>> GetUserLookupsAsync(CancellationToken cancellationToken = default);
 }
 
 public interface IProductStockLocationAdminPort

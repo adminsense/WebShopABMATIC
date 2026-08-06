@@ -1026,6 +1026,8 @@ button.entity-grid-search-icon:focus {
 .audit-badge-report { background: #6f42c1; }
 .audit-badge-checkout { background: #20c997; }
 .audit-badge-payment { background: #fd7e14; }
+.audit-badge-payment-expired { background: #dc3545; }
+.audit-badge-order-cancelled { background: #dc3545; }
 .audit-badge-password { background: #6610f2; }
 .audit-badge-stock { background: #e67e22; }
 .audit-badge-default { background: #495057; }

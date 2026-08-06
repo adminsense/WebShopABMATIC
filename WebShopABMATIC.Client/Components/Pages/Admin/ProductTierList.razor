@@ -2,11 +2,12 @@
 @layout AdminLayout
 @attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
 @using WebShopABMATIC.Application.Admin.ProductQuantityTiers
+@using WebShopABMATIC.Application.Admin.Products
 @using WebShopABMATIC.Application.Common
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
 @using WebShopABMATIC.Web.Services
-@inject IProductQuantityTierAdminPort AdminPort
+@inject IProductQuantityTierAdminPort AdminPort
 @inject IGridExportService GridExport
 @implements IAsyncDisposable
 
@@ -28,15 +29,12 @@
                 <EditForm Model="_model" OnValidSubmit="SaveAsync">
                     <DataAnnotationsValidator />
                     <div class="entity-form-fields"><div class="row g-2">
-                        <div class="col-md-4">
-                            <label class="form-label" for="f-productid">ProductId *</label>
-                            <InputNumber id="f-productid" class="form-control form-control-sm" @bind-Value="_model.ProductId" required />
-                        </div>
-                        <div class="col-md-4">
+                        <ProductPickerField @bind-ProductId="_model.ProductId" @bind-ProductName="_formProductName" CssClass="col-md-6" />
+                        <div class="col-md-3">
                             <label class="form-label" for="f-minimumquantity">Minimum quantity *</label>
                             <InputNumber id="f-minimumquantity" class="form-control form-control-sm" @bind-Value="_model.MinimumQuantity" required />
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label" for="f-discount">Discount % *</label>
                             <InputNumber id="f-discount" class="form-control form-control-sm" @bind-Value="_model.Discount" required />
                         </div>
@@ -58,7 +56,7 @@
         <div class="table-responsive">
             <table class="table table-striped table-hover mb-0">
                 <thead class="table-dark"><tr><th>Id</th>
-                        <th>ProductId</th>
+                        <th>Product</th>
                         <th>MinimumQuantity</th>
                         <th>Discount</th>
                     <th class="text-center">Actions</th></tr></thead>
@@ -69,7 +67,7 @@
                     else { @foreach (var item in _result.Items) {
                         <tr @key="item.Id" class="@(_model.Id == item.Id ? "table-active" : null)">
                             <td>@item.Id</td>
-                                <td>@item.ProductId</td>
+                                <td>@ProductPickerResult.Format(item.ProductId, item.ProductName, item.OrderPartNumber)</td>
                                 <td>@item.MinimumQuantity</td>
                                 <td>@item.Discount</td>
                             <td class="text-center"><div class="btn-group btn-group-sm">
@@ -106,7 +104,8 @@
     [SupplyParameterFromQuery(Name = "edit")] public int? EditId { get; set; }
     private CancellationTokenSource? _cts;
     private ProductQuantityTierListFilter _filter = new();
-    private ProductQuantityTierEditDto _model = new ProductQuantityTierEditDto { ProductId = 1, MinimumQuantity = 1 };
+    private ProductQuantityTierEditDto _model = new ProductQuantityTierEditDto { ProductId = 0, MinimumQuantity = 1 };
+    private string? _formProductName;
     private string _searchDraft = string.Empty;
     private bool _loading = true, _formLoading, _saving, _deleting, _showDeleteConfirm, _disposed, _initialized;
     private string? _formError, _gridError;
@@ -133,7 +132,7 @@
     }
     private async Task ApplySearchAsync() { _filter.Search = _searchDraft; _filter.Page = 1; _cts?.Cancel(); _cts = new CancellationTokenSource(); await LoadGridAsync(_cts.Token); }
 private async Task EditAsync(int id) {
-        _formLoading = true; _formError = null;
+        _formLoading = true; _formError = null; _formProductName = null;
         try {
             var item = await AdminPort.GetForEditAsync(id, _cts?.Token ?? CancellationToken.None);
             if (item is null) { _formError = "Record not found."; return; }
@@ -143,13 +142,14 @@ private async Task EditAsync(int id) {
     private async Task SaveAsync() {
         _saving = true; _formError = null;
         try {
+            if (_model.ProductId <= 0) { _formError = "Select a product before saving."; return; }
             var id = await AdminPort.SaveAsync(_model, _cts?.Token ?? CancellationToken.None);
             await LoadGridAsync(_cts?.Token ?? CancellationToken.None);
             await EditAsync(id);
         } catch (Exception ex) { _formError = ex.Message; }
         finally { _saving = false; }
     }
-    private Task CancelFormAsync() { _formError = null; _model = new ProductQuantityTierEditDto { ProductId = 1, MinimumQuantity = 1 }; return Task.CompletedTask; }
+    private Task CancelFormAsync() { _formError = null; _formProductName = null; _model = new ProductQuantityTierEditDto { ProductId = 0, MinimumQuantity = 1 }; return Task.CompletedTask; }
     private void PromptDelete(ProductQuantityTierDto item) { _itemToDelete = item; _showDeleteConfirm = true; }
     private void CancelDelete() { _showDeleteConfirm = false; _itemToDelete = null; }
     private async Task ConfirmDeleteAsync() {
@@ -178,11 +178,11 @@ private async Task EditAsync(int id) {
         return GridExportBuilder.FromRows(
             "product-tiers",
             "Quantity tier list",
-            new[] { "Id", "ProductId", "MinimumQuantity", "Discount" },
+            new[] { "Id", "Product", "MinimumQuantity", "Discount" },
             _result?.Items.Select(item => (IReadOnlyList<string>)new[]
             {
                 GridExportBuilder.Cell(item.Id),
-                GridExportBuilder.Cell(item.ProductId),
+                GridExportBuilder.Cell(ProductPickerResult.Format(item.ProductId, item.ProductName, item.OrderPartNumber)),
                 GridExportBuilder.Cell(item.MinimumQuantity),
                 GridExportBuilder.Cell(item.Discount)
             }));

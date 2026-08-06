@@ -189,7 +189,7 @@
         }
         catch (Exception ex)
         {
-            _error = ex.Message;
+            _error = FormatSaveError(ex);
             _assignment = null;
         }
         finally
@@ -239,7 +239,7 @@
         }
         catch (Exception ex)
         {
-            _formError = ex.Message;
+            _formError = FormatSaveError(ex);
         }
         finally
         {
@@ -283,7 +283,7 @@
         }
         catch (Exception ex)
         {
-            _formError = ex.Message;
+            _formError = FormatSaveError(ex);
         }
         finally
         {
@@ -319,13 +319,24 @@
         }
         catch (Exception ex)
         {
-            _formError = ex.Message;
+            _formError = FormatSaveError(ex);
             CancelDelete();
         }
         finally
         {
             _deleting = false;
         }
+    }
+
+    private static string FormatSaveError(Exception ex)
+    {
+        var inner = ex;
+        while (inner.InnerException is not null)
+        {
+            inner = inner.InnerException;
+        }
+
+        return string.IsNullOrWhiteSpace(inner.Message) ? ex.Message : inner.Message;
     }
 
     private async Task CloseAsync()

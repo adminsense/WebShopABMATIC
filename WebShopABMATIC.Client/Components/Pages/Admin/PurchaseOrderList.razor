@@ -1,6 +1,7 @@
 @page "/admin/stock/purchase-orders"
 @layout AdminLayout
 @attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
+@using WebShopABMATIC.Application.Admin.Products
 @using WebShopABMATIC.Application.Admin.Stock
 @using WebShopABMATIC.Application.Common
 @using WebShopABMATIC.Application.Auth
@@ -84,8 +85,7 @@
                                     <table class="table table-sm align-middle mb-0">
                                         <thead class="table-light">
                                             <tr>
-                                                <th>Product ID</th>
-                                                <th>Product name</th>
+                                                <th>Product</th>
                                                 <th>Qty ordered</th>
                                                 <th>Delivered</th>
                                                 <th>Unit price</th>
@@ -99,11 +99,15 @@
                                                 var line = _model.Lines[i];
                                                 var index = i;
                                                 <tr>
-                                                    <td style="width: 110px">
-                                                        <InputNumber class="form-control form-control-sm" @bind-Value="line.ProductId" />
-                                                    </td>
-                                                    <td>
-                                                        <InputText class="form-control form-control-sm" @bind-Value="line.ProductName" />
+                                                    <td style="min-width: 280px">
+                                                        <ProductPickerField
+                                                            ProductId="@(line.ProductId ?? 0)"
+                                                            ProductIdChanged="id => SetLineProductAsync(line, id)"
+                                                            ProductName="@line.ProductName"
+                                                            ProductNameChanged="name => SetLineProductName(line, name)"
+                                                            CssClass=""
+                                                            ShowHint="false"
+                                                            InputId="@($"po-prod-{index}")" />
                                                     </td>
                                                     <td style="width: 110px">
                                                         <InputNumber class="form-control form-control-sm" @bind-Value="line.QuantityOrdered" @bind-Value:after="() => RecalculateLine(line)" />
@@ -418,6 +422,18 @@
     }
 
     private void AddLine() => _model.Lines.Add(new StockOrderLineEditDto { QuantityOrdered = 1 });
+
+    private Task SetLineProductAsync(StockOrderLineEditDto line, int productId)
+    {
+        line.ProductId = productId > 0 ? productId : null;
+        return Task.CompletedTask;
+    }
+
+    private Task SetLineProductName(StockOrderLineEditDto line, string? name)
+    {
+        line.ProductName = name ?? string.Empty;
+        return Task.CompletedTask;
+    }
 
     private void RemoveLine(int index)
     {

@@ -8,5 +8,6 @@ public interface IAuditLogRepository
     Task<PagedResult<AuditLogListItemDto>> GetPagedAsync(AuditLogListFilter filter, CancellationToken cancellationToken = default);
     Task<AuditLogDetailDto?> GetByIdAsync(long id, CancellationToken cancellationToken = default);
     Task<bool> AnyAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<string>> GetDistinctUserNamesAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<OrderLogListItemDto>> GetOrderLogsAsync(int orderId, CancellationToken cancellationToken = default);
 }

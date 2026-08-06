@@ -226,7 +226,7 @@ Use credentials from the connected `abmatic_test` database. Inspect logins in ad
 
 **Admin UI:**
 
-- Sidebar **Logs** → `/admin/hub/logs` → `/admin/audit-logs` — reads `[Logging].[Error]` with filters (date, action, module, user, status), color-coded Action badges (IMMO-style), Detail modal, Export CSV
+- Sidebar **Logs** → `/admin/hub/logs` → `/admin/audit-logs` — reads `[Logging].[Error]` with filters (date, action, module, **user dropdown** from distinct log `UserName`s, status), color-coded Action badges (IMMO-style), Detail modal, Export CSV
 - `/admin/orders` — **Order log (DossierLog)** when editing an order
 
 **Enums:** `LegacyAuditModules`, `LegacyProjectActivityCodes` — align `Actie` values with `SELECT DISTINCT Actie FROM Logging.ProjectActiviteit` on your DB if needed.

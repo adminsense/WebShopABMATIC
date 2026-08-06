@@ -6,6 +6,8 @@ public sealed class ProductOptionDto
 {
     public int Id { get; init; }
     public int ProductId { get; init; }
+    public string ProductName { get; init; } = string.Empty;
+    public string? OrderPartNumber { get; init; }
     public string NameEn { get; init; } = string.Empty;
     public string ValueType { get; init; } = string.Empty;
     public string Tag { get; init; } = string.Empty;
