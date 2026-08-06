@@ -2,36 +2,41 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
-using WebShopABMATIC.Application.Auth;
 
 namespace WebShopABMATIC.Infrastructure.Auth;
 
 public static class LegacyCookieAuthentication
 {
     public const string Scheme = CookieAuthenticationDefaults.AuthenticationScheme;
-    public const string CookieName = ".WebShopABMATIC.Auth.Session";
-    private const string LegacyCookieName = ".WebShopABMATIC.Auth";
+
+    /// <summary>Current auth cookie. Bump suffix when invalidating stuck client cookies.</summary>
+    public const string CookieName = ".WebShopABMATIC.Auth.Session.v2";
+
+    private static readonly string[] LegacyCookieNames =
+    [
+        ".WebShopABMATIC.Auth",
+        ".WebShopABMATIC.Auth.Session"
+    ];
 
     /// <summary>Idle ticket lifetime (sliding) inside the auth cookie.</summary>
     public static readonly TimeSpan SessionIdleTimeout = TimeSpan.FromMinutes(15);
 
     public static async Task SignInAsync(HttpContext httpContext, ClaimsPrincipal principal, bool isPersistent)
     {
-        // Drop any legacy persistent cookie so store customers never inherit an old session.
+        // Always clear prior cookies first (incl. old names / sticky sessions).
         DeleteAuthCookies(httpContext);
 
+        // Never persist across browser restarts. Chrome restores "session" cookies via
+        // "Continue where you left off"; we use MaxAge on the cookie options instead.
+        _ = isPersistent;
+        var issued = DateTimeOffset.UtcNow;
         var properties = new AuthenticationProperties
         {
-            IsPersistent = isPersistent,
+            IsPersistent = false,
             AllowRefresh = true,
-            IssuedUtc = DateTimeOffset.UtcNow
+            IssuedUtc = issued,
+            ExpiresUtc = issued.Add(SessionIdleTimeout)
         };
-
-        // Only staff "remember me" gets an explicit expiry. Store customers = session cookie (no Expires).
-        if (isPersistent)
-        {
-            properties.ExpiresUtc = DateTimeOffset.UtcNow.Add(SessionIdleTimeout);
-        }
 
         await httpContext.SignInAsync(Scheme, principal, properties);
     }
@@ -43,6 +48,7 @@ public static class LegacyCookieAuthentication
 
         httpContext.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate";
         httpContext.Response.Headers.Pragma = "no-cache";
+        httpContext.Response.Headers.Expires = "0";
     }
 
     private static void DeleteAuthCookies(HttpContext httpContext)
@@ -58,9 +64,16 @@ public static class LegacyCookieAuthentication
             MaxAge = TimeSpan.Zero
         };
 
-        httpContext.Response.Cookies.Delete(CookieName, cookieOptions);
-        httpContext.Response.Cookies.Delete(LegacyCookieName, cookieOptions);
-        httpContext.Response.Cookies.Append(CookieName, string.Empty, cookieOptions);
-        httpContext.Response.Cookies.Append(LegacyCookieName, string.Empty, cookieOptions);
+        void Wipe(string name)
+        {
+            httpContext.Response.Cookies.Delete(name, cookieOptions);
+            httpContext.Response.Cookies.Append(name, string.Empty, cookieOptions);
+        }
+
+        Wipe(CookieName);
+        foreach (var name in LegacyCookieNames)
+        {
+            Wipe(name);
+        }
     }
 }
