@@ -18,4 +18,7 @@ public sealed class AuditLogAdminUseCase : IAuditLogAdminPort
 
     public Task<AuditLogDetailDto?> GetDetailAsync(long id, CancellationToken cancellationToken = default) =>
         _repository.GetByIdAsync(id, cancellationToken);
+
+    public Task<IReadOnlyList<string>> GetUserLookupsAsync(CancellationToken cancellationToken = default) =>
+        _repository.GetDistinctUserNamesAsync(cancellationToken);
 }

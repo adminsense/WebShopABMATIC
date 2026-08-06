@@ -6,11 +6,13 @@ public sealed class CustomerDeliveryAddressDto
 {
     public int Id { get; init; }
     public int? CustomerId { get; init; }
+    public string CustomerName { get; init; } = string.Empty;
     public string Name { get; init; } = string.Empty;
     public string Straat { get; init; } = string.Empty;
     public string Number { get; init; } = string.Empty;
     public string Bus { get; init; } = string.Empty;
     public int CityId { get; init; }
+    public string CityName { get; init; } = string.Empty;
 }
 
 public sealed class CustomerDeliveryAddressEditDto

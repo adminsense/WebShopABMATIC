@@ -41,6 +41,12 @@ public sealed class OrderAdminUseCase : IOrderAdminPort
             return OrderCancelResult.Failed($"Order {orderId} not found.");
         }
 
+        if (IsPaid(order))
+        {
+            return OrderCancelResult.Failed(
+                "This order is already paid and cannot be cancelled here. Refunds are not available in admin yet.");
+        }
+
         var releaseResult = await _stock.ReleaseReservationAsync(orderId, cancellationToken);
         var released = releaseResult.Status == StockApplyStatus.Applied ? releaseResult.MovementsCreated : 0;
 
@@ -62,6 +68,11 @@ public sealed class OrderAdminUseCase : IOrderAdminPort
 
         return OrderCancelResult.Ok(released);
     }
+
+    private static bool IsPaid(OrderEditDto order) =>
+        order.AdvancePayments.Any(ap =>
+            ap.MolliePaidAt.HasValue ||
+            string.Equals(ap.MolliePaymentStatus, "paid", StringComparison.OrdinalIgnoreCase));
 
     public Task<IReadOnlyList<OrderLogListItemDto>> GetOrderLogsAsync(int orderId, CancellationToken cancellationToken = default) =>
         _auditLogRepository.GetOrderLogsAsync(orderId, cancellationToken);
