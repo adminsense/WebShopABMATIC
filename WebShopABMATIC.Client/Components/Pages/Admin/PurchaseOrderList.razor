@@ -6,6 +6,7 @@
 @using WebShopABMATIC.Application.Common
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Web.Forms
 @inject IStockOrderAdminPort AdminPort
 @implements IAsyncDisposable
 
@@ -314,7 +315,7 @@
         }
         catch (Exception ex)
         {
-            _formError = ex.Message;
+            _formError = AdminFormError.GetDeepestMessage(ex);
         }
     }
 
@@ -333,7 +334,7 @@
         catch (Exception ex)
         {
             _result = null;
-            _gridError = ex.Message;
+            _gridError = AdminFormError.GetDeepestMessage(ex);
         }
         finally
         {
@@ -403,7 +404,7 @@
         }
         catch (Exception ex)
         {
-            _formError = ex.Message;
+            _formError = AdminFormError.GetDeepestMessage(ex);
         }
         finally
         {
@@ -479,7 +480,7 @@
         }
         catch (Exception ex)
         {
-            _formError = ex.Message;
+            _formError = AdminFormError.GetDeepestMessage(ex);
         }
         finally
         {

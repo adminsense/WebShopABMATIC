@@ -1,0 +1,133 @@
+@using WebShopABMATIC.Application.Admin.Lookups
+@using WebShopABMATIC.Application.Common
+@using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Web.Forms
+@inject IAdminLookupPort LookupPort
+
+@if (Show)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5); z-index: 1060;">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title"><i class="bi bi-geo-alt me-1"></i>Select city</h5>
+                    <button type="button" class="btn-close" @onclick="CloseAsync"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-2">Search by city Id, name, or postal code.</p>
+                    <AdminGridSearch @bind-Value="_searchDraft" OnSearch="ApplySearchAsync" />
+                    <div class="table-responsive mt-3">
+                        <table class="table table-striped table-hover mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Id</th>
+                                    <th>City</th>
+                                    <th>Postal</th>
+                                    <th>Country</th>
+                                    <th class="text-center"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (_loading)
+                                {
+                                    <tr><td colspan="5" class="text-center text-muted py-4">Loading…</td></tr>
+                                }
+                                else if (!string.IsNullOrEmpty(_error))
+                                {
+                                    <tr><td colspan="5" class="text-center text-danger py-4">@_error</td></tr>
+                                }
+                                else if (_result is null || _result.Items.Count == 0)
+                                {
+                                    <tr><td colspan="5" class="text-center text-muted py-4">No cities found.</td></tr>
+                                }
+                                else
+                                {
+                                    @foreach (var item in _result.Items)
+                                    {
+                                        <tr @key="item.CityId">
+                                            <td>@item.CityId</td>
+                                            <td>@item.CityName</td>
+                                            <td>@item.PostalCode</td>
+                                            <td>@item.CountryName</td>
+                                            <td class="text-center">
+                                                <button type="button" class="btn btn-sm btn-primary" @onclick="() => SelectAsync(item)">Select</button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <AdminGridPagination
+                        TotalCount="@(_result?.TotalCount ?? 0)"
+                        Page="@_filter.Page"
+                        PageSize="@_filter.PageSize"
+                        Loading="@_loading"
+                        OnPageChanged="ChangePageAsync" />
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseAsync">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public EventCallback<CityLookupDto> OnSelected { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private CityListFilter _filter = new();
+    private string _searchDraft = string.Empty;
+    private PagedResult<CityLookupDto>? _result;
+    private bool _loading;
+    private string? _error;
+    private bool _wasShown;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Show && !_wasShown)
+        {
+            _wasShown = true;
+            _searchDraft = string.Empty;
+            _filter = new CityListFilter { Page = 1, PageSize = AdminGridDefaults.PageSize };
+            await LoadAsync();
+        }
+        else if (!Show)
+        {
+            _wasShown = false;
+        }
+    }
+
+    private async Task ApplySearchAsync()
+    {
+        _filter.Search = string.IsNullOrWhiteSpace(_searchDraft) ? null : _searchDraft.Trim();
+        _filter.Page = 1;
+        await LoadAsync();
+    }
+
+    private async Task ChangePageAsync(int page)
+    {
+        if (page < 1) return;
+        _filter.Page = page;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+        try { _result = await LookupPort.SearchCitiesAsync(_filter); }
+        catch (Exception ex) { _result = null; _error = AdminFormError.GetDeepestMessage(ex); }
+        finally { _loading = false; }
+    }
+
+    private async Task SelectAsync(CityLookupDto item)
+    {
+        await OnSelected.InvokeAsync(item);
+        await CloseAsync();
+    }
+
+    private async Task CloseAsync() => await OnClose.InvokeAsync();
+}
