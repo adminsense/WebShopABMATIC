@@ -255,7 +255,11 @@ private void CloseAttributes() => _attributesProductId = 0;
 - Stacked confirmation on top of a content modal: same markup plus `z-index: 1060`
 - A deep link (`/admin/product-attributes/{ProdId}`) may open the modal over its own grid; closing it replaces the URL with the grid route
 - Reference: `ProductAttributeValuesModal.razor` (callers `ProductList`, `ProductAttributeAssignment`), `CustomerList.razor` (reset password), `AuditLogList.razor` (detail)
-- **Product FK fields:** never use a bare `InputNumber` for ProductId. Use `ProductPickerField` + `ProductPickerModal` (search by Id / name / part / EAN). Show `#Id — Name` on the form and in the grid. Save must reject missing products with `Product #X was not found.` (not a raw EF FK error).
+- **FK fields — never a bare `InputNumber` for foreign keys:**
+  - **Many rows (search):** modal pickers — `ProductPickerField` / `ProductPickerModal`, `CityPickerField` / `CityPickerModal`, `CustomerPickerField` / `CustomerPickerModal`. Show `#Id — Name` on the form and in the grid.
+  - **Few / master CRUD exists:** `<select>` / `InputSelect` — Language, DeliveryType, CustomerType, Supplier, Manufacturer, StockLocation, self-ref Parent on webshop structures.
+  - Save must reject missing FKs with a clear message (e.g. `Product #X was not found.`, `Select a city before saving.`) — not a raw EF FK wrapper.
+  - Form catch: use `AdminFormError.GetDeepestMessage(ex)` so alerts show the real SQL/constraint message, not “See the inner exception…”.
 
 ---
 

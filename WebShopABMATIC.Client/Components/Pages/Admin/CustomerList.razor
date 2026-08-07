@@ -2,11 +2,14 @@
 @layout AdminLayout
 @attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
 @using WebShopABMATIC.Application.Admin.Customers
+@using WebShopABMATIC.Application.Admin.Lookups
 @using WebShopABMATIC.Application.Common
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Web.Forms
 @using WebShopABMATIC.Web.Services
 @inject ICustomerAdminPort AdminPort
+@inject IAdminLookupPort LookupPort
 @inject IGridExportService GridExport
 @implements IAsyncDisposable
 
@@ -52,14 +55,17 @@
                             <label class="form-label" for="f-customerphone">Phone *</label>
                             <InputText id="f-customerphone" class="form-control form-control-sm" @bind-Value="_model.CustomerPhone" required />
                         </div>
-                        <div class="col-md-5">
-                            <label class="form-label" for="f-customertypeid">CustomerTypeId *</label>
-                            <InputNumber id="f-customertypeid" class="form-control form-control-sm" @bind-Value="_model.CustomerTypeId" required />
+                        <div class="col-md-4">
+                            <label class="form-label" for="f-customertypeid">Customer type *</label>
+                            <select id="f-customertypeid" class="form-select form-select-sm" @bind="_model.CustomerTypeId">
+                                <option value="0">— Select —</option>
+                                @foreach (var t in _customerTypes)
+                                {
+                                    <option value="@t.Id">@t.Name</option>
+                                }
+                            </select>
                         </div>
-                        <div class="col-md-5">
-                            <label class="form-label" for="f-customercityid">CityId *</label>
-                            <InputNumber id="f-customercityid" class="form-control form-control-sm" @bind-Value="_model.CustomerCityId" required />
-                        </div>
+                        <CityPickerField @bind-CityId="_model.CustomerCityId" @bind-CityName="_formCityName" CssClass="col-md-6" Label="City *" />
                         <div class="col-md-2 d-flex align-items-end">
                             <div class="form-check mb-1">
                                 <InputCheckbox class="form-check-input" @bind-Value="_model.Locked" id="f-locked" />
@@ -168,7 +174,9 @@
     [SupplyParameterFromQuery(Name = "edit")] public int? EditId { get; set; }
     private CancellationTokenSource? _cts;
     private CustomerListFilter _filter = new();
-    private CustomerEditDto _model = new CustomerEditDto { CustomerTypeId = 1, CustomerCityId = 1, DeliveryTypeId = 1, BetaaltermijnId = 1 };
+    private CustomerEditDto _model = new CustomerEditDto { CustomerTypeId = 0, CustomerCityId = 0, DeliveryTypeId = 1, BetaaltermijnId = 1 };
+    private string? _formCityName;
+    private IReadOnlyList<NamedLookupDto> _customerTypes = [];
     private string _searchDraft = string.Empty;
     private bool _loading = true, _formLoading, _saving, _deleting, _showDeleteConfirm, _disposed, _initialized;
     private bool _showResetConfirm, _resetting;
@@ -181,6 +189,7 @@
 
     protected override async Task OnInitializedAsync() {
         _cts = new CancellationTokenSource();
+        try { _customerTypes = await LookupPort.GetCustomerTypesAsync(_cts.Token); } catch { _customerTypes = []; }
         await LoadGridAsync(_cts.Token);
         if (EditId is > 0) await EditAsync(EditId.Value);
         _initialized = true;
@@ -193,12 +202,12 @@
         _loading = true; _gridError = null;
         try { _result = await AdminPort.GetCustomersAsync(_filter, ct); }
         catch (OperationCanceledException) { return; }
-        catch (Exception ex) { _result = null; _gridError = ex.Message; }
+        catch (Exception ex) { _result = null; _gridError = AdminFormError.GetDeepestMessage(ex); }
         finally { _loading = false; await InvokeAsync(StateHasChanged); }
     }
     private async Task ApplySearchAsync() { _filter.Search = _searchDraft; _filter.Page = 1; _cts?.Cancel(); _cts = new CancellationTokenSource(); await LoadGridAsync(_cts.Token); }
 private async Task EditAsync(int id) {
-        _formLoading = true; _formError = null;
+        _formLoading = true; _formError = null; _formCityName = null;
         try {
             var item = await AdminPort.GetForEditAsync(id, _cts?.Token ?? CancellationToken.None);
             if (item is null) { _formError = "Record not found."; return; }
@@ -208,13 +217,15 @@ private async Task EditAsync(int id) {
     private async Task SaveAsync() {
         _saving = true; _formError = null;
         try {
+            if (_model.CustomerTypeId <= 0) { _formError = "Select a customer type before saving."; return; }
+            if (_model.CustomerCityId <= 0) { _formError = "Select a city before saving."; return; }
             var id = await AdminPort.SaveAsync(_model, _cts?.Token ?? CancellationToken.None);
             await LoadGridAsync(_cts?.Token ?? CancellationToken.None);
             await EditAsync(id);
-        } catch (Exception ex) { _formError = ex.Message; }
+        } catch (Exception ex) { _formError = AdminFormError.GetDeepestMessage(ex); }
         finally { _saving = false; }
     }
-    private Task CancelFormAsync() { _formError = null; _model = new CustomerEditDto { CustomerTypeId = 1, CustomerCityId = 1, DeliveryTypeId = 1, BetaaltermijnId = 1 }; return Task.CompletedTask; }
+    private Task CancelFormAsync() { _formError = null; _formCityName = null; _model = new CustomerEditDto { CustomerTypeId = 0, CustomerCityId = 0, DeliveryTypeId = 1, BetaaltermijnId = 1 }; return Task.CompletedTask; }
     private void PromptDelete(CustomerDto item) { _itemToDelete = item; _showDeleteConfirm = true; }
     private void CancelDelete() { _showDeleteConfirm = false; _itemToDelete = null; }
     private async Task ConfirmDeleteAsync() {

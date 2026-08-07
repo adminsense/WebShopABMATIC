@@ -10,7 +10,7 @@ internal static class AdminCrudDefaults
         "webshop-product-structures" => new WebshopProductStructure { NameEn = string.Empty, NameNl = string.Empty, NameFr = string.Empty },
         "product-prices" => new ProductPrice
         {
-            ProductId = 1,
+            ProductId = 0,
             FromAddress = DateTime.UtcNow.Date,
             GrossSalesPrice = 0,
             GrossPurchasePrice = 0,
@@ -22,10 +22,10 @@ internal static class AdminCrudDefaults
             PurchaseDiscountPercentage = 0,
             CalculationType = 1
         },
-        "product-tiers" => new ProductQuantityTier { ProductId = 1, MinimumQuantity = 1, Discount = 0 },
+        "product-tiers" => new ProductQuantityTier { ProductId = 0, MinimumQuantity = 1, Discount = 0 },
         "product-options" => new ProductOption
         {
-            ProductId = 1,
+            ProductId = 0,
             Name = string.Empty,
             NameEn = string.Empty,
             NameFr = string.Empty,
@@ -39,20 +39,20 @@ internal static class AdminCrudDefaults
         },
         "price-list-categories" => new PriceListCategory { Name = string.Empty, NameFr = string.Empty, SortOrder = 1 },
         "manufacturers" => new Manufacturer { Name = string.Empty },
-        "suppliers" => new Supplier { Name = string.Empty, LanguageId = 1, GeneralLedgerRevenueAccount = 700000, IsInactive = false },
+        "suppliers" => new Supplier { Name = string.Empty, LanguageId = 0, GeneralLedgerRevenueAccount = 700000, IsInactive = false },
         "delivery-addresses" => new CustomerDeliveryAddress
         {
             Name = string.Empty,
             Straat = string.Empty,
             Number = string.Empty,
             Bus = string.Empty,
-            CityId = 1,
+            CityId = 0,
             Notes = string.Empty
         },
         "customer-discounts" => new CustomerProductDiscount
         {
-            CustomerId = 1,
-            ProductId = 1,
+            CustomerId = 0,
+            ProductId = 0,
             FromAddress = DateTime.UtcNow.Date,
             UserId = 1,
             CreatedAt = DateTime.UtcNow
@@ -74,13 +74,13 @@ internal static class AdminCrudDefaults
             CustomerStreet = string.Empty,
             CustomerHouseNumber = string.Empty,
             CustomerBox = string.Empty,
-            CustomerTypeId = 1,
+            CustomerTypeId = 0,
             CustomerPhone = string.Empty,
             CustomerFax = string.Empty,
             CustomerEmail = string.Empty,
             CustomerVatSystemId = 1,
             CustomerStatusId = 1,
-            CustomerCityId = 1,
+            CustomerCityId = 0,
             AccountManagerUserId = 1,
             Locked = false,
             LockedBy = string.Empty,
@@ -111,7 +111,7 @@ internal static class AdminCrudDefaults
             IsAccepted = false,
             CreatedAt = DateTime.UtcNow,
             CreatedByUserId = 1,
-            DeliveryTypeId = 1,
+            DeliveryTypeId = 0,
             CustomerTypeId = 1,
             VatTypeId = 1,
             OrderProcessingTypeId = 1,
@@ -126,8 +126,8 @@ internal static class AdminCrudDefaults
         },
         "product-stock" => new ProductStockLocation
         {
-            StockLocationId = 1,
-            ProductId = 1,
+            StockLocationId = 0,
+            ProductId = 0,
             Quantity = 0,
             MinQuantity = 0,
             MaxQuantity = 100,

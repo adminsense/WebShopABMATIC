@@ -394,7 +394,7 @@ public sealed class StockMovementService : IStockMovementService
             .AnyAsync(p => p.ProductId == command.ProductId, cancellationToken);
         if (!productExists)
         {
-            return StockApplyResult.Failed([$"Product {command.ProductId} not found."]);
+            return StockApplyResult.Failed([$"Product #{command.ProductId} was not found."]);
         }
 
         var locationExists = await _db.StockLocations.AsNoTracking()
@@ -506,7 +506,7 @@ public sealed class StockMovementService : IStockMovementService
             .AnyAsync(p => p.ProductId == command.ProductId, cancellationToken);
         if (!productExists)
         {
-            return StockApplyResult.Failed([$"Product {command.ProductId} not found."]);
+            return StockApplyResult.Failed([$"Product #{command.ProductId} was not found."]);
         }
 
         var locationIds = new[] { command.FromStockLocationId, command.ToStockLocationId };

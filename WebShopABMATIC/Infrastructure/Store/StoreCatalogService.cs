@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using WebShopABMATIC.Application.Ports;
 using WebShopABMATIC.Application.Ports.Outbound;
 using WebShopABMATIC.Application.Store;
@@ -24,7 +23,6 @@ public sealed class StoreCatalogService : IStoreCatalogPort
     private readonly IMemoryCache _cache;
     private readonly ILogger<StoreCatalogService> _logger;
     private readonly StoreDbGate _dbGate;
-    private readonly StoreCatalogFilterOptions _filterOptions;
 
     private Task<T> RunSerializedAsync<T>(Func<Task<T>> operation, CancellationToken cancellationToken) =>
         _dbGate.RunAsync(operation, cancellationToken);
@@ -35,8 +33,7 @@ public sealed class StoreCatalogService : IStoreCatalogPort
         IProductPricingPort pricing,
         IMemoryCache cache,
         ILogger<StoreCatalogService> logger,
-        StoreDbGate dbGate,
-        IOptions<StoreCatalogFilterOptions> filterOptions)
+        StoreDbGate dbGate)
     {
         _db = db;
         _media = media;
@@ -44,7 +41,6 @@ public sealed class StoreCatalogService : IStoreCatalogPort
         _cache = cache;
         _logger = logger;
         _dbGate = dbGate;
-        _filterOptions = filterOptions.Value;
     }
 
     public async Task<IReadOnlyList<StoreCatalogCategoryDto>> GetCategoriesAsync(CancellationToken cancellationToken = default)
@@ -203,14 +199,12 @@ public sealed class StoreCatalogService : IStoreCatalogPort
             }
 
             var mapped = await MapProductRowsAsync(products, structures, cancellationToken);
-            if (categoryId is > 0
-                && _filterOptions.IsEnabledForCategory(categoryId.Value)
-                && filters is { HasAny: true })
+            if (categoryId is > 0 && filters is { HasAny: true })
             {
-                var propertyMap = await LoadPropertyValuesAsync(
+                var attributeMap = await LoadAttributeValuesAsync(
                     mapped.Select(p => p.Id).ToList(),
                     cancellationToken);
-                mapped = ApplyFilters(mapped, filters, propertyMap);
+                mapped = ApplyAttributeFilters(mapped, filters, attributeMap);
             }
 
             if (take is > 0 && mapped.Count > take.Value)
@@ -232,11 +226,6 @@ public sealed class StoreCatalogService : IStoreCatalogPort
         StoreCatalogFilterState? filters,
         CancellationToken cancellationToken)
     {
-        if (!_filterOptions.IsEnabledForCategory(categoryId))
-        {
-            return new StoreCategoryFacetsDto { Enabled = false };
-        }
-
         try
         {
             var structures = await LoadProductStructuresAsync(cancellationToken);
@@ -250,16 +239,16 @@ public sealed class StoreCatalogService : IStoreCatalogPort
                 take: null,
                 cancellationToken);
             var products = await MapProductRowsAsync(rows, structures, cancellationToken);
-            var propertyMap = await LoadPropertyValuesAsync(
+            var attributeMap = await LoadAttributeValuesAsync(
                 products.Select(p => p.Id).ToList(),
                 cancellationToken);
             var active = filters ?? new StoreCatalogFilterState();
-            var matched = ApplyFilters(products, active, propertyMap);
-            var groups = BuildFacetGroups(products, matched, active, propertyMap, categoryId);
+            var matched = ApplyAttributeFilters(products, active, attributeMap);
+            var groups = BuildAttributeFacetGroups(products, active, attributeMap);
 
             return new StoreCategoryFacetsDto
             {
-                Enabled = true,
+                Enabled = groups.Count > 0 || active.AttributeValues.Count > 0,
                 MatchCount = matched.Count,
                 Groups = groups
             };
@@ -294,7 +283,10 @@ public sealed class StoreCatalogService : IStoreCatalogPort
             var safeTake = take > 0 ? take : 24;
             var products = await LoadProductRowsAsync(
                 QueryVisibleLinkedProducts()
-                    .Where(p => p.NameEn != null && p.NameEn.StartsWith(q)),
+                    .Where(p =>
+                        (p.NameNl != null && p.NameNl.Contains(q)) ||
+                        (p.NameEn != null && p.NameEn.Contains(q)) ||
+                        (p.NameFr != null && p.NameFr.Contains(q))),
                 safeTake,
                 cancellationToken);
             return await MapProductRowsAsync(products, structures, cancellationToken);
@@ -1057,7 +1049,7 @@ public sealed class StoreCatalogService : IStoreCatalogPort
         }
     }
 
-    private async Task<IReadOnlyDictionary<int, IReadOnlyList<(int PropertyId, string PropertyName, string Value)>>> LoadPropertyValuesAsync(
+    private async Task<IReadOnlyDictionary<int, IReadOnlyList<(int AttributeId, string AttributeName, string Value)>>> LoadAttributeValuesAsync(
         IReadOnlyList<int> productIds,
         CancellationToken cancellationToken)
     {
@@ -1069,15 +1061,16 @@ public sealed class StoreCatalogService : IStoreCatalogPort
         try
         {
             var rows = await (
-                from item in _db.ProductPropertyItems.AsNoTracking()
-                join prop in _db.ProductProperties.AsNoTracking() on item.ProductPropertyId equals prop.Id
+                from item in _db.ProductAttributeValues.AsNoTracking()
+                join attr in _db.ProductAttributes.AsNoTracking() on item.ProductAttributeId equals attr.Id
                 where productIds.Contains(item.ProductId)
+                      && item.Value != null
+                      && item.Value != ""
                 select new
                 {
                     item.ProductId,
-                    item.ProductPropertyId,
-                    PropertyName = prop.NameNl,
-                    prop.SortOrder,
+                    item.ProductAttributeId,
+                    AttributeName = attr.Name,
                     item.Value
                 }).ToListAsync(cancellationToken);
 
@@ -1086,55 +1079,34 @@ public sealed class StoreCatalogService : IStoreCatalogPort
                 .ToDictionary(
                     g => g.Key,
                     IReadOnlyList<(int, string, string)> (g) => g
-                        .OrderBy(x => x.SortOrder)
-                        .ThenBy(x => x.PropertyName)
-                        .Select(x => (x.ProductPropertyId, x.PropertyName ?? string.Empty, x.Value ?? string.Empty))
+                        .OrderBy(x => x.AttributeName)
+                        .ThenBy(x => x.Value)
+                        .Select(x => (x.ProductAttributeId, x.AttributeName ?? string.Empty, x.Value))
                         .ToList());
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to load ProductProperty items for {Count} products.", productIds.Count);
+            _logger.LogWarning(ex, "Failed to load ProductAttribuutItem values for {Count} products.", productIds.Count);
             return new Dictionary<int, IReadOnlyList<(int, string, string)>>();
         }
     }
 
-    private static IReadOnlyList<StoreProductDto> ApplyFilters(
+    /// <summary>
+    /// AND across distinct attributes; OR across selected values of the same attribute.
+    /// </summary>
+    private static IReadOnlyList<StoreProductDto> ApplyAttributeFilters(
         IReadOnlyList<StoreProductDto> products,
         StoreCatalogFilterState filters,
-        IReadOnlyDictionary<int, IReadOnlyList<(int PropertyId, string PropertyName, string Value)>> propertyMap)
+        IReadOnlyDictionary<int, IReadOnlyList<(int AttributeId, string AttributeName, string Value)>> attributeMap)
     {
-        if (!filters.HasAny)
+        if (filters.AttributeValues.Count == 0
+            || filters.AttributeValues.All(kv => kv.Value.Count == 0))
         {
             return products;
         }
 
         IEnumerable<StoreProductDto> query = products;
-
-        if (filters.ManufacturerIds.Count > 0 || filters.IncludeUnknownManufacturer)
-        {
-            var ids = filters.ManufacturerIds.ToHashSet();
-            query = query.Where(p =>
-                (p.ManufacturerId > 0 && ids.Contains(p.ManufacturerId))
-                || (filters.IncludeUnknownManufacturer && p.ManufacturerId <= 0));
-        }
-
-        if (filters.StockKeys.Count > 0)
-        {
-            var stock = filters.StockKeys.ToHashSet(StringComparer.OrdinalIgnoreCase);
-            query = query.Where(p =>
-                (stock.Contains("in") && !p.IsOutOfStock)
-                || (stock.Contains("out") && p.IsOutOfStock));
-        }
-
-        if (filters.PriceKeys.Count > 0)
-        {
-            var price = filters.PriceKeys.ToHashSet(StringComparer.OrdinalIgnoreCase);
-            query = query.Where(p =>
-                (price.Contains("request") && !p.HasPrice)
-                || (price.Contains("priced") && p.HasPrice));
-        }
-
-        foreach (var (propertyId, values) in filters.PropertyValues)
+        foreach (var (attributeId, values) in filters.AttributeValues)
         {
             if (values.Count == 0)
             {
@@ -1143,132 +1115,21 @@ public sealed class StoreCatalogService : IStoreCatalogPort
 
             var wanted = values.ToHashSet(StringComparer.OrdinalIgnoreCase);
             query = query.Where(p =>
-                propertyMap.TryGetValue(p.Id, out var props)
-                && props.Any(x => x.PropertyId == propertyId && wanted.Contains(x.Value)));
+                attributeMap.TryGetValue(p.Id, out var attrs)
+                && attrs.Any(x => x.AttributeId == attributeId && wanted.Contains(x.Value)));
         }
 
         return query.ToList();
     }
 
-    private IReadOnlyList<StoreFacetGroupDto> BuildFacetGroups(
-        IReadOnlyList<StoreProductDto> all,
-        IReadOnlyList<StoreProductDto> matched,
-        StoreCatalogFilterState active,
-        IReadOnlyDictionary<int, IReadOnlyList<(int PropertyId, string PropertyName, string Value)>> propertyMap,
-        int categoryId)
-    {
-        var groups = new List<StoreFacetGroupDto>();
-
-        // Counts for each group use products matching all OTHER filters (Coolblue-style).
-        var forBrand = ApplyFilters(all, WithoutManufacturer(active), propertyMap);
-        var brandValues = forBrand
-            .GroupBy(p => p.ManufacturerId)
-            .Select(g =>
-            {
-                var id = g.Key;
-                var label = id > 0
-                    ? (g.Select(x => x.ManufacturerName).FirstOrDefault(n => !string.IsNullOrWhiteSpace(n)) ?? $"#{id}")
-                    : "Geen";
-                var value = id > 0 ? id.ToString() : "none";
-                var selected = id > 0
-                    ? active.ManufacturerIds.Contains(id)
-                    : active.IncludeUnknownManufacturer;
-                return new StoreFacetValueDto
-                {
-                    Value = value,
-                    Label = label,
-                    Count = g.Count(),
-                    Selected = selected
-                };
-            })
-            .OrderByDescending(v => v.Value == "none" ? 0 : 1)
-            .ThenBy(v => v.Label, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        groups.Add(new StoreFacetGroupDto
-        {
-            Key = "manufacturer",
-            Title = "Merk",
-            Values = brandValues
-        });
-
-        var forStock = ApplyFilters(all, WithoutStock(active), propertyMap);
-        groups.Add(new StoreFacetGroupDto
-        {
-            Key = "stock",
-            Title = "Voorraad",
-            Values =
-            [
-                new StoreFacetValueDto
-                {
-                    Value = "in",
-                    Label = "Op voorraad",
-                    Count = forStock.Count(p => !p.IsOutOfStock),
-                    Selected = active.StockKeys.Contains("in", StringComparer.OrdinalIgnoreCase)
-                },
-                new StoreFacetValueDto
-                {
-                    Value = "out",
-                    Label = "Uit voorraad",
-                    Count = forStock.Count(p => p.IsOutOfStock),
-                    Selected = active.StockKeys.Contains("out", StringComparer.OrdinalIgnoreCase)
-                }
-            ]
-        });
-
-        var forPrice = ApplyFilters(all, WithoutPrice(active), propertyMap);
-        groups.Add(new StoreFacetGroupDto
-        {
-            Key = "price",
-            Title = "Prijs",
-            Values =
-            [
-                new StoreFacetValueDto
-                {
-                    Value = "priced",
-                    Label = "Met prijs",
-                    Count = forPrice.Count(p => p.HasPrice),
-                    Selected = active.PriceKeys.Contains("priced", StringComparer.OrdinalIgnoreCase)
-                },
-                new StoreFacetValueDto
-                {
-                    Value = "request",
-                    Label = "Prijs op aanvraag",
-                    Count = forPrice.Count(p => !p.HasPrice),
-                    Selected = active.PriceKeys.Contains("request", StringComparer.OrdinalIgnoreCase)
-                }
-            ]
-        });
-
-        var propertyGroups = BuildPropertyFacetGroups(all, active, propertyMap, categoryId);
-        if (propertyGroups.Count > 0)
-        {
-            groups.AddRange(propertyGroups);
-        }
-        else
-        {
-            groups.Add(new StoreFacetGroupDto
-            {
-                Key = "property-placeholder",
-                Title = "Processor, RAM, opslag…",
-                IsMuted = true,
-                Note = "Geen data in ProductProperty vandaag — toekomstige fase (Coolblue-stijl).",
-                Values = []
-            });
-        }
-
-        return groups;
-    }
-
-    private IReadOnlyList<StoreFacetGroupDto> BuildPropertyFacetGroups(
+    private static IReadOnlyList<StoreFacetGroupDto> BuildAttributeFacetGroups(
         IReadOnlyList<StoreProductDto> all,
         StoreCatalogFilterState active,
-        IReadOnlyDictionary<int, IReadOnlyList<(int PropertyId, string PropertyName, string Value)>> propertyMap,
-        int categoryId)
+        IReadOnlyDictionary<int, IReadOnlyList<(int AttributeId, string AttributeName, string Value)>> attributeMap)
     {
         var flat = all
-            .SelectMany(p => propertyMap.TryGetValue(p.Id, out var props)
-                ? props.Select(x => (p.Id, x.PropertyId, x.PropertyName, x.Value))
+            .SelectMany(p => attributeMap.TryGetValue(p.Id, out var attrs)
+                ? attrs.Select(x => (p.Id, x.AttributeId, x.AttributeName, x.Value))
                 : [])
             .Where(x => !string.IsNullOrWhiteSpace(x.Value))
             .ToList();
@@ -1278,37 +1139,19 @@ public sealed class StoreCatalogService : IStoreCatalogPort
             return [];
         }
 
-        var order = _filterOptions.GetPropertyOrder(categoryId);
-        var byProperty = flat.GroupBy(x => x.PropertyId).ToList();
-        if (order is { Count: > 0 })
-        {
-            byProperty = byProperty
-                .OrderBy(g =>
-                {
-                    var idx = order.ToList().IndexOf(g.Key);
-                    return idx < 0 ? int.MaxValue : idx;
-                })
-                .ThenBy(g => g.First().PropertyName, StringComparer.OrdinalIgnoreCase)
-                .ToList();
-        }
-        else
-        {
-            byProperty = byProperty
-                .OrderBy(g => g.First().PropertyName, StringComparer.OrdinalIgnoreCase)
-                .ToList();
-        }
-
         var result = new List<StoreFacetGroupDto>();
-        foreach (var group in byProperty)
+        foreach (var group in flat
+                     .GroupBy(x => x.AttributeId)
+                     .OrderBy(g => g.First().AttributeName, StringComparer.OrdinalIgnoreCase))
         {
-            var propertyId = group.Key;
-            var title = group.First().PropertyName;
-            var selectedValues = active.PropertyValues.TryGetValue(propertyId, out var sel)
+            var attributeId = group.Key;
+            var title = group.First().AttributeName;
+            var selectedValues = active.AttributeValues.TryGetValue(attributeId, out var sel)
                 ? sel.ToHashSet(StringComparer.OrdinalIgnoreCase)
                 : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            var withoutThis = WithoutProperty(active, propertyId);
-            var pool = ApplyFilters(all, withoutThis, propertyMap);
+            var withoutThis = WithoutAttribute(active, attributeId);
+            var pool = ApplyAttributeFilters(all, withoutThis, attributeMap);
             var poolIds = pool.Select(p => p.Id).ToHashSet();
 
             var values = group
@@ -1331,8 +1174,8 @@ public sealed class StoreCatalogService : IStoreCatalogPort
 
             result.Add(new StoreFacetGroupDto
             {
-                Key = $"property:{propertyId}",
-                Title = string.IsNullOrWhiteSpace(title) ? $"Property {propertyId}" : title,
+                Key = $"attr:{attributeId}",
+                Title = string.IsNullOrWhiteSpace(title) ? $"Attribute {attributeId}" : title,
                 Values = values
             });
         }
@@ -1340,45 +1183,12 @@ public sealed class StoreCatalogService : IStoreCatalogPort
         return result;
     }
 
-    private static StoreCatalogFilterState WithoutManufacturer(StoreCatalogFilterState s) =>
-        new()
-        {
-            StockKeys = s.StockKeys,
-            PriceKeys = s.PriceKeys,
-            PropertyValues = s.PropertyValues
-        };
-
-    private static StoreCatalogFilterState WithoutStock(StoreCatalogFilterState s) =>
-        new()
-        {
-            ManufacturerIds = s.ManufacturerIds,
-            IncludeUnknownManufacturer = s.IncludeUnknownManufacturer,
-            PriceKeys = s.PriceKeys,
-            PropertyValues = s.PropertyValues
-        };
-
-    private static StoreCatalogFilterState WithoutPrice(StoreCatalogFilterState s) =>
-        new()
-        {
-            ManufacturerIds = s.ManufacturerIds,
-            IncludeUnknownManufacturer = s.IncludeUnknownManufacturer,
-            StockKeys = s.StockKeys,
-            PropertyValues = s.PropertyValues
-        };
-
-    private static StoreCatalogFilterState WithoutProperty(StoreCatalogFilterState s, int propertyId)
+    private static StoreCatalogFilterState WithoutAttribute(StoreCatalogFilterState s, int attributeId)
     {
-        var copy = s.PropertyValues
-            .Where(kv => kv.Key != propertyId)
+        var copy = s.AttributeValues
+            .Where(kv => kv.Key != attributeId)
             .ToDictionary(kv => kv.Key, kv => kv.Value);
-        return new StoreCatalogFilterState
-        {
-            ManufacturerIds = s.ManufacturerIds,
-            IncludeUnknownManufacturer = s.IncludeUnknownManufacturer,
-            StockKeys = s.StockKeys,
-            PriceKeys = s.PriceKeys,
-            PropertyValues = copy
-        };
+        return new StoreCatalogFilterState { AttributeValues = copy };
     }
 
     private async Task<HashSet<int>> SafeGetProductIdsWithOptionsAsync(

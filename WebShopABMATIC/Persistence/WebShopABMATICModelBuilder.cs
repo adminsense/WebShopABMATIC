@@ -317,7 +317,7 @@ public class WebShopABMATICModelBuilder
         config.Property(t => t.InnerExceptionMessage).HasMaxLength(1024).IsRequired().HasColumnName("InnerException");
         config.Property(t => t.UserName).HasMaxLength(50).IsRequired();
         config.Property(t => t.ClassName).HasMaxLength(50).IsRequired();
-        config.Property(t => t.Id);
+        config.Property(t => t.Id).ValueGeneratedNever();
     }
 
     private static void MapAppSetting(EntityTypeBuilder<AppSetting> config)
