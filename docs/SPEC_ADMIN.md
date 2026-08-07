@@ -10,7 +10,7 @@
 | Category | Count | Status | Notes |
 |----------|-------|--------|-------|
 | **Layout screenshots** | 3 | ✅ Documented | `main_screen`, `menu_screen`, `forms_screen` |
-| **Sidebar menus** | 7 | ✅ Documented | Start through Settings |
+| **Sidebar menus** | 8 | ✅ Documented | Start through Settings (incl. Logs) |
 | **Hub entities** | 22 | ✅ Documented | Full registration map |
 | **Blazor routes** | 22+ | ✅ Complete | Dedicated `*List.razor` per hub entity (form + grid) |
 | **Stock rules** | 6 | ✅ Documented | Min/max, reserve, low-stock KPI |
@@ -43,7 +43,7 @@
 |------|--------|---------|
 | **Shell layout** | ✅ Implemented | Sidebar, top bar, logout, footer |
 | **Dashboard KPIs** | ✅ Implemented | `IAdminDashboardPort` → `AdminDashboardUseCase` |
-| **Hub navigation** | ✅ Implemented | 7 sidebar menus, entity cards |
+| **Hub navigation** | ✅ Implemented | 8 sidebar menus (incl. Logs), entity cards |
 | **Entity CRUD pages** | ✅ Implemented | 21 `*List.razor` pages (form + grid per entity) |
 | **Product CRUD + media** | ✅ Implemented | `ProductAdminUseCase` + `IProductMediaPort` |
 | **Stock alerts on dashboard** | ✅ Implemented | `Quantity <= MinQuantity` count |
@@ -116,7 +116,7 @@ The admin UI is defined by **three screen types**. These match the legacy AB-MAT
 | **Title + subtitle** | Menu name and one-line scope description |
 | **Entity cards** | Icon circle, entity tag, title, description, full-width **"{Entity} form"** button |
 
-**Blazor route:** `/admin/hub/{webshop|catalog|customers|sales|stock|settings}`  
+**Blazor route:** `/admin/hub/{webshop|catalog|customers|sales|stock|logs|settings}`  
 **Purpose:** Second navigation level — staff choose which **registration (master data)** to maintain before opening list or form screens.
 
 ---
@@ -235,7 +235,8 @@ Each sidebar item opens a **hub** of entity cards. Below: what staff **register 
 | 4 | **Customers** | B2B accounts, addresses, discounts | `Customer`, `CustomerDeliveryAddress`, `CustomerProductDiscount`, `CustomerType` |
 | 5 | **Sales** | Orders and fulfilment configuration | `Order`, `OrderStatus`, `DeliveryType` |
 | 6 | **Stock** | Warehouses and quantities | `ProductStockLocation`, `StockLocation` |
-| 7 | **Settings** | Payments, staff users, VAT | `PaymentMethod`, `StaffUser`, `UserGroup`, `VatType`, `SystemUser` (Identity legacy) |
+| 7 | **Logs** | Audit trail (`[Logging].[Error]`) | `AuditLog` (`/admin/audit-logs`) |
+| 8 | **Settings** | Payments, staff users, VAT | `PaymentMethod`, `StaffUser`, `UserGroup`, `VatType`, `SystemUser` (Identity legacy) |
 
 ---
 
@@ -243,8 +244,8 @@ Each sidebar item opens a **hub** of entity cards. Below: what staff **register 
 
 | Entity | Table | What staff registers |
 |--------|-------|----------------------|
-| **Webshop structure** | `WebshopStructure` | Hierarchical **catalog menu** on the public site (`NameNl`, parent, `SortOrder`) |
-| **Webshop product structure** | `WebshopProductStructure` | **Category labels** for the shop in NL/FR/EN |
+| **Webshop structure** | `WebshopStructure` | Hierarchical **catalog menu** on the public site (`NameNl`, parent via `<select>`, `SortOrder`) |
+| **Webshop product structure** | `WebshopProductStructure` | **Category labels** for the shop in NL/FR/EN; parent via `<select>` |
 
 **Store impact:** Drives category navigation on the web store (`WebshopStructure` chips / tree).
 
@@ -257,16 +258,16 @@ Each sidebar item opens a **hub** of entity cards. Below: what staff **register 
 | **Product** | `Product` | Master product: names NL/EN/FR (`ProdName` / `ProdNameEN` / `ProdNameFr`), part numbers, supplier/manufacturer, **`ShowOnWebshop`**, descriptions NL/EN/FR (`ProdDescription*`) + `WebshopDescriptionNl`, EAN |
 | **Product attributes** | `ProductAttribuut` | Filter attribute dictionary (`Naam`, `Gegevenstype`, `Eenheid`) — `/admin/attributes` (when shipped) |
 | **Product attribute values** | `ProductAttribuutItem` | Per-product `Waarde`; FK `ProductProdId` → `Product.ProdId`. Opened as a **modal** (`ProductAttributeValuesModal`) from the Attributes row action on `/admin/products` and on the product-selection grid `/admin/product-attributes`. **Add** saves and keeps the modal open; **Close/X** returns to the calling grid untouched. Deep link `/admin/product-attributes/{ProdId}` opens the modal over the grid. |
-| **Product price** | `ProductPrice` | Price rows: gross/net sales and purchase, validity dates, assembly/installation |
-| **Product quantity tier** | `ProductQuantityTier` | Volume discounts (`MinimumQuantity`, `Discount`) |
-| **Product option** | `ProductOption` | Configurable options (required flag, sort order, price formulas) |
+| **Product price** | `ProductPrice` | Price rows: gross/net sales and purchase, validity dates, assembly/installation. Form uses **product picker modal**; grid shows `#Id — Name`. |
+| **Product quantity tier** | `ProductQuantityTier` | Volume discounts (`MinimumQuantity`, `Discount`). Same product picker + name on form/grid. |
+| **Product option** | `ProductOption` | Configurable options (required flag, sort order, price formulas). Same product picker + name on form/grid. |
 | **Price list category** | `PriceListCategories` | Sections for exported price lists |
-| **Manufacturer** | `Manufacturer` | Brand/manufacturer master |
-| **Supplier** | `Supplier` | Supplier master and price list metadata |
+| **Manufacturer** | `Manufacturer` | Brand/manufacturer master. Form uses **city picker** for `CityId`. |
+| **Supplier** | `Supplier` | Supplier master; **city picker** + **language** `<select>`; no raw `CityId`/`LanguageId` inputs. |
 
 **Store impact:** Only `Product` with `ShowOnWebshop = true` appears on the storefront. Prices and options drive cart line calculations.
 
-**Blazor status:** ✅ Full list + form for **Product**; other catalog entities — list/form routes prepared.
+**Blazor status:** ✅ Full list + form for **Product** (supplier/manufacturer dropdowns + names on grid); price / tier / option / discount / product-stock / stock adjustment / transfer / PO lines use shared `ProductPickerField` + `ProductPickerModal` (search by Id or name). City/customer pickers on supplier, manufacturer, customer, delivery address, discount. Missing product → clear validation message, not EF FK text. Form errors use `AdminFormError.GetDeepestMessage`.
 
 ---
 
@@ -274,14 +275,14 @@ Each sidebar item opens a **hub** of entity cards. Below: what staff **register 
 
 | Entity | Table | What staff registers |
 |--------|-------|----------------------|
-| **Customer** | `Customer` | Company account, VAT, address, **`WebshopLogin`** + password hash, `CustomerTypeId`, `DeliveryTypeId` |
-| **Customer delivery address** | `CustomerDeliveryAddress` | Ship-to addresses per customer |
-| **Customer product discount** | `CustomerProductDiscount` | Customer-specific % discount per product (validity dates) |
+| **Customer** | `Customer` | Company account, VAT, address, **`WebshopLogin`** + password hash; **customer type** `<select>` + **city picker** (no raw type/city IDs) |
+| **Customer delivery address** | `CustomerDeliveryAddress` | Ship-to addresses; **customer** + **city** pickers; grid shows names |
+| **Customer product discount** | `CustomerProductDiscount` | Customer-specific % discount per product (validity dates). Form uses **customer** + **product** pickers; grid shows names. |
 | **Customer type** | `CustomerType` | Segment (dealer, contractor, …), base discount, default delivery |
 
 **Store impact:** `WebshopLogin` is the customer sign-in on the web store. Discounts apply at checkout when implemented.
 
-**Blazor status:** ✅ Customer **list**; form CRUD planned.
+**Blazor status:** ✅ Customer list + form; delivery address and discount CRUD with pickers.
 
 ---
 
@@ -298,8 +299,10 @@ Each sidebar item opens a **hub** of entity cards. Below: what staff **register 
 - Review orders placed from the web store.
 - Accept or reject (`Order.IsAccepted`).
 - Progress status (drives stock reservation/consumption via `OrderStatus`).
+- **Cancel order & release stock** is allowed only when the order is **not** paid (`AdvancePayments` without `MolliePaidAt` / status `paid`). Paid orders: button disabled; message *This order is already paid and cannot be cancelled here. Refunds are not available in admin yet.* (Mollie refund = P3 / out of admin scope.)
+- Delivery type on the order form is a **`<select>`** from delivery-type master (not a raw Id).
 
-**Blazor status:** ✅ Order **list**; detail editor planned.
+**Blazor status:** ✅ Order list + edit form; cancel-paid blocked; delivery-type dropdown.
 
 ---
 
@@ -308,7 +311,7 @@ Each sidebar item opens a **hub** of entity cards. Below: what staff **register 
 | Entity | Table | What staff registers |
 |--------|-------|----------------------|
 | **Stock location** | `StockLocation` | Warehouses and storage sites (`IsWarehouse`) |
-| **Product stock location** | `ProductStockLocation` | Per product/location: `Quantity`, `ReservedQuantity`, **`MinQuantity`**, **`MaxQuantity`**, last count |
+| **Product stock location** | `ProductStockLocation` | Per product/location: `Quantity`, `ReservedQuantity`, **`MinQuantity`**, **`MaxQuantity`**, last count. Form uses product picker + **stock location** `<select>`; grid shows product and location names. |
 | **Stock movement** | `StockMovements` | Historical in/out/reservation journal (read-only) |
 | **Stock order (PO)** | `StockOrder` / `StockOrderLines` | Purchase orders (CRUD in Phase E) |
 
@@ -318,15 +321,27 @@ Each sidebar item opens a **hub** of entity cards. Below: what staff **register 
 |-------|------|-------|
 | `/admin/stock/overview` | Stock overview | KPI widgets + balance by location |
 | `/admin/stock/movements` | Movement journal | Date/product filters, read-only grid |
-| `/admin/product-stock` | Product stock | CRUD per product/location; **low-stock filter** |
-| `/admin/stock/adjustment` | Stock adjustment | Manual inbound/outbound movements |
+| `/admin/product-stock` | Product stock | CRUD per product/location; **low-stock filter**; product picker |
+| `/admin/stock/adjustment` | Stock adjustment | Manual inbound/outbound; product picker modal |
 | `/admin/stock-locations` | Stock locations | Warehouse master data |
 
 **Blazor status:** ✅ Overview + movement journal (Phase A); product stock + locations CRUD implemented.
 
 ---
 
-### 3.7 Settings — platform configuration
+### 3.7 Logs — audit trail
+
+| Entity | Table | What staff consults |
+|--------|-------|---------------------|
+| **Audit trail** | `[Logging].[Error]` (`AppError`) | Auth, staff CRUD, checkout/payment, exports, exceptions — `/admin/audit-logs` |
+
+**UI:** Filters (date, action, module, user, status), color-coded Action badges, Detail modal, Export CSV. Staff CRUD is written via EF `SaveChanges` interceptor; consultation is this screen only (not per form).
+
+**Blazor status:** ✅ Hub Logs + list screen.
+
+---
+
+### 3.8 Settings — platform configuration
 
 | Entity | Table | What staff registers |
 |--------|-------|----------------------|

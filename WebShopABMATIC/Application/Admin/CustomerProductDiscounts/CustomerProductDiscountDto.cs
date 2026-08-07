@@ -6,7 +6,10 @@ public sealed class CustomerProductDiscountDto
 {
     public int Id { get; init; }
     public int CustomerId { get; init; }
+    public string CustomerName { get; init; } = string.Empty;
     public int ProductId { get; init; }
+    public string ProductName { get; init; } = string.Empty;
+    public string? OrderPartNumber { get; init; }
     public decimal? DiscountPercentage { get; init; }
     public DateTime FromAddress { get; init; }
     public DateTime? ValidTo { get; init; }
