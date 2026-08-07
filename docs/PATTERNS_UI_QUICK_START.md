@@ -257,8 +257,9 @@ private void CloseAttributes() => _attributesProductId = 0;
 - Reference: `ProductAttributeValuesModal.razor` (callers `ProductList`, `ProductAttributeAssignment`), `CustomerList.razor` (reset password), `AuditLogList.razor` (detail)
 - **FK fields — never a bare `InputNumber` for foreign keys:**
   - **Many rows (search):** modal pickers — `ProductPickerField` / `ProductPickerModal`, `CityPickerField` / `CityPickerModal`, `CustomerPickerField` / `CustomerPickerModal`. Show `#Id — Name` on the form and in the grid.
+  - **Picker field UX:** the textbox is `readonly`; click the field **or** the search icon opens the modal (search happens inside the modal, not by typing in the field). Placeholder, hint, and save validation must say *Click the field or the search icon to select a product/customer/city…*
   - **Few / master CRUD exists:** `<select>` / `InputSelect` — Language, DeliveryType, CustomerType, Supplier, Manufacturer, StockLocation, self-ref Parent on webshop structures.
-  - Save must reject missing FKs with a clear message (e.g. `Product #X was not found.`, `Select a city before saving.`) — not a raw EF FK wrapper.
+  - Save must reject missing FKs with a clear message (e.g. `Product #X was not found.`, or the click-field hint above) — not a raw EF FK wrapper.
   - Form catch: use `AdminFormError.GetDeepestMessage(ex)` so alerts show the real SQL/constraint message, not “See the inner exception…”.
 
 ---

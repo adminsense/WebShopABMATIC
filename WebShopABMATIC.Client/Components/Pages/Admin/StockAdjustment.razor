@@ -1,9 +1,11 @@
 @page "/admin/stock/adjustment"
 @layout AdminLayout
 @attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
+@using WebShopABMATIC.Application.Admin.Products
 @using WebShopABMATIC.Application.Admin.Stock
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Web.Forms
 @using WebShopABMATIC.Application.Stock
 @inject IStockAdjustmentPort AdjustmentPort
 @implements IAsyncDisposable
@@ -34,12 +36,8 @@
                     <DataAnnotationsValidator />
                     <div class="entity-form-fields">
                         <div class="row g-3">
-                            <div class="col-md-4">
-                                <label class="form-label" for="adj-product">Product ID *</label>
-                                <InputNumber id="adj-product" class="form-control form-control-sm" @bind-Value="_model.ProductId" @bind-Value:after="RefreshPreviewAsync" />
-                                <ValidationMessage For="@(() => _model.ProductId)" />
-                            </div>
-                            <div class="col-md-4">
+                            <ProductPickerField @bind-ProductId="_model.ProductId" @bind-ProductId:after="RefreshPreviewAsync" @bind-ProductName="_formProductName" CssClass="col-md-6" />
+                            <div class="col-md-3">
                                 <label class="form-label" for="adj-location">Stock location *</label>
                                 <InputSelect id="adj-location" class="form-select form-select-sm" @bind-Value="_model.StockLocationId" @bind-Value:after="RefreshPreviewAsync">
                                     @foreach (var loc in _lookups?.StockLocations ?? [])
@@ -49,7 +47,7 @@
                                 </InputSelect>
                                 <ValidationMessage For="@(() => _model.StockLocationId)" />
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label class="form-label" for="adj-change">Quantity change *</label>
                                 <InputNumber id="adj-change" class="form-control form-control-sm" @bind-Value="_model.QuantityChange" />
                                 <div class="form-text">Positive = stock in · negative = stock out</div>
@@ -114,7 +112,8 @@
 
 @code {
     private CancellationTokenSource? _cts;
-    private StockAdjustmentRequest _model = new() { StockLocationId = 1, ProductId = 1, QuantityChange = 1 };
+    private StockAdjustmentRequest _model = new() { StockLocationId = 1, ProductId = 0, QuantityChange = 1 };
+    private string? _formProductName;
     private StockAdjustmentLookupsDto? _lookups;
     private StockAdjustmentPreviewDto? _preview;
     private bool _loadingLookups = true;
@@ -145,7 +144,7 @@
         }
         catch (Exception ex)
         {
-            _formError = ex.Message;
+            _formError = AdminFormError.GetDeepestMessage(ex);
         }
         finally
         {
@@ -175,7 +174,7 @@
         }
         catch (Exception ex)
         {
-            _formError = ex.Message;
+            _formError = AdminFormError.GetDeepestMessage(ex);
         }
         finally
         {
@@ -213,7 +212,7 @@
         }
         catch (Exception ex)
         {
-            _formError = ex.Message;
+            _formError = AdminFormError.GetDeepestMessage(ex);
         }
         finally
         {
@@ -227,11 +226,12 @@
         _successMessage = null;
         _model = new StockAdjustmentRequest
         {
-            ProductId = 1,
+            ProductId = 0,
             StockLocationId = _lookups?.StockLocations.FirstOrDefault()?.Id ?? 1,
             QuantityChange = 1,
             Reason = string.Empty
         };
+        _formProductName = null;
         await RefreshPreviewAsync();
     }
 

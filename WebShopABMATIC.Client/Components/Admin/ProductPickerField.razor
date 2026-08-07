@@ -10,8 +10,13 @@
                class="form-control form-control-sm"
                value="@DisplayText"
                readonly
-               placeholder="Select a product…" />
-        <button type="button" class="btn btn-outline-primary" @onclick="OpenPicker" disabled="@Disabled" title="Search product">
+               role="button"
+               style="cursor: pointer;"
+               placeholder="Click the field or the search icon to select a product."
+               title="Click the field or the search icon to select a product."
+               @onclick="OpenPicker"
+               disabled="@Disabled" />
+        <button type="button" class="btn btn-outline-primary" @onclick="OpenPicker" disabled="@Disabled" title="Click the field or the search icon to select a product.">
             <i class="bi bi-search"></i>
         </button>
         @if (ProductId > 0 && !Disabled)
@@ -23,7 +28,7 @@
     </div>
     @if (ProductId <= 0 && ShowHint)
     {
-        <div class="form-text text-danger">Select a product before saving.</div>
+        <div class="form-text text-danger">Click the field or the search icon to select a product before saving.</div>
     }
 </div>
 
@@ -106,7 +111,11 @@
         }
     }
 
-    private void OpenPicker() => _showPicker = true;
+    private void OpenPicker()
+    {
+        if (Disabled) return;
+        _showPicker = true;
+    }
 
     private void ClosePicker() => _showPicker = false;
 

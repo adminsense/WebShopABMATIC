@@ -2,9 +2,11 @@
 @layout AdminLayout
 @attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
 @using WebShopABMATIC.Application.Admin.CustomerDeliveryAddresses
+@using WebShopABMATIC.Application.Admin.Lookups
 @using WebShopABMATIC.Application.Common
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Web.Forms
 @using WebShopABMATIC.Web.Services
 @inject ICustomerDeliveryAddressAdminPort AdminPort
 @inject IGridExportService GridExport
@@ -28,10 +30,11 @@
                 <EditForm Model="_model" OnValidSubmit="SaveAsync">
                     <DataAnnotationsValidator />
                     <div class="entity-form-fields"><div class="row g-2">
-                        <div class="col-md-4">
-                            <label class="form-label" for="f-customerid">CustomerId</label>
-                            <InputNumber id="f-customerid" class="form-control form-control-sm" @bind-Value="_model.CustomerId" />
-                        </div>
+                        <CustomerPickerField
+                            CustomerId="@(_model.CustomerId ?? 0)"
+                            CustomerIdChanged="OnCustomerIdChanged"
+                            @bind-CustomerName="_formCustomerName"
+                            CssClass="col-md-4" />
                         <div class="col-md-8">
                             <label class="form-label" for="f-name">Name *</label>
                             <InputText id="f-name" class="form-control form-control-sm" @bind-Value="_model.Name" required />
@@ -44,10 +47,8 @@
                             <label class="form-label" for="f-number">Number *</label>
                             <InputText id="f-number" class="form-control form-control-sm" @bind-Value="_model.Number" required />
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label" for="f-cityid">CityId *</label>
-                            <InputNumber id="f-cityid" class="form-control form-control-sm" @bind-Value="_model.CityId" required />
-                        </div>
+                        <CityPickerField @bind-CityId="_model.CityId" @bind-CityName="_formCityName" CssClass="col-md-3" Label="City *" />
+
                         <div class="col-12 d-flex gap-2 pt-1 flex-wrap">
                             <button type="submit" class="btn btn-primary" disabled="@_saving">@(_isEditing ? "Update" : "Create")</button>
                             <button type="button" class="btn btn-secondary" @onclick="CancelFormAsync" disabled="@_saving"><i class="bi bi-x me-1"></i>Cancel</button>
@@ -66,9 +67,9 @@
         <div class="table-responsive">
             <table class="table table-striped table-hover mb-0">
                 <thead class="table-dark"><tr><th>Id</th>
-                        <th>CustomerId</th>
+                        <th>Customer</th>
                         <th>Name</th>
-                        <th>CityId</th>
+                        <th>City</th>
                     <th class="text-center">Actions</th></tr></thead>
                 <tbody>
                     @if (_loading) { <tr><td colspan="5" class="text-center text-muted py-4">Loading…</td></tr> }
@@ -77,9 +78,9 @@
                     else { @foreach (var item in _result.Items) {
                         <tr @key="item.Id" class="@(_model.Id == item.Id ? "table-active" : null)">
                             <td>@item.Id</td>
-                                <td>@item.CustomerId</td>
+                                <td>@CustomerPickerResult.Format(item.CustomerId ?? 0, item.CustomerName)</td>
                                 <td>@item.Name</td>
-                                <td>@item.CityId</td>
+                                <td>@CityLookupDto.Format(item.CityId, item.CityName)</td>
                             <td class="text-center"><div class="btn-group btn-group-sm">
                                 <a class="btn btn-sm btn-primary" href="@($"/admin/delivery-addresses?edit={item.Id}")" data-enhance-nav="false"><i class="bi bi-pencil"></i></a>
                                         <button type="button" class="btn btn-sm btn-danger" @onclick="() => PromptDelete(item)" title="Delete">
@@ -115,6 +116,8 @@
     private CancellationTokenSource? _cts;
     private CustomerDeliveryAddressListFilter _filter = new();
     private CustomerDeliveryAddressEditDto _model = new CustomerDeliveryAddressEditDto();
+    private string? _formCustomerName;
+    private string? _formCityName;
     private string _searchDraft = string.Empty;
     private bool _loading = true, _formLoading, _saving, _deleting, _showDeleteConfirm, _disposed, _initialized;
     private string? _formError, _gridError;
@@ -136,12 +139,12 @@
         _loading = true; _gridError = null;
         try { _result = await AdminPort.GetCustomerDeliveryAddressesAsync(_filter, ct); }
         catch (OperationCanceledException) { return; }
-        catch (Exception ex) { _result = null; _gridError = ex.Message; }
+        catch (Exception ex) { _result = null; _gridError = AdminFormError.GetDeepestMessage(ex); }
         finally { _loading = false; await InvokeAsync(StateHasChanged); }
     }
     private async Task ApplySearchAsync() { _filter.Search = _searchDraft; _filter.Page = 1; _cts?.Cancel(); _cts = new CancellationTokenSource(); await LoadGridAsync(_cts.Token); }
 private async Task EditAsync(int id) {
-        _formLoading = true; _formError = null;
+        _formLoading = true; _formError = null; _formCustomerName = null; _formCityName = null;
         try {
             var item = await AdminPort.GetForEditAsync(id, _cts?.Token ?? CancellationToken.None);
             if (item is null) { _formError = "Record not found."; return; }
@@ -151,13 +154,19 @@ private async Task EditAsync(int id) {
     private async Task SaveAsync() {
         _saving = true; _formError = null;
         try {
+            if (_model.CityId <= 0) { _formError = "Click the field or the search icon to select a city before saving."; return; }
             var id = await AdminPort.SaveAsync(_model, _cts?.Token ?? CancellationToken.None);
             await LoadGridAsync(_cts?.Token ?? CancellationToken.None);
             await EditAsync(id);
-        } catch (Exception ex) { _formError = ex.Message; }
+        } catch (Exception ex) { _formError = AdminFormError.GetDeepestMessage(ex); }
         finally { _saving = false; }
     }
-    private Task CancelFormAsync() { _formError = null; _model = new CustomerDeliveryAddressEditDto(); return Task.CompletedTask; }
+    private Task CancelFormAsync() { _formError = null; _formCustomerName = null; _formCityName = null; _model = new CustomerDeliveryAddressEditDto(); return Task.CompletedTask; }
+    private Task OnCustomerIdChanged(int customerId)
+    {
+        _model.CustomerId = customerId > 0 ? customerId : null;
+        return Task.CompletedTask;
+    }
     private void PromptDelete(CustomerDeliveryAddressDto item) { _itemToDelete = item; _showDeleteConfirm = true; }
     private void CancelDelete() { _showDeleteConfirm = false; _itemToDelete = null; }
     private async Task ConfirmDeleteAsync() {
@@ -186,13 +195,13 @@ private async Task EditAsync(int id) {
         return GridExportBuilder.FromRows(
             "delivery-addresses",
             "Delivery address list",
-            new[] { "Id", "CustomerId", "Name", "CityId" },
+            new[] { "Id", "Customer", "Name", "City" },
             _result?.Items.Select(item => (IReadOnlyList<string>)new[]
             {
                 GridExportBuilder.Cell(item.Id),
-                GridExportBuilder.Cell(item.CustomerId),
+                GridExportBuilder.Cell(CustomerPickerResult.Format(item.CustomerId ?? 0, item.CustomerName)),
                 GridExportBuilder.Cell(item.Name),
-                GridExportBuilder.Cell(item.CityId)
+                GridExportBuilder.Cell(CityLookupDto.Format(item.CityId, item.CityName))
             }));
     }
     private async Task ChangePageAsync(int page)

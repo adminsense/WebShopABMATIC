@@ -1,14 +1,16 @@
 @page "/admin/orders"
 @layout AdminLayout
 @attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
+@using WebShopABMATIC.Application.Admin.Lookups
 @using WebShopABMATIC.Application.Admin.Orders
 @using WebShopABMATIC.Application.Admin.AuditLogs
 @using WebShopABMATIC.Application.Common
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Web.Forms
 @using WebShopABMATIC.Web.Services
 @inject IOrderAdminPort AdminPort
-
+@inject IAdminLookupPort LookupPort
 @inject IGridExportService GridExport
 @implements IAsyncDisposable
 
@@ -46,7 +48,13 @@
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label" for="f-deliverytypeid">Delivery type *</label>
-                                <InputNumber id="f-deliverytypeid" class="form-control form-control-sm" @bind-Value="_model.DeliveryTypeId" required />
+                                <select id="f-deliverytypeid" class="form-select form-select-sm" @bind="_model.DeliveryTypeId">
+                                    <option value="0">— Select —</option>
+                                    @foreach (var dt in _deliveryTypes)
+                                    {
+                                        <option value="@dt.Id">@dt.Name</option>
+                                    }
+                                </select>
                             </div>
                             <div class="col-md-2 d-flex align-items-end">
                                 <div class="form-check mb-1">
@@ -68,7 +76,13 @@
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label" for="f-deliverytypeid">Delivery type *</label>
-                                <InputNumber id="f-deliverytypeid" class="form-control form-control-sm" @bind-Value="_model.DeliveryTypeId" required />
+                                <select id="f-deliverytypeid" class="form-select form-select-sm" @bind="_model.DeliveryTypeId">
+                                    <option value="0">— Select —</option>
+                                    @foreach (var dt in _deliveryTypes)
+                                    {
+                                        <option value="@dt.Id">@dt.Name</option>
+                                    }
+                                </select>
                             </div>
                             <div class="col-md-2 d-flex align-items-end">
                                 <div class="form-check mb-1">
@@ -82,7 +96,11 @@
                             <button type="button" class="btn btn-secondary" @onclick="CancelFormAsync" disabled="@_saving"><i class="bi bi-x me-1"></i>Cancel</button>
                             @if (_isEditing)
                             {
-                                <button type="button" class="btn btn-danger" @onclick="CancelOrderAsync" disabled="@(_saving || _cancelling)">
+                                <button type="button"
+                                        class="btn btn-danger"
+                                        @onclick="CancelOrderAsync"
+                                        disabled="@(_saving || _cancelling || _orderIsPaid)"
+                                        title="@(_orderIsPaid ? "This order is already paid and cannot be cancelled here. Refunds are not available in admin yet." : "Cancel order and release reserved stock")">
                                     @if (_cancelling) { <span class="spinner-border spinner-border-sm me-1"></span> }
                                     <i class="bi bi-x-circle me-1"></i>Cancel order &amp; release stock
                                 </button>
@@ -126,7 +144,7 @@
                 @if (_isEditing)
                 {
                     <div class="mt-4">
-                        <h3 class="h6 fw-bold">Order log (DossierLog)</h3>
+                        <h3 class="h6 fw-bold">Order log</h3>
                         @if (_orderLogsLoading)
                         {
                             <p class="text-muted small mb-0">Loading log…</p>
@@ -207,16 +225,22 @@
     [SupplyParameterFromQuery(Name = "edit")] public int? EditId { get; set; }
     private CancellationTokenSource? _cts;
     private OrderListFilter _filter = new();
-    private OrderEditDto _model = new OrderEditDto { ProjectId = 1, DeliveryTypeId = 1, CreatedAt = DateTime.UtcNow.Date };
+    private OrderEditDto _model = new OrderEditDto { ProjectId = 1, DeliveryTypeId = 0, CreatedAt = DateTime.UtcNow.Date };
+    private IReadOnlyList<NamedLookupDto> _deliveryTypes = [];
     private string _searchDraft = string.Empty;
     private bool _loading = true, _formLoading, _saving, _disposed, _initialized, _cancelling, _orderLogsLoading;
     private string? _formError, _gridError, _formSuccess;
     private PagedResult<OrderSummaryDto>? _result;
     private IReadOnlyList<OrderLogListItemDto> _orderLogs = [];
     private bool _isEditing => _model.Id > 0;
+    private bool _orderIsPaid =>
+        _model.AdvancePayments.Any(ap =>
+            ap.MolliePaidAt.HasValue ||
+            string.Equals(ap.MolliePaymentStatus, "paid", StringComparison.OrdinalIgnoreCase));
 
     protected override async Task OnInitializedAsync() {
         _cts = new CancellationTokenSource();
+        try { _deliveryTypes = await LookupPort.GetDeliveryTypesAsync(_cts.Token); } catch { _deliveryTypes = []; }
         await LoadGridAsync(_cts.Token);
         if (EditId is > 0) await EditAsync(EditId.Value);
         _initialized = true;
@@ -229,7 +253,7 @@
         _loading = true; _gridError = null;
         try { _result = await AdminPort.GetOrdersAsync(_filter, ct); }
         catch (OperationCanceledException) { return; }
-        catch (Exception ex) { _result = null; _gridError = ex.Message; }
+        catch (Exception ex) { _result = null; _gridError = AdminFormError.GetDeepestMessage(ex); }
         finally { _loading = false; await InvokeAsync(StateHasChanged); }
     }
     private async Task ApplySearchAsync() { _filter.Search = _searchDraft; _filter.Page = 1; _cts?.Cancel(); _cts = new CancellationTokenSource(); await LoadGridAsync(_cts.Token); }
@@ -262,17 +286,18 @@ private async Task EditAsync(int id) {
     private async Task SaveAsync() {
         _saving = true; _formError = null;
         try {
+            if (_model.DeliveryTypeId <= 0) { _formError = "Select a delivery type before saving."; return; }
             var id = await AdminPort.SaveAsync(_model, _cts?.Token ?? CancellationToken.None);
             await LoadGridAsync(_cts?.Token ?? CancellationToken.None);
             await EditAsync(id);
-        } catch (Exception ex) { _formError = ex.Message; }
+        } catch (Exception ex) { _formError = AdminFormError.GetDeepestMessage(ex); }
         finally { _saving = false; }
     }
-    private Task CancelFormAsync() { _formError = null; _formSuccess = null; _model = new OrderEditDto { ProjectId = 1, DeliveryTypeId = 1, CreatedAt = DateTime.UtcNow.Date }; return Task.CompletedTask; }
+    private Task CancelFormAsync() { _formError = null; _formSuccess = null; _model = new OrderEditDto { ProjectId = 1, DeliveryTypeId = 0, CreatedAt = DateTime.UtcNow.Date }; return Task.CompletedTask; }
 
     private async Task CancelOrderAsync()
     {
-        if (_model.Id == 0) return;
+        if (_model.Id == 0 || _orderIsPaid) return;
         _cancelling = true; _formError = null; _formSuccess = null;
         try
         {
@@ -285,7 +310,7 @@ private async Task EditAsync(int id) {
             }
             else { _formError = result.Message; }
         }
-        catch (Exception ex) { _formError = ex.Message; }
+        catch (Exception ex) { _formError = AdminFormError.GetDeepestMessage(ex); }
         finally { _cancelling = false; }
     }
 

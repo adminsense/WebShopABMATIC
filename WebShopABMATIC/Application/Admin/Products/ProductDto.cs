@@ -10,7 +10,9 @@ public sealed class ProductDto
     public string NameFr { get; init; } = string.Empty;
     public string? OrderPartNumber { get; init; }
     public int SupplierId { get; init; }
+    public string SupplierName { get; init; } = string.Empty;
     public int ManufacturerId { get; init; }
+    public string ManufacturerName { get; init; } = string.Empty;
     public bool ShowOnWebshop { get; init; }
     public string? WebshopDescriptionNl { get; init; }
     public string? EanCode { get; init; }

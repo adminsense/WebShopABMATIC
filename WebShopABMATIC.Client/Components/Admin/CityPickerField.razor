@@ -6,8 +6,18 @@
 <div class="@CssClass">
     <label class="form-label" for="@InputId">@(Label ?? "City *")</label>
     <div class="input-group input-group-sm">
-        <input id="@InputId" type="text" class="form-control form-control-sm" value="@DisplayText" readonly placeholder="Select a city…" />
-        <button type="button" class="btn btn-outline-primary" @onclick="OpenPicker" disabled="@Disabled" title="Search city">
+        <input id="@InputId"
+               type="text"
+               class="form-control form-control-sm"
+               value="@DisplayText"
+               readonly
+               role="button"
+               style="cursor: pointer;"
+               placeholder="Click the field or the search icon to select a city."
+               title="Click the field or the search icon to select a city."
+               @onclick="OpenPicker"
+               disabled="@Disabled" />
+        <button type="button" class="btn btn-outline-primary" @onclick="OpenPicker" disabled="@Disabled" title="Click the field or the search icon to select a city.">
             <i class="bi bi-search"></i>
         </button>
         @if (CityId > 0 && AllowClear && !Disabled)
@@ -19,7 +29,7 @@
     </div>
     @if (CityId <= 0 && ShowHint)
     {
-        <div class="form-text text-danger">Select a city before saving.</div>
+        <div class="form-text text-danger">Click the field or the search icon to select a city before saving.</div>
     }
 </div>
 
@@ -82,7 +92,11 @@
         }
     }
 
-    private void OpenPicker() => _showPicker = true;
+    private void OpenPicker()
+    {
+        if (Disabled) return;
+        _showPicker = true;
+    }
     private void ClosePicker() => _showPicker = false;
 
     private async Task OnCitySelectedAsync(CityLookupDto city)
