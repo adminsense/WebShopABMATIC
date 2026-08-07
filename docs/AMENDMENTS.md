@@ -16,6 +16,19 @@ Stable behaviour lives in the SPECs (`SPEC_WEB_STORE.md`, `SPEC_ADMIN.md`, `SPEC
 
 ## 📅 Amendments (newest first)
 
+| 2026-08-07 |
+|:---|
+| 1. Admin picker UX: click the Product/City/Customer field or search icon opens the modal; hint and save messages say *Click the field or the search icon to select…* (no typing in the readonly field). |
+| 2. Delivery-address / discount edit passes City/Customer/Product names into pickers (avoids EF parallel-lookup `(unavailable)`); Customer grid shows `(unnamed)` / `—` for empty fields. |
+| 3. Admin list search matches displayed PK Id when the term is numeric (`int.TryParse`) on all entity list repositories (e.g. Order status `7`). |
+
+| 2026-08-06 |
+|:---|
+| 1. Fixed audit writes: `[Logging].[Error].Id` is not IDENTITY — `LegacyAuditWriter` assigns `MAX(Id)+1` before insert (`ValueGeneratedNever`). Unblocks staff CRUD SaveChanges (incl. product attributes), login/logout audit rows, and Audit Logs grid load of latest 20. |
+| 2. Auth cookie hardened against “still logged in” on reopen: new cookie name `.Auth.Session.v2`, never persistent, `MaxAge` = 15 min idle (Chrome session-restore was keeping old session cookies). |
+| 3. Audit Logs UI: removed Entity ID from grid, detail modal, and CSV export (parsed values were unreliable / not useful). |
+| 4. Audit Logs User filter is a dropdown of distinct `UserName` values from `[Logging].[Error]` (was free-text). |
+
 | 2026-08-05 |
 |:---|
 | 1. Re-enabled legacy audit: DI uses `LegacyAuditService` + `LegacyAuditLogRepository` (was Null*); staff CRUD via EF `LegacyAuditSaveChangesInterceptor` → `[Logging].[Error]`; store auth/registration/checkout via explicit `IAuditService`; `LegacyExceptionLoggingMiddleware` for unhandled exceptions. |
