@@ -149,6 +149,8 @@ private async Task EditAsync(int id) {
             var item = await AdminPort.GetForEditAsync(id, _cts?.Token ?? CancellationToken.None);
             if (item is null) { _formError = "Record not found."; return; }
             _model = item;
+            _formCustomerName = string.IsNullOrWhiteSpace(item.CustomerName) ? null : item.CustomerName;
+            _formCityName = string.IsNullOrWhiteSpace(item.CityName) ? null : item.CityName;
         } finally { _formLoading = false; }
     }
     private async Task SaveAsync() {

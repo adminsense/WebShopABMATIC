@@ -21,7 +21,14 @@ public sealed class SupplierRepository : ISupplierRepository
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
             var term = filter.Search.Trim();
-            query = query.Where(e => e.Name.Contains(term));
+            if (int.TryParse(term, out var id))
+            {
+                query = query.Where(e => e.SupplierId == id || e.Name.Contains(term));
+            }
+            else
+            {
+                query = query.Where(e => e.Name.Contains(term));
+            }
         }
 
         var total = await query.CountAsync(cancellationToken);

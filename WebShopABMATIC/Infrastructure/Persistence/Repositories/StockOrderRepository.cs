@@ -4,6 +4,7 @@ using WebShopABMATIC.Application.Common;
 using WebShopABMATIC.Application.Ports.Outbound;
 using WebShopABMATIC.Data.Entities;
 using WebShopABMATIC.Data.Persistence;
+using WebShopABMATIC.Infrastructure.Persistence;
 
 namespace WebShopABMATIC.Infrastructure.Persistence.Repositories;
 
@@ -149,6 +150,18 @@ public sealed class StockOrderRepository : IStockOrderRepository
         if (dto.Lines.Count == 0)
         {
             throw new InvalidOperationException("At least one order line is required.");
+        }
+
+        foreach (var line in dto.Lines)
+        {
+            if (line.ProductId is int productId and > 0)
+            {
+                await AdminProductExists.EnsureAsync(_db, productId, cancellationToken);
+            }
+            else
+            {
+                throw new InvalidOperationException("Select a product for every purchase order line.");
+            }
         }
 
         await using var tx = await _db.Database.BeginTransactionAsync(cancellationToken);

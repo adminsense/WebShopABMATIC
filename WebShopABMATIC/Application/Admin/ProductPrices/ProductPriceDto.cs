@@ -6,6 +6,8 @@ public sealed class ProductPriceDto
 {
     public int Id { get; init; }
     public int ProductId { get; init; }
+    public string ProductName { get; init; } = string.Empty;
+    public string? OrderPartNumber { get; init; }
     public DateTime FromAddress { get; init; }
     public DateTime? ValidTo { get; init; }
     public decimal GrossSalesPrice { get; init; }

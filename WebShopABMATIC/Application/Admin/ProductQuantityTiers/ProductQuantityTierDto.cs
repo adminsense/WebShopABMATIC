@@ -6,6 +6,8 @@ public sealed class ProductQuantityTierDto
 {
     public int Id { get; init; }
     public int ProductId { get; init; }
+    public string ProductName { get; init; } = string.Empty;
+    public string? OrderPartNumber { get; init; }
     public decimal MinimumQuantity { get; init; }
     public decimal Discount { get; init; }
 }

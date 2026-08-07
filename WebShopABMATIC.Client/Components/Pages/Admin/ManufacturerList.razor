@@ -2,11 +2,14 @@
 @layout AdminLayout
 @attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
 @using WebShopABMATIC.Application.Admin.Manufacturers
+@using WebShopABMATIC.Application.Admin.Lookups
 @using WebShopABMATIC.Application.Common
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Web.Forms
 @using WebShopABMATIC.Web.Services
 @inject IManufacturerAdminPort AdminPort
+@inject IAdminLookupPort LookupPort
 @inject IGridExportService GridExport
 @implements IAsyncDisposable
 
@@ -32,10 +35,13 @@
                             <label class="form-label" for="f-name">Name *</label>
                             <InputText id="f-name" class="form-control form-control-sm" @bind-Value="_model.Name" required />
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label" for="f-cityid">CityId</label>
-                            <InputNumber id="f-cityid" class="form-control form-control-sm" @bind-Value="_model.CityId" />
-                        </div>
+                        <CityPickerField
+                            CityId="@(_model.CityId ?? 0)"
+                            CityIdChanged="OnCityIdChanged"
+                            @bind-CityName="_formCityName"
+                            CssClass="col-md-4"
+                            ShowHint="false"
+                            Label="City" />
                         <div class="col-md-8">
                             <label class="form-label" for="f-email">Email</label>
                             <InputText id="f-email" class="form-control form-control-sm" @bind-Value="_model.Email" />
@@ -109,6 +115,7 @@
     private CancellationTokenSource? _cts;
     private ManufacturerListFilter _filter = new();
     private ManufacturerEditDto _model = new ManufacturerEditDto();
+    private string? _formCityName;
     private string _searchDraft = string.Empty;
     private bool _loading = true, _formLoading, _saving, _deleting, _showDeleteConfirm, _disposed, _initialized;
     private string? _formError, _gridError;
@@ -130,16 +137,25 @@
         _loading = true; _gridError = null;
         try { _result = await AdminPort.GetManufacturersAsync(_filter, ct); }
         catch (OperationCanceledException) { return; }
-        catch (Exception ex) { _result = null; _gridError = ex.Message; }
+        catch (Exception ex) { _result = null; _gridError = AdminFormError.GetDeepestMessage(ex); }
         finally { _loading = false; await InvokeAsync(StateHasChanged); }
     }
     private async Task ApplySearchAsync() { _filter.Search = _searchDraft; _filter.Page = 1; _cts?.Cancel(); _cts = new CancellationTokenSource(); await LoadGridAsync(_cts.Token); }
 private async Task EditAsync(int id) {
-        _formLoading = true; _formError = null;
+        _formLoading = true; _formError = null; _formCityName = null;
         try {
             var item = await AdminPort.GetForEditAsync(id, _cts?.Token ?? CancellationToken.None);
             if (item is null) { _formError = "Record not found."; return; }
             _model = item;
+            if (item.CityId is int cityId and > 0)
+            {
+                try
+                {
+                    var city = await LookupPort.GetCityAsync(cityId, _cts?.Token ?? CancellationToken.None);
+                    _formCityName = string.IsNullOrWhiteSpace(city?.CityName) ? null : city.CityName;
+                }
+                catch { }
+            }
         } finally { _formLoading = false; }
     }
     private async Task SaveAsync() {
@@ -148,10 +164,15 @@ private async Task EditAsync(int id) {
             var id = await AdminPort.SaveAsync(_model, _cts?.Token ?? CancellationToken.None);
             await LoadGridAsync(_cts?.Token ?? CancellationToken.None);
             await EditAsync(id);
-        } catch (Exception ex) { _formError = ex.Message; }
+        } catch (Exception ex) { _formError = AdminFormError.GetDeepestMessage(ex); }
         finally { _saving = false; }
     }
-    private Task CancelFormAsync() { _formError = null; _model = new ManufacturerEditDto(); return Task.CompletedTask; }
+    private Task CancelFormAsync() { _formError = null; _formCityName = null; _model = new ManufacturerEditDto(); return Task.CompletedTask; }
+    private Task OnCityIdChanged(int cityId)
+    {
+        _model.CityId = cityId > 0 ? cityId : null;
+        return Task.CompletedTask;
+    }
     private void PromptDelete(ManufacturerDto item) { _itemToDelete = item; _showDeleteConfirm = true; }
     private void CancelDelete() { _showDeleteConfirm = false; _itemToDelete = null; }
     private async Task ConfirmDeleteAsync() {

@@ -3,6 +3,7 @@
 @attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Web.Forms
 @inject IAdminDashboardPort DashboardPort
 @implements IAsyncDisposable
 
@@ -345,7 +346,7 @@ else if (_dashboard is not null)
         }
         catch (Exception ex)
         {
-            _error = ex.Message;
+            _error = AdminFormError.GetDeepestMessage(ex);
         }
         finally
         {
