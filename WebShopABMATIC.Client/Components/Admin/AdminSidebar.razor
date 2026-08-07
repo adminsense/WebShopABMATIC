@@ -100,6 +100,8 @@
 
         new("/admin/hub/stock", "Stock", "oi-box", Exact: false),
 
+        new("/admin/hub/logs", "Logs", "oi-document", Exact: false),
+
         new("/admin/hub/settings", "Settings", "oi-wrench", Exact: false)
 
     ];
@@ -189,6 +191,18 @@
                    || path.StartsWith("admin/stock-locations", StringComparison.OrdinalIgnoreCase)
 
                    || path.StartsWith("admin/stock/", StringComparison.OrdinalIgnoreCase);
+
+        }
+
+
+
+        if (string.Equals(href, "admin/hub/logs", StringComparison.OrdinalIgnoreCase))
+
+        {
+
+            return path.StartsWith(href, StringComparison.OrdinalIgnoreCase)
+
+                   || path.StartsWith("admin/audit-logs", StringComparison.OrdinalIgnoreCase);
 
         }
 
