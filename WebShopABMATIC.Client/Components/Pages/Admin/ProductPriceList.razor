@@ -6,6 +6,7 @@
 @using WebShopABMATIC.Application.Common
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Web.Forms
 @using WebShopABMATIC.Web.Services
 @inject IProductPriceAdminPort AdminPort
 @inject IGridExportService GridExport
@@ -143,7 +144,7 @@
         _loading = true; _gridError = null;
         try { _result = await AdminPort.GetProductPricesAsync(_filter, ct); }
         catch (OperationCanceledException) { return; }
-        catch (Exception ex) { _result = null; _gridError = ex.Message; }
+        catch (Exception ex) { _result = null; _gridError = AdminFormError.GetDeepestMessage(ex); }
         finally { _loading = false; await InvokeAsync(StateHasChanged); }
     }
     private async Task ApplySearchAsync() { _filter.Search = _searchDraft; _filter.Page = 1; _cts?.Cancel(); _cts = new CancellationTokenSource(); await LoadGridAsync(_cts.Token); }
@@ -158,11 +159,11 @@ private async Task EditAsync(int id) {
     private async Task SaveAsync() {
         _saving = true; _formError = null;
         try {
-            if (_model.ProductId <= 0) { _formError = "Select a product before saving."; return; }
+            if (_model.ProductId <= 0) { _formError = "Click the field or the search icon to select a product before saving."; return; }
             var id = await AdminPort.SaveAsync(_model, _cts?.Token ?? CancellationToken.None);
             await LoadGridAsync(_cts?.Token ?? CancellationToken.None);
             await EditAsync(id);
-        } catch (Exception ex) { _formError = ex.Message; }
+        } catch (Exception ex) { _formError = AdminFormError.GetDeepestMessage(ex); }
         finally { _saving = false; }
     }
     private Task CancelFormAsync() { _formError = null; _formProductName = null; _model = new ProductPriceEditDto { ProductId = 0, FromAddress = DateTime.UtcNow.Date }; return Task.CompletedTask; }

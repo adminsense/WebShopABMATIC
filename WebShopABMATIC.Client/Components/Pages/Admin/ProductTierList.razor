@@ -143,7 +143,7 @@ private async Task EditAsync(int id) {
     private async Task SaveAsync() {
         _saving = true; _formError = null;
         try {
-            if (_model.ProductId <= 0) { _formError = "Select a product before saving."; return; }
+            if (_model.ProductId <= 0) { _formError = "Click the field or the search icon to select a product before saving."; return; }
             var id = await AdminPort.SaveAsync(_model, _cts?.Token ?? CancellationToken.None);
             await LoadGridAsync(_cts?.Token ?? CancellationToken.None);
             await EditAsync(id);

@@ -1,4 +1,5 @@
 using WebShopABMATIC.Application.Admin.AuditLogs;
+using WebShopABMATIC.Application.Admin.Lookups;
 using WebShopABMATIC.Application.Admin.CustomerDeliveryAddresses;
 using WebShopABMATIC.Application.Admin.CustomerProductDiscounts;
 using WebShopABMATIC.Application.Admin.Customers;
@@ -180,6 +181,18 @@ public interface IAuditLogAdminPort
     Task<PagedResult<AuditLogListItemDto>> GetAuditTrailAsync(AuditLogListFilter filter, CancellationToken cancellationToken = default);
     Task<AuditLogDetailDto?> GetDetailAsync(long id, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<string>> GetUserLookupsAsync(CancellationToken cancellationToken = default);
+}
+
+public interface IAdminLookupPort
+{
+    Task<PagedResult<CityLookupDto>> SearchCitiesAsync(CityListFilter filter, CancellationToken cancellationToken = default);
+    Task<CityLookupDto?> GetCityAsync(int cityId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<LanguageLookupDto>> GetLanguagesAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<NamedLookupDto>> GetDeliveryTypesAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<NamedLookupDto>> GetCustomerTypesAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<NamedLookupDto>> GetSuppliersAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<NamedLookupDto>> GetManufacturersAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<NamedLookupDto>> GetStockLocationsAsync(CancellationToken cancellationToken = default);
 }
 
 public interface IProductStockLocationAdminPort

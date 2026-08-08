@@ -5,6 +5,7 @@
 @using WebShopABMATIC.Application.Common
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Web.Forms
 @using WebShopABMATIC.Web.Services
 @inject IStaffUserAdminPort AdminPort
 @inject IGridExportService GridExport
@@ -16,7 +17,7 @@
     <a class="btn btn-secondary btn-back mb-3" href="/admin/hub/settings" data-enhance-nav="false"><span class="oi oi-arrow-left"></span> Back to list</a>
     <div class="entity-page-header page-header">
         <h1 class="h3 mb-1"><i class="bi bi-person-workspace text-primary"></i> Staff user</h1>
-        <p class="mb-0">Internal staff accounts (<code>Instellingen.User</code>). Password, user group, and Admin/Manager access for panel login. Self-service name/phone/password stays on My profile.</p>
+        <p class="mb-0">Internal staff accounts. Password, user group, and Admin/Manager access for panel login. Self-service name/phone/password stays on My profile.</p>
     </div>
     <div class="card shadow-sm border entity-form-card admin-form-card">
         <AdminEntityFormHeader ExportDisabled="@ExportDisabled" OnExport="ExportGridAsync">
@@ -83,7 +84,7 @@
                             </div>
                         </div>
                         <div class="col-12">
-                            <p class="form-text mb-0">At least one of Admin or Manager is required for admin-panel login. Manager maps to ERP <code>Bestellingen</code>.</p>
+                            <p class="form-text mb-0">At least one of Admin or Manager is required for admin-panel login.</p>
                         </div>
                         <div class="col-12 d-flex gap-2 pt-1">
                             <button type="submit" class="btn btn-primary" disabled="@_saving">@(_isEditing ? "Update" : "Create")</button>
@@ -186,7 +187,7 @@
         _loading = true; _gridError = null;
         try { _result = await AdminPort.GetStaffUsersAsync(_filter, ct); }
         catch (OperationCanceledException) { return; }
-        catch (Exception ex) { _result = null; _gridError = ex.Message; }
+        catch (Exception ex) { _result = null; _gridError = AdminFormError.GetDeepestMessage(ex); }
         finally { _loading = false; await InvokeAsync(StateHasChanged); }
     }
     private void OnGroupChanged(ChangeEventArgs e)
@@ -212,7 +213,7 @@
             var id = await AdminPort.SaveAsync(_model, _cts?.Token ?? CancellationToken.None);
             await LoadGridAsync(_cts?.Token ?? CancellationToken.None);
             await EditAsync(id);
-        } catch (Exception ex) { _formError = ex.Message; }
+        } catch (Exception ex) { _formError = AdminFormError.GetDeepestMessage(ex); }
         finally { _saving = false; }
     }
     private Task CancelFormAsync() { _formError = null; _model = NewModel(); return Task.CompletedTask; }

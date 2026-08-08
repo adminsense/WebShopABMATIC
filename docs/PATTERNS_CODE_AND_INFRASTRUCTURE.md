@@ -602,7 +602,7 @@ All implementations support:
 | Element | Component | Location |
 |---------|-----------|----------|
 | EXPORT button | `<AdminEntityFormHeader>` → `<AdminExportDropdown>` | Top-right of **form** card header |
-| Grid search | `<AdminGridSearch>` | Toolbar full width; type ≥3 chars (debounce) or lupa/Enter; 0 matches = empty grid |
+| Grid search | `<AdminGridSearch>` | Toolbar full width; type ≥3 chars (debounce) or lupa/Enter; 0 matches = empty grid. **Numeric term** must also match the row PK shown in the Id column (`int.TryParse` + `Id == n \|\| text Contains`). |
 
 **Registration:** `Program.cs` → `services.AddScoped<IGridExportService, GridExportService>();`  
 **Script:** `App.razor` → `<script src="js/admin-export.js"></script>`

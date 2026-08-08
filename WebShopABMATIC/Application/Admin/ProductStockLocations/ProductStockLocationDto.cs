@@ -6,6 +6,7 @@ public sealed class ProductStockLocationDto
 {
     public int Id { get; init; }
     public int StockLocationId { get; init; }
+    public string StockLocationName { get; init; } = string.Empty;
     public int ProductId { get; init; }
     public string ProductName { get; init; } = string.Empty;
     public decimal Quantity { get; init; }

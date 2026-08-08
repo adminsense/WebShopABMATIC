@@ -1,13 +1,16 @@
 @page "/admin/product-stock"
 @layout AdminLayout
 @attribute [Authorize(Policy = AppPolicies.AdminOrManager)]
+@using WebShopABMATIC.Application.Admin.Lookups
 @using WebShopABMATIC.Application.Admin.ProductStockLocations
 @using WebShopABMATIC.Application.Admin.Products
 @using WebShopABMATIC.Application.Common
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Web.Forms
 @using WebShopABMATIC.Web.Services
 @inject IProductStockLocationAdminPort AdminPort
+@inject IAdminLookupPort LookupPort
 @inject IGridExportService GridExport
 @implements IAsyncDisposable
 
@@ -24,14 +27,20 @@
             <Title>@(_isEditing ? "Edit product stock" : "Create product stock")</Title>
         </AdminEntityFormHeader>
         <div class="card-body">
-            @if (_formLoading) { <p class="text-muted mb-0">Loadingù</p> }
+            @if (_formLoading) { <p class="text-muted mb-0">LoadingÔøΩ</p> }
             else {
                 <EditForm Model="_model" OnValidSubmit="SaveAsync">
                     <DataAnnotationsValidator />
                     <div class="entity-form-fields"><div class="row g-2">
                         <div class="col-md-3">
-                            <label class="form-label" for="f-stocklocationid">StockLocationId *</label>
-                            <InputNumber id="f-stocklocationid" class="form-control form-control-sm" @bind-Value="_model.StockLocationId" required />
+                            <label class="form-label" for="f-stocklocationid">Stock location *</label>
+                            <select id="f-stocklocationid" class="form-select form-select-sm" @bind="_model.StockLocationId">
+                                <option value="0">- Select -</option>
+                                @foreach (var loc in _stockLocations)
+                                {
+                                    <option value="@loc.Id">@loc.Name</option>
+                                }
+                            </select>
                         </div>
                         <ProductPickerField @bind-ProductId="_model.ProductId" @bind-ProductName="_formProductName" CssClass="col-md-5" />
                         <div class="col-md-2">
@@ -78,14 +87,14 @@
                         <th>Min</th>
                     <th class="text-center">Actions</th></tr></thead>
                 <tbody>
-                    @if (_loading) { <tr><td colspan="8" class="text-center text-muted py-4">Loadingù</td></tr> }
+                    @if (_loading) { <tr><td colspan="8" class="text-center text-muted py-4">LoadingÔøΩ</td></tr> }
                     else if (!string.IsNullOrEmpty(_gridError)) { <tr><td colspan="8" class="text-center text-danger py-4">@_gridError</td></tr> }
                     else if (_result is null || _result.Items.Count == 0) { <tr><td colspan="8" class="text-center text-muted py-4">@(_filter.LowStockOnly ? "No low-stock rows." : "No records found.")</td></tr> }
                     else { @foreach (var item in _result.Items) {
                         <tr @key="item.Id" class="@RowClass(item)">
                             <td>@item.Id</td>
                                 <td>@ProductPickerResult.Format(item.ProductId, item.ProductName)</td>
-                                <td>@item.StockLocationId</td>
+                                <td>@(string.IsNullOrWhiteSpace(item.StockLocationName) ? $"#{item.StockLocationId}" : item.StockLocationName)</td>
                                 <td>@item.Quantity</td>
                                 <td>@item.ReservedQuantity</td>
                                 <td>@item.AvailableQuantity</td>
@@ -125,8 +134,9 @@
     [SupplyParameterFromQuery(Name = "lowStock")] public bool? LowStock { get; set; }
     private CancellationTokenSource? _cts;
     private ProductStockLocationListFilter _filter = new();
-    private ProductStockLocationEditDto _model = new ProductStockLocationEditDto { StockLocationId = 1, ProductId = 0, MaxQuantity = 100 };
+    private ProductStockLocationEditDto _model = new ProductStockLocationEditDto { StockLocationId = 0, ProductId = 0, MaxQuantity = 100 };
     private string? _formProductName;
+    private IReadOnlyList<NamedLookupDto> _stockLocations = [];
     private string _searchDraft = string.Empty;
     private bool _loading = true, _formLoading, _saving, _deleting, _showDeleteConfirm, _disposed, _initialized;
     private string? _formError, _gridError;
@@ -137,6 +147,7 @@
     protected override async Task OnInitializedAsync() {
         _cts = new CancellationTokenSource();
         _filter.LowStockOnly = LowStock == true;
+        try { _stockLocations = await LookupPort.GetStockLocationsAsync(_cts.Token); } catch { _stockLocations = []; }
         await LoadGridAsync(_cts.Token);
         if (EditId is > 0) await EditAsync(EditId.Value);
         _initialized = true;
@@ -158,7 +169,7 @@
         _loading = true; _gridError = null;
         try { _result = await AdminPort.GetProductStockLocationsAsync(_filter, ct); }
         catch (OperationCanceledException) { return; }
-        catch (Exception ex) { _result = null; _gridError = ex.Message; }
+        catch (Exception ex) { _result = null; _gridError = AdminFormError.GetDeepestMessage(ex); }
         finally { _loading = false; await InvokeAsync(StateHasChanged); }
     }
     private async Task ApplySearchAsync() { _filter.Search = _searchDraft; _filter.Page = 1; _cts?.Cancel(); _cts = new CancellationTokenSource(); await LoadGridAsync(_cts.Token); }
@@ -177,14 +188,15 @@ private async Task EditAsync(int id) {
     private async Task SaveAsync() {
         _saving = true; _formError = null;
         try {
-            if (_model.ProductId <= 0) { _formError = "Select a product before saving."; return; }
+            if (_model.StockLocationId <= 0) { _formError = "Select a stock location before saving."; return; }
+            if (_model.ProductId <= 0) { _formError = "Click the field or the search icon to select a product before saving."; return; }
             var id = await AdminPort.SaveAsync(_model, _cts?.Token ?? CancellationToken.None);
             await LoadGridAsync(_cts?.Token ?? CancellationToken.None);
             await EditAsync(id);
-        } catch (Exception ex) { _formError = ex.Message; }
+        } catch (Exception ex) { _formError = AdminFormError.GetDeepestMessage(ex); }
         finally { _saving = false; }
     }
-    private Task CancelFormAsync() { _formError = null; _formProductName = null; _model = new ProductStockLocationEditDto { StockLocationId = 1, ProductId = 0, MaxQuantity = 100 }; return Task.CompletedTask; }
+    private Task CancelFormAsync() { _formError = null; _formProductName = null; _model = new ProductStockLocationEditDto { StockLocationId = 0, ProductId = 0, MaxQuantity = 100 }; return Task.CompletedTask; }
     private void PromptDelete(ProductStockLocationDto item) { _itemToDelete = item; _showDeleteConfirm = true; }
     private void CancelDelete() { _showDeleteConfirm = false; _itemToDelete = null; }
     private async Task ConfirmDeleteAsync() {
@@ -213,12 +225,12 @@ private async Task EditAsync(int id) {
         return GridExportBuilder.FromRows(
             "product-stock",
             "Product stock list",
-            new[] { "Id", "Product", "StockLocationId", "OnHand", "Reserved", "Available", "MinQuantity" },
+            new[] { "Id", "Product", "Location", "OnHand", "Reserved", "Available", "MinQuantity" },
             _result?.Items.Select(item => (IReadOnlyList<string>)new[]
             {
                 GridExportBuilder.Cell(item.Id),
                 GridExportBuilder.Cell(ProductPickerResult.Format(item.ProductId, item.ProductName)),
-                GridExportBuilder.Cell(item.StockLocationId),
+                GridExportBuilder.Cell(string.IsNullOrWhiteSpace(item.StockLocationName) ? item.StockLocationId : item.StockLocationName),
                 GridExportBuilder.Cell(item.Quantity),
                 GridExportBuilder.Cell(item.ReservedQuantity),
                 GridExportBuilder.Cell(item.AvailableQuantity),

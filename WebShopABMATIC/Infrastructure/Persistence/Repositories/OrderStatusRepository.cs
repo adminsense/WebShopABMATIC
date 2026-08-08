@@ -21,7 +21,14 @@ public sealed class OrderStatusRepository : IOrderStatusRepository
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
             var term = filter.Search.Trim();
-            query = query.Where(e => e.Name.Contains(term) || e.NameFr.Contains(term));
+            if (int.TryParse(term, out var id))
+            {
+                query = query.Where(e => e.Id == id || e.Name.Contains(term) || e.NameFr.Contains(term));
+            }
+            else
+            {
+                query = query.Where(e => e.Name.Contains(term) || e.NameFr.Contains(term));
+            }
         }
 
         var total = await query.CountAsync(cancellationToken);

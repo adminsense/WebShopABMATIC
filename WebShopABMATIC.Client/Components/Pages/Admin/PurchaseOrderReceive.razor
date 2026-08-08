@@ -4,6 +4,7 @@
 @using WebShopABMATIC.Application.Admin.Stock
 @using WebShopABMATIC.Application.Auth
 @using WebShopABMATIC.Application.Ports
+@using WebShopABMATIC.Web.Forms
 @using WebShopABMATIC.Application.Stock
 @inject IStockPoReceivePort ReceivePort
 @implements IAsyncDisposable
@@ -225,7 +226,7 @@
         }
         catch (Exception ex)
         {
-            _formError = ex.Message;
+            _formError = AdminFormError.GetDeepestMessage(ex);
         }
         finally
         {
@@ -260,7 +261,7 @@
         }
         catch (Exception ex)
         {
-            _formError = ex.Message;
+            _formError = AdminFormError.GetDeepestMessage(ex);
         }
         finally
         {
@@ -292,7 +293,7 @@
         }
         catch (Exception ex)
         {
-            _formError = ex.Message;
+            _formError = AdminFormError.GetDeepestMessage(ex);
         }
         finally
         {
